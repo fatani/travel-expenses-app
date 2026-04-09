@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 2;
+  static const int databaseVersion = 3;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -60,6 +60,8 @@ class AppDatabase {
             amount REAL NOT NULL,
             currency_code TEXT NOT NULL,
             spent_at TEXT NOT NULL,
+            payment_method TEXT NOT NULL,
+            source TEXT NOT NULL,
             category TEXT,
             note TEXT,
             created_at TEXT NOT NULL,
@@ -86,6 +88,15 @@ class AppDatabase {
             "ALTER TABLE $tripsTable ADD COLUMN base_currency TEXT NOT NULL DEFAULT ''",
           );
           await db.execute('ALTER TABLE $tripsTable ADD COLUMN budget REAL');
+        }
+
+        if (oldVersion < 3) {
+          await db.execute(
+            "ALTER TABLE $expensesTable ADD COLUMN payment_method TEXT NOT NULL DEFAULT ''",
+          );
+          await db.execute(
+            "ALTER TABLE $expensesTable ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'",
+          );
         }
       },
     );

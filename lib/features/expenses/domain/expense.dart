@@ -6,6 +6,8 @@ class Expense {
     required this.amount,
     required this.currencyCode,
     required this.spentAt,
+    required this.paymentMethod,
+    required this.source,
     this.category,
     this.note,
     required this.createdAt,
@@ -19,6 +21,8 @@ class Expense {
     required double amount,
     String currencyCode = 'USD',
     DateTime? spentAt,
+    required String paymentMethod,
+    String source = 'manual',
     String? category,
     String? note,
   }) {
@@ -31,6 +35,8 @@ class Expense {
       amount: amount,
       currencyCode: currencyCode,
       spentAt: spentAt ?? now,
+      paymentMethod: paymentMethod,
+      source: source,
       category: category,
       note: note,
       createdAt: now,
@@ -46,6 +52,8 @@ class Expense {
       amount: (map['amount']! as num).toDouble(),
       currencyCode: map['currency_code']! as String,
       spentAt: DateTime.parse(map['spent_at']! as String),
+      paymentMethod: (map['payment_method'] as String?) ?? '',
+      source: (map['source'] as String?) ?? 'manual',
       category: map['category'] as String?,
       note: map['note'] as String?,
       createdAt: DateTime.parse(map['created_at']! as String),
@@ -59,6 +67,8 @@ class Expense {
   final double amount;
   final String currencyCode;
   final DateTime spentAt;
+  final String paymentMethod;
+  final String source;
   final String? category;
   final String? note;
   final DateTime createdAt;
@@ -71,6 +81,8 @@ class Expense {
     double? amount,
     String? currencyCode,
     DateTime? spentAt,
+    String? paymentMethod,
+    String? source,
     String? category,
     String? note,
     DateTime? createdAt,
@@ -83,6 +95,8 @@ class Expense {
       amount: amount ?? this.amount,
       currencyCode: currencyCode ?? this.currencyCode,
       spentAt: spentAt ?? this.spentAt,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      source: source ?? this.source,
       category: category ?? this.category,
       note: note ?? this.note,
       createdAt: createdAt ?? this.createdAt,
@@ -97,11 +111,21 @@ class Expense {
       'title': title,
       'amount': amount,
       'currency_code': currencyCode,
-      'spent_at': spentAt.toUtc().toIso8601String(),
+      'spent_at': _writeDate(spentAt),
+      'payment_method': paymentMethod,
+      'source': source,
       'category': category,
       'note': note,
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
     };
+  }
+
+  static String _writeDate(DateTime value) {
+    final normalized = DateTime(value.year, value.month, value.day);
+    final year = normalized.year.toString().padLeft(4, '0');
+    final month = normalized.month.toString().padLeft(2, '0');
+    final day = normalized.day.toString().padLeft(2, '0');
+    return '$year-$month-$day';
   }
 }

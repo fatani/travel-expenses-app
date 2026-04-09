@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../expenses/presentation/trip_details_screen.dart';
 import '../domain/trip.dart';
 import 'trip_controller.dart';
 import 'trip_form_screen.dart';
@@ -33,7 +34,8 @@ class TripsListScreen extends ConsumerWidget {
 
                 return _TripCard(
                   trip: trip,
-                  onTap: () => _openTripForm(context, trip: trip),
+                  onTap: () => _openTripDetails(context, trip),
+                  onEdit: () => _openTripForm(context, trip: trip),
                   onDelete: () => _confirmDelete(context, ref, trip),
                 );
               },
@@ -86,6 +88,12 @@ class TripsListScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _openTripDetails(BuildContext context, Trip trip) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => TripDetailsScreen(trip: trip)),
+    );
+  }
+
   Future<void> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
@@ -135,11 +143,13 @@ class _TripCard extends StatelessWidget {
   const _TripCard({
     required this.trip,
     required this.onTap,
+    required this.onEdit,
     required this.onDelete,
   });
 
   final Trip trip;
   final VoidCallback onTap;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
@@ -165,10 +175,20 @@ class _TripCard extends StatelessWidget {
             ],
           ),
         ),
-        trailing: IconButton(
-          tooltip: 'Delete trip',
-          onPressed: onDelete,
-          icon: const Icon(Icons.delete_outline_rounded),
+        trailing: Wrap(
+          spacing: 4,
+          children: [
+            IconButton(
+              tooltip: 'Edit trip',
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined),
+            ),
+            IconButton(
+              tooltip: 'Delete trip',
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline_rounded),
+            ),
+          ],
         ),
         onTap: onTap,
       ),
