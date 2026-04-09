@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/providers/database_providers.dart';
+import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/presentation/trip_form_screen.dart';
 import '../domain/expense.dart';
@@ -47,6 +48,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           trip: _trip,
           expenses: expenses,
           onAddExpense: () => _openExpenseForm(),
+          onAddViaSms: _openSmsExpenseScreen,
           onEditExpense: (expense) => _openExpenseForm(expense: expense),
           onDeleteExpense: (expense) => _confirmDelete(expense),
         ),
@@ -110,6 +112,12 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     );
   }
 
+  Future<void> _openSmsExpenseScreen() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => SmsExpenseScreen(trip: _trip)),
+    );
+  }
+
   Future<void> _confirmDelete(Expense expense) async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -156,6 +164,7 @@ class _TripDetailsContent extends StatelessWidget {
     required this.trip,
     required this.expenses,
     required this.onAddExpense,
+    required this.onAddViaSms,
     required this.onEditExpense,
     required this.onDeleteExpense,
   });
@@ -163,6 +172,7 @@ class _TripDetailsContent extends StatelessWidget {
   final Trip trip;
   final List<Expense> expenses;
   final VoidCallback onAddExpense;
+  final VoidCallback onAddViaSms;
   final ValueChanged<Expense> onEditExpense;
   final ValueChanged<Expense> onDeleteExpense;
 
@@ -199,11 +209,31 @@ class _TripDetailsContent extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              FilledButton.icon(
+                onPressed: onAddExpense,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add Expense'),
+              ),
+              OutlinedButton.icon(
+                onPressed: onAddViaSms,
+                icon: const Icon(Icons.sms_rounded),
+                label: const Text('Add via Bank SMS'),
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
           Text('Expenses', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           if (expenses.isEmpty)
-            _EmptyExpensesState(onAddExpense: onAddExpense)
+            _EmptyExpensesState(
+              onAddExpense: onAddExpense,
+              onAddViaSms: onAddViaSms,
+            )
           else
             ...expenses.map(
               (expense) => Padding(
@@ -374,9 +404,13 @@ class _ExpenseCard extends StatelessWidget {
 }
 
 class _EmptyExpensesState extends StatelessWidget {
-  const _EmptyExpensesState({required this.onAddExpense});
+  const _EmptyExpensesState({
+    required this.onAddExpense,
+    required this.onAddViaSms,
+  });
 
   final VoidCallback onAddExpense;
+  final VoidCallback onAddViaSms;
 
   @override
   Widget build(BuildContext context) {
@@ -402,6 +436,12 @@ class _EmptyExpensesState extends StatelessWidget {
               onPressed: onAddExpense,
               icon: const Icon(Icons.add_rounded),
               label: const Text('Add Expense'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onAddViaSms,
+              icon: const Icon(Icons.sms_rounded),
+              label: const Text('Add via Bank SMS'),
             ),
           ],
         ),

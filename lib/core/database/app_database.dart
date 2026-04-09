@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 4;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -64,6 +64,7 @@ class AppDatabase {
             source TEXT NOT NULL,
             category TEXT,
             note TEXT,
+            raw_sms_text TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
@@ -96,6 +97,12 @@ class AppDatabase {
           );
           await db.execute(
             "ALTER TABLE $expensesTable ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'",
+          );
+        }
+
+        if (oldVersion < 4) {
+          await db.execute(
+            'ALTER TABLE $expensesTable ADD COLUMN raw_sms_text TEXT',
           );
         }
       },
