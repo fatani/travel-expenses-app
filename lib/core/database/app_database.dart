@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 4;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -36,6 +36,9 @@ class AppDatabase {
       version: databaseVersion,
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
+      },
+      onOpen: (db) async {
+        await _ensureSettingsLocaleColumn(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -74,6 +77,7 @@ class AppDatabase {
           CREATE TABLE $settingsTable (
             id INTEGER PRIMARY KEY,
             currency_code TEXT NOT NULL,
+            locale_code TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           )
@@ -98,7 +102,28 @@ class AppDatabase {
             "ALTER TABLE $expensesTable ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'",
           );
         }
+
+        if (oldVersion < 4) {
+          await db.execute(
+            "ALTER TABLE $settingsTable ADD COLUMN locale_code TEXT NOT NULL DEFAULT 'ar'",
+          );
+        }
       },
+    );
+  }
+
+  Future<void> _ensureSettingsLocaleColumn(Database db) async {
+    final columns = await db.rawQuery('PRAGMA table_info($settingsTable)');
+    final hasLocaleCode = columns.any(
+      (column) => column['name'] == 'locale_code',
+    );
+
+    if (hasLocaleCode) {
+      return;
+    }
+
+    await db.execute(
+      "ALTER TABLE $settingsTable ADD COLUMN locale_code TEXT NOT NULL DEFAULT 'ar'",
     );
   }
 }

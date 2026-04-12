@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../trips/domain/trip.dart';
 import '../domain/expense.dart';
 import 'expense_controller.dart';
+import 'expense_option_labels.dart';
 
 class ExpenseFormScreen extends ConsumerStatefulWidget {
   const ExpenseFormScreen({super.key, required this.trip, this.expense});
@@ -20,24 +22,6 @@ class ExpenseFormScreen extends ConsumerStatefulWidget {
 }
 
 class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
-  static const List<String> _categories = <String>[
-    'Transport',
-    'Accommodation',
-    'Food',
-    'Visa',
-    'Shopping',
-    'Entertainment',
-    'Other',
-  ];
-
-  static const List<String> _paymentMethods = <String>[
-    'Cash',
-    'Credit Card',
-    'Debit Card',
-    'Bank Transfer',
-    'Mobile Wallet',
-  ];
-
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _titleController;
   late final TextEditingController _amountController;
@@ -82,13 +66,18 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isSaving = ref
         .watch(expenseControllerProvider(widget.trip.id))
         .isLoading;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.isEditMode ? 'Edit Expense' : 'New Expense'),
+        title: Text(
+          widget.isEditMode
+              ? l10n.expenseFormEditTitle
+              : l10n.expenseFormCreateTitle,
+        ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -106,11 +95,10 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         TextFormField(
                           controller: _titleController,
                           textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Title',
-                            hintText: 'Airport taxi',
-                            helperText:
-                                'Optional. If empty, category will be used.',
+                          decoration: InputDecoration(
+                            labelText: l10n.expenseFormTitleLabel,
+                            hintText: l10n.expenseFormTitleHint,
+                            helperText: l10n.expenseFormTitleHelper,
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -120,9 +108,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Amount',
-                            hintText: '45.00',
+                          decoration: InputDecoration(
+                            labelText: l10n.expenseFormAmountLabel,
+                            hintText: l10n.expenseFormAmountHint,
                           ),
                           validator: _validateAmount,
                         ),
@@ -137,8 +125,8 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             ),
                             LengthLimitingTextInputFormatter(3),
                           ],
-                          decoration: const InputDecoration(
-                            labelText: 'Currency',
+                          decoration: InputDecoration(
+                            labelText: l10n.expenseFormCurrencyLabel,
                             hintText: 'USD',
                           ),
                           validator: _validateRequired,
@@ -146,16 +134,21 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           initialValue: _selectedCategory,
-                          items: _categories
+                          items: ExpenseOptionLabels.categories
                               .map(
                                 (category) => DropdownMenuItem<String>(
                                   value: category,
-                                  child: Text(category),
+                                  child: Text(
+                                    ExpenseOptionLabels.category(
+                                      l10n,
+                                      category,
+                                    ),
+                                  ),
                                 ),
                               )
                               .toList(),
-                          decoration: const InputDecoration(
-                            labelText: 'Category',
+                          decoration: InputDecoration(
+                            labelText: l10n.expenseFormCategoryLabel,
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -167,16 +160,21 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           initialValue: _selectedPaymentMethod,
-                          items: _paymentMethods
+                          items: ExpenseOptionLabels.paymentMethods
                               .map(
                                 (paymentMethod) => DropdownMenuItem<String>(
                                   value: paymentMethod,
-                                  child: Text(paymentMethod),
+                                  child: Text(
+                                    ExpenseOptionLabels.paymentMethod(
+                                      l10n,
+                                      paymentMethod,
+                                    ),
+                                  ),
                                 ),
                               )
                               .toList(),
-                          decoration: const InputDecoration(
-                            labelText: 'Payment method',
+                          decoration: InputDecoration(
+                            labelText: l10n.expenseFormPaymentMethodLabel,
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -189,9 +187,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         TextFormField(
                           controller: _dateController,
                           readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Expense date',
-                            suffixIcon: Icon(Icons.calendar_today_rounded),
+                          decoration: InputDecoration(
+                            labelText: l10n.expenseFormDateLabel,
+                            suffixIcon: const Icon(
+                              Icons.calendar_today_rounded,
+                            ),
                           ),
                           onTap: _selectDate,
                           validator: _validateDate,
@@ -201,9 +201,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           controller: _noteController,
                           minLines: 3,
                           maxLines: 5,
-                          decoration: const InputDecoration(
-                            labelText: 'Note',
-                            hintText: 'Optional details',
+                          decoration: InputDecoration(
+                            labelText: l10n.expenseFormNoteLabel,
+                            hintText: l10n.expenseFormNoteHint,
                           ),
                         ),
                       ],
@@ -216,7 +216,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                   child: FilledButton(
                     onPressed: isSaving ? null : _submit,
                     child: Text(
-                      widget.isEditMode ? 'Save Changes' : 'Create Expense',
+                      widget.isEditMode
+                          ? l10n.expenseFormSaveEdit
+                          : l10n.expenseFormSaveCreate,
                     ),
                   ),
                 ),
@@ -229,40 +231,44 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   }
 
   String? _validateRequired(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.trim().isEmpty) {
-      return 'This field is required.';
+      return l10n.commonRequiredField;
     }
 
     return null;
   }
 
   String? _validateAmount(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.trim().isEmpty) {
-      return 'This field is required.';
+      return l10n.commonRequiredField;
     }
 
     final amount = double.tryParse(value.trim());
     if (amount == null) {
-      return 'Enter a valid number.';
+      return l10n.commonEnterValidNumber;
     }
     if (amount <= 0) {
-      return 'Amount must be greater than zero.';
+      return l10n.expenseFormAmountPositive;
     }
 
     return null;
   }
 
   String? _validateDropdown(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.isEmpty) {
-      return 'This field is required.';
+      return l10n.commonRequiredField;
     }
 
     return null;
   }
 
   String? _validateDate(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (_spentAt == null) {
-      return 'This field is required.';
+      return l10n.commonRequiredField;
     }
 
     return null;
@@ -336,9 +342,13 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to save expense: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.expenseFormSaveError('$error'),
+          ),
+        ),
+      );
     }
   }
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../expenses/presentation/trip_details_screen.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../domain/trip.dart';
 import 'trip_controller.dart';
 import 'trip_form_screen.dart';
@@ -12,10 +14,20 @@ class TripsListScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final tripsState = ref.watch(tripsControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Trips')),
+      appBar: AppBar(
+        title: Text(l10n.tripsTitle),
+        actions: [
+          IconButton(
+            tooltip: l10n.settingsLanguageTooltip,
+            onPressed: () => _openSettings(context),
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
       body: tripsState.when(
         data: (trips) {
           if (trips.isEmpty) {
@@ -53,7 +65,7 @@ class TripsListScreen extends ConsumerWidget {
                   const Icon(Icons.error_outline_rounded, size: 40),
                   const SizedBox(height: 12),
                   Text(
-                    'Could not load trips.',
+                    l10n.tripsLoadError,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
@@ -66,7 +78,7 @@ class TripsListScreen extends ConsumerWidget {
                   FilledButton(
                     onPressed: () =>
                         ref.read(tripsControllerProvider.notifier).reload(),
-                    child: const Text('Try Again'),
+                    child: Text(l10n.commonTryAgain),
                   ),
                 ],
               ),
@@ -77,7 +89,7 @@ class TripsListScreen extends ConsumerWidget {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openTripForm(context),
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Trip'),
+        label: Text(l10n.tripsAddButton),
       ),
     );
   }
@@ -94,27 +106,32 @@ class TripsListScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _openSettings(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+    );
+  }
+
   Future<void> _confirmDelete(
     BuildContext context,
     WidgetRef ref,
     Trip trip,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete trip?'),
-          content: Text(
-            'This will permanently remove ${trip.name} and its linked expenses.',
-          ),
+          title: Text(l10n.tripsDeleteDialogTitle),
+          content: Text(l10n.tripsDeleteDialogMessage(trip.name)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: Text(l10n.commonDelete),
             ),
           ],
         );
@@ -134,7 +151,7 @@ class TripsListScreen extends ConsumerWidget {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to delete trip: $error')));
+      ).showSnackBar(SnackBar(content: Text(l10n.tripsDeleteError('$error'))));
     }
   }
 }
@@ -154,7 +171,9 @@ class _TripCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final localeName = Localizations.localeOf(context).toLanguageTag();
 
     return Card(
       child: ListTile(
@@ -167,10 +186,10 @@ class _TripCard extends StatelessWidget {
             children: [
               Text(trip.destination),
               const SizedBox(height: 6),
-              Text(_formatDateRange(trip)),
+              Text(_formatDateRange(trip, localeName, l10n)),
               if (trip.budget != null) ...[
                 const SizedBox(height: 6),
-                Text(_formatBudget(trip)),
+                Text(l10n.tripsBudgetLabel(_formatBudget(trip))),
               ],
             ],
           ),
@@ -179,12 +198,12 @@ class _TripCard extends StatelessWidget {
           spacing: 4,
           children: [
             IconButton(
-              tooltip: 'Edit trip',
+              tooltip: l10n.tripsEditTooltip,
               onPressed: onEdit,
               icon: const Icon(Icons.edit_outlined),
             ),
             IconButton(
-              tooltip: 'Delete trip',
+              tooltip: l10n.tripsDeleteTooltip,
               onPressed: onDelete,
               icon: const Icon(Icons.delete_outline_rounded),
             ),
@@ -195,15 +214,15 @@ class _TripCard extends StatelessWidget {
     );
   }
 
-  String _formatDateRange(Trip trip) {
-    final formatter = DateFormat('dd MMM yyyy');
+  String _formatDateRange(Trip trip, String localeName, AppLocalizations l10n) {
     final start = trip.startDate;
     final end = trip.endDate;
 
     if (start == null || end == null) {
-      return 'Dates need attention';
+      return l10n.tripsDatesNeedAttention;
     }
 
+    final formatter = DateFormat('dd MMM yyyy', localeName);
     return '${formatter.format(start)} - ${formatter.format(end)}';
   }
 
@@ -214,7 +233,7 @@ class _TripCard extends StatelessWidget {
       decimalDigits: 2,
     );
 
-    return 'Budget: ${formatter.format(trip.budget)}';
+    return formatter.format(trip.budget);
   }
 }
 
@@ -225,6 +244,7 @@ class _EmptyTripsState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
 
     return Center(
@@ -242,13 +262,13 @@ class _EmptyTripsState extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               Text(
-                'No trips yet',
+                l10n.tripsEmptyTitle,
                 style: theme.textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               Text(
-                'Create your first trip to start tracking travel expenses.',
+                l10n.tripsEmptyMessage,
                 style: theme.textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -256,7 +276,7 @@ class _EmptyTripsState extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onAddTrip,
                 icon: const Icon(Icons.add_rounded),
-                label: const Text('Add Trip'),
+                label: Text(l10n.tripsAddButton),
               ),
             ],
           ),
