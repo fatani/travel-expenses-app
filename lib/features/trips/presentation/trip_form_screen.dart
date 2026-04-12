@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../domain/trip.dart';
 import 'trip_controller.dart';
@@ -64,10 +65,15 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isSaving = ref.watch(tripsControllerProvider).isLoading;
 
     return Scaffold(
-      appBar: AppBar(title: Text(widget.isEditMode ? 'Edit Trip' : 'New Trip')),
+      appBar: AppBar(
+        title: Text(
+          widget.isEditMode ? l10n.tripFormEditTitle : l10n.tripFormCreateTitle,
+        ),
+      ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -84,9 +90,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                         TextFormField(
                           controller: _nameController,
                           textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Trip name',
-                            hintText: 'Summer Conference',
+                          decoration: InputDecoration(
+                            labelText: l10n.tripFormNameLabel,
+                            hintText: l10n.tripFormNameHint,
                           ),
                           validator: _validateRequired,
                         ),
@@ -94,9 +100,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                         TextFormField(
                           controller: _destinationController,
                           textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Destination',
-                            hintText: 'Istanbul, Turkey',
+                          decoration: InputDecoration(
+                            labelText: l10n.tripFormDestinationLabel,
+                            hintText: l10n.tripFormDestinationHint,
                           ),
                           validator: _validateRequired,
                         ),
@@ -111,8 +117,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                             ),
                             LengthLimitingTextInputFormatter(3),
                           ],
-                          decoration: const InputDecoration(
-                            labelText: 'Base currency',
+                          decoration: InputDecoration(
+                            labelText: l10n.tripFormCurrencyLabel,
                             hintText: 'USD',
                           ),
                           validator: _validateRequired,
@@ -124,9 +130,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: const InputDecoration(
-                            labelText: 'Budget (optional)',
-                            hintText: '2500',
+                          decoration: InputDecoration(
+                            labelText: l10n.tripFormBudgetLabel,
+                            hintText: l10n.tripFormBudgetHint,
                           ),
                           validator: _validateBudget,
                         ),
@@ -134,9 +140,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                         TextFormField(
                           controller: _startDateController,
                           readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'Start date',
-                            suffixIcon: Icon(Icons.calendar_today_rounded),
+                          decoration: InputDecoration(
+                            labelText: l10n.tripFormStartDateLabel,
+                            suffixIcon: const Icon(
+                              Icons.calendar_today_rounded,
+                            ),
                           ),
                           onTap: () => _selectDate(isStartDate: true),
                           validator: _validateStartDate,
@@ -145,9 +153,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                         TextFormField(
                           controller: _endDateController,
                           readOnly: true,
-                          decoration: const InputDecoration(
-                            labelText: 'End date',
-                            suffixIcon: Icon(Icons.calendar_today_rounded),
+                          decoration: InputDecoration(
+                            labelText: l10n.tripFormEndDateLabel,
+                            suffixIcon: const Icon(
+                              Icons.calendar_today_rounded,
+                            ),
                           ),
                           onTap: () => _selectDate(isStartDate: false),
                           validator: _validateEndDate,
@@ -162,7 +172,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                   child: FilledButton(
                     onPressed: isSaving ? null : _submit,
                     child: Text(
-                      widget.isEditMode ? 'Save Changes' : 'Create Trip',
+                      widget.isEditMode
+                          ? l10n.tripFormSaveEdit
+                          : l10n.tripFormSaveCreate,
                     ),
                   ),
                 ),
@@ -175,46 +187,50 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   String? _validateRequired(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.trim().isEmpty) {
-      return 'This field is required.';
+      return l10n.commonRequiredField;
     }
 
     return null;
   }
 
   String? _validateBudget(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (value == null || value.trim().isEmpty) {
       return null;
     }
 
     final budget = double.tryParse(value.trim());
     if (budget == null) {
-      return 'Enter a valid number.';
+      return l10n.commonEnterValidNumber;
     }
     if (budget < 0) {
-      return 'Budget must be zero or more.';
+      return l10n.tripFormBudgetNonNegative;
     }
 
     return null;
   }
 
   String? _validateStartDate(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (_startDate == null) {
-      return 'This field is required.';
+      return l10n.commonRequiredField;
     }
     if (_endDate != null && _startDate!.isAfter(_endDate!)) {
-      return 'Start date must be on or before the end date.';
+      return l10n.tripFormStartDateBeforeEnd;
     }
 
     return null;
   }
 
   String? _validateEndDate(String? value) {
+    final l10n = AppLocalizations.of(context)!;
     if (_endDate == null) {
-      return 'This field is required.';
+      return l10n.commonRequiredField;
     }
     if (_startDate != null && _startDate!.isAfter(_endDate!)) {
-      return 'End date must be on or after the start date.';
+      return l10n.tripFormEndDateAfterStart;
     }
 
     return null;
@@ -289,9 +305,13 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to save trip: $error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.tripFormSaveError('$error'),
+          ),
+        ),
+      );
     }
   }
 

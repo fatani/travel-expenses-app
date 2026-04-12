@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../../trips/domain/trip.dart';
@@ -8,6 +9,7 @@ import '../../trips/presentation/trip_form_screen.dart';
 import '../domain/expense.dart';
 import 'expense_controller.dart';
 import 'expense_form_screen.dart';
+import 'expense_option_labels.dart';
 
 class TripDetailsScreen extends ConsumerStatefulWidget {
   const TripDetailsScreen({super.key, required this.trip});
@@ -29,6 +31,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final expensesState = ref.watch(expenseControllerProvider(_trip.id));
 
     return Scaffold(
@@ -36,7 +39,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         title: Text(_trip.name),
         actions: [
           IconButton(
-            tooltip: 'Edit trip',
+            tooltip: l10n.tripDetailsEditTripTooltip,
             onPressed: _openTripEditor,
             icon: const Icon(Icons.edit_outlined),
           ),
@@ -60,7 +63,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                 const Icon(Icons.error_outline_rounded, size: 40),
                 const SizedBox(height: 12),
                 Text(
-                  'Could not load expenses.',
+                  l10n.tripDetailsLoadError,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
@@ -70,7 +73,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                   onPressed: () => ref
                       .read(expenseControllerProvider(_trip.id).notifier)
                       .reload(),
-                  child: const Text('Try Again'),
+                  child: Text(l10n.commonTryAgain),
                 ),
               ],
             ),
@@ -80,7 +83,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _openExpenseForm,
         icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Expense'),
+        label: Text(l10n.tripDetailsAddExpense),
       ),
     );
   }
@@ -111,20 +114,21 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _confirmDelete(Expense expense) async {
+    final l10n = AppLocalizations.of(context)!;
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Delete expense?'),
-          content: Text('This will remove ${expense.title} from this trip.'),
+          title: Text(l10n.tripDetailsDeleteExpenseTitle),
+          content: Text(l10n.tripDetailsDeleteExpenseMessage(expense.title)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Cancel'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('Delete'),
+              child: Text(l10n.commonDelete),
             ),
           ],
         );
@@ -145,7 +149,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete expense: $error')),
+        SnackBar(content: Text(l10n.tripDetailsDeleteExpenseError('$error'))),
       );
     }
   }
@@ -168,6 +172,7 @@ class _TripDetailsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final total = expenses.fold<double>(
       0,
       (sum, expense) => sum + expense.amount,
@@ -186,21 +191,24 @@ class _TripDetailsContent extends StatelessWidget {
             children: [
               Expanded(
                 child: _StatCard(
-                  label: 'Total expenses',
+                  label: l10n.tripDetailsTotalExpenses,
                   value: _formatCurrency(total, trip.baseCurrency),
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: _StatCard(
-                  label: 'Expense count',
+                  label: l10n.tripDetailsExpenseCount,
                   value: expenses.length.toString(),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          Text('Expenses', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            l10n.tripDetailsExpensesSection,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 12),
           if (expenses.isEmpty)
             _EmptyExpensesState(onAddExpense: onAddExpense)
@@ -237,6 +245,7 @@ class _TripSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -247,12 +256,12 @@ class _TripSummaryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(trip.destination),
             const SizedBox(height: 8),
-            Text('Base currency: ${trip.baseCurrency}'),
+            Text(l10n.tripDetailsBaseCurrency(trip.baseCurrency)),
             const SizedBox(height: 8),
-            Text(_formatDateRange(trip)),
+            Text(_formatDateRange(context, trip)),
             if (trip.budget != null) ...[
               const SizedBox(height: 8),
-              Text('Budget: ${_formatBudget(trip)}'),
+              Text(l10n.tripDetailsBudget(_formatBudget(trip))),
             ],
           ],
         ),
@@ -260,12 +269,14 @@ class _TripSummaryCard extends StatelessWidget {
     );
   }
 
-  String _formatDateRange(Trip trip) {
+  String _formatDateRange(BuildContext context, Trip trip) {
+    final l10n = AppLocalizations.of(context)!;
     if (trip.startDate == null || trip.endDate == null) {
-      return 'Dates need attention';
+      return l10n.tripsDatesNeedAttention;
     }
 
-    final formatter = DateFormat('dd MMM yyyy');
+    final localeName = Localizations.localeOf(context).toLanguageTag();
+    final formatter = DateFormat('dd MMM yyyy', localeName);
     return '${formatter.format(trip.startDate!)} - ${formatter.format(trip.endDate!)}';
   }
 
@@ -316,51 +327,74 @@ class _ExpenseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final formatter = NumberFormat.currency(
       name: expense.currencyCode,
       symbol: '${expense.currencyCode} ',
       decimalDigits: 2,
     );
-    final dateFormatter = DateFormat('dd MMM yyyy');
+    final dateFormatter = DateFormat(
+      'dd MMM yyyy',
+      Localizations.localeOf(context).toLanguageTag(),
+    );
 
     return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        title: Text(expense.title),
-        subtitle: Padding(
-          padding: const EdgeInsets.only(top: 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('${expense.category ?? 'Other'} • ${expense.paymentMethod}'),
-              const SizedBox(height: 6),
-              Text(dateFormatter.format(expense.spentAt)),
-              if (expense.note != null && expense.note!.isNotEmpty) ...[
-                const SizedBox(height: 6),
-                Text(expense.note!),
-              ],
-            ],
-          ),
-        ),
-        trailing: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              formatter.format(expense.amount),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
             Row(
-              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        expense.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} • ${ExpenseOptionLabels.paymentMethod(l10n, expense.paymentMethod)}',
+                      ),
+                      const SizedBox(height: 6),
+                      Text(dateFormatter.format(expense.spentAt)),
+                      if (expense.note != null && expense.note!.isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          expense.note!,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    formatter.format(expense.amount),
+                    textAlign: TextAlign.end,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 4,
               children: [
                 IconButton(
-                  tooltip: 'Edit expense',
+                  tooltip: l10n.tripsEditTooltip,
                   onPressed: onEdit,
                   icon: const Icon(Icons.edit_outlined),
                 ),
                 IconButton(
-                  tooltip: 'Delete expense',
+                  tooltip: l10n.commonDelete,
                   onPressed: onDelete,
                   icon: const Icon(Icons.delete_outline_rounded),
                 ),
@@ -380,6 +414,7 @@ class _EmptyExpensesState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -388,12 +423,12 @@ class _EmptyExpensesState extends StatelessWidget {
             const Icon(Icons.receipt_long_rounded, size: 48),
             const SizedBox(height: 16),
             Text(
-              'No expenses yet',
+              l10n.tripDetailsEmptyExpensesTitle,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
             Text(
-              'Add your first manual expense for this trip.',
+              l10n.tripDetailsEmptyExpensesMessage,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
@@ -401,7 +436,7 @@ class _EmptyExpensesState extends StatelessWidget {
             FilledButton.icon(
               onPressed: onAddExpense,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Add Expense'),
+              label: Text(l10n.tripDetailsAddExpense),
             ),
           ],
         ),
