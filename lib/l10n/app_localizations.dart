@@ -341,6 +341,12 @@ abstract class AppLocalizations {
   /// **'Expenses'**
   String get tripDetailsExpensesSection;
 
+  /// No description provided for @tripDetailsAddViaSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Add via Bank SMS'**
+  String get tripDetailsAddViaSms;
+
   /// No description provided for @tripDetailsBaseCurrency.
   ///
   /// In en, this message translates to:
@@ -610,6 +616,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add via Bank SMS'**
   String get smsScreenTitle;
+
+  /// No description provided for @smsInputLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank SMS text'**
+  String get smsInputLabel;
+
+  /// No description provided for @smsInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the full bank SMS message here.'**
+  String get smsInputHint;
+
+  /// No description provided for @smsParseButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Parse SMS'**
+  String get smsParseButton;
+
+  /// No description provided for @smsParseDetectedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Detected values were filled below. You can edit them before saving.'**
+  String get smsParseDetectedMessage;
+
+  /// No description provided for @smsParseNoResultMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No reliable fields found. Please complete the form manually.'**
+  String get smsParseNoResultMessage;
+
+  /// No description provided for @smsTitleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant or description'**
+  String get smsTitleLabel;
+
+  /// No description provided for @smsTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Store, merchant, or short description'**
+  String get smsTitleHint;
+
+  /// No description provided for @smsTitleHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional. If empty, selected category is used as title.'**
+  String get smsTitleHelper;
+
+  /// No description provided for @smsCurrencyFallbackHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency defaults to trip base currency: {currency}'**
+  String smsCurrencyFallbackHelper(Object currency);
+
+  /// No description provided for @smsSaveButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Expense'**
+  String get smsSaveButton;
+
+  /// No description provided for @smsTextRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the SMS text first.'**
+  String get smsTextRequired;
+
+  /// No description provided for @smsTripMissingError.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip is missing. Reopen this screen.'**
+  String get smsTripMissingError;
+
+  /// No description provided for @smsSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save SMS expense: {error}'**
+  String smsSaveError(Object error);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

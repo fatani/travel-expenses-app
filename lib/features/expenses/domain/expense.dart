@@ -10,6 +10,7 @@ class Expense {
     required this.source,
     this.category,
     this.note,
+    this.rawSmsText,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -25,6 +26,7 @@ class Expense {
     String source = 'manual',
     String? category,
     String? note,
+    String? rawSmsText,
   }) {
     final now = DateTime.now().toUtc();
 
@@ -39,6 +41,7 @@ class Expense {
       source: source,
       category: category,
       note: note,
+      rawSmsText: rawSmsText,
       createdAt: now,
       updatedAt: now,
     );
@@ -56,6 +59,7 @@ class Expense {
       source: (map['source'] as String?) ?? 'manual',
       category: map['category'] as String?,
       note: map['note'] as String?,
+      rawSmsText: map['raw_sms_text'] as String?,
       createdAt: DateTime.parse(map['created_at']! as String),
       updatedAt: DateTime.parse(map['updated_at']! as String),
     );
@@ -71,6 +75,7 @@ class Expense {
   final String source;
   final String? category;
   final String? note;
+  final String? rawSmsText;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -85,6 +90,7 @@ class Expense {
     String? source,
     String? category,
     String? note,
+    String? rawSmsText,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -99,6 +105,7 @@ class Expense {
       source: source ?? this.source,
       category: category ?? this.category,
       note: note ?? this.note,
+      rawSmsText: rawSmsText ?? this.rawSmsText,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -116,6 +123,7 @@ class Expense {
       'source': source,
       'category': category,
       'note': note,
+      'raw_sms_text': rawSmsText,
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
     };

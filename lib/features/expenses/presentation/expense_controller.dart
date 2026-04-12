@@ -35,7 +35,9 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     required String category,
     required DateTime spentAt,
     required String paymentMethod,
+    String source = 'manual',
     String? note,
+    String? rawSmsText,
   }) async {
     final expense = Expense.create(
       tripId: _tripId,
@@ -44,9 +46,10 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       currencyCode: currencyCode,
       spentAt: _normalizeDate(spentAt),
       paymentMethod: paymentMethod,
-      source: 'manual',
+      source: source,
       category: category,
       note: _normalizeText(note),
+      rawSmsText: _normalizeText(rawSmsText),
     );
 
     await _runMutation(
@@ -62,7 +65,9 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     required String category,
     required DateTime spentAt,
     required String paymentMethod,
+    String source = 'manual',
     String? note,
+    String? rawSmsText,
   }) async {
     final updatedExpense = expense.copyWith(
       title: title,
@@ -70,9 +75,10 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       currencyCode: currencyCode,
       spentAt: _normalizeDate(spentAt),
       paymentMethod: paymentMethod,
-      source: 'manual',
+      source: source,
       category: category,
       note: _normalizeText(note),
+      rawSmsText: _normalizeText(rawSmsText),
     );
 
     await _runMutation(

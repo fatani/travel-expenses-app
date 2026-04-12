@@ -140,6 +140,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsExpensesSection => 'Expenses';
 
   @override
+  String get tripDetailsAddViaSms => 'Add via Bank SMS';
+
+  @override
   String tripDetailsBaseCurrency(Object currency) {
     return 'Base currency: $currency';
   }
@@ -285,4 +288,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get smsScreenTitle => 'Add via Bank SMS';
+
+  @override
+  String get smsInputLabel => 'Bank SMS text';
+
+  @override
+  String get smsInputHint => 'Paste the full bank SMS message here.';
+
+  @override
+  String get smsParseButton => 'Parse SMS';
+
+  @override
+  String get smsParseDetectedMessage => 'Detected values were filled below. You can edit them before saving.';
+
+  @override
+  String get smsParseNoResultMessage => 'No reliable fields found. Please complete the form manually.';
+
+  @override
+  String get smsTitleLabel => 'Merchant or description';
+
+  @override
+  String get smsTitleHint => 'Store, merchant, or short description';
+
+  @override
+  String get smsTitleHelper => 'Optional. If empty, selected category is used as title.';
+
+  @override
+  String smsCurrencyFallbackHelper(Object currency) {
+    return 'Currency defaults to trip base currency: $currency';
+  }
+
+  @override
+  String get smsSaveButton => 'Save Expense';
+
+  @override
+  String get smsTextRequired => 'Paste the SMS text first.';
+
+  @override
+  String get smsTripMissingError => 'Trip is missing. Reopen this screen.';
+
+  @override
+  String smsSaveError(Object error) {
+    return 'Failed to save SMS expense: $error';
+  }
 }

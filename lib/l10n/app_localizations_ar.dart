@@ -140,6 +140,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsExpensesSection => 'المصاريف';
 
   @override
+  String get tripDetailsAddViaSms => 'إضافة عبر رسالة البنك';
+
+  @override
   String tripDetailsBaseCurrency(Object currency) {
     return 'العملة الأساسية: $currency';
   }
@@ -285,4 +288,47 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get smsScreenTitle => 'إضافة عبر رسالة البنك';
+
+  @override
+  String get smsInputLabel => 'نص رسالة البنك';
+
+  @override
+  String get smsInputHint => 'الصق رسالة البنك كاملة هنا.';
+
+  @override
+  String get smsParseButton => 'تحليل الرسالة';
+
+  @override
+  String get smsParseDetectedMessage => 'تم تعبئة الحقول المكتشفة أدناه. يمكنك تعديلها قبل الحفظ.';
+
+  @override
+  String get smsParseNoResultMessage => 'لم يتم العثور على بيانات موثوقة. يرجى إكمال الحقول يدوياً.';
+
+  @override
+  String get smsTitleLabel => 'التاجر أو الوصف';
+
+  @override
+  String get smsTitleHint => 'اسم المتجر أو وصف مختصر';
+
+  @override
+  String get smsTitleHelper => 'اختياري. إذا تُرك فارغاً فسيتم استخدام الفئة كعنوان.';
+
+  @override
+  String smsCurrencyFallbackHelper(Object currency) {
+    return 'العملة الافتراضية هي العملة الأساسية للرحلة: $currency';
+  }
+
+  @override
+  String get smsSaveButton => 'حفظ المصروف';
+
+  @override
+  String get smsTextRequired => 'يرجى لصق نص الرسالة أولاً.';
+
+  @override
+  String get smsTripMissingError => 'بيانات الرحلة غير متوفرة. أعد فتح هذه الشاشة.';
+
+  @override
+  String smsSaveError(Object error) {
+    return 'فشل حفظ مصروف الرسالة: $error';
+  }
 }

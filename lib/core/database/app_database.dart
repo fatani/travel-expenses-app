@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 4;
+  static const int databaseVersion = 5;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -39,6 +39,7 @@ class AppDatabase {
       },
       onOpen: (db) async {
         await _ensureSettingsLocaleColumn(db);
+        await _ensureExpensesRawSmsColumn(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -67,6 +68,7 @@ class AppDatabase {
             source TEXT NOT NULL,
             category TEXT,
             note TEXT,
+            raw_sms_text TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
@@ -104,19 +106,41 @@ class AppDatabase {
         }
 
         if (oldVersion < 4) {
-          await db.execute(
-            "ALTER TABLE $settingsTable ADD COLUMN locale_code TEXT NOT NULL DEFAULT 'ar'",
+          final hasLocaleCode = await _hasColumn(
+            db,
+            settingsTable,
+            'locale_code',
           );
+          if (!hasLocaleCode) {
+            await db.execute(
+              "ALTER TABLE $settingsTable ADD COLUMN locale_code TEXT NOT NULL DEFAULT 'ar'",
+            );
+          }
+        }
+
+        if (oldVersion < 5) {
+          final hasRawSmsText = await _hasColumn(
+            db,
+            expensesTable,
+            'raw_sms_text',
+          );
+          if (!hasRawSmsText) {
+            await db.execute(
+              'ALTER TABLE $expensesTable ADD COLUMN raw_sms_text TEXT',
+            );
+          }
         }
       },
     );
   }
 
+  Future<bool> _hasColumn(Database db, String table, String columnName) async {
+    final columns = await db.rawQuery('PRAGMA table_info($table)');
+    return columns.any((column) => column['name'] == columnName);
+  }
+
   Future<void> _ensureSettingsLocaleColumn(Database db) async {
-    final columns = await db.rawQuery('PRAGMA table_info($settingsTable)');
-    final hasLocaleCode = columns.any(
-      (column) => column['name'] == 'locale_code',
-    );
+    final hasLocaleCode = await _hasColumn(db, settingsTable, 'locale_code');
 
     if (hasLocaleCode) {
       return;
@@ -125,5 +149,15 @@ class AppDatabase {
     await db.execute(
       "ALTER TABLE $settingsTable ADD COLUMN locale_code TEXT NOT NULL DEFAULT 'ar'",
     );
+  }
+
+  Future<void> _ensureExpensesRawSmsColumn(Database db) async {
+    final hasRawSmsText = await _hasColumn(db, expensesTable, 'raw_sms_text');
+
+    if (hasRawSmsText) {
+      return;
+    }
+
+    await db.execute('ALTER TABLE $expensesTable ADD COLUMN raw_sms_text TEXT');
   }
 }
