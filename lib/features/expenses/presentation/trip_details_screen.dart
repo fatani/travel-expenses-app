@@ -264,126 +264,34 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             ],
           ),
           const SizedBox(height: 16),
-          TextField(
-            controller: _searchController,
-            onChanged: (value) {
-              setState(() {
-                _searchQuery = value.trim().toLowerCase();
-              });
-            },
-            decoration: InputDecoration(
-              labelText: l10n.tripDetailsSearchLabel,
-              hintText: l10n.tripDetailsSearchHint,
-              prefixIcon: const Icon(Icons.search_rounded),
-            ),
-          ),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final isNarrow = constraints.maxWidth < 760;
-              final itemWidth = isNarrow ? constraints.maxWidth : 240.0;
-
-              return Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  SizedBox(
-                    width: itemWidth,
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: _selectedCategory,
-                      decoration: InputDecoration(
-                        labelText: l10n.tripDetailsFilterCategory,
-                      ),
-                      items: [
-                        DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text(l10n.tripDetailsAllCategories),
-                        ),
-                        ...ExpenseOptionLabels.categories.map(
-                          (category) => DropdownMenuItem<String?>(
-                            value: category,
-                            child: Text(
-                              ExpenseOptionLabels.category(l10n, category),
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCategory = value;
-                        });
-                      },
-                    ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value.trim().toLowerCase();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    labelText: l10n.tripDetailsSearchLabel,
+                    hintText: l10n.tripDetailsSearchHint,
+                    prefixIcon: const Icon(Icons.search_rounded),
                   ),
-                  SizedBox(
-                    width: itemWidth,
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: _selectedPaymentMethod,
-                      decoration: InputDecoration(
-                        labelText: l10n.tripDetailsFilterPaymentMethod,
-                      ),
-                      items: [
-                        DropdownMenuItem<String?>(
-                          value: null,
-                          child: Text(l10n.tripDetailsAllPaymentMethods),
-                        ),
-                        ...ExpenseOptionLabels.paymentMethods.map(
-                          (paymentMethod) => DropdownMenuItem<String?>(
-                            value: paymentMethod,
-                            child: Text(
-                              ExpenseOptionLabels.paymentMethod(
-                                l10n,
-                                paymentMethod,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedPaymentMethod = value;
-                        });
-                      },
-                    ),
-                  ),
-                  SizedBox(
-                    width: itemWidth,
-                    child: DropdownButtonFormField<_ExpenseSort>(
-                      initialValue: _selectedSort,
-                      decoration: InputDecoration(
-                        labelText: l10n.tripDetailsSortBy,
-                      ),
-                      items: [
-                        DropdownMenuItem<_ExpenseSort>(
-                          value: _ExpenseSort.newestFirst,
-                          child: Text(l10n.tripDetailsSortNewest),
-                        ),
-                        DropdownMenuItem<_ExpenseSort>(
-                          value: _ExpenseSort.oldestFirst,
-                          child: Text(l10n.tripDetailsSortOldest),
-                        ),
-                        DropdownMenuItem<_ExpenseSort>(
-                          value: _ExpenseSort.highestAmount,
-                          child: Text(l10n.tripDetailsSortHighestAmount),
-                        ),
-                        DropdownMenuItem<_ExpenseSort>(
-                          value: _ExpenseSort.lowestAmount,
-                          child: Text(l10n.tripDetailsSortLowestAmount),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) {
-                          return;
-                        }
-                        setState(() {
-                          _selectedSort = value;
-                        });
-                      },
-                    ),
-                  ),
-                ],
-              );
-            },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Badge(
+                isLabelVisible: _activeFilterCount > 0,
+                label: Text('$_activeFilterCount'),
+                child: IconButton.outlined(
+                  tooltip: l10n.tripDetailsFiltersAndSort,
+                  onPressed: () => _showFiltersBottomSheet(context),
+                  icon: const Icon(Icons.tune_rounded),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           Text(
@@ -495,6 +403,172 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       _selectedPaymentMethod = null;
       _selectedSort = _ExpenseSort.newestFirst;
     });
+  }
+
+  int get _activeFilterCount {
+    int count = 0;
+    if (_selectedCategory != null) count++;
+    if (_selectedPaymentMethod != null) count++;
+    if (_selectedSort != _ExpenseSort.newestFirst) count++;
+    return count;
+  }
+
+  void _showFiltersBottomSheet(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    var localCategory = _selectedCategory;
+    var localPaymentMethod = _selectedPaymentMethod;
+    var localSort = _selectedSort;
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (ctx, setSheetState) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    l10n.tripDetailsFiltersAndSort,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String?>(
+                    initialValue: localCategory,
+                    decoration: InputDecoration(
+                      labelText: l10n.tripDetailsFilterCategory,
+                    ),
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text(l10n.tripDetailsAllCategories),
+                      ),
+                      ...ExpenseOptionLabels.categories.map(
+                        (category) => DropdownMenuItem<String?>(
+                          value: category,
+                          child: Text(
+                            ExpenseOptionLabels.category(l10n, category),
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setSheetState(() {
+                        localCategory = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String?>(
+                    initialValue: localPaymentMethod,
+                    decoration: InputDecoration(
+                      labelText: l10n.tripDetailsFilterPaymentMethod,
+                    ),
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text(l10n.tripDetailsAllPaymentMethods),
+                      ),
+                      ...ExpenseOptionLabels.paymentMethods.map(
+                        (pm) => DropdownMenuItem<String?>(
+                          value: pm,
+                          child: Text(
+                            ExpenseOptionLabels.paymentMethod(l10n, pm),
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      setSheetState(() {
+                        localPaymentMethod = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<_ExpenseSort>(
+                    initialValue: localSort,
+                    decoration: InputDecoration(
+                      labelText: l10n.tripDetailsSortBy,
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: _ExpenseSort.newestFirst,
+                        child: Text(l10n.tripDetailsSortNewest),
+                      ),
+                      DropdownMenuItem(
+                        value: _ExpenseSort.oldestFirst,
+                        child: Text(l10n.tripDetailsSortOldest),
+                      ),
+                      DropdownMenuItem(
+                        value: _ExpenseSort.highestAmount,
+                        child: Text(l10n.tripDetailsSortHighestAmount),
+                      ),
+                      DropdownMenuItem(
+                        value: _ExpenseSort.lowestAmount,
+                        child: Text(l10n.tripDetailsSortLowestAmount),
+                      ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setSheetState(() {
+                          localSort = value;
+                        });
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            _clearFilters();
+                            Navigator.of(sheetContext).pop();
+                          },
+                          child: Text(l10n.tripDetailsClearFilters),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedCategory = localCategory;
+                              _selectedPaymentMethod = localPaymentMethod;
+                              _selectedSort = localSort;
+                            });
+                            Navigator.of(sheetContext).pop();
+                          },
+                          child: Text(l10n.tripDetailsApplyFilters),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
 }
 
@@ -646,9 +720,9 @@ class _ExpenseCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 4,
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
                   tooltip: l10n.tripsEditTooltip,

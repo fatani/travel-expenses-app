@@ -356,7 +356,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsAddViaSms.
   ///
   /// In en, this message translates to:
-  /// **'Add via Bank SMS'**
+  /// **'Add via Bank SMS (Beta)'**
   String get tripDetailsAddViaSms;
 
   /// No description provided for @tripDetailsSearchLabel.
@@ -436,6 +436,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Clear filters'**
   String get tripDetailsClearFilters;
+
+  /// No description provided for @tripDetailsFiltersAndSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters & Sort'**
+  String get tripDetailsFiltersAndSort;
+
+  /// No description provided for @tripDetailsApplyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get tripDetailsApplyFilters;
 
   /// No description provided for @tripDetailsBaseCurrency.
   ///

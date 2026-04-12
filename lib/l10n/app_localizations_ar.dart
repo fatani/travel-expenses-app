@@ -146,7 +146,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsExpensesSection => 'المصاريف';
 
   @override
-  String get tripDetailsAddViaSms => 'إضافة عبر رسالة البنك';
+  String get tripDetailsAddViaSms => 'إضافة عبر رسالة البنك (تجريبي)';
 
   @override
   String get tripDetailsSearchLabel => 'البحث في المصاريف';
@@ -186,6 +186,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripDetailsClearFilters => 'مسح التصفيات';
+
+  @override
+  String get tripDetailsFiltersAndSort => 'التصفية والترتيب';
+
+  @override
+  String get tripDetailsApplyFilters => 'تطبيق';
 
   @override
   String tripDetailsBaseCurrency(Object currency) {

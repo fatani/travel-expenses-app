@@ -146,7 +146,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsExpensesSection => 'Expenses';
 
   @override
-  String get tripDetailsAddViaSms => 'Add via Bank SMS';
+  String get tripDetailsAddViaSms => 'Add via Bank SMS (Beta)';
 
   @override
   String get tripDetailsSearchLabel => 'Search expenses';
@@ -186,6 +186,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDetailsClearFilters => 'Clear filters';
+
+  @override
+  String get tripDetailsFiltersAndSort => 'Filters & Sort';
+
+  @override
+  String get tripDetailsApplyFilters => 'Apply';
 
   @override
   String tripDetailsBaseCurrency(Object currency) {
