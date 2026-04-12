@@ -15,4 +15,20 @@ void main() {
     expect(result.suggestedCategory, 'Food');
     expect(result.spentAt, DateTime(2026, 4, 9, 14, 35));
   });
+
+  test('prefers transaction amount and ignores remaining balance amount', () {
+    final result = parser.parse('''
+شراء انترنت (Apple Pay)
+46.00 SAR
+بطاقة ائتمانية ****4744
+from Mobily
+التاريخ 11/04/26 12:07
+الصرف المتبقي 5859.81 SAR
+''');
+
+    expect(result.amount, 46.00);
+    expect(result.currencyCode, 'SAR');
+    expect(result.merchant, contains('Mobily'));
+    expect(result.amount, isNot(5859.81));
+  });
 }

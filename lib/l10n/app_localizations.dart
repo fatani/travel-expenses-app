@@ -335,6 +335,18 @@ abstract class AppLocalizations {
   /// **'Expense count'**
   String get tripDetailsExpenseCount;
 
+  /// No description provided for @tripDetailsTopCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Top spending category'**
+  String get tripDetailsTopCategory;
+
+  /// No description provided for @tripDetailsTopCategoryNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No category yet'**
+  String get tripDetailsTopCategoryNone;
+
   /// No description provided for @tripDetailsExpensesSection.
   ///
   /// In en, this message translates to:
@@ -346,6 +358,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add via Bank SMS'**
   String get tripDetailsAddViaSms;
+
+  /// No description provided for @tripDetailsSearchLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search expenses'**
+  String get tripDetailsSearchLabel;
+
+  /// No description provided for @tripDetailsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by title, description, or merchant'**
+  String get tripDetailsSearchHint;
+
+  /// No description provided for @tripDetailsFilterCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by category'**
+  String get tripDetailsFilterCategory;
+
+  /// No description provided for @tripDetailsFilterPaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by payment method'**
+  String get tripDetailsFilterPaymentMethod;
+
+  /// No description provided for @tripDetailsSortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get tripDetailsSortBy;
+
+  /// No description provided for @tripDetailsAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get tripDetailsAllCategories;
+
+  /// No description provided for @tripDetailsAllPaymentMethods.
+  ///
+  /// In en, this message translates to:
+  /// **'All payment methods'**
+  String get tripDetailsAllPaymentMethods;
+
+  /// No description provided for @tripDetailsSortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get tripDetailsSortNewest;
+
+  /// No description provided for @tripDetailsSortOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get tripDetailsSortOldest;
+
+  /// No description provided for @tripDetailsSortHighestAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest amount'**
+  String get tripDetailsSortHighestAmount;
+
+  /// No description provided for @tripDetailsSortLowestAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest amount'**
+  String get tripDetailsSortLowestAmount;
+
+  /// No description provided for @tripDetailsNoMatchingExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses match the current search and filters.'**
+  String get tripDetailsNoMatchingExpenses;
+
+  /// No description provided for @tripDetailsClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get tripDetailsClearFilters;
 
   /// No description provided for @tripDetailsBaseCurrency.
   ///

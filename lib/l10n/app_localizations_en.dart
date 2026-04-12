@@ -137,10 +137,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsExpenseCount => 'Expense count';
 
   @override
+  String get tripDetailsTopCategory => 'Top spending category';
+
+  @override
+  String get tripDetailsTopCategoryNone => 'No category yet';
+
+  @override
   String get tripDetailsExpensesSection => 'Expenses';
 
   @override
   String get tripDetailsAddViaSms => 'Add via Bank SMS';
+
+  @override
+  String get tripDetailsSearchLabel => 'Search expenses';
+
+  @override
+  String get tripDetailsSearchHint => 'Search by title, description, or merchant';
+
+  @override
+  String get tripDetailsFilterCategory => 'Filter by category';
+
+  @override
+  String get tripDetailsFilterPaymentMethod => 'Filter by payment method';
+
+  @override
+  String get tripDetailsSortBy => 'Sort by';
+
+  @override
+  String get tripDetailsAllCategories => 'All categories';
+
+  @override
+  String get tripDetailsAllPaymentMethods => 'All payment methods';
+
+  @override
+  String get tripDetailsSortNewest => 'Newest first';
+
+  @override
+  String get tripDetailsSortOldest => 'Oldest first';
+
+  @override
+  String get tripDetailsSortHighestAmount => 'Highest amount';
+
+  @override
+  String get tripDetailsSortLowestAmount => 'Lowest amount';
+
+  @override
+  String get tripDetailsNoMatchingExpenses => 'No expenses match the current search and filters.';
+
+  @override
+  String get tripDetailsClearFilters => 'Clear filters';
 
   @override
   String tripDetailsBaseCurrency(Object currency) {

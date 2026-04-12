@@ -137,10 +137,55 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsExpenseCount => 'عدد المصاريف';
 
   @override
+  String get tripDetailsTopCategory => 'أعلى فئة إنفاق';
+
+  @override
+  String get tripDetailsTopCategoryNone => 'لا توجد فئة بعد';
+
+  @override
   String get tripDetailsExpensesSection => 'المصاريف';
 
   @override
   String get tripDetailsAddViaSms => 'إضافة عبر رسالة البنك';
+
+  @override
+  String get tripDetailsSearchLabel => 'البحث في المصاريف';
+
+  @override
+  String get tripDetailsSearchHint => 'ابحث بالعنوان أو الوصف أو اسم التاجر';
+
+  @override
+  String get tripDetailsFilterCategory => 'تصفية حسب الفئة';
+
+  @override
+  String get tripDetailsFilterPaymentMethod => 'تصفية حسب طريقة الدفع';
+
+  @override
+  String get tripDetailsSortBy => 'الترتيب حسب';
+
+  @override
+  String get tripDetailsAllCategories => 'كل الفئات';
+
+  @override
+  String get tripDetailsAllPaymentMethods => 'كل طرق الدفع';
+
+  @override
+  String get tripDetailsSortNewest => 'الأحدث أولاً';
+
+  @override
+  String get tripDetailsSortOldest => 'الأقدم أولاً';
+
+  @override
+  String get tripDetailsSortHighestAmount => 'الأعلى مبلغاً';
+
+  @override
+  String get tripDetailsSortLowestAmount => 'الأقل مبلغاً';
+
+  @override
+  String get tripDetailsNoMatchingExpenses => 'لا توجد مصاريف تطابق البحث والتصفيات الحالية.';
+
+  @override
+  String get tripDetailsClearFilters => 'مسح التصفيات';
 
   @override
   String tripDetailsBaseCurrency(Object currency) {

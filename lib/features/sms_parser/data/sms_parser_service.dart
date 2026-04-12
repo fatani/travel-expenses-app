@@ -9,7 +9,7 @@ final smsParserServiceProvider = Provider<SmsParserService>((ref) {
 class SmsParserService {
   const SmsParserService();
 
-  static const Map<String, String> _currencyTokens = <String, String>{
+  static const Map<String, String> _currencyAliases = <String, String>{
     'USD': 'USD',
     'EUR': 'EUR',
     'GBP': 'GBP',
@@ -17,10 +17,12 @@ class SmsParserService {
     'SAR': 'SAR',
     'QAR': 'QAR',
     'KWD': 'KWD',
+    'BHD': 'BHD',
     'OMR': 'OMR',
-    'JOD': 'JOD',
     'EGP': 'EGP',
     'TRY': 'TRY',
+    'JOD': 'JOD',
+    'MAD': 'MAD',
     'INR': 'INR',
     'PKR': 'PKR',
     r'$': 'USD',
@@ -28,11 +30,32 @@ class SmsParserService {
     '€': 'EUR',
     '£': 'GBP',
     'TL': 'TRY',
+    'AED.': 'AED',
+    'SAR.': 'SAR',
   };
+
+  static const List<String> _balanceKeywords = <String>[
+    'remaining balance',
+    'available balance',
+    'balance',
+    'الصرف المتبقي',
+    'الرصيد المتبقي',
+  ];
+
+  static const List<String> _transactionKeywords = <String>[
+    'purchase',
+    'payment',
+    'transaction',
+    'pos',
+    'apple pay',
+    'card used',
+    'شراء',
+  ];
 
   static const Map<String, String> _categoryKeywords = <String, String>{
     'uber': 'Transport',
     'taxi': 'Transport',
+    'metro': 'Transport',
     'airline': 'Transport',
     'hotel': 'Accommodation',
     'inn': 'Accommodation',
@@ -40,6 +63,7 @@ class SmsParserService {
     'cafe': 'Food',
     'coffee': 'Food',
     'starbucks': 'Food',
+    'burger': 'Food',
     'visa': 'Visa',
     'embassy': 'Visa',
     'mall': 'Shopping',
@@ -50,57 +74,110 @@ class SmsParserService {
   };
 
   SmsParseResult parse(String rawText) {
-    final compact = rawText.trim().replaceAll(RegExp(r'\s+'), ' ');
-    final amountMatch = _extractAmount(compact);
-    final merchant = _extractMerchant(compact);
+    final normalizedText = rawText.trim();
+    final compact = normalizedText.replaceAll(RegExp(r'\s+'), ' ');
+    final amountMatch = _findAmountMatch(normalizedText);
+    final merchant = _extractMerchant(normalizedText);
 
     return SmsParseResult(
-      rawText: rawText.trim(),
+      rawText: normalizedText,
       amount: amountMatch?.amount,
-      currencyCode: amountMatch?.currency,
+      currencyCode: amountMatch?.currencyCode,
       spentAt: _extractDateTime(compact),
       merchant: merchant,
       suggestedCategory: _suggestCategory('$compact ${merchant ?? ''}'),
     );
   }
 
-  _AmountMatch? _extractAmount(String input) {
-    final patterns = <RegExp>[
-      RegExp(
-        r'(USD|EUR|GBP|AED|SAR|QAR|KWD|OMR|JOD|EGP|TRY|INR|PKR|US\$|\$|€|£|TL)\s*(\d{1,3}(?:[,.]\d{3})*(?:[,.]\d{1,2})|\d+(?:[,.]\d{1,2})?)',
-        caseSensitive: false,
-      ),
-      RegExp(
-        r'(\d{1,3}(?:[,.]\d{3})*(?:[,.]\d{1,2})|\d+(?:[,.]\d{1,2})?)\s*(USD|EUR|GBP|AED|SAR|QAR|KWD|OMR|JOD|EGP|TRY|INR|PKR|US\$|\$|€|£|TL)',
-        caseSensitive: false,
-      ),
-      RegExp(
-        r'(?:spent|purchase|paid|payment|transaction)[^\d]{0,20}(\d{1,3}(?:[,.]\d{3})*(?:[,.]\d{1,2})|\d+(?:[,.]\d{1,2})?)',
-        caseSensitive: false,
-      ),
-    ];
+  _AmountMatch? _findAmountMatch(String input) {
+    final lines = input
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
 
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(input);
-      if (match == null) {
+    if (lines.isEmpty) {
+      return null;
+    }
+
+    final prioritizedLines = _prioritizedTransactionLines(lines);
+    final fromPriority = _extractAmountFromLines(prioritizedLines);
+    if (fromPriority != null) {
+      return fromPriority;
+    }
+
+    final filteredLines = lines.where((line) => !_isBalanceLine(line)).toList();
+    return _extractAmountFromLines(filteredLines);
+  }
+
+  List<String> _prioritizedTransactionLines(List<String> lines) {
+    final prioritized = <String>[];
+
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      if (!_isTransactionLine(line)) {
         continue;
       }
 
-      final first = match.group(1);
-      final second = match.group(2);
-      final currency = _normalizeCurrency(first) ?? _normalizeCurrency(second);
-      final amount = _parseAmount(
-        currency == null
-            ? first
-            : (currency == _normalizeCurrency(first) ? second : first),
-      );
+      prioritized.add(line);
+      if (i + 1 < lines.length) {
+        prioritized.add(lines[i + 1]);
+      }
+      if (i > 0) {
+        prioritized.add(lines[i - 1]);
+      }
+    }
 
-      if (amount != null) {
-        return _AmountMatch(amount: amount, currency: currency);
+    return prioritized;
+  }
+
+  _AmountMatch? _extractAmountFromLines(List<String> lines) {
+    const pattern =
+        r'(USD|EUR|GBP|AED|SAR|QAR|KWD|BHD|OMR|EGP|TRY|JOD|MAD|INR|PKR|US\$|\$|€|£|TL)';
+    final currencyFirst = RegExp(
+      '$pattern\\s*(\\d{1,3}(?:[,.]\\d{3})*(?:[,.]\\d{1,2})|\\d+(?:[,.]\\d{1,2})?)',
+      caseSensitive: false,
+    );
+    final amountFirst = RegExp(
+      '(\\d{1,3}(?:[,.]\\d{3})*(?:[,.]\\d{1,2})|\\d+(?:[,.]\\d{1,2})?)\\s*$pattern',
+      caseSensitive: false,
+    );
+
+    for (final line in lines) {
+      if (_isBalanceLine(line)) {
+        continue;
+      }
+
+      final firstMatch = currencyFirst.firstMatch(line);
+      if (firstMatch != null) {
+        final amount = _parseAmount(firstMatch.group(2));
+        final currency = _normalizeCurrency(firstMatch.group(1));
+        if (amount != null) {
+          return _AmountMatch(amount: amount, currencyCode: currency);
+        }
+      }
+
+      final secondMatch = amountFirst.firstMatch(line);
+      if (secondMatch != null) {
+        final amount = _parseAmount(secondMatch.group(1));
+        final currency = _normalizeCurrency(secondMatch.group(2));
+        if (amount != null) {
+          return _AmountMatch(amount: amount, currencyCode: currency);
+        }
       }
     }
 
     return null;
+  }
+
+  bool _isTransactionLine(String line) {
+    final lower = line.toLowerCase();
+    return _transactionKeywords.any(lower.contains);
+  }
+
+  bool _isBalanceLine(String line) {
+    final lower = line.toLowerCase();
+    return _balanceKeywords.any(lower.contains);
   }
 
   String? _normalizeCurrency(String? value) {
@@ -108,63 +185,63 @@ class SmsParserService {
       return null;
     }
 
-    final token = value.trim().toUpperCase();
-    return _currencyTokens[token] ?? _currencyTokens[value.trim()];
+    final key = value.trim().toUpperCase();
+    return _currencyAliases[key] ?? _currencyAliases[value.trim()] ?? key;
   }
 
-  double? _parseAmount(String? rawAmount) {
-    if (rawAmount == null || rawAmount.trim().isEmpty) {
+  double? _parseAmount(String? value) {
+    if (value == null || value.trim().isEmpty) {
       return null;
     }
 
-    var amount = rawAmount.replaceAll(' ', '');
-    if (amount.contains(',') && amount.contains('.')) {
-      amount = amount.replaceAll(',', '');
-    } else if (amount.contains(',')) {
-      final commaIndex = amount.lastIndexOf(',');
-      final decimals = amount.length - commaIndex - 1;
-      amount = decimals == 2
-          ? amount.replaceAll(',', '.')
-          : amount.replaceAll(',', '');
+    var normalized = value.replaceAll(' ', '');
+    if (normalized.contains(',') && normalized.contains('.')) {
+      normalized = normalized.replaceAll(',', '');
+    } else if (normalized.contains(',')) {
+      final lastComma = normalized.lastIndexOf(',');
+      final digitsAfter = normalized.length - lastComma - 1;
+      normalized = digitsAfter == 2
+          ? normalized.replaceAll(',', '.')
+          : normalized.replaceAll(',', '');
     }
 
-    return double.tryParse(amount);
+    return double.tryParse(normalized);
   }
 
   DateTime? _extractDateTime(String input) {
-    final dmy = RegExp(
+    final slashMatch = RegExp(
       r'(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?',
     ).firstMatch(input);
-    if (dmy != null) {
-      final day = int.parse(dmy.group(1)!);
-      final month = int.parse(dmy.group(2)!);
-      final year = _normalizeYear(int.parse(dmy.group(3)!));
-      final hour = int.tryParse(dmy.group(4) ?? '') ?? 0;
-      final minute = int.tryParse(dmy.group(5) ?? '') ?? 0;
+    if (slashMatch != null) {
+      final day = int.parse(slashMatch.group(1)!);
+      final month = int.parse(slashMatch.group(2)!);
+      final year = _normalizeYear(int.parse(slashMatch.group(3)!));
+      final hour = int.tryParse(slashMatch.group(4) ?? '') ?? 0;
+      final minute = int.tryParse(slashMatch.group(5) ?? '') ?? 0;
       return _safeDate(year, month, day, hour, minute);
     }
 
-    final iso = RegExp(
+    final isoMatch = RegExp(
       r'(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?',
     ).firstMatch(input);
-    if (iso != null) {
-      final year = int.parse(iso.group(1)!);
-      final month = int.parse(iso.group(2)!);
-      final day = int.parse(iso.group(3)!);
-      final hour = int.tryParse(iso.group(4) ?? '') ?? 0;
-      final minute = int.tryParse(iso.group(5) ?? '') ?? 0;
+    if (isoMatch != null) {
+      final year = int.parse(isoMatch.group(1)!);
+      final month = int.parse(isoMatch.group(2)!);
+      final day = int.parse(isoMatch.group(3)!);
+      final hour = int.tryParse(isoMatch.group(4) ?? '') ?? 0;
+      final minute = int.tryParse(isoMatch.group(5) ?? '') ?? 0;
       return _safeDate(year, month, day, hour, minute);
     }
 
     return null;
   }
 
-  int _normalizeYear(int year) {
-    if (year >= 100) {
-      return year;
+  int _normalizeYear(int value) {
+    if (value >= 100) {
+      return value;
     }
 
-    return year >= 70 ? 1900 + year : 2000 + year;
+    return value >= 70 ? 1900 + value : 2000 + value;
   }
 
   DateTime? _safeDate(int year, int month, int day, int hour, int minute) {
@@ -176,51 +253,69 @@ class SmsParserService {
   }
 
   String? _extractMerchant(String input) {
+    final lines = input
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
     final patterns = <RegExp>[
-      RegExp(r'(?:at|from|merchant[:\s]+)([^,.\n]+)', caseSensitive: false),
+      RegExp(r'(?:from|at|merchant[:\s]+)([^,.\n]+)', caseSensitive: false),
+      RegExp(r'(?:من|التاجر[:\s]+)([^,.\n]+)', caseSensitive: false),
       RegExp(r'(?:desc(?:ription)?[:\s]+)([^,.\n]+)', caseSensitive: false),
     ];
 
-    for (final pattern in patterns) {
-      final match = pattern.firstMatch(input);
-      if (match == null) {
+    for (final line in lines) {
+      if (_isBalanceLine(line)) {
         continue;
       }
 
-      final merchant = match.group(1)?.trim();
-      if (merchant == null || merchant.isEmpty) {
+      for (final pattern in patterns) {
+        final match = pattern.firstMatch(line);
+        final value = match?.group(1)?.trim();
+        if (value != null && value.isNotEmpty) {
+          return _cleanMerchant(value);
+        }
+      }
+    }
+
+    for (final line in lines) {
+      if (_isBalanceLine(line)) {
         continue;
       }
-
-      return _cleanMerchant(merchant);
+      if (_isTransactionLine(line) && !_hasAmountToken(line)) {
+        return _cleanMerchant(line);
+      }
     }
 
     return null;
   }
 
-  String _cleanMerchant(String input) {
-    var output = input.replaceAll(RegExp(r'\s+'), ' ');
-    output = output.split(RegExp(r'\s+on\s+', caseSensitive: false)).first;
-    output = output.split(RegExp(r'\s+\d{1,2}[/-]\d{1,2}[/-]\d{2,4}')).first;
-    return output.trim();
+  bool _hasAmountToken(String line) {
+    return RegExp(r'\d+(?:[,.]\d{1,2})').hasMatch(line);
+  }
+
+  String _cleanMerchant(String value) {
+    var cleaned = value.replaceAll(RegExp(r'\s+'), ' ');
+    cleaned = cleaned.split(RegExp(r'\s+on\s+', caseSensitive: false)).first;
+    cleaned = cleaned.split(RegExp(r'\s+\d{1,2}[/-]\d{1,2}[/-]\d{2,4}')).first;
+    return cleaned.trim();
   }
 
   String? _suggestCategory(String text) {
     final lower = text.toLowerCase();
-
     for (final entry in _categoryKeywords.entries) {
       if (lower.contains(entry.key)) {
         return entry.value;
       }
     }
-
     return null;
   }
 }
 
 class _AmountMatch {
-  const _AmountMatch({required this.amount, required this.currency});
+  const _AmountMatch({required this.amount, this.currencyCode});
 
   final double amount;
-  final String? currency;
+  final String? currencyCode;
 }
