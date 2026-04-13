@@ -304,6 +304,16 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         ? _selectedCategory!
         : _titleController.text.trim();
     final amount = double.parse(_amountController.text.trim());
+    final currencyCode = _currencyController.text.trim().toUpperCase();
+
+    if (widget.expense == null &&
+        currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
+      final shouldKeepAsIs = await _confirmCurrencyMismatch(currencyCode);
+      if (shouldKeepAsIs != true) {
+        return;
+      }
+    }
+
     final controller = ref.read(
       expenseControllerProvider(widget.trip.id).notifier,
     );
@@ -313,7 +323,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         await controller.createExpense(
           title: title,
           amount: amount,
-          currencyCode: _currencyController.text.trim().toUpperCase(),
+          currencyCode: currencyCode,
           category: _selectedCategory!,
           spentAt: _spentAt!,
           paymentMethod: _selectedPaymentMethod!,
@@ -324,7 +334,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           expense: widget.expense!,
           title: title,
           amount: amount,
-          currencyCode: _currencyController.text.trim().toUpperCase(),
+          currencyCode: currencyCode,
           category: _selectedCategory!,
           spentAt: _spentAt!,
           paymentMethod: _selectedPaymentMethod!,
@@ -350,6 +360,34 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         ),
       );
     }
+  }
+
+  Future<bool?> _confirmCurrencyMismatch(String expenseCurrency) {
+    final l10n = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(l10n.expenseCurrencyMismatchTitle),
+          content: Text(
+            l10n.expenseCurrencyMismatchMessage(
+              expenseCurrency,
+              widget.trip.baseCurrency,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.expenseCurrencyMismatchConvertManually),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.expenseCurrencyMismatchKeepAsIs),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _syncDateField() {

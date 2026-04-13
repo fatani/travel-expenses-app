@@ -206,12 +206,15 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final total = widget.expenses.fold<double>(
+    final baseCurrencyExpenses = _baseCurrencyExpenses(widget.expenses);
+    final total = baseCurrencyExpenses.fold<double>(
       0,
       (sum, expense) => sum + expense.amount,
     );
     final topCategory = _topCategory(widget.expenses);
     final filteredExpenses = _filteredAndSortedExpenses();
+    final hasExcludedCurrencies =
+        baseCurrencyExpenses.length != widget.expenses.length;
 
     return RefreshIndicator(
       onRefresh: () => ProviderScope.containerOf(
@@ -246,6 +249,30 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                 ? l10n.tripDetailsTopCategoryNone
                 : ExpenseOptionLabels.category(l10n, topCategory),
           ),
+          if (hasExcludedCurrencies) ...[
+            const SizedBox(height: 12),
+            Card(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        l10n.tripDetailsExcludedCurrenciesWarning,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Wrap(
             spacing: 12,
@@ -333,6 +360,15 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       decimalDigits: 2,
     );
     return formatter.format(amount);
+  }
+
+  List<Expense> _baseCurrencyExpenses(List<Expense> expenses) {
+    final baseCurrency = widget.trip.baseCurrency.trim().toUpperCase();
+    return expenses
+        .where(
+          (expense) => expense.currencyCode.trim().toUpperCase() == baseCurrency,
+        )
+        .toList();
   }
 
   List<Expense> _filteredAndSortedExpenses() {

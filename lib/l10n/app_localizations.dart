@@ -356,7 +356,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsAddViaSms.
   ///
   /// In en, this message translates to:
-  /// **'Add via Bank SMS (Beta)'**
+  /// **'Add via Bank SMS'**
   String get tripDetailsAddViaSms;
 
   /// No description provided for @tripDetailsSearchLabel.
@@ -479,6 +479,12 @@ abstract class AppLocalizations {
   /// **'Failed to delete expense: {error}'**
   String tripDetailsDeleteExpenseError(Object error);
 
+  /// No description provided for @tripDetailsExcludedCurrenciesWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Some expenses in other currencies are not included in the total'**
+  String get tripDetailsExcludedCurrenciesWarning;
+
   /// No description provided for @tripDetailsEmptyExpensesTitle.
   ///
   /// In en, this message translates to:
@@ -586,6 +592,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Amount must be greater than zero.'**
   String get expenseFormAmountPositive;
+
+  /// No description provided for @expenseCurrencyMismatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency differs from trip base currency'**
+  String get expenseCurrencyMismatchTitle;
+
+  /// No description provided for @expenseCurrencyMismatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This expense uses {expenseCurrency} while the trip base currency is {tripCurrency}. You can edit it manually, or keep it as-is and it will be excluded from totals.'**
+  String expenseCurrencyMismatchMessage(Object expenseCurrency, Object tripCurrency);
+
+  /// No description provided for @expenseCurrencyMismatchConvertManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert manually'**
+  String get expenseCurrencyMismatchConvertManually;
+
+  /// No description provided for @expenseCurrencyMismatchKeepAsIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep as-is'**
+  String get expenseCurrencyMismatchKeepAsIs;
 
   /// No description provided for @expenseFormSaveError.
   ///

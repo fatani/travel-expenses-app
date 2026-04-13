@@ -146,7 +146,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsExpensesSection => 'Expenses';
 
   @override
-  String get tripDetailsAddViaSms => 'Add via Bank SMS (Beta)';
+  String get tripDetailsAddViaSms => 'Add via Bank SMS';
 
   @override
   String get tripDetailsSearchLabel => 'Search expenses';
@@ -217,6 +217,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tripDetailsExcludedCurrenciesWarning =>
+      'Some expenses in other currencies are not included in the total';
+
+  @override
   String get tripDetailsEmptyExpensesTitle => 'No expenses yet';
 
   @override
@@ -269,6 +273,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expenseFormAmountPositive => 'Amount must be greater than zero.';
+
+  @override
+  String get expenseCurrencyMismatchTitle =>
+      'Currency differs from trip base currency';
+
+  @override
+  String expenseCurrencyMismatchMessage(
+    Object expenseCurrency,
+    Object tripCurrency,
+  ) {
+    return 'This expense uses $expenseCurrency while the trip base currency is $tripCurrency. You can edit it manually, or keep it as-is and it will be excluded from totals.';
+  }
+
+  @override
+  String get expenseCurrencyMismatchConvertManually => 'Convert manually';
+
+  @override
+  String get expenseCurrencyMismatchKeepAsIs => 'Keep as-is';
 
   @override
   String expenseFormSaveError(Object error) {

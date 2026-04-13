@@ -7,7 +7,472 @@ final smsParserServiceProvider = Provider<SmsParserService>((ref) {
 });
 
 class SmsParserService {
-  const SmsParserService();
+  const SmsParserService({List<SmsMessageParser>? parsers})
+      : _parsers = parsers ?? const <SmsMessageParser>[
+          SaudiBankSmsParser(),
+          GenericSmsParser(),
+        ];
+
+  final List<SmsMessageParser> _parsers;
+
+  static const Map<String, String> _digitNormalization = <String, String>{
+    '٠': '0',
+    '١': '1',
+    '٢': '2',
+    '٣': '3',
+    '٤': '4',
+    '٥': '5',
+    '٦': '6',
+    '٧': '7',
+    '٨': '8',
+    '٩': '9',
+    '۰': '0',
+    '۱': '1',
+    '۲': '2',
+    '۳': '3',
+    '۴': '4',
+    '۵': '5',
+    '۶': '6',
+    '۷': '7',
+    '۸': '8',
+    '۹': '9',
+  };
+
+  static final RegExp _directionalMarksPattern = RegExp(
+    r'[\u200E\u200F\u202A-\u202E\u2066-\u2069\u061C]',
+  );
+
+  static String normalizeIncomingText(String input) {
+    if (input.isEmpty) {
+      return input;
+    }
+
+    var normalized = input
+        .replaceAll(_directionalMarksPattern, '')
+        .replaceAll('\u00A0', ' ')
+        .replaceAll('٫', '.')
+        .replaceAll('٬', ',');
+
+    for (final entry in _digitNormalization.entries) {
+      normalized = normalized.replaceAll(entry.key, entry.value);
+    }
+
+    return normalized;
+  }
+
+  SmsParseResult parse(String rawText) {
+    final normalizedText = normalizeIncomingText(rawText).trim();
+    if (normalizedText.isEmpty) {
+      return const SmsParseResult(rawText: '');
+    }
+
+    final selectedParsers = _parsers
+        .where((parser) => parser.canParse(normalizedText))
+        .toList();
+
+    for (final parser in selectedParsers) {
+      final result = parser.parse(normalizedText);
+      if (result.hasAnyValue) {
+        return result;
+      }
+    }
+
+    return SmsParseResult(rawText: normalizedText);
+  }
+}
+
+abstract class SmsMessageParser {
+  const SmsMessageParser();
+
+  bool canParse(String rawText);
+  SmsParseResult parse(String rawText);
+}
+
+class SaudiBankSmsParser extends _BaseSmsMessageParser {
+  const SaudiBankSmsParser();
+
+  static const List<String> _snbIndicators = <String>[
+    'بطاقة ائتمانية',
+    'التاريخ',
+    'الصرف المتبقي',
+  ];
+
+  static const List<String> _snbTransactionKeywords = <String>[
+    'شراء',
+    'purchase',
+  ];
+
+  static const List<String> _balanceLineKeywords = <String>[
+    'المتبقي',
+    'الرصيد',
+    'remaining balance',
+    'available balance',
+    'balance',
+  ];
+
+  @override
+  bool canParse(String rawText) {
+    final lower = rawText.toLowerCase();
+    final matched = _snbIndicators.where(lower.contains).toList();
+    return matched.isNotEmpty;
+  }
+
+  @override
+  SmsParseResult parse(String rawText) {
+    final normalizedText = rawText.trim();
+    final lines = normalizedText
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    final compact = normalizedText.replaceAll(RegExp(r'\s+'), ' ');
+
+    final transactionIndex = lines.indexWhere(_isSnbTransactionLine);
+
+    final amountResult = _extractAmountFromLines(lines, transactionIndex);
+    final merchant = _extractMerchantFromLines(lines);
+    final spentAt = _extractDateFromLines(lines);
+
+    return SmsParseResult(
+      rawText: normalizedText,
+      amount: amountResult?.amount,
+      currencyCode: amountResult?.currencyCode,
+      merchant: merchant,
+      spentAt: spentAt,
+      suggestedCategory: _suggestSnbCategory('$compact ${merchant ?? ''}'),
+    );
+  }
+
+  _AmountMatch? _extractAmountFromLines(List<String> lines, int transactionIndex) {
+    if (transactionIndex == -1) {
+      return null;
+    }
+
+    final candidates = <_AmountCandidate>[];
+    // Fix: \b does not work for Arabic chars (they are \W in Dart regex).
+    // Use containsAny approach instead of regex for more reliable matching.
+
+    // Pass 1: prioritize explicitly labeled transaction amount lines.
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i];
+      final lower = line.toLowerCase();
+      if (_isSnbBalanceLine(lower)) {
+        continue;
+      }
+
+      // Check if line contains "amount" or "مبلغ" (label keywords)
+      final hasAmountLabel = lower.contains('amount') || line.contains('مبلغ');
+      if (!hasAmountLabel) {
+        continue;
+      }
+
+      final candidate = _extractAmountCandidateFromLine(
+        line: line,
+        lineIndex: i,
+        transactionIndex: transactionIndex,
+      );
+      if (candidate != null) {
+        candidates.add(candidate);
+      }
+    }
+
+    // Pass 2: fallback to plain amount lines if no labeled line was found.
+    if (candidates.isEmpty) {
+      for (var i = 0; i < lines.length; i++) {
+        final line = lines[i];
+        final lower = line.toLowerCase();
+        if (_isSnbBalanceLine(lower)) {
+          continue;
+        }
+
+        final candidate = _extractAmountCandidateFromLine(
+          line: line,
+          lineIndex: i,
+          transactionIndex: transactionIndex,
+        );
+        if (candidate != null) {
+          candidates.add(candidate);
+        }
+      }
+    }
+
+    if (candidates.isEmpty) {
+      return null;
+    }
+
+    candidates.sort((a, b) {
+      final score = b.score.compareTo(a.score);
+      if (score != 0) {
+        return score;
+      }
+      return a.lineIndex.compareTo(b.lineIndex);
+    });
+
+    final topScore = candidates.first.score;
+    final topCandidates = candidates.where((c) => c.score == topScore).toList();
+    final distinct = topCandidates
+        .map((c) => '${c.amount}|${c.currencyCode ?? ''}')
+        .toSet();
+    if (distinct.length > 1) {
+      return null;
+    }
+
+    final selected = topCandidates.first;
+    return _AmountMatch(
+      amount: selected.amount,
+      currencyCode: selected.currencyCode,
+    );
+  }
+
+  _AmountCandidate? _extractAmountCandidateFromLine({
+    required String line,
+    required int lineIndex,
+    required int transactionIndex,
+  }) {
+    const currencyPattern =
+        '(USD|EUR|GBP|AED|SAR|QAR|KWD|BHD|OMR|EGP|TRY|JOD|MAD|INR|PKR|US\\\$|\\\$|€|£|TL)';
+    final amountFirstPattern = RegExp(
+      r'(?<!\d)(\d{1,3}(?:[,.]\d{3})*(?:[,.]\d{1,2})|\d+(?:[,.]\d{1,2})?)\s*'
+      '$currencyPattern(?!\\w)',
+      caseSensitive: false,
+    );
+    final currencyFirstPattern = RegExp(
+      '$currencyPattern\\s*'
+      r'(\d{1,3}(?:[,.]\d{3})*(?:[,.]\d{1,2})|\d+(?:[,.]\d{1,2})?)(?!\d)',
+      caseSensitive: false,
+    );
+
+    final amountFirst = amountFirstPattern.firstMatch(line);
+    if (amountFirst != null) {
+      final amount = _parseSnbAmount(amountFirst.group(1));
+      if (amount != null && amount > 0) {
+        final score = lineIndex == transactionIndex + 1
+            ? 3
+            : lineIndex == transactionIndex
+                ? 2
+                : 1;
+        return _AmountCandidate(
+          amount: amount,
+          currencyCode: _normalizeSnbCurrency(amountFirst.group(2)),
+          score: score,
+          lineIndex: lineIndex,
+        );
+      }
+    }
+
+    final currencyFirst = currencyFirstPattern.firstMatch(line);
+    if (currencyFirst != null) {
+      final amount = _parseSnbAmount(currencyFirst.group(2));
+      if (amount != null && amount > 0) {
+        final score = lineIndex == transactionIndex + 1
+            ? 3
+            : lineIndex == transactionIndex
+                ? 2
+                : 1;
+        return _AmountCandidate(
+          amount: amount,
+          currencyCode: _normalizeSnbCurrency(currencyFirst.group(1)),
+          score: score,
+          lineIndex: lineIndex,
+        );
+      }
+    }
+
+    return null;
+  }
+
+  String? _extractMerchantFromLines(List<String> lines) {
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      if (_isSnbBalanceLine(lower)) {
+        continue;
+      }
+
+      final arabicMatch = RegExp(r'^من\s+(.+)$').firstMatch(line);
+      if (arabicMatch != null) {
+        final merchant = _cleanSnbMerchant(arabicMatch.group(1)!.trim());
+        if (merchant.length >= 2) {
+          return merchant;
+        }
+      }
+
+      final englishMatch = RegExp(r'^(?:from)\s+(.+)$', caseSensitive: false)
+          .firstMatch(line);
+      if (englishMatch != null) {
+        final merchant = _cleanSnbMerchant(englishMatch.group(1)!.trim());
+        if (merchant.length >= 2) {
+          return merchant;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  DateTime? _extractDateFromLines(List<String> lines) {
+    for (final line in lines) {
+      if (!line.contains('التاريخ')) {
+        continue;
+      }
+
+      final slash = RegExp(
+        r'(?<!\d)(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?(?!\d)',
+      ).firstMatch(line);
+      if (slash != null) {
+        final day = int.parse(slash.group(1)!);
+        final month = int.parse(slash.group(2)!);
+        final year = _normalizeSnbYear(int.parse(slash.group(3)!));
+        final hour = int.tryParse(slash.group(4) ?? '') ?? 0;
+        final minute = int.tryParse(slash.group(5) ?? '') ?? 0;
+        final parsed = _safeSnbDate(year, month, day, hour, minute);
+        if (parsed != null) {
+          return parsed;
+        }
+      }
+    }
+
+    for (final line in lines) {
+      final iso = RegExp(
+        r'(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?(?!\d)',
+      ).firstMatch(line);
+      if (iso == null) {
+        continue;
+      }
+
+      final year = int.parse(iso.group(1)!);
+      final month = int.parse(iso.group(2)!);
+      final day = int.parse(iso.group(3)!);
+      final hour = int.tryParse(iso.group(4) ?? '') ?? 0;
+      final minute = int.tryParse(iso.group(5) ?? '') ?? 0;
+      final parsed = _safeSnbDate(year, month, day, hour, minute);
+      if (parsed != null) {
+        return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  bool _isSnbTransactionLine(String line) {
+    final lower = line.toLowerCase();
+    return _snbTransactionKeywords.any(lower.contains);
+  }
+
+  bool _isSnbBalanceLine(String line) {
+    final lowerLine = line.toLowerCase();
+    return _balanceLineKeywords.any(lowerLine.contains);
+  }
+
+  String? _normalizeSnbCurrency(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+
+    return value.trim().toUpperCase().replaceAll('.', '');
+  }
+
+  double? _parseSnbAmount(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return null;
+    }
+
+    var normalized = value.replaceAll(' ', '');
+    if (normalized.contains(',') && normalized.contains('.')) {
+      normalized = normalized.replaceAll(',', '');
+    } else if (normalized.contains(',')) {
+      final lastComma = normalized.lastIndexOf(',');
+      final digitsAfter = normalized.length - lastComma - 1;
+      normalized = digitsAfter == 2
+          ? normalized.replaceAll(',', '.')
+          : normalized.replaceAll(',', '');
+    }
+
+    return double.tryParse(normalized);
+  }
+
+  String _cleanSnbMerchant(String value) {
+    var cleaned = value.replaceAll(RegExp(r'\s+'), ' ').trim();
+    cleaned = cleaned.split(RegExp(r'\s+التاريخ\b')).first;
+    cleaned = cleaned.split(RegExp(r'\s+on\s+', caseSensitive: false)).first;
+    return cleaned.trim();
+  }
+
+  int _normalizeSnbYear(int value) {
+    if (value >= 100) {
+      return value;
+    }
+
+    return value >= 70 ? 1900 + value : 2000 + value;
+  }
+
+  DateTime? _safeSnbDate(int year, int month, int day, int hour, int minute) {
+    try {
+      return DateTime(year, month, day, hour, minute);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String? _suggestSnbCategory(String text) {
+    return const GenericSmsParser().parse(text).suggestedCategory;
+  }
+
+  @override
+  List<String> get transactionKeywords => const <String>[
+        'purchase',
+        'payment',
+        'transaction',
+        'pos',
+        'apple pay',
+        'card used',
+        'شراء',
+        'مدى',
+        'سداد',
+      ];
+
+  @override
+  List<String> get balanceKeywords => const <String>[
+        'remaining balance',
+        'available balance',
+        'balance',
+        'الصرف المتبقي',
+        'الرصيد المتبقي',
+        'الرصيد الحالي',
+      ];
+}
+
+class GenericSmsParser extends _BaseSmsMessageParser {
+  const GenericSmsParser();
+
+  @override
+  bool canParse(String rawText) => true;
+
+  @override
+  List<String> get transactionKeywords => const <String>[
+        'purchase',
+        'payment',
+        'transaction',
+        'pos',
+        'card used',
+        'spent',
+        'debit',
+        'شراء',
+      ];
+
+  @override
+  List<String> get balanceKeywords => const <String>[
+        'remaining balance',
+        'available balance',
+        'balance',
+        'outstanding',
+        'الصرف المتبقي',
+        'الرصيد المتبقي',
+      ];
+}
+
+abstract class _BaseSmsMessageParser implements SmsMessageParser {
+  const _BaseSmsMessageParser();
 
   static const Map<String, String> _currencyAliases = <String, String>{
     'USD': 'USD',
@@ -34,24 +499,6 @@ class SmsParserService {
     'SAR.': 'SAR',
   };
 
-  static const List<String> _balanceKeywords = <String>[
-    'remaining balance',
-    'available balance',
-    'balance',
-    'الصرف المتبقي',
-    'الرصيد المتبقي',
-  ];
-
-  static const List<String> _transactionKeywords = <String>[
-    'purchase',
-    'payment',
-    'transaction',
-    'pos',
-    'apple pay',
-    'card used',
-    'شراء',
-  ];
-
   static const Map<String, String> _categoryKeywords = <String, String>{
     'uber': 'Transport',
     'taxi': 'Transport',
@@ -73,111 +520,260 @@ class SmsParserService {
     'museum': 'Entertainment',
   };
 
+  List<String> get transactionKeywords;
+  List<String> get balanceKeywords;
+
+  @override
   SmsParseResult parse(String rawText) {
     final normalizedText = rawText.trim();
+    final lines = normalizedText
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+    final scoredLines = _buildScoredLines(lines);
+
+    final amount = _extractAmount(scoredLines);
+    final merchant = _extractMerchant(scoredLines);
+    final spentAt = _extractDateTime(scoredLines);
     final compact = normalizedText.replaceAll(RegExp(r'\s+'), ' ');
-    final amountMatch = _findAmountMatch(normalizedText);
-    final merchant = _extractMerchant(normalizedText);
 
     return SmsParseResult(
       rawText: normalizedText,
-      amount: amountMatch?.amount,
-      currencyCode: amountMatch?.currencyCode,
-      spentAt: _extractDateTime(compact),
+      amount: amount?.amount,
+      currencyCode: amount?.currencyCode,
+      spentAt: spentAt,
       merchant: merchant,
       suggestedCategory: _suggestCategory('$compact ${merchant ?? ''}'),
     );
   }
 
-  _AmountMatch? _findAmountMatch(String input) {
-    final lines = input
-        .split(RegExp(r'\r?\n'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
-
-    if (lines.isEmpty) {
-      return null;
-    }
-
-    final prioritizedLines = _prioritizedTransactionLines(lines);
-    final fromPriority = _extractAmountFromLines(prioritizedLines);
-    if (fromPriority != null) {
-      return fromPriority;
-    }
-
-    final filteredLines = lines.where((line) => !_isBalanceLine(line)).toList();
-    return _extractAmountFromLines(filteredLines);
-  }
-
-  List<String> _prioritizedTransactionLines(List<String> lines) {
-    final prioritized = <String>[];
+  List<_ScoredLine> _buildScoredLines(List<String> lines) {
+    final scored = <_ScoredLine>[];
 
     for (var i = 0; i < lines.length; i++) {
       final line = lines[i];
-      if (!_isTransactionLine(line)) {
-        continue;
+      var score = 0;
+      if (_isTransactionLine(line)) {
+        score += 100;
+      }
+      if (_containsMerchantHint(line)) {
+        score += 35;
+      }
+      if (_isBalanceLine(line)) {
+        score -= 200;
       }
 
-      prioritized.add(line);
-      if (i + 1 < lines.length) {
-        prioritized.add(lines[i + 1]);
-      }
-      if (i > 0) {
-        prioritized.add(lines[i - 1]);
-      }
+      scored.add(_ScoredLine(text: line, index: i, score: score));
     }
 
-    return prioritized;
+    return scored;
   }
 
-  _AmountMatch? _extractAmountFromLines(List<String> lines) {
-    const pattern =
+  _AmountMatch? _extractAmount(List<_ScoredLine> scoredLines) {
+    if (scoredLines.isEmpty) {
+      return null;
+    }
+
+    const currencyPattern =
         r'(USD|EUR|GBP|AED|SAR|QAR|KWD|BHD|OMR|EGP|TRY|JOD|MAD|INR|PKR|US\$|\$|€|£|TL)';
     final currencyFirst = RegExp(
-      '$pattern\\s*(\\d{1,3}(?:[,.]\\d{3})*(?:[,.]\\d{1,2})|\\d+(?:[,.]\\d{1,2})?)',
+      '$currencyPattern\\s*(\\d{1,3}(?:[,.]\\d{3})*(?:[,.]\\d{1,2})|\\d+(?:[,.]\\d{1,2})?)',
       caseSensitive: false,
     );
     final amountFirst = RegExp(
-      '(\\d{1,3}(?:[,.]\\d{3})*(?:[,.]\\d{1,2})|\\d+(?:[,.]\\d{1,2})?)\\s*$pattern',
+      '(\\d{1,3}(?:[,.]\\d{3})*(?:[,.]\\d{1,2})|\\d+(?:[,.]\\d{1,2})?)\\s*$currencyPattern',
       caseSensitive: false,
     );
 
-    for (final line in lines) {
-      if (_isBalanceLine(line)) {
+    final candidates = <_AmountCandidate>[];
+    for (final line in scoredLines) {
+      if (_isBalanceLine(line.text)) {
         continue;
       }
 
-      final firstMatch = currencyFirst.firstMatch(line);
-      if (firstMatch != null) {
-        final amount = _parseAmount(firstMatch.group(2));
-        final currency = _normalizeCurrency(firstMatch.group(1));
-        if (amount != null) {
-          return _AmountMatch(amount: amount, currencyCode: currency);
+      for (final match in currencyFirst.allMatches(line.text)) {
+        final amount = _parseAmount(match.group(2));
+        if (amount == null || amount <= 0) {
+          continue;
+        }
+
+        candidates.add(
+          _AmountCandidate(
+            amount: amount,
+            currencyCode: _normalizeCurrency(match.group(1)),
+            score: line.score,
+            lineIndex: line.index,
+          ),
+        );
+      }
+
+      for (final match in amountFirst.allMatches(line.text)) {
+        final amount = _parseAmount(match.group(1));
+        if (amount == null || amount <= 0) {
+          continue;
+        }
+
+        candidates.add(
+          _AmountCandidate(
+            amount: amount,
+            currencyCode: _normalizeCurrency(match.group(2)),
+            score: line.score,
+            lineIndex: line.index,
+          ),
+        );
+      }
+    }
+
+    if (candidates.isEmpty) {
+      return null;
+    }
+
+    candidates.sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      if (byScore != 0) {
+        return byScore;
+      }
+      return a.lineIndex.compareTo(b.lineIndex);
+    });
+
+    final topScore = candidates.first.score;
+    final topCandidates = candidates.where((c) => c.score == topScore).toList();
+    final distinctTop = topCandidates
+        .map((c) => '${c.amount}|${c.currencyCode ?? ''}')
+        .toSet();
+
+    if (distinctTop.length > 1) {
+      return null;
+    }
+
+    final selected = topCandidates.first;
+    return _AmountMatch(
+      amount: selected.amount,
+      currencyCode: selected.currencyCode,
+    );
+  }
+
+  DateTime? _extractDateTime(List<_ScoredLine> scoredLines) {
+    final candidates = <_DateCandidate>[];
+
+    for (final line in scoredLines) {
+      if (_isBalanceLine(line.text)) {
+        continue;
+      }
+
+      final slashMatches = RegExp(
+        r'(?<!\d)(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?(?!\d)',
+      ).allMatches(line.text);
+      for (final match in slashMatches) {
+        final day = int.parse(match.group(1)!);
+        final month = int.parse(match.group(2)!);
+        final year = _normalizeYear(int.parse(match.group(3)!));
+        final hour = int.tryParse(match.group(4) ?? '') ?? 0;
+        final minute = int.tryParse(match.group(5) ?? '') ?? 0;
+        final parsed = _safeDate(year, month, day, hour, minute);
+        if (parsed != null) {
+          candidates.add(_DateCandidate(value: parsed, score: line.score));
         }
       }
 
-      final secondMatch = amountFirst.firstMatch(line);
-      if (secondMatch != null) {
-        final amount = _parseAmount(secondMatch.group(1));
-        final currency = _normalizeCurrency(secondMatch.group(2));
-        if (amount != null) {
-          return _AmountMatch(amount: amount, currencyCode: currency);
+      final isoMatches = RegExp(
+        r'(?<!\d)(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?(?!\d)',
+      ).allMatches(line.text);
+      for (final match in isoMatches) {
+        final year = int.parse(match.group(1)!);
+        final month = int.parse(match.group(2)!);
+        final day = int.parse(match.group(3)!);
+        final hour = int.tryParse(match.group(4) ?? '') ?? 0;
+        final minute = int.tryParse(match.group(5) ?? '') ?? 0;
+        final parsed = _safeDate(year, month, day, hour, minute);
+        if (parsed != null) {
+          candidates.add(_DateCandidate(value: parsed, score: line.score));
         }
       }
     }
 
-    return null;
+    if (candidates.isEmpty) {
+      return null;
+    }
+
+    candidates.sort((a, b) => b.score.compareTo(a.score));
+    final topScore = candidates.first.score;
+    final topDates = candidates
+        .where((d) => d.score == topScore)
+        .map((d) => d.value)
+        .toSet();
+
+    if (topDates.length > 1) {
+      return null;
+    }
+
+    return candidates.first.value;
+  }
+
+  String? _extractMerchant(List<_ScoredLine> scoredLines) {
+    final patterns = <RegExp>[
+      RegExp(r'(?:from|at|merchant[:\s]+)\s*([^,.\n]+)', caseSensitive: false),
+      RegExp(r'(?:من|التاجر[:\s]+)\s*([^,.\n]+)', caseSensitive: false),
+      RegExp(r'(?:desc(?:ription)?[:\s]+)\s*([^,.\n]+)', caseSensitive: false),
+    ];
+
+    final explicitCandidates = <_TextCandidate>[];
+    for (final line in scoredLines) {
+      if (_isBalanceLine(line.text)) {
+        continue;
+      }
+
+      for (final pattern in patterns) {
+        final match = pattern.firstMatch(line.text);
+        final value = match?.group(1)?.trim();
+        if (value == null || value.isEmpty) {
+          continue;
+        }
+
+        final cleaned = _cleanMerchant(value);
+        if (cleaned.length < 2) {
+          continue;
+        }
+
+        explicitCandidates.add(_TextCandidate(value: cleaned, score: line.score));
+      }
+    }
+
+    if (explicitCandidates.isEmpty) {
+      return null;
+    }
+
+    explicitCandidates.sort((a, b) => b.score.compareTo(a.score));
+    final topScore = explicitCandidates.first.score;
+    final distinct = explicitCandidates
+        .where((c) => c.score == topScore)
+        .map((c) => c.value)
+        .toSet();
+    if (distinct.length > 1) {
+      return null;
+    }
+
+    return explicitCandidates.first.value;
   }
 
   bool _isTransactionLine(String line) {
     final lower = line.toLowerCase();
-    return _transactionKeywords.any(lower.contains);
+    return transactionKeywords.any(lower.contains);
   }
 
   bool _isBalanceLine(String line) {
     final lower = line.toLowerCase();
-    return _balanceKeywords.any(lower.contains);
+    return balanceKeywords.any(lower.contains);
+  }
+
+  bool _containsMerchantHint(String line) {
+    final lower = line.toLowerCase();
+    return lower.contains('from ') ||
+        lower.contains('merchant') ||
+        lower.contains(' at ') ||
+        lower.contains('من ') ||
+        lower.contains('التاجر');
   }
 
   String? _normalizeCurrency(String? value) {
@@ -208,34 +804,6 @@ class SmsParserService {
     return double.tryParse(normalized);
   }
 
-  DateTime? _extractDateTime(String input) {
-    final slashMatch = RegExp(
-      r'(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})(?:\s+(\d{1,2}):(\d{2}))?',
-    ).firstMatch(input);
-    if (slashMatch != null) {
-      final day = int.parse(slashMatch.group(1)!);
-      final month = int.parse(slashMatch.group(2)!);
-      final year = _normalizeYear(int.parse(slashMatch.group(3)!));
-      final hour = int.tryParse(slashMatch.group(4) ?? '') ?? 0;
-      final minute = int.tryParse(slashMatch.group(5) ?? '') ?? 0;
-      return _safeDate(year, month, day, hour, minute);
-    }
-
-    final isoMatch = RegExp(
-      r'(\d{4})-(\d{1,2})-(\d{1,2})(?:[ T](\d{1,2}):(\d{2}))?',
-    ).firstMatch(input);
-    if (isoMatch != null) {
-      final year = int.parse(isoMatch.group(1)!);
-      final month = int.parse(isoMatch.group(2)!);
-      final day = int.parse(isoMatch.group(3)!);
-      final hour = int.tryParse(isoMatch.group(4) ?? '') ?? 0;
-      final minute = int.tryParse(isoMatch.group(5) ?? '') ?? 0;
-      return _safeDate(year, month, day, hour, minute);
-    }
-
-    return null;
-  }
-
   int _normalizeYear(int value) {
     if (value >= 100) {
       return value;
@@ -252,53 +820,11 @@ class SmsParserService {
     }
   }
 
-  String? _extractMerchant(String input) {
-    final lines = input
-        .split(RegExp(r'\r?\n'))
-        .map((line) => line.trim())
-        .where((line) => line.isNotEmpty)
-        .toList();
-
-    final patterns = <RegExp>[
-      RegExp(r'(?:from|at|merchant[:\s]+)([^,.\n]+)', caseSensitive: false),
-      RegExp(r'(?:من|التاجر[:\s]+)([^,.\n]+)', caseSensitive: false),
-      RegExp(r'(?:desc(?:ription)?[:\s]+)([^,.\n]+)', caseSensitive: false),
-    ];
-
-    for (final line in lines) {
-      if (_isBalanceLine(line)) {
-        continue;
-      }
-
-      for (final pattern in patterns) {
-        final match = pattern.firstMatch(line);
-        final value = match?.group(1)?.trim();
-        if (value != null && value.isNotEmpty) {
-          return _cleanMerchant(value);
-        }
-      }
-    }
-
-    for (final line in lines) {
-      if (_isBalanceLine(line)) {
-        continue;
-      }
-      if (_isTransactionLine(line) && !_hasAmountToken(line)) {
-        return _cleanMerchant(line);
-      }
-    }
-
-    return null;
-  }
-
-  bool _hasAmountToken(String line) {
-    return RegExp(r'\d+(?:[,.]\d{1,2})').hasMatch(line);
-  }
-
   String _cleanMerchant(String value) {
     var cleaned = value.replaceAll(RegExp(r'\s+'), ' ');
     cleaned = cleaned.split(RegExp(r'\s+on\s+', caseSensitive: false)).first;
     cleaned = cleaned.split(RegExp(r'\s+\d{1,2}[/-]\d{1,2}[/-]\d{2,4}')).first;
+    cleaned = cleaned.split(RegExp(r'\s+balance', caseSensitive: false)).first;
     return cleaned.trim();
   }
 
@@ -311,6 +837,46 @@ class SmsParserService {
     }
     return null;
   }
+}
+
+class _ScoredLine {
+  const _ScoredLine({
+    required this.text,
+    required this.index,
+    required this.score,
+  });
+
+  final String text;
+  final int index;
+  final int score;
+}
+
+class _AmountCandidate {
+  const _AmountCandidate({
+    required this.amount,
+    required this.currencyCode,
+    required this.score,
+    required this.lineIndex,
+  });
+
+  final double amount;
+  final String? currencyCode;
+  final int score;
+  final int lineIndex;
+}
+
+class _DateCandidate {
+  const _DateCandidate({required this.value, required this.score});
+
+  final DateTime value;
+  final int score;
+}
+
+class _TextCandidate {
+  const _TextCandidate({required this.value, required this.score});
+
+  final String value;
+  final int score;
 }
 
 class _AmountMatch {

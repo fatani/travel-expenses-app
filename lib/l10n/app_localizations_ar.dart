@@ -146,7 +146,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsExpensesSection => 'المصاريف';
 
   @override
-  String get tripDetailsAddViaSms => 'إضافة عبر رسالة البنك (تجريبي)';
+  String get tripDetailsAddViaSms => 'إضافة عبر رسالة البنك';
 
   @override
   String get tripDetailsSearchLabel => 'البحث في المصاريف';
@@ -217,6 +217,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get tripDetailsExcludedCurrenciesWarning =>
+      'بعض المصاريف بعملات أخرى غير مشمولة في الإجمالي';
+
+  @override
   String get tripDetailsEmptyExpensesTitle => 'لا توجد مصاريف بعد';
 
   @override
@@ -269,6 +273,24 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get expenseFormAmountPositive => 'يجب أن يكون المبلغ أكبر من صفر.';
+
+  @override
+  String get expenseCurrencyMismatchTitle =>
+      'عملة المصروف تختلف عن العملة الأساسية للرحلة';
+
+  @override
+  String expenseCurrencyMismatchMessage(
+    Object expenseCurrency,
+    Object tripCurrency,
+  ) {
+    return 'هذا المصروف بعملة $expenseCurrency بينما العملة الأساسية للرحلة هي $tripCurrency. يمكنك التعديل يدوياً، أو الإبقاء عليه كما هو وسيتم استبعاده من الإجماليات.';
+  }
+
+  @override
+  String get expenseCurrencyMismatchConvertManually => 'التعديل يدوياً';
+
+  @override
+  String get expenseCurrencyMismatchKeepAsIs => 'الإبقاء كما هو';
 
   @override
   String expenseFormSaveError(Object error) {

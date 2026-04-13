@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -161,7 +163,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedCategory,
+                          value: _selectedCategory,
                           items: ExpenseOptionLabels.categories
                               .map(
                                 (category) => DropdownMenuItem<String>(
@@ -187,7 +189,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedPaymentMethod,
+                          value: _selectedPaymentMethod,
                           items: ExpenseOptionLabels.paymentMethods
                               .map(
                                 (paymentMethod) => DropdownMenuItem<String>(
@@ -270,8 +272,15 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       if (result.merchant != null && result.merchant!.isNotEmpty) {
         _titleController.text = result.merchant!;
       }
-      if (result.suggestedCategory != null) {
-        _selectedCategory = result.suggestedCategory;
+      final suggestedCategory =
+          result.suggestedCategory ?? _inferCategoryFallback(result.rawText);
+      if (suggestedCategory != null) {
+        _selectedCategory = suggestedCategory;
+      }
+      final suggestedPaymentMethod =
+          _inferPaymentMethodFallback(result.rawText);
+      if (suggestedPaymentMethod != null) {
+        _selectedPaymentMethod = suggestedPaymentMethod;
       }
       if (result.spentAt != null) {
         _expenseDate = DateUtils.dateOnly(result.spentAt!);
@@ -335,6 +344,46 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     return null;
   }
 
+  String? _inferCategoryFallback(String rawText) {
+    final normalized = SmsParserService.normalizeIncomingText(rawText)
+        .toLowerCase();
+
+    if (normalized.contains('starbucks') ||
+        normalized.contains('restaurant') ||
+        normalized.contains('مطعم')) {
+      return 'Food';
+    }
+    if (normalized.contains('uber') ||
+        normalized.contains('taxi') ||
+        normalized.contains('metro')) {
+      return 'Transport';
+    }
+
+    // Keep form usable when parser has no strong category signal.
+    return 'Other';
+  }
+
+  String? _inferPaymentMethodFallback(String rawText) {
+    final normalized = SmsParserService.normalizeIncomingText(rawText)
+        .toLowerCase();
+
+    if (normalized.contains('apple pay') ||
+        normalized.contains('google pay') ||
+        normalized.contains('samsung pay')) {
+      return 'Mobile Wallet';
+    }
+    if (normalized.contains('بطاقة ائتمانية') ||
+        normalized.contains('credit card')) {
+      return 'Credit Card';
+    }
+    if (normalized.contains('بطاقة') ||
+        normalized.contains('debit')) {
+      return 'Debit Card';
+    }
+
+    return null;
+  }
+
   Future<void> _selectDate() async {
     final selectedDate = await showDatePicker(
       context: context,
@@ -371,6 +420,15 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     final title = _titleController.text.trim().isEmpty
         ? _selectedCategory!
         : _titleController.text.trim();
+    final currencyCode = _currencyController.text.trim().toUpperCase();
+
+    if (currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
+      final shouldKeepAsIs = await _confirmCurrencyMismatch(currencyCode);
+      if (shouldKeepAsIs != true) {
+        return;
+      }
+    }
+
     final controller = ref.read(
       expenseControllerProvider(widget.trip.id).notifier,
     );
@@ -379,7 +437,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       await controller.createExpense(
         title: title,
         amount: double.parse(_amountController.text.trim()),
-        currencyCode: _currencyController.text.trim().toUpperCase(),
+        currencyCode: currencyCode,
         category: _selectedCategory!,
         spentAt: _expenseDate!,
         paymentMethod: _selectedPaymentMethod!,
@@ -402,6 +460,34 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text(l10n.smsSaveError('$error'))));
     }
+  }
+
+  Future<bool?> _confirmCurrencyMismatch(String expenseCurrency) {
+    final l10n = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(l10n.expenseCurrencyMismatchTitle),
+          content: Text(
+            l10n.expenseCurrencyMismatchMessage(
+              expenseCurrency,
+              widget.trip.baseCurrency,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.expenseCurrencyMismatchConvertManually),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.expenseCurrencyMismatchKeepAsIs),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _syncDateField() {
