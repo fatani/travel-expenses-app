@@ -257,7 +257,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormPaymentMethodLabel => 'طريقة الدفع';
 
   @override
+  String get expenseFormPaymentNetworkLabel => 'شبكة البطاقة';
+
+  @override
+  String get expenseFormPaymentChannelLabel => 'قناة الدفع';
+
+  @override
   String get expenseFormDateLabel => 'تاريخ المصروف';
+
+  @override
+  String get expenseFormTimeLabel => 'وقت المصروف';
 
   @override
   String get expenseFormNoteLabel => 'ملاحظة';
@@ -332,6 +341,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentMethodMobileWallet => 'محفظة إلكترونية';
+
+  @override
+  String get paymentMethodOther => 'أخرى';
+
+  @override
+  String get paymentNetworkVisa => 'فيزا';
+
+  @override
+  String get paymentNetworkMastercard => 'ماستركارد';
+
+  @override
+  String get paymentNetworkMada => 'مدى';
+
+  @override
+  String get paymentNetworkOther => 'أخرى';
+
+  @override
+  String get paymentChannelApplePay => 'أبل باي';
+
+  @override
+  String get paymentChannelGooglePay => 'جوجل باي';
+
+  @override
+  String get paymentChannelCardPresent => 'شراء عبر نقاط البيع';
+
+  @override
+  String get paymentChannelOnline => 'شراء عبر الإنترنت';
+
+  @override
+  String get paymentChannelOther => 'أخرى';
 
   @override
   String get settingsTitle => 'الإعدادات';

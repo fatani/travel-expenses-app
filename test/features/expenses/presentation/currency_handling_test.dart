@@ -96,10 +96,20 @@ void main() {
 
       await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Cash').last);
+      await tester.tap(find.text('Visa').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(2));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('POS Purchase').last);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byType(TextFormField).at(3));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(TextFormField).at(4));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
@@ -127,6 +137,29 @@ void main() {
 
       expect(repository.createdExpenses, hasLength(1));
       expect(repository.createdExpenses.single.currencyCode, 'SAR');
+    },
+  );
+
+  testWidgets(
+    'manual expense form shows asterisks for required fields before validation',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          child: ExpenseFormScreen(trip: trip),
+          overrides: const [],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Amount *'), findsOneWidget);
+      expect(find.text('Currency *'), findsOneWidget);
+      expect(find.text('Category *'), findsOneWidget);
+      expect(find.text('Card network *'), findsOneWidget);
+      expect(find.text('Payment channel *'), findsOneWidget);
+      expect(find.text('Expense date *'), findsOneWidget);
+      expect(find.text('Expense time *'), findsOneWidget);
+      expect(find.text('This field is required.'), findsNothing);
     },
   );
 
@@ -160,11 +193,23 @@ void main() {
       await tester.ensureVisible(find.byType(DropdownButtonFormField<String>).at(1));
       await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Credit Card').last);
+      await tester.tap(find.text('Visa').last);
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byType(DropdownButtonFormField<String>).at(2));
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(2));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Online Purchase').last);
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(find.byType(TextFormField).at(4));
       await tester.tap(find.byType(TextFormField).at(4));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byType(TextFormField).at(5));
+      await tester.tap(find.byType(TextFormField).at(5));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
@@ -185,6 +230,85 @@ void main() {
       expect(repository.createdExpenses, hasLength(1));
       expect(repository.createdExpenses.single.currencyCode, 'SAR');
       expect(repository.createdExpenses.single.source, 'sms');
+      expect(repository.createdExpenses.single.paymentNetwork, 'Visa');
+      expect(repository.createdExpenses.single.paymentChannel, 'Online Purchase');
+      expect(repository.createdExpenses.single.paymentMethod, 'Credit Card');
+    },
+  );
+
+  testWidgets(
+    'sms form shows asterisks for required fields before validation',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          child: SmsExpenseScreen(trip: trip),
+          overrides: const [],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bank SMS text *'), findsOneWidget);
+      expect(find.text('Amount *'), findsOneWidget);
+      expect(find.text('Currency *'), findsOneWidget);
+      expect(find.text('Category *'), findsOneWidget);
+      expect(find.text('Card network *'), findsOneWidget);
+      expect(find.text('Payment channel *'), findsOneWidget);
+      expect(find.text('Expense date *'), findsOneWidget);
+      expect(find.text('This field is required.'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'sms date editing preserves parsed time and saves updated day',
+    (tester) async {
+      final repository = _FakeExpenseRepository();
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: SmsExpenseScreen(trip: trip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+          ],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        '''
+شراء عبر نقاط البيع
+بطاقة:8664 ;فيزا-ابل باي
+لدى:NAFTHAT A
+مبلغ:15 SAR
+رصيد:1780.92 SAR
+12/4/26 13:24
+''',
+      );
+
+      await tester.tap(find.text('Parse SMS'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.byType(TextFormField).at(4));
+      await tester.tap(find.byType(TextFormField).at(4));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('20'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Save Expense'));
+      await tester.tap(find.text('Save Expense'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Keep as-is'));
+      await tester.pumpAndSettle();
+
+      expect(repository.createdExpenses, hasLength(1));
+      expect(repository.createdExpenses.single.spentAt, DateTime(2026, 4, 20, 13, 24));
+      expect(repository.createdExpenses.single.paymentNetwork, 'Visa');
+      expect(repository.createdExpenses.single.paymentChannel, 'POS Purchase');
     },
   );
 }

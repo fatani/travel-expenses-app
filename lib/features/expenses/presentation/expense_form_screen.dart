@@ -27,11 +27,14 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   late final TextEditingController _amountController;
   late final TextEditingController _currencyController;
   late final TextEditingController _dateController;
+  late final TextEditingController _timeController;
   late final TextEditingController _noteController;
 
   String? _selectedCategory;
-  String? _selectedPaymentMethod;
+  String? _selectedPaymentNetwork;
+  String? _selectedPaymentChannel;
   DateTime? _spentAt;
+  bool _showValidationErrors = false;
 
   @override
   void initState() {
@@ -45,13 +48,27 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       text: expense?.currencyCode ?? widget.trip.baseCurrency,
     );
     _dateController = TextEditingController();
+    _timeController = TextEditingController();
     _noteController = TextEditingController(text: expense?.note ?? '');
     _selectedCategory = expense?.category;
-    _selectedPaymentMethod = expense?.paymentMethod.isNotEmpty == true
-        ? expense!.paymentMethod
+    _selectedPaymentNetwork = expense?.paymentNetwork?.isNotEmpty == true
+      ? expense!.paymentNetwork
+      : expense != null
+        ? 'Other'
         : null;
-    _spentAt = expense?.spentAt;
-    _syncDateField();
+    _selectedPaymentChannel = expense?.paymentChannel?.isNotEmpty == true
+      ? expense!.paymentChannel
+      : expense != null
+        ? 'Other'
+        : null;
+    _spentAt = expense?.spentAt ?? DateTime.now();
+    _syncDateAndTimeFields(useLocale: false);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncDateAndTimeFields();
   }
 
   @override
@@ -60,6 +77,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     _amountController.dispose();
     _currencyController.dispose();
     _dateController.dispose();
+    _timeController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -84,6 +102,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
+            autovalidateMode: _showValidationErrors
+                ? AutovalidateMode.always
+                : AutovalidateMode.disabled,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -109,7 +130,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             decimal: true,
                           ),
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormAmountLabel,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormAmountLabel,
+                            ),
                             hintText: l10n.expenseFormAmountHint,
                           ),
                           validator: _validateAmount,
@@ -126,7 +149,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             LengthLimitingTextInputFormatter(3),
                           ],
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormCurrencyLabel,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormCurrencyLabel,
+                            ),
                             hintText: 'USD',
                           ),
                           validator: _validateRequired,
@@ -148,7 +173,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                               )
                               .toList(),
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormCategoryLabel,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormCategoryLabel,
+                            ),
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -159,42 +186,97 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedPaymentMethod,
-                          items: ExpenseOptionLabels.paymentMethods
+                          initialValue: _selectedPaymentNetwork,
+                          items: ExpenseOptionLabels.paymentNetworks
                               .map(
-                                (paymentMethod) => DropdownMenuItem<String>(
-                                  value: paymentMethod,
+                                (paymentNetwork) => DropdownMenuItem<String>(
+                                  value: paymentNetwork,
                                   child: Text(
-                                    ExpenseOptionLabels.paymentMethod(
+                                    ExpenseOptionLabels.paymentNetwork(
                                       l10n,
-                                      paymentMethod,
+                                      paymentNetwork,
                                     ),
                                   ),
                                 ),
                               )
                               .toList(),
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormPaymentMethodLabel,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormPaymentNetworkLabel,
+                            ),
                           ),
                           onChanged: (value) {
                             setState(() {
-                              _selectedPaymentMethod = value;
+                              _selectedPaymentNetwork = value;
                             });
                           },
                           validator: _validateDropdown,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _dateController,
-                          readOnly: true,
+                        DropdownButtonFormField<String>(
+                          initialValue: _selectedPaymentChannel,
+                          items: ExpenseOptionLabels.paymentChannels
+                              .map(
+                                (paymentChannel) => DropdownMenuItem<String>(
+                                  value: paymentChannel,
+                                  child: Text(
+                                    ExpenseOptionLabels.paymentChannel(
+                                      l10n,
+                                      paymentChannel,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormDateLabel,
-                            suffixIcon: const Icon(
-                              Icons.calendar_today_rounded,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormPaymentChannelLabel,
                             ),
                           ),
-                          onTap: _selectDate,
-                          validator: _validateDate,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedPaymentChannel = value;
+                            });
+                          },
+                          validator: _validateDropdown,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _dateController,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  labelText: _requiredLabel(
+                                    l10n.expenseFormDateLabel,
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.calendar_today_rounded,
+                                  ),
+                                ),
+                                onTap: _selectDate,
+                                validator: _validateDate,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _timeController,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  labelText: _requiredLabel(
+                                    l10n.expenseFormTimeLabel,
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.access_time_rounded,
+                                  ),
+                                ),
+                                onTap: _selectTime,
+                                validator: _validateDate,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -288,14 +370,56 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     }
 
     setState(() {
-      _spentAt = DateUtils.dateOnly(selectedDate);
-      _syncDateField();
+      _spentAt = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        _spentAt?.hour ?? 0,
+        _spentAt?.minute ?? 0,
+      );
+      _syncDateAndTimeFields();
     });
 
-    _formKey.currentState?.validate();
+    if (_showValidationErrors) {
+      _formKey.currentState?.validate();
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final initialDate = _spentAt ?? DateTime.now();
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initialDate),
+    );
+
+    if (selectedTime == null) {
+      return;
+    }
+
+    setState(() {
+      final baseDate = _spentAt ?? DateTime.now();
+      _spentAt = DateTime(
+        baseDate.year,
+        baseDate.month,
+        baseDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
+      _syncDateAndTimeFields();
+    });
+
+    if (_showValidationErrors) {
+      _formKey.currentState?.validate();
+    }
   }
 
   Future<void> _submit() async {
+    if (!_showValidationErrors) {
+      setState(() {
+        _showValidationErrors = true;
+      });
+    }
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -305,6 +429,10 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         : _titleController.text.trim();
     final amount = double.parse(_amountController.text.trim());
     final currencyCode = _currencyController.text.trim().toUpperCase();
+    final paymentMethod = _resolvePaymentMethodCompatibility(
+      _selectedPaymentNetwork!,
+      _selectedPaymentChannel!,
+    );
 
     if (widget.expense == null &&
         currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
@@ -326,7 +454,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           currencyCode: currencyCode,
           category: _selectedCategory!,
           spentAt: _spentAt!,
-          paymentMethod: _selectedPaymentMethod!,
+          paymentMethod: paymentMethod,
+          paymentNetwork: _selectedPaymentNetwork!,
+          paymentChannel: _selectedPaymentChannel!,
           note: _noteController.text,
         );
       } else {
@@ -337,7 +467,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           currencyCode: currencyCode,
           category: _selectedCategory!,
           spentAt: _spentAt!,
-          paymentMethod: _selectedPaymentMethod!,
+          paymentMethod: paymentMethod,
+          paymentNetwork: _selectedPaymentNetwork!,
+          paymentChannel: _selectedPaymentChannel!,
           note: _noteController.text,
         );
       }
@@ -390,8 +522,34 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     );
   }
 
-  void _syncDateField() {
-    final formatter = DateFormat('dd MMM yyyy');
-    _dateController.text = _spentAt == null ? '' : formatter.format(_spentAt!);
+  String _resolvePaymentMethodCompatibility(String network, String channel) {
+    if (network == 'Mada') {
+      return 'Debit Card';
+    }
+    if (network == 'Visa' || network == 'Mastercard') {
+      return 'Credit Card';
+    }
+    if (channel == 'POS Purchase' || channel == 'Online Purchase') {
+      return 'Other';
+    }
+    return 'Other';
+  }
+
+  void _syncDateAndTimeFields({bool useLocale = true}) {
+    if (_spentAt == null) {
+      _dateController.text = '';
+      _timeController.text = '';
+      return;
+    }
+
+    final localeTag = useLocale
+        ? Localizations.localeOf(context).toLanguageTag()
+        : null;
+    _dateController.text = DateFormat('dd MMM yyyy', localeTag).format(_spentAt!);
+    _timeController.text = DateFormat('HH:mm', localeTag).format(_spentAt!);
+  }
+
+  String _requiredLabel(String label) {
+    return '$label *';
   }
 }

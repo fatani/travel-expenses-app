@@ -35,6 +35,8 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     required String category,
     required DateTime spentAt,
     required String paymentMethod,
+    String? paymentNetwork,
+    String? paymentChannel,
     String source = 'manual',
     String? note,
     String? rawSmsText,
@@ -44,8 +46,10 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       title: title,
       amount: amount,
       currencyCode: currencyCode,
-      spentAt: _normalizeDate(spentAt),
+      spentAt: spentAt,
       paymentMethod: paymentMethod,
+      paymentNetwork: paymentNetwork,
+      paymentChannel: paymentChannel,
       source: source,
       category: category,
       note: _normalizeText(note),
@@ -65,6 +69,8 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     required String category,
     required DateTime spentAt,
     required String paymentMethod,
+    String? paymentNetwork,
+    String? paymentChannel,
     String source = 'manual',
     String? note,
     String? rawSmsText,
@@ -73,8 +79,10 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       title: title,
       amount: amount,
       currencyCode: currencyCode,
-      spentAt: _normalizeDate(spentAt),
+      spentAt: spentAt,
       paymentMethod: paymentMethod,
+      paymentNetwork: paymentNetwork,
+      paymentChannel: paymentChannel,
       source: source,
       category: category,
       note: _normalizeText(note),
@@ -106,10 +114,6 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       state = AsyncValue.error(error, stackTrace);
       rethrow;
     }
-  }
-
-  DateTime _normalizeDate(DateTime value) {
-    return DateTime(value.year, value.month, value.day);
   }
 
   String? _normalizeText(String? value) {

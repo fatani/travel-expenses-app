@@ -7,6 +7,8 @@ class Expense {
     required this.currencyCode,
     required this.spentAt,
     required this.paymentMethod,
+    this.paymentNetwork,
+    this.paymentChannel,
     required this.source,
     this.category,
     this.note,
@@ -23,6 +25,8 @@ class Expense {
     String currencyCode = 'USD',
     DateTime? spentAt,
     required String paymentMethod,
+    String? paymentNetwork,
+    String? paymentChannel,
     String source = 'manual',
     String? category,
     String? note,
@@ -38,6 +42,8 @@ class Expense {
       currencyCode: currencyCode,
       spentAt: spentAt ?? now,
       paymentMethod: paymentMethod,
+      paymentNetwork: paymentNetwork,
+      paymentChannel: paymentChannel,
       source: source,
       category: category,
       note: note,
@@ -56,6 +62,8 @@ class Expense {
       currencyCode: map['currency_code']! as String,
       spentAt: DateTime.parse(map['spent_at']! as String),
       paymentMethod: (map['payment_method'] as String?) ?? '',
+      paymentNetwork: map['payment_network'] as String?,
+      paymentChannel: map['payment_channel'] as String?,
       source: (map['source'] as String?) ?? 'manual',
       category: map['category'] as String?,
       note: map['note'] as String?,
@@ -72,6 +80,8 @@ class Expense {
   final String currencyCode;
   final DateTime spentAt;
   final String paymentMethod;
+  final String? paymentNetwork;
+  final String? paymentChannel;
   final String source;
   final String? category;
   final String? note;
@@ -87,6 +97,8 @@ class Expense {
     String? currencyCode,
     DateTime? spentAt,
     String? paymentMethod,
+    String? paymentNetwork,
+    String? paymentChannel,
     String? source,
     String? category,
     String? note,
@@ -102,6 +114,8 @@ class Expense {
       currencyCode: currencyCode ?? this.currencyCode,
       spentAt: spentAt ?? this.spentAt,
       paymentMethod: paymentMethod ?? this.paymentMethod,
+      paymentNetwork: paymentNetwork ?? this.paymentNetwork,
+      paymentChannel: paymentChannel ?? this.paymentChannel,
       source: source ?? this.source,
       category: category ?? this.category,
       note: note ?? this.note,
@@ -120,6 +134,8 @@ class Expense {
       'currency_code': currencyCode,
       'spent_at': _writeDate(spentAt),
       'payment_method': paymentMethod,
+      'payment_network': paymentNetwork,
+      'payment_channel': paymentChannel,
       'source': source,
       'category': category,
       'note': note,
@@ -130,10 +146,6 @@ class Expense {
   }
 
   static String _writeDate(DateTime value) {
-    final normalized = DateTime(value.year, value.month, value.day);
-    final year = normalized.year.toString().padLeft(4, '0');
-    final month = normalized.month.toString().padLeft(2, '0');
-    final day = normalized.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
+    return value.toIso8601String();
   }
 }

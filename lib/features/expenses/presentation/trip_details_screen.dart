@@ -706,7 +706,9 @@ class _ExpenseCard extends StatelessWidget {
       decimalDigits: 2,
     );
     final dateFormatter = DateFormat(
-      'dd MMM yyyy',
+      expense.spentAt.hour != 0 || expense.spentAt.minute != 0
+          ? 'dd MMM yyyy • HH:mm'
+          : 'dd MMM yyyy',
       Localizations.localeOf(context).toLanguageTag(),
     );
 
@@ -731,7 +733,12 @@ class _ExpenseCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} • ${ExpenseOptionLabels.paymentMethod(l10n, expense.paymentMethod)}',
+                        '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} • ${ExpenseOptionLabels.paymentSummary(
+                          l10n,
+                          paymentMethodValue: expense.paymentMethod,
+                          paymentNetworkValue: expense.paymentNetwork,
+                          paymentChannelValue: expense.paymentChannel,
+                        )}',
                       ),
                       const SizedBox(height: 6),
                       Text(dateFormatter.format(expense.spentAt)),

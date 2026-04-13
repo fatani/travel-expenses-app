@@ -190,4 +190,123 @@ Ref 12345
     expect(result.currencyCode, isNull, reason: 'No clear currency');
     expect(result.spentAt, isNull, reason: 'No clear date/time');
   });
+
+  test('Al Rajhi: POS purchase with labeled amount and merchant لدى', () {
+    final result = parser.parse('''
+شراء عبر نقاط البيع
+بطاقة:8664 ;فيزا-ابل باي
+لدى:NAFTHAT A
+مبلغ:15 SAR
+رصيد:1780.92 SAR
+12/4/26 13:24
+''');
+
+    expect(result.amount, 15);
+    expect(result.currencyCode, 'SAR');
+    expect(result.merchant, 'NAFTHAT A');
+    expect(result.spentAt, DateTime(2026, 4, 12, 13, 24));
+    expect(result.suggestedPaymentNetwork, 'Visa');
+    expect(result.suggestedPaymentChannel, 'POS Purchase');
+    expect(result.suggestedPaymentMethod, 'Credit Card');
+  });
+
+  test('Al Rajhi: internet purchase fallback amount from بـSR line', () {
+    final result = parser.parse('''
+شراء إنترنت بـSR 6.97
+عبر 8664 ;فيزا-ابل باي
+لـCAREEM RI
+رصيد:1795.92 SR
+11/4/26 20:53
+''');
+
+    expect(result.amount, 6.97);
+    expect(result.currencyCode, 'SAR');
+    expect(result.merchant, 'CAREEM RI');
+    expect(result.spentAt, DateTime(2026, 4, 11, 20, 53));
+    expect(result.suggestedPaymentNetwork, 'Visa');
+    expect(result.suggestedPaymentChannel, 'Online Purchase');
+    expect(result.suggestedPaymentMethod, 'Credit Card');
+  });
+
+  test('Al Rajhi: POS purchase with large labeled amount', () {
+    final result = parser.parse('''
+شراء عبر نقاط البيع
+بطاقة:1331 ;فيزا
+لدى:ALJAZIRA T
+مبلغ:500 SAR
+رصيد:14304.82 SAR
+10/4/26 00:49
+''');
+
+    expect(result.amount, 500);
+    expect(result.currencyCode, 'SAR');
+    expect(result.merchant, 'ALJAZIRA T');
+    expect(result.spentAt, DateTime(2026, 4, 10, 0, 49));
+    expect(result.suggestedPaymentNetwork, 'Visa');
+    expect(result.suggestedPaymentChannel, 'POS Purchase');
+    expect(result.suggestedPaymentMethod, 'Credit Card');
+  });
+
+  test('Al Rajhi: keeps primary amount and ignores fees and total due', () {
+    final result = parser.parse('''
+شراء انترنت
+بطاقة:8664 ;فيزا-ابل باي
+مبلغ: 11.91 SAR
+لدى:UBR* PEND
+رسوم وضريبة: 0.24 SAR
+اجمالي المبلغ المستحق: 12.15 SAR
+دولة:Netherlands
+رصيد:1902.19 SAR
+في:7/4/26 18:46
+''');
+
+    expect(result.amount, 11.91);
+    expect(result.currencyCode, 'SAR');
+    expect(result.merchant, 'UBR* PEND');
+    expect(result.spentAt, DateTime(2026, 4, 7, 18, 46));
+    expect(result.suggestedPaymentNetwork, 'Visa');
+    expect(result.suggestedPaymentChannel, 'Online Purchase');
+    expect(result.suggestedPaymentMethod, 'Credit Card');
+  });
+
+  test('Al Rajhi: foreign currency uses USD amount and not total due SAR', () {
+    final result = parser.parse('''
+شراء انترنت
+بطاقة: 1331 ;فيزا
+مبلغ: 100 USD (375.45 ريال)
+لدى: GITHUB, I
+رسوم وضريبة: 7.51 SAR
+سعر الصرف~ 3.7545
+إجمالي المبلغ المستحق: 382.96 SAR
+دولة: USA
+رصيد: 13015.49 SAR
+13/3/26 20:29
+''');
+
+    expect(result.amount, 100);
+    expect(result.currencyCode, 'USD');
+    expect(result.merchant, 'GITHUB, I');
+    expect(result.spentAt, DateTime(2026, 3, 13, 20, 29));
+    expect(result.suggestedPaymentNetwork, 'Visa');
+    expect(result.suggestedPaymentChannel, 'Online Purchase');
+    expect(result.suggestedPaymentMethod, 'Credit Card');
+  });
+
+  test('Al Rajhi: merchant falls back to لـ and keeps datetime with time', () {
+    final result = parser.parse('''
+شراء انترنت بـSR 5
+عبر:9565;مدى-ابل باي
+من:7329
+لـbarq
+13/4/26 08:05
+''');
+
+    expect(result.amount, 5);
+    expect(result.currencyCode, 'SAR');
+    expect(result.merchant, 'barq');
+    expect(result.spentAt, DateTime(2026, 4, 13, 8, 5));
+    expect(result.suggestedPaymentNetwork, 'Mada');
+    expect(result.suggestedPaymentChannel, 'Online Purchase');
+    expect(result.suggestedPaymentMethod, 'Debit Card');
+  });
 }

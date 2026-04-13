@@ -557,11 +557,29 @@ abstract class AppLocalizations {
   /// **'Payment method'**
   String get expenseFormPaymentMethodLabel;
 
+  /// No description provided for @expenseFormPaymentNetworkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card network'**
+  String get expenseFormPaymentNetworkLabel;
+
+  /// No description provided for @expenseFormPaymentChannelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment channel'**
+  String get expenseFormPaymentChannelLabel;
+
   /// No description provided for @expenseFormDateLabel.
   ///
   /// In en, this message translates to:
   /// **'Expense date'**
   String get expenseFormDateLabel;
+
+  /// No description provided for @expenseFormTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense time'**
+  String get expenseFormTimeLabel;
 
   /// No description provided for @expenseFormNoteLabel.
   ///
@@ -694,6 +712,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mobile Wallet'**
   String get paymentMethodMobileWallet;
+
+  /// No description provided for @paymentMethodOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get paymentMethodOther;
+
+  /// No description provided for @paymentNetworkVisa.
+  ///
+  /// In en, this message translates to:
+  /// **'Visa'**
+  String get paymentNetworkVisa;
+
+  /// No description provided for @paymentNetworkMastercard.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastercard'**
+  String get paymentNetworkMastercard;
+
+  /// No description provided for @paymentNetworkMada.
+  ///
+  /// In en, this message translates to:
+  /// **'Mada'**
+  String get paymentNetworkMada;
+
+  /// No description provided for @paymentNetworkOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get paymentNetworkOther;
+
+  /// No description provided for @paymentChannelApplePay.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Pay'**
+  String get paymentChannelApplePay;
+
+  /// No description provided for @paymentChannelGooglePay.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Pay'**
+  String get paymentChannelGooglePay;
+
+  /// No description provided for @paymentChannelCardPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Card Present'**
+  String get paymentChannelCardPresent;
+
+  /// No description provided for @paymentChannelOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get paymentChannelOnline;
+
+  /// No description provided for @paymentChannelOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get paymentChannelOther;
 
   /// No description provided for @settingsTitle.
   ///

@@ -257,7 +257,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormPaymentMethodLabel => 'Payment method';
 
   @override
+  String get expenseFormPaymentNetworkLabel => 'Card network';
+
+  @override
+  String get expenseFormPaymentChannelLabel => 'Payment channel';
+
+  @override
   String get expenseFormDateLabel => 'Expense date';
+
+  @override
+  String get expenseFormTimeLabel => 'Expense time';
 
   @override
   String get expenseFormNoteLabel => 'Note';
@@ -332,6 +341,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentMethodMobileWallet => 'Mobile Wallet';
+
+  @override
+  String get paymentMethodOther => 'Other';
+
+  @override
+  String get paymentNetworkVisa => 'Visa';
+
+  @override
+  String get paymentNetworkMastercard => 'Mastercard';
+
+  @override
+  String get paymentNetworkMada => 'Mada';
+
+  @override
+  String get paymentNetworkOther => 'Other';
+
+  @override
+  String get paymentChannelApplePay => 'Apple Pay';
+
+  @override
+  String get paymentChannelGooglePay => 'Google Pay';
+
+  @override
+  String get paymentChannelCardPresent => 'POS Purchase';
+
+  @override
+  String get paymentChannelOnline => 'Online Purchase';
+
+  @override
+  String get paymentChannelOther => 'Other';
 
   @override
   String get settingsTitle => 'Settings';
