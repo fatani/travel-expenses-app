@@ -137,10 +137,61 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsExpenseCount => 'Expense count';
 
   @override
+  String get tripDetailsTopCategory => 'Top spending category';
+
+  @override
+  String get tripDetailsTopCategoryNone => 'No category yet';
+
+  @override
   String get tripDetailsExpensesSection => 'Expenses';
 
   @override
   String get tripDetailsAddViaSms => 'Add via Bank SMS';
+
+  @override
+  String get tripDetailsSearchLabel => 'Search expenses';
+
+  @override
+  String get tripDetailsSearchHint => 'Search by title, description, or merchant';
+
+  @override
+  String get tripDetailsFilterCategory => 'Filter by category';
+
+  @override
+  String get tripDetailsFilterPaymentMethod => 'Filter by payment method';
+
+  @override
+  String get tripDetailsSortBy => 'Sort by';
+
+  @override
+  String get tripDetailsAllCategories => 'All categories';
+
+  @override
+  String get tripDetailsAllPaymentMethods => 'All payment methods';
+
+  @override
+  String get tripDetailsSortNewest => 'Newest first';
+
+  @override
+  String get tripDetailsSortOldest => 'Oldest first';
+
+  @override
+  String get tripDetailsSortHighestAmount => 'Highest amount';
+
+  @override
+  String get tripDetailsSortLowestAmount => 'Lowest amount';
+
+  @override
+  String get tripDetailsNoMatchingExpenses => 'No expenses match the current search and filters.';
+
+  @override
+  String get tripDetailsClearFilters => 'Clear filters';
+
+  @override
+  String get tripDetailsFiltersAndSort => 'Filters & Sort';
+
+  @override
+  String get tripDetailsApplyFilters => 'Apply';
 
   @override
   String tripDetailsBaseCurrency(Object currency) {
@@ -164,6 +215,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripDetailsDeleteExpenseError(Object error) {
     return 'Failed to delete expense: $error';
   }
+
+  @override
+  String get tripDetailsExcludedCurrenciesWarning =>
+      'Some expenses in other currencies are not included in the total';
 
   @override
   String get tripDetailsEmptyExpensesTitle => 'No expenses yet';
@@ -202,7 +257,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormPaymentMethodLabel => 'Payment method';
 
   @override
+  String get expenseFormPaymentNetworkLabel => 'Card network';
+
+  @override
+  String get expenseFormPaymentChannelLabel => 'Payment channel';
+
+  @override
   String get expenseFormDateLabel => 'Expense date';
+
+  @override
+  String get expenseFormTimeLabel => 'Expense time';
 
   @override
   String get expenseFormNoteLabel => 'Note';
@@ -218,6 +282,24 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expenseFormAmountPositive => 'Amount must be greater than zero.';
+
+  @override
+  String get expenseCurrencyMismatchTitle =>
+      'Currency differs from trip base currency';
+
+  @override
+  String expenseCurrencyMismatchMessage(
+    Object expenseCurrency,
+    Object tripCurrency,
+  ) {
+    return 'This expense uses $expenseCurrency while the trip base currency is $tripCurrency. You can edit it manually, or keep it as-is and it will be excluded from totals.';
+  }
+
+  @override
+  String get expenseCurrencyMismatchConvertManually => 'Convert manually';
+
+  @override
+  String get expenseCurrencyMismatchKeepAsIs => 'Keep as-is';
 
   @override
   String expenseFormSaveError(Object error) {
@@ -259,6 +341,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paymentMethodMobileWallet => 'Mobile Wallet';
+
+  @override
+  String get paymentMethodOther => 'Other';
+
+  @override
+  String get paymentNetworkVisa => 'Visa';
+
+  @override
+  String get paymentNetworkMastercard => 'Mastercard';
+
+  @override
+  String get paymentNetworkMada => 'Mada';
+
+  @override
+  String get paymentNetworkOther => 'Other';
+
+  @override
+  String get paymentChannelApplePay => 'Apple Pay';
+
+  @override
+  String get paymentChannelGooglePay => 'Google Pay';
+
+  @override
+  String get paymentChannelCardPresent => 'POS Purchase';
+
+  @override
+  String get paymentChannelOnline => 'Online Purchase';
+
+  @override
+  String get paymentChannelOther => 'Other';
 
   @override
   String get settingsTitle => 'Settings';

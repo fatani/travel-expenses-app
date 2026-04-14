@@ -137,10 +137,61 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsExpenseCount => 'عدد المصاريف';
 
   @override
+  String get tripDetailsTopCategory => 'أعلى فئة إنفاق';
+
+  @override
+  String get tripDetailsTopCategoryNone => 'لا توجد فئة بعد';
+
+  @override
   String get tripDetailsExpensesSection => 'المصاريف';
 
   @override
   String get tripDetailsAddViaSms => 'إضافة عبر رسالة البنك';
+
+  @override
+  String get tripDetailsSearchLabel => 'البحث في المصاريف';
+
+  @override
+  String get tripDetailsSearchHint => 'ابحث بالعنوان أو الوصف أو اسم التاجر';
+
+  @override
+  String get tripDetailsFilterCategory => 'تصفية حسب الفئة';
+
+  @override
+  String get tripDetailsFilterPaymentMethod => 'تصفية حسب طريقة الدفع';
+
+  @override
+  String get tripDetailsSortBy => 'الترتيب حسب';
+
+  @override
+  String get tripDetailsAllCategories => 'كل الفئات';
+
+  @override
+  String get tripDetailsAllPaymentMethods => 'كل طرق الدفع';
+
+  @override
+  String get tripDetailsSortNewest => 'الأحدث أولاً';
+
+  @override
+  String get tripDetailsSortOldest => 'الأقدم أولاً';
+
+  @override
+  String get tripDetailsSortHighestAmount => 'الأعلى مبلغاً';
+
+  @override
+  String get tripDetailsSortLowestAmount => 'الأقل مبلغاً';
+
+  @override
+  String get tripDetailsNoMatchingExpenses => 'لا توجد مصاريف تطابق البحث والتصفيات الحالية.';
+
+  @override
+  String get tripDetailsClearFilters => 'مسح التصفيات';
+
+  @override
+  String get tripDetailsFiltersAndSort => 'التصفية والترتيب';
+
+  @override
+  String get tripDetailsApplyFilters => 'تطبيق';
 
   @override
   String tripDetailsBaseCurrency(Object currency) {
@@ -164,6 +215,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String tripDetailsDeleteExpenseError(Object error) {
     return 'فشل حذف المصروف: $error';
   }
+
+  @override
+  String get tripDetailsExcludedCurrenciesWarning =>
+      'بعض المصاريف بعملات أخرى غير مشمولة في الإجمالي';
 
   @override
   String get tripDetailsEmptyExpensesTitle => 'لا توجد مصاريف بعد';
@@ -202,7 +257,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormPaymentMethodLabel => 'طريقة الدفع';
 
   @override
+  String get expenseFormPaymentNetworkLabel => 'شبكة البطاقة';
+
+  @override
+  String get expenseFormPaymentChannelLabel => 'قناة الدفع';
+
+  @override
   String get expenseFormDateLabel => 'تاريخ المصروف';
+
+  @override
+  String get expenseFormTimeLabel => 'وقت المصروف';
 
   @override
   String get expenseFormNoteLabel => 'ملاحظة';
@@ -218,6 +282,24 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get expenseFormAmountPositive => 'يجب أن يكون المبلغ أكبر من صفر.';
+
+  @override
+  String get expenseCurrencyMismatchTitle =>
+      'عملة المصروف تختلف عن العملة الأساسية للرحلة';
+
+  @override
+  String expenseCurrencyMismatchMessage(
+    Object expenseCurrency,
+    Object tripCurrency,
+  ) {
+    return 'هذا المصروف بعملة $expenseCurrency بينما العملة الأساسية للرحلة هي $tripCurrency. يمكنك التعديل يدوياً، أو الإبقاء عليه كما هو وسيتم استبعاده من الإجماليات.';
+  }
+
+  @override
+  String get expenseCurrencyMismatchConvertManually => 'التعديل يدوياً';
+
+  @override
+  String get expenseCurrencyMismatchKeepAsIs => 'الإبقاء كما هو';
 
   @override
   String expenseFormSaveError(Object error) {
@@ -259,6 +341,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get paymentMethodMobileWallet => 'محفظة إلكترونية';
+
+  @override
+  String get paymentMethodOther => 'أخرى';
+
+  @override
+  String get paymentNetworkVisa => 'فيزا';
+
+  @override
+  String get paymentNetworkMastercard => 'ماستركارد';
+
+  @override
+  String get paymentNetworkMada => 'مدى';
+
+  @override
+  String get paymentNetworkOther => 'أخرى';
+
+  @override
+  String get paymentChannelApplePay => 'أبل باي';
+
+  @override
+  String get paymentChannelGooglePay => 'جوجل باي';
+
+  @override
+  String get paymentChannelCardPresent => 'شراء عبر نقاط البيع';
+
+  @override
+  String get paymentChannelOnline => 'شراء عبر الإنترنت';
+
+  @override
+  String get paymentChannelOther => 'أخرى';
 
   @override
   String get settingsTitle => 'الإعدادات';

@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 5;
+  static const int databaseVersion = 6;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -40,6 +40,7 @@ class AppDatabase {
       onOpen: (db) async {
         await _ensureSettingsLocaleColumn(db);
         await _ensureExpensesRawSmsColumn(db);
+        await _ensureExpensesPaymentDetailsColumns(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -65,6 +66,8 @@ class AppDatabase {
             currency_code TEXT NOT NULL,
             spent_at TEXT NOT NULL,
             payment_method TEXT NOT NULL,
+            payment_network TEXT,
+            payment_channel TEXT,
             source TEXT NOT NULL,
             category TEXT,
             note TEXT,
@@ -130,6 +133,30 @@ class AppDatabase {
             );
           }
         }
+
+        if (oldVersion < 6) {
+          final hasPaymentNetwork = await _hasColumn(
+            db,
+            expensesTable,
+            'payment_network',
+          );
+          if (!hasPaymentNetwork) {
+            await db.execute(
+              'ALTER TABLE $expensesTable ADD COLUMN payment_network TEXT',
+            );
+          }
+
+          final hasPaymentChannel = await _hasColumn(
+            db,
+            expensesTable,
+            'payment_channel',
+          );
+          if (!hasPaymentChannel) {
+            await db.execute(
+              'ALTER TABLE $expensesTable ADD COLUMN payment_channel TEXT',
+            );
+          }
+        }
       },
     );
   }
@@ -159,5 +186,29 @@ class AppDatabase {
     }
 
     await db.execute('ALTER TABLE $expensesTable ADD COLUMN raw_sms_text TEXT');
+  }
+
+  Future<void> _ensureExpensesPaymentDetailsColumns(Database db) async {
+    final hasPaymentNetwork = await _hasColumn(
+      db,
+      expensesTable,
+      'payment_network',
+    );
+    if (!hasPaymentNetwork) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN payment_network TEXT',
+      );
+    }
+
+    final hasPaymentChannel = await _hasColumn(
+      db,
+      expensesTable,
+      'payment_channel',
+    );
+    if (!hasPaymentChannel) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN payment_channel TEXT',
+      );
+    }
   }
 }

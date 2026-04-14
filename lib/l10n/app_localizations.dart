@@ -335,6 +335,18 @@ abstract class AppLocalizations {
   /// **'Expense count'**
   String get tripDetailsExpenseCount;
 
+  /// No description provided for @tripDetailsTopCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Top spending category'**
+  String get tripDetailsTopCategory;
+
+  /// No description provided for @tripDetailsTopCategoryNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No category yet'**
+  String get tripDetailsTopCategoryNone;
+
   /// No description provided for @tripDetailsExpensesSection.
   ///
   /// In en, this message translates to:
@@ -346,6 +358,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add via Bank SMS'**
   String get tripDetailsAddViaSms;
+
+  /// No description provided for @tripDetailsSearchLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Search expenses'**
+  String get tripDetailsSearchLabel;
+
+  /// No description provided for @tripDetailsSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search by title, description, or merchant'**
+  String get tripDetailsSearchHint;
+
+  /// No description provided for @tripDetailsFilterCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by category'**
+  String get tripDetailsFilterCategory;
+
+  /// No description provided for @tripDetailsFilterPaymentMethod.
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by payment method'**
+  String get tripDetailsFilterPaymentMethod;
+
+  /// No description provided for @tripDetailsSortBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get tripDetailsSortBy;
+
+  /// No description provided for @tripDetailsAllCategories.
+  ///
+  /// In en, this message translates to:
+  /// **'All categories'**
+  String get tripDetailsAllCategories;
+
+  /// No description provided for @tripDetailsAllPaymentMethods.
+  ///
+  /// In en, this message translates to:
+  /// **'All payment methods'**
+  String get tripDetailsAllPaymentMethods;
+
+  /// No description provided for @tripDetailsSortNewest.
+  ///
+  /// In en, this message translates to:
+  /// **'Newest first'**
+  String get tripDetailsSortNewest;
+
+  /// No description provided for @tripDetailsSortOldest.
+  ///
+  /// In en, this message translates to:
+  /// **'Oldest first'**
+  String get tripDetailsSortOldest;
+
+  /// No description provided for @tripDetailsSortHighestAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Highest amount'**
+  String get tripDetailsSortHighestAmount;
+
+  /// No description provided for @tripDetailsSortLowestAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest amount'**
+  String get tripDetailsSortLowestAmount;
+
+  /// No description provided for @tripDetailsNoMatchingExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses match the current search and filters.'**
+  String get tripDetailsNoMatchingExpenses;
+
+  /// No description provided for @tripDetailsClearFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear filters'**
+  String get tripDetailsClearFilters;
+
+  /// No description provided for @tripDetailsFiltersAndSort.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters & Sort'**
+  String get tripDetailsFiltersAndSort;
+
+  /// No description provided for @tripDetailsApplyFilters.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get tripDetailsApplyFilters;
 
   /// No description provided for @tripDetailsBaseCurrency.
   ///
@@ -376,6 +478,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to delete expense: {error}'**
   String tripDetailsDeleteExpenseError(Object error);
+
+  /// No description provided for @tripDetailsExcludedCurrenciesWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Some expenses in other currencies are not included in the total'**
+  String get tripDetailsExcludedCurrenciesWarning;
 
   /// No description provided for @tripDetailsEmptyExpensesTitle.
   ///
@@ -449,11 +557,29 @@ abstract class AppLocalizations {
   /// **'Payment method'**
   String get expenseFormPaymentMethodLabel;
 
+  /// No description provided for @expenseFormPaymentNetworkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card network'**
+  String get expenseFormPaymentNetworkLabel;
+
+  /// No description provided for @expenseFormPaymentChannelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment channel'**
+  String get expenseFormPaymentChannelLabel;
+
   /// No description provided for @expenseFormDateLabel.
   ///
   /// In en, this message translates to:
   /// **'Expense date'**
   String get expenseFormDateLabel;
+
+  /// No description provided for @expenseFormTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense time'**
+  String get expenseFormTimeLabel;
 
   /// No description provided for @expenseFormNoteLabel.
   ///
@@ -484,6 +610,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Amount must be greater than zero.'**
   String get expenseFormAmountPositive;
+
+  /// No description provided for @expenseCurrencyMismatchTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency differs from trip base currency'**
+  String get expenseCurrencyMismatchTitle;
+
+  /// No description provided for @expenseCurrencyMismatchMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This expense uses {expenseCurrency} while the trip base currency is {tripCurrency}. You can edit it manually, or keep it as-is and it will be excluded from totals.'**
+  String expenseCurrencyMismatchMessage(Object expenseCurrency, Object tripCurrency);
+
+  /// No description provided for @expenseCurrencyMismatchConvertManually.
+  ///
+  /// In en, this message translates to:
+  /// **'Convert manually'**
+  String get expenseCurrencyMismatchConvertManually;
+
+  /// No description provided for @expenseCurrencyMismatchKeepAsIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep as-is'**
+  String get expenseCurrencyMismatchKeepAsIs;
 
   /// No description provided for @expenseFormSaveError.
   ///
@@ -562,6 +712,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mobile Wallet'**
   String get paymentMethodMobileWallet;
+
+  /// No description provided for @paymentMethodOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get paymentMethodOther;
+
+  /// No description provided for @paymentNetworkVisa.
+  ///
+  /// In en, this message translates to:
+  /// **'Visa'**
+  String get paymentNetworkVisa;
+
+  /// No description provided for @paymentNetworkMastercard.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastercard'**
+  String get paymentNetworkMastercard;
+
+  /// No description provided for @paymentNetworkMada.
+  ///
+  /// In en, this message translates to:
+  /// **'Mada'**
+  String get paymentNetworkMada;
+
+  /// No description provided for @paymentNetworkOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get paymentNetworkOther;
+
+  /// No description provided for @paymentChannelApplePay.
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Pay'**
+  String get paymentChannelApplePay;
+
+  /// No description provided for @paymentChannelGooglePay.
+  ///
+  /// In en, this message translates to:
+  /// **'Google Pay'**
+  String get paymentChannelGooglePay;
+
+  /// No description provided for @paymentChannelCardPresent.
+  ///
+  /// In en, this message translates to:
+  /// **'Card Present'**
+  String get paymentChannelCardPresent;
+
+  /// No description provided for @paymentChannelOnline.
+  ///
+  /// In en, this message translates to:
+  /// **'Online'**
+  String get paymentChannelOnline;
+
+  /// No description provided for @paymentChannelOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get paymentChannelOther;
 
   /// No description provided for @settingsTitle.
   ///

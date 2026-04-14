@@ -6,6 +6,9 @@ class SmsParseResult {
     this.spentAt,
     this.merchant,
     this.suggestedCategory,
+    this.suggestedPaymentMethod,
+    this.suggestedPaymentNetwork,
+    this.suggestedPaymentChannel,
   });
 
   final String rawText;
@@ -14,12 +17,18 @@ class SmsParseResult {
   final DateTime? spentAt;
   final String? merchant;
   final String? suggestedCategory;
+  final String? suggestedPaymentMethod;
+  final String? suggestedPaymentNetwork;
+  final String? suggestedPaymentChannel;
 
   bool get hasAnyValue {
     return amount != null ||
         currencyCode != null ||
         spentAt != null ||
         merchant != null ||
-        suggestedCategory != null;
+        suggestedCategory != null ||
+        suggestedPaymentMethod != null ||
+        suggestedPaymentNetwork != null ||
+        suggestedPaymentChannel != null;
   }
 }

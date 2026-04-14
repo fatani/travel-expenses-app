@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -26,13 +28,16 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
   late final TextEditingController _amountController;
   late final TextEditingController _currencyController;
   late final TextEditingController _dateController;
+  late final TextEditingController _timeController;
   late final TextEditingController _noteController;
 
   String? _selectedCategory;
-  String? _selectedPaymentMethod;
+  String? _selectedPaymentNetwork;
+  String? _selectedPaymentChannel;
   DateTime? _expenseDate;
   SmsParseResult? _parseResult;
   bool _attemptedParse = false;
+  bool _showValidationErrors = false;
 
   @override
   void initState() {
@@ -42,6 +47,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     _amountController = TextEditingController();
     _currencyController = TextEditingController(text: widget.trip.baseCurrency);
     _dateController = TextEditingController();
+    _timeController = TextEditingController();
     _noteController = TextEditingController();
   }
 
@@ -52,6 +58,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     _amountController.dispose();
     _currencyController.dispose();
     _dateController.dispose();
+    _timeController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -70,6 +77,9 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
           padding: const EdgeInsets.all(16),
           child: Form(
             key: _formKey,
+            autovalidateMode: _showValidationErrors
+                ? AutovalidateMode.always
+                : AutovalidateMode.disabled,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -80,7 +90,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          l10n.smsInputLabel,
+                          _requiredLabel(l10n.smsInputLabel),
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 12),
@@ -135,7 +145,9 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                             decimal: true,
                           ),
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormAmountLabel,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormAmountLabel,
+                            ),
                             hintText: l10n.expenseFormAmountHint,
                           ),
                           validator: _validateAmount,
@@ -152,7 +164,9 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                             LengthLimitingTextInputFormatter(3),
                           ],
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormCurrencyLabel,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormCurrencyLabel,
+                            ),
                             helperText: l10n.smsCurrencyFallbackHelper(
                               widget.trip.baseCurrency,
                             ),
@@ -161,7 +175,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedCategory,
+                          value: _selectedCategory,
                           items: ExpenseOptionLabels.categories
                               .map(
                                 (category) => DropdownMenuItem<String>(
@@ -176,7 +190,9 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                               )
                               .toList(),
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormCategoryLabel,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormCategoryLabel,
+                            ),
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -187,42 +203,94 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
-                          initialValue: _selectedPaymentMethod,
-                          items: ExpenseOptionLabels.paymentMethods
+                          value: _selectedPaymentNetwork,
+                          items: ExpenseOptionLabels.paymentNetworks
                               .map(
-                                (paymentMethod) => DropdownMenuItem<String>(
-                                  value: paymentMethod,
+                                (paymentNetwork) => DropdownMenuItem<String>(
+                                  value: paymentNetwork,
                                   child: Text(
-                                    ExpenseOptionLabels.paymentMethod(
+                                    ExpenseOptionLabels.paymentNetwork(
                                       l10n,
-                                      paymentMethod,
+                                      paymentNetwork,
                                     ),
                                   ),
                                 ),
                               )
                               .toList(),
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormPaymentMethodLabel,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormPaymentNetworkLabel,
+                            ),
                           ),
                           onChanged: (value) {
                             setState(() {
-                              _selectedPaymentMethod = value;
+                              _selectedPaymentNetwork = value;
                             });
                           },
                           validator: _validateDropdown,
                         ),
                         const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _dateController,
-                          readOnly: true,
+                        DropdownButtonFormField<String>(
+                          value: _selectedPaymentChannel,
+                          items: ExpenseOptionLabels.paymentChannels
+                              .map(
+                                (paymentChannel) => DropdownMenuItem<String>(
+                                  value: paymentChannel,
+                                  child: Text(
+                                    ExpenseOptionLabels.paymentChannel(
+                                      l10n,
+                                      paymentChannel,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
                           decoration: InputDecoration(
-                            labelText: l10n.expenseFormDateLabel,
-                            suffixIcon: const Icon(
-                              Icons.calendar_today_rounded,
+                            labelText: _requiredLabel(
+                              l10n.expenseFormPaymentChannelLabel,
                             ),
                           ),
-                          onTap: _selectDate,
-                          validator: _validateDate,
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedPaymentChannel = value;
+                            });
+                          },
+                          validator: _validateDropdown,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _dateController,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  labelText: _requiredLabel(
+                                    l10n.expenseFormDateLabel,
+                                  ),
+                                  suffixIcon: const Icon(
+                                    Icons.calendar_today_rounded,
+                                  ),
+                                ),
+                                onTap: _selectDate,
+                                validator: _validateDate,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _timeController,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  labelText: l10n.expenseFormTimeLabel,
+                                  suffixIcon: const Icon(
+                                    Icons.access_time_rounded,
+                                  ),
+                                ),
+                                onTap: _selectTime,
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
@@ -270,16 +338,27 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       if (result.merchant != null && result.merchant!.isNotEmpty) {
         _titleController.text = result.merchant!;
       }
-      if (result.suggestedCategory != null) {
-        _selectedCategory = result.suggestedCategory;
+      final suggestedCategory =
+          result.suggestedCategory ?? _inferCategoryFallback(result.rawText);
+      if (suggestedCategory != null) {
+        _selectedCategory = suggestedCategory;
+      }
+      final suggestedPaymentNetwork =
+          result.suggestedPaymentNetwork ?? _inferPaymentNetworkFallback(result.rawText);
+      if (suggestedPaymentNetwork != null) {
+        _selectedPaymentNetwork = suggestedPaymentNetwork;
+      }
+      final suggestedPaymentChannel =
+          result.suggestedPaymentChannel ?? _inferPaymentChannelFallback(result.rawText);
+      if (suggestedPaymentChannel != null) {
+        _selectedPaymentChannel = suggestedPaymentChannel;
       }
       if (result.spentAt != null) {
-        _expenseDate = DateUtils.dateOnly(result.spentAt!);
-        _syncDateField();
+        _expenseDate = result.spentAt!;
+        _syncDateAndTimeFields();
       }
     });
 
-    _formKey.currentState?.validate();
   }
 
   String? _validateSmsText(String? value) {
@@ -335,6 +414,60 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     return null;
   }
 
+  String? _inferCategoryFallback(String rawText) {
+    final normalized = SmsParserService.normalizeIncomingText(rawText)
+        .toLowerCase();
+
+    if (normalized.contains('starbucks') ||
+        normalized.contains('restaurant') ||
+        normalized.contains('مطعم')) {
+      return 'Food';
+    }
+    if (normalized.contains('uber') ||
+        normalized.contains('taxi') ||
+        normalized.contains('metro')) {
+      return 'Transport';
+    }
+
+    // Keep form usable when parser has no strong category signal.
+    return 'Other';
+  }
+
+  String? _inferPaymentNetworkFallback(String rawText) {
+    final normalized = SmsParserService.normalizeIncomingText(rawText)
+        .toLowerCase();
+
+    if (normalized.contains('mastercard')) {
+      return 'Mastercard';
+    }
+    if (normalized.contains('فيزا') || normalized.contains('visa')) {
+      return 'Visa';
+    }
+    if (normalized.contains('مدى') || normalized.contains('mada')) {
+      return 'Mada';
+    }
+
+    return null;
+  }
+
+  String? _inferPaymentChannelFallback(String rawText) {
+    final normalized = SmsParserService.normalizeIncomingText(rawText)
+        .toLowerCase();
+
+    if (normalized.contains('شراء إنترنت') ||
+        normalized.contains('شراء انترنت') ||
+        normalized.contains('online') ||
+        normalized.contains('internet')) {
+      return 'Online Purchase';
+    }
+    if (normalized.contains('شراء عبر نقاط البيع') ||
+        normalized.contains('pos')) {
+      return 'POS Purchase';
+    }
+
+    return null;
+  }
+
   Future<void> _selectDate() async {
     final selectedDate = await showDatePicker(
       context: context,
@@ -348,11 +481,47 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     }
 
     setState(() {
-      _expenseDate = DateUtils.dateOnly(selectedDate);
-      _syncDateField();
+      _expenseDate = DateTime(
+        selectedDate.year,
+        selectedDate.month,
+        selectedDate.day,
+        _expenseDate?.hour ?? 0,
+        _expenseDate?.minute ?? 0,
+      );
+      _syncDateAndTimeFields();
     });
 
-    _formKey.currentState?.validate();
+    if (_showValidationErrors) {
+      _formKey.currentState?.validate();
+    }
+  }
+
+  Future<void> _selectTime() async {
+    final initialDate = _expenseDate ?? DateTime.now();
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initialDate),
+    );
+
+    if (selectedTime == null) {
+      return;
+    }
+
+    setState(() {
+      final baseDate = _expenseDate ?? DateTime.now();
+      _expenseDate = DateTime(
+        baseDate.year,
+        baseDate.month,
+        baseDate.day,
+        selectedTime.hour,
+        selectedTime.minute,
+      );
+      _syncDateAndTimeFields();
+    });
+
+    if (_showValidationErrors) {
+      _formKey.currentState?.validate();
+    }
   }
 
   Future<void> _saveExpense() async {
@@ -364,6 +533,12 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       return;
     }
 
+    if (!_showValidationErrors) {
+      setState(() {
+        _showValidationErrors = true;
+      });
+    }
+
     if (!_formKey.currentState!.validate()) {
       return;
     }
@@ -371,6 +546,19 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     final title = _titleController.text.trim().isEmpty
         ? _selectedCategory!
         : _titleController.text.trim();
+    final currencyCode = _currencyController.text.trim().toUpperCase();
+    final paymentMethod = _resolvePaymentMethodCompatibility(
+      _selectedPaymentNetwork!,
+      _selectedPaymentChannel!,
+    );
+
+    if (currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
+      final shouldKeepAsIs = await _confirmCurrencyMismatch(currencyCode);
+      if (shouldKeepAsIs != true) {
+        return;
+      }
+    }
+
     final controller = ref.read(
       expenseControllerProvider(widget.trip.id).notifier,
     );
@@ -379,10 +567,12 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       await controller.createExpense(
         title: title,
         amount: double.parse(_amountController.text.trim()),
-        currencyCode: _currencyController.text.trim().toUpperCase(),
+        currencyCode: currencyCode,
         category: _selectedCategory!,
         spentAt: _expenseDate!,
-        paymentMethod: _selectedPaymentMethod!,
+        paymentMethod: paymentMethod,
+        paymentNetwork: _selectedPaymentNetwork!,
+        paymentChannel: _selectedPaymentChannel!,
         source: 'sms',
         note: _noteController.text,
         rawSmsText: _smsTextController.text.trim(),
@@ -404,11 +594,58 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     }
   }
 
-  void _syncDateField() {
+  Future<bool?> _confirmCurrencyMismatch(String expenseCurrency) {
+    final l10n = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(l10n.expenseCurrencyMismatchTitle),
+          content: Text(
+            l10n.expenseCurrencyMismatchMessage(
+              expenseCurrency,
+              widget.trip.baseCurrency,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(l10n.expenseCurrencyMismatchConvertManually),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text(l10n.expenseCurrencyMismatchKeepAsIs),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  String _resolvePaymentMethodCompatibility(String network, String channel) {
+    if (network == 'Mada') {
+      return 'Debit Card';
+    }
+    if (network == 'Visa' || network == 'Mastercard') {
+      return 'Credit Card';
+    }
+    return 'Other';
+  }
+
+  void _syncDateAndTimeFields() {
+    if (_expenseDate == null) {
+      _dateController.text = '';
+      _timeController.text = '';
+      return;
+    }
     final localeTag = Localizations.localeOf(context).toLanguageTag();
-    final formatter = DateFormat('dd MMM yyyy', localeTag);
-    _dateController.text = _expenseDate == null
-        ? ''
-        : formatter.format(_expenseDate!);
+    _dateController.text = DateFormat('dd MMM yyyy', localeTag).format(
+      _expenseDate!,
+    );
+    _timeController.text = DateFormat('HH:mm', localeTag).format(_expenseDate!);
+  }
+
+  String _requiredLabel(String label) {
+    return '$label *';
   }
 }
