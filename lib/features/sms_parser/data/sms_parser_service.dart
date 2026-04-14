@@ -11,6 +11,7 @@ class SmsParserService {
       : _parsers = parsers ?? const <SmsMessageParser>[
           SaudiBankSmsParser(),
           AlRajhiSmsParser(),
+          SabSmsParser(),
           GenericSmsParser(),
         ];
 
@@ -798,6 +799,222 @@ class AlRajhiSmsParser extends _BaseSmsMessageParser {
   @override
   List<String> get balanceKeywords => const <String>[
         'رصيد',
+      ];
+}
+
+class SabSmsParser extends _BaseSmsMessageParser {
+  const SabSmsParser();
+
+  /// Require both strong markers: bank name "SAB" and the transaction phrase
+  /// "was used at". This combination is unique enough without extra scoring.
+  @override
+  bool canParse(String rawText) {
+    final lower = rawText.toLowerCase();
+    return lower.contains('sab') && lower.contains('was used at');
+  }
+
+  @override
+  SmsParseResult parse(String rawText) {
+    final normalizedText = rawText.trim();
+    final lines = normalizedText
+        .split(RegExp(r'\r?\n'))
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList();
+
+    final amount = _extractSabAmount(lines);
+    final merchant = _extractSabMerchant(lines);
+    final spentAt = _extractSabDateTime(lines);
+    final paymentDetails = _extractSabPaymentDetails(lines);
+    final compact = normalizedText.replaceAll(RegExp(r'\s+'), ' ');
+
+    return SmsParseResult(
+      rawText: normalizedText,
+      amount: amount?.amount,
+      currencyCode: amount?.currencyCode,
+      merchant: merchant,
+      spentAt: spentAt,
+      suggestedCategory: _suggestCategory('$compact ${merchant ?? ''}'),
+      suggestedPaymentMethod: _resolveSabPaymentMethod(
+        paymentDetails.network,
+        paymentDetails.channel,
+      ),
+      suggestedPaymentNetwork: paymentDetails.network,
+      suggestedPaymentChannel: paymentDetails.channel,
+    );
+  }
+
+  /// Extracts the original transaction amount from the "was used at … for CUR
+  /// AMOUNT" phrase. Never falls back to balance, fees, or total lines.
+  _AmountMatch? _extractSabAmount(List<String> lines) {
+    for (final line in lines) {
+      if (!line.toLowerCase().contains('was used at')) {
+        continue;
+      }
+
+      final match = RegExp(
+        r'\bfor\s+([A-Z]{3})\s+(\d+(?:\.\d{1,2})?)',
+        caseSensitive: false,
+      ).firstMatch(line);
+
+      if (match != null) {
+        final currency = match.group(1)!.toUpperCase();
+        final amount = _parseAmount(match.group(2));
+        if (amount != null && amount > 0) {
+          return _AmountMatch(amount: amount, currencyCode: currency);
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Extracts the merchant name from the text between "was used at" and the
+  /// first occurrence of " for ", " via ", or " on ".
+  String? _extractSabMerchant(List<String> lines) {
+    for (final line in lines) {
+      if (!line.toLowerCase().contains('was used at')) {
+        continue;
+      }
+
+      final match = RegExp(
+        r'was used at\s+(.+?)\s+(?:for|via|on)\s',
+        caseSensitive: false,
+      ).firstMatch(line);
+
+      if (match != null) {
+        final merchant = match.group(1)!.trim();
+        if (merchant.length >= 2) {
+          return merchant;
+        }
+      }
+    }
+    return null;
+  }
+
+  /// Extracts the full datetime. Prefers an explicit "Date: YYYY-MM-DD HH:MM:SS"
+  /// line; falls back to the inline "on YYYY-MM-DD HH:MM:SS" in the main line.
+  DateTime? _extractSabDateTime(List<String> lines) {
+    // Pass 1: explicit "Date: ..." line.
+    for (final line in lines) {
+      if (!line.toLowerCase().startsWith('date:')) {
+        continue;
+      }
+      final match = RegExp(
+        r'(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?',
+      ).firstMatch(line);
+      if (match != null) {
+        final parsed = _safeDate(
+          int.parse(match.group(1)!),
+          int.parse(match.group(2)!),
+          int.parse(match.group(3)!),
+          int.parse(match.group(4)!),
+          int.parse(match.group(5)!),
+        );
+        if (parsed != null) {
+          return parsed;
+        }
+      }
+    }
+
+    // Pass 2: inline "on YYYY-MM-DD HH:MM:SS" in the transaction line.
+    for (final line in lines) {
+      if (!line.toLowerCase().contains('was used at')) {
+        continue;
+      }
+      final match = RegExp(
+        r'\bon\s+(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})(?::(\d{2}))?',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (match != null) {
+        final parsed = _safeDate(
+          int.parse(match.group(1)!),
+          int.parse(match.group(2)!),
+          int.parse(match.group(3)!),
+          int.parse(match.group(4)!),
+          int.parse(match.group(5)!),
+        );
+        if (parsed != null) {
+          return parsed;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  _PaymentDetails _extractSabPaymentDetails(List<String> lines) {
+    String? network;
+    String? channel;
+    String? executionMethod;
+
+    // Network: scan all lines for card network name.
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      if (lower.contains('mastercard')) {
+        network = 'Mastercard';
+        break;
+      } else if (lower.contains('visa')) {
+        network = 'Visa';
+        break;
+      } else if (lower.contains('mada')) {
+        network = 'Mada';
+        break;
+      }
+    }
+
+    // Channel: determined by the first (header) line only.
+    if (lines.isNotEmpty) {
+      switch (lines.first.trim().toLowerCase()) {
+        case 'online purchase':
+          channel = 'Online Purchase';
+        case 'pos purchase':
+          channel = 'POS Purchase';
+        case 'pos international purchase':
+          // Phase 1 normalization: keep channel model stable for dropdown/UI.
+          channel = 'POS Purchase';
+      }
+    }
+
+    // Execution method: Apple Pay / Google Pay appear as "via X" in any line.
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      if (lower.contains('via apple pay')) {
+        executionMethod = 'Apple Pay';
+        break;
+      } else if (lower.contains('via google pay')) {
+        executionMethod = 'Google Pay';
+        break;
+      }
+    }
+
+    return _PaymentDetails(
+      network: network,
+      channel: channel,
+      executionMethod: executionMethod,
+    );
+  }
+
+  String? _resolveSabPaymentMethod(String? network, String? channel) {
+    if (network == 'Mastercard' || network == 'Visa') {
+      return 'Credit Card';
+    }
+    if (network == 'Mada') {
+      return 'Debit Card';
+    }
+    return null;
+  }
+
+  @override
+  List<String> get transactionKeywords => const <String>[
+        'pos purchase',
+        'online purchase',
+        'was used at',
+      ];
+
+  @override
+  List<String> get balanceKeywords => const <String>[
+        'balance:',
+        'balance',
       ];
 }
 

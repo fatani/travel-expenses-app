@@ -311,6 +311,60 @@ void main() {
       expect(repository.createdExpenses.single.paymentChannel, 'POS Purchase');
     },
   );
+
+  testWidgets(
+    'sms parse of SAB international purchase keeps dropdown-safe payment channel',
+    (tester) async {
+      final repository = _FakeExpenseRepository();
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: SmsExpenseScreen(trip: trip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+          ],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        '''
+PoS International Purchase
+SAB Mastercard Alfursan Credit Card (8263) was used at www.shein.com for SAR 909.97 in UNITED ARAB EMIRATES
+Exchange rate: 1.00000
+Amount in SAR: 909.97
+International Fees: 20.92
+Total amount: 930.89
+Date: 2026-02-22 14:34:20
+Balance: SAR 2354.38
+''',
+      );
+
+      await tester.tap(find.text('Parse SMS'));
+      await tester.pumpAndSettle();
+
+      final channelState = tester.state<FormFieldState<String>>(
+        find.byType(DropdownButtonFormField<String>).at(2),
+      );
+      expect(channelState.value, 'POS Purchase');
+
+      await tester.ensureVisible(find.text('Save Expense'));
+      await tester.tap(find.text('Save Expense'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Keep as-is'));
+      await tester.pumpAndSettle();
+
+      expect(repository.createdExpenses, hasLength(1));
+      expect(repository.createdExpenses.single.amount, 909.97);
+      expect(repository.createdExpenses.single.currencyCode, 'SAR');
+      expect(repository.createdExpenses.single.title, 'www.shein.com');
+      expect(repository.createdExpenses.single.paymentNetwork, 'Mastercard');
+      expect(repository.createdExpenses.single.paymentChannel, 'POS Purchase');
+    },
+  );
 }
 
 Widget _buildApp({

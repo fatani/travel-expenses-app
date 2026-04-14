@@ -350,8 +350,11 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       }
       final suggestedPaymentChannel =
           result.suggestedPaymentChannel ?? _inferPaymentChannelFallback(result.rawText);
-      if (suggestedPaymentChannel != null) {
-        _selectedPaymentChannel = suggestedPaymentChannel;
+      final safePaymentChannel = _normalizePaymentChannelForDropdown(
+        suggestedPaymentChannel,
+      );
+      if (safePaymentChannel != null) {
+        _selectedPaymentChannel = safePaymentChannel;
       }
       if (result.spentAt != null) {
         _expenseDate = result.spentAt!;
@@ -462,6 +465,22 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     }
     if (normalized.contains('شراء عبر نقاط البيع') ||
         normalized.contains('pos')) {
+      return 'POS Purchase';
+    }
+
+    return null;
+  }
+
+  String? _normalizePaymentChannelForDropdown(String? value) {
+    if (value == null || value.isEmpty) {
+      return null;
+    }
+
+    if (ExpenseOptionLabels.paymentChannels.contains(value)) {
+      return value;
+    }
+
+    if (value == 'POS International Purchase') {
       return 'POS Purchase';
     }
 
