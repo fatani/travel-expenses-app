@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:travel_expenses/features/expenses/presentation/expense_option_labels.dart';
 import 'package:travel_expenses/features/sms_parser/data/sms_parser_service.dart';
 
 void main() {
@@ -308,5 +309,134 @@ Ref 12345
     expect(result.suggestedPaymentNetwork, 'Mada');
     expect(result.suggestedPaymentChannel, 'Online Purchase');
     expect(result.suggestedPaymentMethod, 'Debit Card');
+  });
+
+  group('SAB', () {
+    test('SAB example 1: Online Purchase with foreign currency (THB)', () {
+      final result = parser.parse('''
+Online Purchase
+SAB Mastercard Alfursan Credit Card (8263) was used at AMP*AIS SERVICES for THB 10.00 in THAILAND
+Exchange rate: 0.11800
+Amount in SAR: 1.18
+International Fees in SAR: 0.02
+Total amount in SAR: 1.20
+Date: 2026-04-10 11:42:33
+Balance: SAR 1141.56
+''');
+
+      expect(result.amount, 10.00);
+      expect(result.currencyCode, 'THB');
+      expect(result.merchant, 'AMP*AIS SERVICES');
+      expect(result.spentAt, DateTime(2026, 4, 10, 11, 42));
+      expect(result.suggestedPaymentNetwork, 'Mastercard');
+      expect(result.suggestedPaymentChannel, 'Online Purchase');
+      expect(result.suggestedPaymentMethod, 'Credit Card');
+      // Must NOT use any of the secondary amounts
+      expect(result.amount, isNot(1.18));
+      expect(result.amount, isNot(1.20));
+    });
+
+    test('SAB example 2: POS Purchase with inline datetime', () {
+      final result = parser.parse('''
+POS Purchase
+SAB Mastercard Alfursan Credit Card (8263) was used at ALJAZIRA TAKAFUL TAAWU for SAR 500.00 on 2026-04-10 00:49:35
+Balance: SAR 1145.10
+''');
+
+      expect(result.amount, 500.00);
+      expect(result.currencyCode, 'SAR');
+      expect(result.merchant, 'ALJAZIRA TAKAFUL TAAWU');
+      expect(result.spentAt, DateTime(2026, 4, 10, 0, 49));
+      expect(result.suggestedPaymentNetwork, 'Mastercard');
+      expect(result.suggestedPaymentChannel, 'POS Purchase');
+      expect(result.suggestedPaymentMethod, 'Credit Card');
+      expect(result.amount, isNot(1145.10));
+    });
+
+    test('SAB example 3: POS Purchase via Apple Pay — Apple Pay is detail not channel', () {
+      final result = parser.parse('''
+POS Purchase
+SAB Mastercard Alfursan Credit Card (8263) was used at AJLAN BROS for SAR 720.00 via Apple Pay
+Date: 2026-03-18 09:45:13
+Balance: SAR 1112.77
+''');
+
+      expect(result.amount, 720.00);
+      expect(result.currencyCode, 'SAR');
+      expect(result.merchant, 'AJLAN BROS');
+      expect(result.spentAt, DateTime(2026, 3, 18, 9, 45));
+      expect(result.suggestedPaymentNetwork, 'Mastercard');
+      expect(result.suggestedPaymentChannel, 'POS Purchase');
+      expect(result.suggestedPaymentMethod, 'Credit Card');
+    });
+
+    test('SAB example 4: PoS International Purchase — channel normalized safely', () {
+      final result = parser.parse('''
+PoS International Purchase
+SAB Mastercard Alfursan Credit Card (8263) was used at www.shein.com for SAR 909.97 in UNITED ARAB EMIRATES
+Exchange rate: 1.00000
+Amount in SAR: 909.97
+International Fees: 20.92
+Total amount: 930.89
+Date: 2026-02-22 14:34:20
+Balance: SAR 2354.38
+''');
+
+      expect(result.amount, 909.97);
+      expect(result.currencyCode, 'SAR');
+      expect(result.merchant, 'www.shein.com');
+      expect(result.spentAt, DateTime(2026, 2, 22, 14, 34));
+      expect(result.suggestedPaymentNetwork, 'Mastercard');
+      expect(result.suggestedPaymentChannel, 'POS Purchase');
+      expect(result.suggestedPaymentMethod, 'Credit Card');
+      // Fees and total must not be used as amount
+      expect(result.amount, isNot(930.89));
+      expect(result.amount, isNot(20.92));
+    });
+
+    test('SAB parsed channel is always valid for dropdown', () {
+      final result = parser.parse('''
+PoS International Purchase
+SAB Mastercard Alfursan Credit Card (8263) was used at www.shein.com for SAR 909.97 in UNITED ARAB EMIRATES
+Exchange rate: 1.00000
+Amount in SAR: 909.97
+International Fees: 20.92
+Total amount: 930.89
+Date: 2026-02-22 14:34:20
+Balance: SAR 2354.38
+''');
+
+      expect(
+        ExpenseOptionLabels.paymentChannels.contains(
+          result.suggestedPaymentChannel,
+        ),
+        isTrue,
+      );
+    });
+
+    test('SAB example 5: POS Purchase with inline datetime — Amazon SA', () {
+      final result = parser.parse('''
+POS Purchase
+SAB Mastercard Alfursan Credit Card (9519) was used at Amazon SA for SAR 73.74 on 2026-02-16 20:48:47
+Balance: SAR 2956.62
+''');
+
+      expect(result.amount, 73.74);
+      expect(result.currencyCode, 'SAR');
+      expect(result.merchant, 'Amazon SA');
+      expect(result.spentAt, DateTime(2026, 2, 16, 20, 48));
+      expect(result.suggestedPaymentNetwork, 'Mastercard');
+      expect(result.suggestedPaymentChannel, 'POS Purchase');
+      expect(result.suggestedPaymentMethod, 'Credit Card');
+      expect(result.amount, isNot(2956.62));
+    });
+  });
+
+  test('payment channel dropdown values are unique', () {
+    expect(
+      ExpenseOptionLabels.paymentChannels.toSet().length,
+      ExpenseOptionLabels.paymentChannels.length,
+      reason: 'Duplicate payment channel values can trigger DropdownButton assertion.',
+    );
   });
 }
