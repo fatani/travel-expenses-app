@@ -485,6 +485,12 @@ abstract class AppLocalizations {
   /// **'Some expenses in other currencies are not included in the total'**
   String get tripDetailsExcludedCurrenciesWarning;
 
+  /// No description provided for @tripDetailsNoExpensesInBaseCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses in this currency'**
+  String get tripDetailsNoExpensesInBaseCurrency;
+
   /// No description provided for @tripDetailsEmptyExpensesTitle.
   ///
   /// In en, this message translates to:
@@ -758,13 +764,13 @@ abstract class AppLocalizations {
   /// No description provided for @paymentChannelCardPresent.
   ///
   /// In en, this message translates to:
-  /// **'Card Present'**
+  /// **'POS Purchase'**
   String get paymentChannelCardPresent;
 
   /// No description provided for @paymentChannelOnline.
   ///
   /// In en, this message translates to:
-  /// **'Online'**
+  /// **'Online Purchase'**
   String get paymentChannelOnline;
 
   /// No description provided for @paymentChannelOther.
@@ -904,6 +910,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to save SMS expense: {error}'**
   String smsSaveError(Object error);
+
+  /// No description provided for @intlBreakdownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'International breakdown'**
+  String get intlBreakdownTitle;
+
+  /// No description provided for @intlBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Billed'**
+  String get intlBilled;
+
+  /// No description provided for @intlFees.
+  ///
+  /// In en, this message translates to:
+  /// **'Fees'**
+  String get intlFees;
+
+  /// No description provided for @intlTotalCharged.
+  ///
+  /// In en, this message translates to:
+  /// **'Total charged'**
+  String get intlTotalCharged;
+
+  /// No description provided for @tripDetailsActuallyCharged.
+  ///
+  /// In en, this message translates to:
+  /// **'Total charged (SAR)'**
+  String get tripDetailsActuallyCharged;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -246,6 +246,9 @@ Ref 12345
     expect(result.suggestedPaymentNetwork, 'Visa');
     expect(result.suggestedPaymentChannel, 'POS Purchase');
     expect(result.suggestedPaymentMethod, 'Credit Card');
+    expect(result.isInternational, isFalse);
+    expect(result.feesAmount, isNull);
+    expect(result.totalChargedAmount, isNull);
   });
 
   test('Al Rajhi: keeps primary amount and ignores fees and total due', () {
@@ -291,6 +294,15 @@ Ref 12345
     expect(result.suggestedPaymentNetwork, 'Visa');
     expect(result.suggestedPaymentChannel, 'Online Purchase');
     expect(result.suggestedPaymentMethod, 'Credit Card');
+    expect(result.transactionAmount, 100);
+    expect(result.transactionCurrency, 'USD');
+    expect(result.billedAmount, 375.45);
+    expect(result.billedCurrency, 'SAR');
+    expect(result.feesAmount, 7.51);
+    expect(result.feesCurrency, 'SAR');
+    expect(result.totalChargedAmount, 382.96);
+    expect(result.totalChargedCurrency, 'SAR');
+    expect(result.isInternational, isTrue);
   });
 
   test('Al Rajhi: merchant falls back to لـ and keeps datetime with time', () {
@@ -331,9 +343,38 @@ Balance: SAR 1141.56
       expect(result.suggestedPaymentNetwork, 'Mastercard');
       expect(result.suggestedPaymentChannel, 'Online Purchase');
       expect(result.suggestedPaymentMethod, 'Credit Card');
+      expect(result.billedAmount, 1.18);
+      expect(result.billedCurrency, 'SAR');
+      expect(result.feesAmount, 0.02);
+      expect(result.feesCurrency, 'SAR');
+      expect(result.totalChargedAmount, 1.20);
+      expect(result.totalChargedCurrency, 'SAR');
+      expect(result.isInternational, isTrue);
       // Must NOT use any of the secondary amounts
       expect(result.amount, isNot(1.18));
       expect(result.amount, isNot(1.20));
+    });
+
+    test('SAB parses billed/fees/total with label variations', () {
+      final result = parser.parse('''
+Online Purchase
+SAB Mastercard Alfursan Credit Card (8263) was used at AMP*AIS SERVICES for THB 10.00 in THAILAND
+Amount in SAR 1.18
+International Fees 0.02
+Total amount 1.20
+Date: 2026-04-10 11:42:33
+Balance: SAR 1141.56
+''');
+
+      expect(result.transactionAmount, 10.00);
+      expect(result.transactionCurrency, 'THB');
+      expect(result.billedAmount, 1.18);
+      expect(result.billedCurrency, 'SAR');
+      expect(result.feesAmount, 0.02);
+      expect(result.feesCurrency, 'SAR');
+      expect(result.totalChargedAmount, 1.20);
+      expect(result.totalChargedCurrency, 'SAR');
+      expect(result.isInternational, isTrue);
     });
 
     test('SAB example 2: POS Purchase with inline datetime', () {

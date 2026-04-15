@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -34,6 +36,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final expensesState = ref.watch(expenseControllerProvider(_trip.id));
+    final hasExpenses = expensesState.valueOrNull?.isNotEmpty == true;
 
     return Scaffold(
       appBar: AppBar(
@@ -82,11 +85,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openExpenseForm,
-        icon: const Icon(Icons.add_rounded),
-        label: Text(l10n.tripDetailsAddExpense),
-      ),
+      floatingActionButton: hasExpenses
+          ? FloatingActionButton.extended(
+              onPressed: _openExpenseForm,
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.tripDetailsAddExpense),
+            )
+          : null,
     );
   }
 
@@ -95,9 +100,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       MaterialPageRoute<void>(builder: (_) => TripFormScreen(trip: _trip)),
     );
 
-    final refreshedTrip = await ref
-        .read(tripRepositoryProvider)
-        .getTripById(_trip.id);
+    final refreshedTrip = await ref.read(tripRepositoryProvider).getTripById(
+      _trip.id,
+    );
     if (!mounted || refreshedTrip == null) {
       return;
     }
@@ -206,22 +211,58 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final baseCurrencyExpenses = _baseCurrencyExpenses(widget.expenses);
-    final total = baseCurrencyExpenses.fold<double>(
+    final hasExpenses = widget.expenses.isNotEmpty;
+    final totalableExpenses = _totalableExpenses(widget.expenses);
+    final total = totalableExpenses.fold<double>(
       0,
-      (sum, expense) => sum + expense.amount,
+      (sum, expense) => sum + expense.transactionAmount,
     );
     final topCategory = _topCategory(widget.expenses);
     final filteredExpenses = _filteredAndSortedExpenses();
     final hasExcludedCurrencies =
-        baseCurrencyExpenses.length != widget.expenses.length;
+        totalableExpenses.length != widget.expenses.length;
+    final hasExpensesOutsideBaseCurrency =
+      total == 0 && hasExcludedCurrencies && widget.expenses.isNotEmpty;
+    final totalDisplayValue = hasExpensesOutsideBaseCurrency
+      ? l10n.tripDetailsNoExpensesInBaseCurrency
+      : _formatCurrency(total, widget.trip.baseCurrency);
+
+    // SAR total: sum totalChargedAmount (fallback billedAmount) for international expenses
+    final sarTotal = widget.expenses
+        .where((e) => e.isInternational)
+        .fold<double>(0, (sum, e) {
+          final charged = e.totalChargedAmount ?? e.billedAmount;
+          return sum + (charged ?? 0);
+        });
+    final hasSarTotal = sarTotal > 0;
+    final listBottomPadding = MediaQuery.of(context).padding.bottom + 128;
+
+    if (!hasExpenses) {
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            _TripSummaryCard(trip: widget.trip),
+            const SizedBox(height: 16),
+            Expanded(
+              child: Center(
+                child: _EmptyExpensesState(
+                  onAddExpense: widget.onAddExpense,
+                  onAddViaSms: widget.onAddViaSms,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return RefreshIndicator(
       onRefresh: () => ProviderScope.containerOf(
         context,
       ).read(expenseControllerProvider(widget.trip.id).notifier).reload(),
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, listBottomPadding),
         children: [
           _TripSummaryCard(trip: widget.trip),
           const SizedBox(height: 16),
@@ -230,7 +271,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               Expanded(
                 child: _StatCard(
                   label: l10n.tripDetailsTotalExpenses,
-                  value: _formatCurrency(total, widget.trip.baseCurrency),
+                  value: totalDisplayValue,
                 ),
               ),
               const SizedBox(width: 12),
@@ -249,6 +290,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                 ? l10n.tripDetailsTopCategoryNone
                 : ExpenseOptionLabels.category(l10n, topCategory),
           ),
+          if (hasSarTotal) ...[
+            const SizedBox(height: 12),
+            _StatCard(
+              label: l10n.tripDetailsActuallyCharged,
+              value: _formatCurrency(sarTotal, 'SAR'),
+            ),
+          ],
           if (hasExcludedCurrencies) ...[
             const SizedBox(height: 12),
             Card(
@@ -278,11 +326,6 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             spacing: 12,
             runSpacing: 12,
             children: [
-              FilledButton.icon(
-                onPressed: widget.onAddExpense,
-                icon: const Icon(Icons.add_rounded),
-                label: Text(l10n.tripDetailsAddExpense),
-              ),
               OutlinedButton.icon(
                 onPressed: widget.onAddViaSms,
                 icon: const Icon(Icons.sms_rounded),
@@ -326,12 +369,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             style: Theme.of(context).textTheme.titleLarge,
           ),
           const SizedBox(height: 12),
-          if (widget.expenses.isEmpty)
-            _EmptyExpensesState(
-              onAddExpense: widget.onAddExpense,
-              onAddViaSms: widget.onAddViaSms,
-            )
-          else if (filteredExpenses.isEmpty)
+          if (filteredExpenses.isEmpty)
             _EmptyFilteredState(
               message: l10n.tripDetailsNoMatchingExpenses,
               clearLabel: l10n.tripDetailsClearFilters,
@@ -362,11 +400,24 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     return formatter.format(amount);
   }
 
-  List<Expense> _baseCurrencyExpenses(List<Expense> expenses) {
+  List<Expense> _totalableExpenses(List<Expense> expenses) {
     final baseCurrency = widget.trip.baseCurrency.trim().toUpperCase();
+    final isDomesticTrip = baseCurrency == 'SAR';
+
+    if (isDomesticTrip) {
+      return expenses
+          .where(
+            (expense) =>
+                expense.transactionCurrency.trim().toUpperCase() == 'SAR',
+          )
+          .toList();
+    }
+
+    // For international trips, avoid mixing currencies into one aggregate.
     return expenses
         .where(
-          (expense) => expense.currencyCode.trim().toUpperCase() == baseCurrency,
+          (expense) =>
+              expense.transactionCurrency.trim().toUpperCase() == baseCurrency,
         )
         .toList();
   }
@@ -397,9 +448,9 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
         case _ExpenseSort.oldestFirst:
           return a.spentAt.compareTo(b.spentAt);
         case _ExpenseSort.highestAmount:
-          return b.amount.compareTo(a.amount);
+          return b.transactionAmount.compareTo(a.transactionAmount);
         case _ExpenseSort.lowestAmount:
-          return a.amount.compareTo(b.amount);
+          return a.transactionAmount.compareTo(b.transactionAmount);
       }
     });
 
@@ -416,8 +467,8 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       final category = expense.category ?? 'Other';
       totals.update(
         category,
-        (value) => value + expense.amount,
-        ifAbsent: () => expense.amount,
+        (value) => value + expense.transactionAmount,
+        ifAbsent: () => expense.transactionAmount,
       );
     }
 
@@ -700,9 +751,34 @@ class _ExpenseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final formatter = NumberFormat.currency(
-      name: expense.currencyCode,
-      symbol: '${expense.currencyCode} ',
+
+    // Determine primary display amount: totalCharged > billed > transaction
+    final bool useCharged = expense.totalChargedAmount != null;
+    final bool useBilled =
+        !useCharged && expense.billedAmount != null;
+    final double primaryAmount = useCharged
+        ? expense.totalChargedAmount!
+        : useBilled
+        ? expense.billedAmount!
+        : expense.transactionAmount;
+    final String primaryCurrency = useCharged
+        ? (expense.totalChargedCurrency ?? expense.transactionCurrency)
+        : useBilled
+        ? (expense.billedCurrency ?? expense.transactionCurrency)
+        : expense.transactionCurrency;
+    final bool showSecondary =
+        (useCharged || useBilled) &&
+        expense.transactionCurrency.toUpperCase() !=
+            primaryCurrency.toUpperCase();
+
+    final primaryFormatter = NumberFormat.currency(
+      name: primaryCurrency,
+      symbol: '$primaryCurrency ',
+      decimalDigits: 2,
+    );
+    final txFormatter = NumberFormat.currency(
+      name: expense.transactionCurrency,
+      symbol: '${expense.transactionCurrency} ',
       decimalDigits: 2,
     );
     final dateFormatter = DateFormat(
@@ -710,6 +786,10 @@ class _ExpenseCard extends StatelessWidget {
           ? 'dd MMM yyyy • HH:mm'
           : 'dd MMM yyyy',
       Localizations.localeOf(context).toLanguageTag(),
+    );
+
+    final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
     );
 
     return Card(
@@ -754,12 +834,34 @@ class _ExpenseCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                Flexible(
-                  child: Text(
-                    formatter.format(expense.amount),
-                    textAlign: TextAlign.end,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      primaryFormatter.format(primaryAmount),
+                      textAlign: TextAlign.end,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    if (showSecondary) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '≈ ${txFormatter.format(expense.transactionAmount)}',
+                        textAlign: TextAlign.end,
+                        textDirection: ui.TextDirection.ltr,
+                        style: mutedStyle,
+                      ),
+                    ],
+                    if (expense.feesAmount != null &&
+                        (expense.feesCurrency ?? '').isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        '${l10n.intlFees}: ${(expense.feesCurrency ?? '').toUpperCase()} ${expense.feesAmount!.toStringAsFixed(2)}',
+                        textAlign: TextAlign.end,
+                        textDirection: ui.TextDirection.ltr,
+                        style: mutedStyle,
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ),
@@ -798,36 +900,77 @@ class _EmptyExpensesState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          children: [
-            const Icon(Icons.receipt_long_rounded, size: 48),
-            const SizedBox(height: 16),
-            Text(
-              l10n.tripDetailsEmptyExpensesTitle,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              l10n.tripDetailsEmptyExpensesMessage,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onAddExpense,
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.tripDetailsAddExpense),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: onAddViaSms,
-              icon: const Icon(Icons.sms_rounded),
-              label: Text(l10n.tripDetailsAddViaSms),
-            ),
-          ],
+    final colorScheme = Theme.of(context).colorScheme;
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 420),
+      child: Card(
+        color: Colors.white,
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shadowColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.receipt_long_rounded,
+                size: 40,
+                color: colorScheme.primary.withValues(alpha: 0.8),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                l10n.tripDetailsEmptyExpensesTitle,
+                style: Theme.of(context).textTheme.titleLarge,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                l10n.tripDetailsEmptyExpensesMessage,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: onAddExpense,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: colorScheme.primary,
+                    foregroundColor: colorScheme.onPrimary,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(l10n.tripDetailsAddExpense),
+                ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onAddViaSms,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colorScheme.primary,
+                    side: BorderSide(
+                      color: colorScheme.primary.withValues(alpha: 0.35),
+                    ),
+                  ),
+                  icon: const Icon(Icons.sms_outlined),
+                  label: Text(l10n.tripDetailsAddViaSms),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

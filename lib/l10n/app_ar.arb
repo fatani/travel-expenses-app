@@ -47,7 +47,7 @@
   "tripDetailsTopCategory": "أعلى فئة إنفاق",
   "tripDetailsTopCategoryNone": "لا توجد فئة بعد",
   "tripDetailsExpensesSection": "المصاريف",
-  "tripDetailsAddViaSms": "إضافة عبر رسالة البنك",
+  "tripDetailsAddViaSms": "إضافة من رسالة البنك",
   "tripDetailsSearchLabel": "البحث في المصاريف",
   "tripDetailsSearchHint": "ابحث بالعنوان أو الوصف أو اسم التاجر",
   "tripDetailsFilterCategory": "تصفية حسب الفئة",
@@ -73,8 +73,9 @@
   "tripDetailsDeleteExpenseError": "فشل حذف المصروف: {error}",
   "@tripDetailsDeleteExpenseError": {"placeholders": {"error": {}}},
   "tripDetailsExcludedCurrenciesWarning": "بعض المصاريف بعملات أخرى غير مشمولة في الإجمالي",
-  "tripDetailsEmptyExpensesTitle": "لا توجد مصاريف بعد",
-  "tripDetailsEmptyExpensesMessage": "أضف أول مصروف يدوي لهذه الرحلة.",
+  "tripDetailsNoExpensesInBaseCurrency": "لا توجد مصاريف بهذه العملة",
+  "tripDetailsEmptyExpensesTitle": "لا توجد مصاريف لهذه الرحلة",
+  "tripDetailsEmptyExpensesMessage": "أضف أول مصروف لهذه الرحلة",
   "expenseFormCreateTitle": "مصروف جديد",
   "expenseFormEditTitle": "تعديل المصروف",
   "expenseFormTitleLabel": "العنوان",
@@ -147,5 +148,10 @@
   "smsTextRequired": "يرجى لصق نص الرسالة أولاً.",
   "smsTripMissingError": "بيانات الرحلة غير متوفرة. أعد فتح هذه الشاشة.",
   "smsSaveError": "فشل حفظ مصروف الرسالة: {error}",
-  "@smsSaveError": {"placeholders": {"error": {}}}
+  "@smsSaveError": {"placeholders": {"error": {}}},
+  "intlBreakdownTitle": "تفاصيل الدفع الدولي",
+  "intlBilled": "المبلغ المخصوم",
+  "intlFees": "الرسوم",
+  "intlTotalCharged": "إجمالي الخصم",
+  "tripDetailsActuallyCharged": "إجمالي المخصوم"
 }

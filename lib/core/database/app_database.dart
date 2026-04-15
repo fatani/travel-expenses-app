@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 6;
+  static const int databaseVersion = 7;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -41,6 +41,7 @@ class AppDatabase {
         await _ensureSettingsLocaleColumn(db);
         await _ensureExpensesRawSmsColumn(db);
         await _ensureExpensesPaymentDetailsColumns(db);
+        await _ensureExpensesFinancialColumns(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -64,6 +65,15 @@ class AppDatabase {
             title TEXT NOT NULL,
             amount REAL NOT NULL,
             currency_code TEXT NOT NULL,
+            transaction_amount REAL,
+            transaction_currency TEXT,
+            billed_amount REAL,
+            billed_currency TEXT,
+            fees_amount REAL,
+            fees_currency TEXT,
+            total_charged_amount REAL,
+            total_charged_currency TEXT,
+            is_international INTEGER NOT NULL DEFAULT 0,
             spent_at TEXT NOT NULL,
             payment_method TEXT NOT NULL,
             payment_network TEXT,
@@ -157,6 +167,10 @@ class AppDatabase {
             );
           }
         }
+
+        if (oldVersion < 7) {
+          await _ensureExpensesFinancialColumns(db);
+        }
       },
     );
   }
@@ -210,5 +224,101 @@ class AppDatabase {
         'ALTER TABLE $expensesTable ADD COLUMN payment_channel TEXT',
       );
     }
+  }
+
+  Future<void> _ensureExpensesFinancialColumns(Database db) async {
+    final hasTransactionAmount = await _hasColumn(
+      db,
+      expensesTable,
+      'transaction_amount',
+    );
+    if (!hasTransactionAmount) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN transaction_amount REAL',
+      );
+    }
+
+    final hasTransactionCurrency = await _hasColumn(
+      db,
+      expensesTable,
+      'transaction_currency',
+    );
+    if (!hasTransactionCurrency) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN transaction_currency TEXT',
+      );
+    }
+
+    final hasBilledAmount = await _hasColumn(
+      db,
+      expensesTable,
+      'billed_amount',
+    );
+    if (!hasBilledAmount) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN billed_amount REAL');
+    }
+
+    final hasBilledCurrency = await _hasColumn(
+      db,
+      expensesTable,
+      'billed_currency',
+    );
+    if (!hasBilledCurrency) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN billed_currency TEXT');
+    }
+
+    final hasFeesAmount = await _hasColumn(db, expensesTable, 'fees_amount');
+    if (!hasFeesAmount) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN fees_amount REAL');
+    }
+
+    final hasFeesCurrency = await _hasColumn(db, expensesTable, 'fees_currency');
+    if (!hasFeesCurrency) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN fees_currency TEXT');
+    }
+
+    final hasTotalChargedAmount = await _hasColumn(
+      db,
+      expensesTable,
+      'total_charged_amount',
+    );
+    if (!hasTotalChargedAmount) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN total_charged_amount REAL',
+      );
+    }
+
+    final hasTotalChargedCurrency = await _hasColumn(
+      db,
+      expensesTable,
+      'total_charged_currency',
+    );
+    if (!hasTotalChargedCurrency) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN total_charged_currency TEXT',
+      );
+    }
+
+    final hasIsInternational = await _hasColumn(
+      db,
+      expensesTable,
+      'is_international',
+    );
+    if (!hasIsInternational) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN is_international INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    // Backfill for existing rows to keep old data compatible with the new model.
+    await db.execute(
+      'UPDATE $expensesTable SET transaction_amount = amount WHERE transaction_amount IS NULL',
+    );
+    await db.execute(
+      'UPDATE $expensesTable SET transaction_currency = currency_code WHERE transaction_currency IS NULL OR transaction_currency = ""',
+    );
+    await db.execute(
+      'UPDATE $expensesTable SET is_international = CASE WHEN UPPER(COALESCE(transaction_currency, currency_code, "")) != "SAR" OR COALESCE(fees_amount, 0) > 0 THEN 1 ELSE is_international END',
+    );
   }
 }

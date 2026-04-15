@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -117,6 +119,56 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                                 ? l10n.smsParseDetectedMessage
                                 : l10n.smsParseNoResultMessage,
                           ),
+                          if (_hasFinancialBreakdown(_parseResult)) ...[
+                            const SizedBox(height: 12),
+                            Card(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                              child: Padding(
+                                padding: const EdgeInsets.all(12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      l10n.intlBreakdownTitle,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleSmall,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    if (_parseResult?.billedAmount != null)
+                                      _BreakdownRow(
+                                        label: l10n.intlBilled,
+                                        value: _formatMoney(
+                                          _parseResult!.billedAmount!,
+                                          _parseResult!.billedCurrency,
+                                        ),
+                                      ),
+                                    if (_parseResult?.feesAmount != null)
+                                      _BreakdownRow(
+                                        label: l10n.intlFees,
+                                        value: _formatMoney(
+                                          _parseResult!.feesAmount!,
+                                          _parseResult!.feesCurrency,
+                                        ),
+                                        subtle: true,
+                                      ),
+                                    if (_parseResult?.totalChargedAmount !=
+                                        null)
+                                      _BreakdownRow(
+                                        label: l10n.intlTotalCharged,
+                                        value: _formatMoney(
+                                          _parseResult!.totalChargedAmount!,
+                                          _parseResult!.totalChargedCurrency,
+                                        ),
+                                        bold: true,
+                                      ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ],
                     ),
@@ -565,11 +617,13 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     final title = _titleController.text.trim().isEmpty
         ? _selectedCategory!
         : _titleController.text.trim();
+    final transactionAmount = double.parse(_amountController.text.trim());
     final currencyCode = _currencyController.text.trim().toUpperCase();
     final paymentMethod = _resolvePaymentMethodCompatibility(
       _selectedPaymentNetwork!,
       _selectedPaymentChannel!,
     );
+    final parsed = _parseResult;
 
     if (currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
       final shouldKeepAsIs = await _confirmCurrencyMismatch(currencyCode);
@@ -585,8 +639,19 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     try {
       await controller.createExpense(
         title: title,
-        amount: double.parse(_amountController.text.trim()),
+        amount: transactionAmount,
         currencyCode: currencyCode,
+        transactionAmount: transactionAmount,
+        transactionCurrency: currencyCode,
+        billedAmount: parsed?.billedAmount,
+        billedCurrency: parsed?.billedCurrency,
+        feesAmount: parsed?.feesAmount,
+        feesCurrency: parsed?.feesCurrency,
+        totalChargedAmount: parsed?.totalChargedAmount,
+        totalChargedCurrency: parsed?.totalChargedCurrency,
+        isInternational:
+            currencyCode.toUpperCase() != 'SAR' ||
+            ((parsed?.feesAmount ?? 0) > 0),
         category: _selectedCategory!,
         spentAt: _expenseDate!,
         paymentMethod: paymentMethod,
@@ -666,5 +731,65 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
 
   String _requiredLabel(String label) {
     return '$label *';
+  }
+
+  bool _hasFinancialBreakdown(SmsParseResult? result) {
+    if (result == null) {
+      return false;
+    }
+
+    return result.billedAmount != null ||
+        result.feesAmount != null ||
+        result.totalChargedAmount != null;
+  }
+
+  String _formatMoney(double amount, String? currency) {
+    final normalizedCurrency = (currency == null || currency.trim().isEmpty)
+        ? widget.trip.baseCurrency
+        : currency.trim().toUpperCase();
+    final formatter = NumberFormat.currency(
+      name: normalizedCurrency,
+      symbol: '$normalizedCurrency ',
+      decimalDigits: 2,
+    );
+    return formatter.format(amount);
+  }
+}
+
+class _BreakdownRow extends StatelessWidget {
+  const _BreakdownRow({
+    required this.label,
+    required this.value,
+    this.subtle = false,
+    this.bold = false,
+  });
+
+  final String label;
+  final String value;
+  final bool subtle;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) {
+    final baseStyle = Theme.of(context).textTheme.bodyMedium;
+    final color = subtle
+        ? Theme.of(context).colorScheme.onSurfaceVariant
+        : null;
+    final style = bold
+        ? baseStyle?.copyWith(fontWeight: FontWeight.bold, color: color)
+        : baseStyle?.copyWith(color: color);
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Directionality(
+        textDirection: ui.TextDirection.ltr,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(label, style: style),
+            Text(value, style: style),
+          ],
+        ),
+      ),
+    );
   }
 }

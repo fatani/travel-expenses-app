@@ -70,6 +70,220 @@ void main() {
   );
 
   testWidgets(
+    'domestic SAR trip totals only SAR transaction amounts',
+    (tester) async {
+      final domesticTrip = Trip.create(
+        id: 'trip-sar',
+        name: 'Riyadh',
+        destination: 'Riyadh',
+        baseCurrency: 'SAR',
+      );
+
+      final repository = _FakeExpenseRepository(
+        initialExpenses: [
+          Expense.create(
+            id: 'sar-1',
+            tripId: domesticTrip.id,
+            title: 'Lunch',
+            amount: 50,
+            currencyCode: 'SAR',
+            transactionAmount: 50,
+            transactionCurrency: 'SAR',
+            spentAt: DateTime(2026, 4, 12),
+            paymentMethod: 'Cash',
+            category: 'Food',
+          ),
+          Expense.create(
+            id: 'usd-1',
+            tripId: domesticTrip.id,
+            title: 'Online service',
+            amount: 20,
+            currencyCode: 'USD',
+            transactionAmount: 20,
+            transactionCurrency: 'USD',
+            feesAmount: 1,
+            feesCurrency: 'SAR',
+            isInternational: true,
+            spentAt: DateTime(2026, 4, 12),
+            paymentMethod: 'Credit Card',
+            category: 'Other',
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: TripDetailsScreen(trip: domesticTrip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+          ],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('SAR 50.00'), findsOneWidget);
+      expect(find.text('SAR 70.00'), findsNothing);
+      expect(
+        find.text(
+          'Some expenses in other currencies are not included in the total',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'trip details shows no-base-currency message instead of misleading zero and keeps SAR charged total',
+    (tester) async {
+      final repository = _FakeExpenseRepository(
+        initialExpenses: [
+          Expense.create(
+            id: 'intl-1',
+            tripId: trip.id,
+            title: 'Bangkok ride',
+            amount: 10,
+            currencyCode: 'THB',
+            transactionAmount: 10,
+            transactionCurrency: 'THB',
+            billedAmount: 1.18,
+            billedCurrency: 'SAR',
+            feesAmount: 0.02,
+            feesCurrency: 'SAR',
+            totalChargedAmount: 1.20,
+            totalChargedCurrency: 'SAR',
+            isInternational: true,
+            spentAt: DateTime(2026, 4, 13),
+            paymentMethod: 'Credit Card',
+            category: 'Transport',
+          ),
+          Expense.create(
+            id: 'intl-2',
+            tripId: trip.id,
+            title: 'Online tool',
+            amount: 3,
+            currencyCode: 'USD',
+            transactionAmount: 3,
+            transactionCurrency: 'USD',
+            billedAmount: 11.25,
+            billedCurrency: 'SAR',
+            isInternational: true,
+            spentAt: DateTime(2026, 4, 13),
+            paymentMethod: 'Credit Card',
+            category: 'Other',
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: TripDetailsScreen(trip: trip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+          ],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('No expenses in this currency'), findsOneWidget);
+      expect(find.text('CNY 0.00'), findsNothing);
+      expect(find.text('Total charged (SAR)'), findsOneWidget);
+      expect(find.text('SAR 12.45'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'trip details shows Arabic no-base-currency message and charged total label in ar locale',
+    (tester) async {
+      final repository = _FakeExpenseRepository(
+        initialExpenses: [
+          Expense.create(
+            id: 'intl-ar-1',
+            tripId: trip.id,
+            title: 'Bangkok ride',
+            amount: 10,
+            currencyCode: 'THB',
+            transactionAmount: 10,
+            transactionCurrency: 'THB',
+            billedAmount: 1.18,
+            billedCurrency: 'SAR',
+            feesAmount: 0.02,
+            feesCurrency: 'SAR',
+            totalChargedAmount: 1.20,
+            totalChargedCurrency: 'SAR',
+            isInternational: true,
+            spentAt: DateTime(2026, 4, 13),
+            paymentMethod: 'Credit Card',
+            category: 'Transport',
+          ),
+          Expense.create(
+            id: 'intl-ar-2',
+            tripId: trip.id,
+            title: 'Online tool',
+            amount: 3,
+            currencyCode: 'USD',
+            transactionAmount: 3,
+            transactionCurrency: 'USD',
+            billedAmount: 11.25,
+            billedCurrency: 'SAR',
+            isInternational: true,
+            spentAt: DateTime(2026, 4, 13),
+            paymentMethod: 'Credit Card',
+            category: 'Other',
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: TripDetailsScreen(trip: trip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+          ],
+          locale: const Locale('ar'),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('لا توجد مصاريف بهذه العملة'), findsOneWidget);
+      expect(find.text('CNY 0.00'), findsNothing);
+      expect(find.text('إجمالي المخصوم'), findsOneWidget);
+      expect(find.text('SAR 12.45'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'empty trip details state keeps trip summary fixed and does not scroll',
+    (tester) async {
+      final repository = _FakeExpenseRepository(initialExpenses: const []);
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: TripDetailsScreen(trip: trip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+          ],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final titleFinder = find.text(trip.name).first;
+      final emptyStateFinder = find.text('No expenses yet');
+      final initialPosition = tester.getTopLeft(titleFinder);
+
+      expect(emptyStateFinder, findsOneWidget);
+
+      await tester.drag(find.byType(Scaffold), const Offset(0, -300));
+      await tester.pumpAndSettle();
+
+      expect(tester.getTopLeft(titleFinder), equals(initialPosition));
+    },
+  );
+
+  testWidgets(
     'manual expense creation asks for confirmation when currency differs',
     (tester) async {
       final repository = _FakeExpenseRepository();
@@ -365,16 +579,61 @@ Balance: SAR 2354.38
       expect(repository.createdExpenses.single.paymentChannel, 'POS Purchase');
     },
   );
+
+  testWidgets(
+    'sms parse shows billed, fees, and total charged breakdown for SAB THB message',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          child: SmsExpenseScreen(trip: trip),
+          overrides: const [],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        '''
+Online Purchase
+SAB Mastercard Alfursan Credit Card (8263) was used at AMP*AIS SERVICES for THB 10.00 in THAILAND
+Exchange rate: 0.11800
+Amount in SAR: 1.18
+International Fees in SAR: 0.02
+Total amount in SAR: 1.20
+Date: 2026-04-10 11:42:33
+Balance: SAR 1141.56
+''',
+      );
+
+      await tester.tap(find.text('Parse SMS'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('International breakdown'), findsOneWidget);
+      // Labels and values are now separate Text widgets in a Row.
+      expect(find.text('Billed'), findsOneWidget);
+      expect(find.text('SAR 1.18'), findsOneWidget);
+      expect(find.text('Fees'), findsOneWidget);
+      expect(find.text('SAR 0.02'), findsOneWidget);
+      expect(find.text('Total charged'), findsOneWidget);
+      expect(find.text('SAR 1.20'), findsOneWidget);
+
+      // Main transaction fields remain primary.
+      expect(find.text('10.00'), findsWidgets);
+      expect(find.text('THB'), findsWidgets);
+    },
+  );
 }
 
 Widget _buildApp({
   required Widget child,
   required List<Override> overrides,
+  Locale locale = const Locale('en'),
 }) {
   return ProviderScope(
     overrides: overrides,
     child: MaterialApp(
-      locale: const Locale('en'),
+      locale: locale,
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: child,

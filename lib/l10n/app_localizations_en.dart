@@ -217,8 +217,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tripDetailsExcludedCurrenciesWarning =>
-      'Some expenses in other currencies are not included in the total';
+  String get tripDetailsExcludedCurrenciesWarning => 'Some expenses in other currencies are not included in the total';
+
+  @override
+  String get tripDetailsNoExpensesInBaseCurrency => 'No expenses in this currency';
 
   @override
   String get tripDetailsEmptyExpensesTitle => 'No expenses yet';
@@ -284,14 +286,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormAmountPositive => 'Amount must be greater than zero.';
 
   @override
-  String get expenseCurrencyMismatchTitle =>
-      'Currency differs from trip base currency';
+  String get expenseCurrencyMismatchTitle => 'Currency differs from trip base currency';
 
   @override
-  String expenseCurrencyMismatchMessage(
-    Object expenseCurrency,
-    Object tripCurrency,
-  ) {
+  String expenseCurrencyMismatchMessage(Object expenseCurrency, Object tripCurrency) {
     return 'This expense uses $expenseCurrency while the trip base currency is $tripCurrency. You can edit it manually, or keep it as-is and it will be excluded from totals.';
   }
 
@@ -443,4 +441,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String smsSaveError(Object error) {
     return 'Failed to save SMS expense: $error';
   }
+
+  @override
+  String get intlBreakdownTitle => 'International breakdown';
+
+  @override
+  String get intlBilled => 'Billed';
+
+  @override
+  String get intlFees => 'Fees';
+
+  @override
+  String get intlTotalCharged => 'Total charged';
+
+  @override
+  String get tripDetailsActuallyCharged => 'Total charged (SAR)';
 }

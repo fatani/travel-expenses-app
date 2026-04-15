@@ -146,7 +146,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsExpensesSection => 'المصاريف';
 
   @override
-  String get tripDetailsAddViaSms => 'إضافة عبر رسالة البنك';
+  String get tripDetailsAddViaSms => 'إضافة من رسالة البنك';
 
   @override
   String get tripDetailsSearchLabel => 'البحث في المصاريف';
@@ -217,14 +217,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get tripDetailsExcludedCurrenciesWarning =>
-      'بعض المصاريف بعملات أخرى غير مشمولة في الإجمالي';
+  String get tripDetailsExcludedCurrenciesWarning => 'بعض المصاريف بعملات أخرى غير مشمولة في الإجمالي';
 
   @override
-  String get tripDetailsEmptyExpensesTitle => 'لا توجد مصاريف بعد';
+  String get tripDetailsNoExpensesInBaseCurrency => 'لا توجد مصاريف بهذه العملة';
 
   @override
-  String get tripDetailsEmptyExpensesMessage => 'أضف أول مصروف يدوي لهذه الرحلة.';
+  String get tripDetailsEmptyExpensesTitle => 'لا توجد مصاريف لهذه الرحلة';
+
+  @override
+  String get tripDetailsEmptyExpensesMessage => 'أضف أول مصروف لهذه الرحلة';
 
   @override
   String get expenseFormCreateTitle => 'مصروف جديد';
@@ -284,14 +286,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormAmountPositive => 'يجب أن يكون المبلغ أكبر من صفر.';
 
   @override
-  String get expenseCurrencyMismatchTitle =>
-      'عملة المصروف تختلف عن العملة الأساسية للرحلة';
+  String get expenseCurrencyMismatchTitle => 'عملة المصروف تختلف عن العملة الأساسية للرحلة';
 
   @override
-  String expenseCurrencyMismatchMessage(
-    Object expenseCurrency,
-    Object tripCurrency,
-  ) {
+  String expenseCurrencyMismatchMessage(Object expenseCurrency, Object tripCurrency) {
     return 'هذا المصروف بعملة $expenseCurrency بينما العملة الأساسية للرحلة هي $tripCurrency. يمكنك التعديل يدوياً، أو الإبقاء عليه كما هو وسيتم استبعاده من الإجماليات.';
   }
 
@@ -443,4 +441,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String smsSaveError(Object error) {
     return 'فشل حفظ مصروف الرسالة: $error';
   }
+
+  @override
+  String get intlBreakdownTitle => 'تفاصيل الدفع الدولي';
+
+  @override
+  String get intlBilled => 'المبلغ المخصوم';
+
+  @override
+  String get intlFees => 'الرسوم';
+
+  @override
+  String get intlTotalCharged => 'إجمالي الخصم';
+
+  @override
+  String get tripDetailsActuallyCharged => 'إجمالي المخصوم';
 }

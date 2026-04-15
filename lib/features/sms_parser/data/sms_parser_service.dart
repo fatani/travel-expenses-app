@@ -133,13 +133,39 @@ class SaudiBankSmsParser extends _BaseSmsMessageParser {
     final transactionIndex = lines.indexWhere(_isSnbTransactionLine);
 
     final amountResult = _extractAmountFromLines(lines, transactionIndex);
+    final billed = _extractLabeledAmount(
+      lines,
+      labels: const <String>['amount in sar'],
+      defaultCurrency: 'SAR',
+    );
+    final fees = _extractLabeledAmount(
+      lines,
+      labels: const <String>['international fees', 'fees'],
+      defaultCurrency: 'SAR',
+    );
+    final totalCharged = _extractLabeledAmount(
+      lines,
+      labels: const <String>['total amount in sar', 'total amount'],
+      defaultCurrency: 'SAR',
+    );
     final merchant = _extractMerchantFromLines(lines);
     final spentAt = _extractDateFromLines(lines);
+    final transactionCurrency = amountResult?.currencyCode;
 
     return SmsParseResult(
       rawText: normalizedText,
-      amount: amountResult?.amount,
-      currencyCode: amountResult?.currencyCode,
+      transactionAmount: amountResult?.amount,
+      transactionCurrency: transactionCurrency,
+      billedAmount: billed?.amount,
+      billedCurrency: billed?.currencyCode,
+      feesAmount: fees?.amount,
+      feesCurrency: fees?.currencyCode,
+      totalChargedAmount: totalCharged?.amount,
+      totalChargedCurrency: totalCharged?.currencyCode,
+      isInternational: _isInternationalTransaction(
+        transactionCurrency,
+        fees?.amount,
+      ),
       merchant: merchant,
       spentAt: spentAt,
       suggestedCategory: _suggestSnbCategory('$compact ${merchant ?? ''}'),
@@ -492,15 +518,37 @@ class AlRajhiSmsParser extends _BaseSmsMessageParser {
         .toList();
 
     final amount = _extractAlRajhiAmount(lines);
+    final billed = _extractAlRajhiBilledAmount(lines);
+    final fees = _extractLabeledAmount(
+      lines,
+      labels: const <String>['رسوم وضريبة'],
+      defaultCurrency: 'SAR',
+    );
+    final totalCharged = _extractLabeledAmount(
+      lines,
+      labels: const <String>['اجمالي المبلغ المستحق', 'إجمالي المبلغ المستحق'],
+      defaultCurrency: 'SAR',
+    );
     final merchant = _extractAlRajhiMerchant(lines);
     final spentAt = _extractAlRajhiDateTime(lines);
     final paymentDetails = _extractAlRajhiPaymentDetails(lines);
     final compact = normalizedText.replaceAll(RegExp(r'\s+'), ' ');
+    final transactionCurrency = amount?.currencyCode;
 
     return SmsParseResult(
       rawText: normalizedText,
-      amount: amount?.amount,
-      currencyCode: amount?.currencyCode,
+      transactionAmount: amount?.amount,
+      transactionCurrency: transactionCurrency,
+      billedAmount: billed?.amount,
+      billedCurrency: billed?.currencyCode,
+      feesAmount: fees?.amount,
+      feesCurrency: fees?.currencyCode,
+      totalChargedAmount: totalCharged?.amount,
+      totalChargedCurrency: totalCharged?.currencyCode,
+      isInternational: _isInternationalTransaction(
+        transactionCurrency,
+        fees?.amount,
+      ),
       merchant: merchant,
       spentAt: spentAt,
       suggestedCategory: _suggestCategory('$compact ${merchant ?? ''}'),
@@ -511,6 +559,30 @@ class AlRajhiSmsParser extends _BaseSmsMessageParser {
       suggestedPaymentNetwork: paymentDetails.network,
       suggestedPaymentChannel: paymentDetails.channel,
     );
+  }
+
+  _AmountMatch? _extractAlRajhiBilledAmount(List<String> lines) {
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      if (!lower.startsWith('مبلغ')) {
+        continue;
+      }
+
+      final parentheticalSar = RegExp(
+        r'\((\d+(?:[.,]\d{1,2})?)\s*(?:ريال|SAR|SR)\)',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (parentheticalSar == null) {
+        continue;
+      }
+
+      final amount = _parseAmount(parentheticalSar.group(1));
+      if (amount != null && amount > 0) {
+        return _AmountMatch(amount: amount, currencyCode: 'SAR');
+      }
+    }
+
+    return null;
   }
 
   _PaymentDetails _extractAlRajhiPaymentDetails(List<String> lines) {
@@ -823,15 +895,47 @@ class SabSmsParser extends _BaseSmsMessageParser {
         .toList();
 
     final amount = _extractSabAmount(lines);
+    final billed =
+        _extractSabBilledAmount(lines) ??
+        _extractLabeledAmount(
+          lines,
+          labels: const <String>['amount in sar'],
+          defaultCurrency: 'SAR',
+        );
+    final fees =
+        _extractSabFeesAmount(lines) ??
+        _extractLabeledAmount(
+          lines,
+          labels: const <String>['international fees'],
+          defaultCurrency: 'SAR',
+        );
+    final totalCharged =
+        _extractSabTotalAmount(lines) ??
+        _extractLabeledAmount(
+          lines,
+          labels: const <String>['total amount in sar', 'total amount'],
+          defaultCurrency: 'SAR',
+        );
     final merchant = _extractSabMerchant(lines);
     final spentAt = _extractSabDateTime(lines);
     final paymentDetails = _extractSabPaymentDetails(lines);
     final compact = normalizedText.replaceAll(RegExp(r'\s+'), ' ');
+    final transactionCurrency = amount?.currencyCode;
 
     return SmsParseResult(
       rawText: normalizedText,
-      amount: amount?.amount,
-      currencyCode: amount?.currencyCode,
+      transactionAmount: amount?.amount,
+      transactionCurrency: transactionCurrency,
+      billedAmount: billed?.amount,
+      billedCurrency: billed?.currencyCode,
+      feesAmount: fees?.amount,
+      feesCurrency: fees?.currencyCode,
+      totalChargedAmount: totalCharged?.amount,
+      totalChargedCurrency: totalCharged?.currencyCode,
+      isInternational: _isInternationalTransaction(
+        transactionCurrency,
+        fees?.amount,
+      ),
       merchant: merchant,
       spentAt: spentAt,
       suggestedCategory: _suggestCategory('$compact ${merchant ?? ''}'),
@@ -865,6 +969,69 @@ class SabSmsParser extends _BaseSmsMessageParser {
         }
       }
     }
+    return null;
+  }
+
+  _AmountMatch? _extractSabBilledAmount(List<String> lines) {
+    for (final line in lines) {
+      final match = RegExp(
+        r'\bamount\s+in\s+sar\s*:?\s*(\d+(?:[.,]\d{1,2})?)\b',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (match == null) {
+        continue;
+      }
+
+      final amount = _parseAmount(match.group(1));
+      if (amount != null) {
+        return const _AmountMatch(amount: 0, currencyCode: 'SAR').copyWith(
+          amount: amount,
+        );
+      }
+    }
+
+    return null;
+  }
+
+  _AmountMatch? _extractSabFeesAmount(List<String> lines) {
+    for (final line in lines) {
+      final match = RegExp(
+        r'\binternational\s+fees(?:\s+in\s+sar)?\s*:?\s*(\d+(?:[.,]\d{1,2})?)\b',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (match == null) {
+        continue;
+      }
+
+      final amount = _parseAmount(match.group(1));
+      if (amount != null) {
+        return const _AmountMatch(amount: 0, currencyCode: 'SAR').copyWith(
+          amount: amount,
+        );
+      }
+    }
+
+    return null;
+  }
+
+  _AmountMatch? _extractSabTotalAmount(List<String> lines) {
+    for (final line in lines) {
+      final match = RegExp(
+        r'\btotal\s+amount(?:\s+in\s+sar)?\s*:?\s*(\d+(?:[.,]\d{1,2})?)\b',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (match == null) {
+        continue;
+      }
+
+      final amount = _parseAmount(match.group(1));
+      if (amount != null) {
+        return const _AmountMatch(amount: 0, currencyCode: 'SAR').copyWith(
+          amount: amount,
+        );
+      }
+    }
+
     return null;
   }
 
@@ -1113,11 +1280,13 @@ abstract class _BaseSmsMessageParser implements SmsMessageParser {
     final merchant = _extractMerchant(scoredLines);
     final spentAt = _extractDateTime(scoredLines);
     final compact = normalizedText.replaceAll(RegExp(r'\s+'), ' ');
+    final transactionCurrency = amount?.currencyCode;
 
     return SmsParseResult(
       rawText: normalizedText,
-      amount: amount?.amount,
-      currencyCode: amount?.currencyCode,
+      transactionAmount: amount?.amount,
+      transactionCurrency: transactionCurrency,
+      isInternational: _isInternationalTransaction(transactionCurrency, null),
       spentAt: spentAt,
       merchant: merchant,
       suggestedCategory: _suggestCategory('$compact ${merchant ?? ''}'),
@@ -1413,6 +1582,74 @@ abstract class _BaseSmsMessageParser implements SmsMessageParser {
     }
     return null;
   }
+
+  _AmountMatch? _extractLabeledAmount(
+    List<String> lines, {
+    required List<String> labels,
+    String? defaultCurrency,
+  }) {
+    final normalizedLabels = labels.map((label) => label.toLowerCase()).toList();
+    for (final line in lines) {
+      final lower = line.toLowerCase();
+      if (!normalizedLabels.any(lower.contains)) {
+        continue;
+      }
+
+      final amountFirst = RegExp(
+        r'(\d+(?:[.,]\d{1,2})?)\s*(USD|EUR|GBP|AED|QAR|KWD|BHD|OMR|SAR|SR|THB)',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (amountFirst != null) {
+        final amount = _parseAmount(amountFirst.group(1));
+        if (amount != null && amount > 0) {
+          return _AmountMatch(
+            amount: amount,
+            currencyCode: _normalizeCurrency(amountFirst.group(2)),
+          );
+        }
+      }
+
+      final currencyFirst = RegExp(
+        r'(USD|EUR|GBP|AED|QAR|KWD|BHD|OMR|SAR|SR|THB)\s*(\d+(?:[.,]\d{1,2})?)',
+        caseSensitive: false,
+      ).firstMatch(line);
+      if (currencyFirst != null) {
+        final amount = _parseAmount(currencyFirst.group(2));
+        if (amount != null && amount > 0) {
+          return _AmountMatch(
+            amount: amount,
+            currencyCode: _normalizeCurrency(currencyFirst.group(1)),
+          );
+        }
+      }
+
+      if (defaultCurrency != null) {
+        final numberOnly = RegExp(
+          r'(\d+(?:[.,]\d{1,2})?)',
+          caseSensitive: false,
+        ).firstMatch(line);
+        if (numberOnly != null) {
+          final amount = _parseAmount(numberOnly.group(1));
+          if (amount != null && amount > 0) {
+            return _AmountMatch(
+              amount: amount,
+              currencyCode: defaultCurrency,
+            );
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  bool _isInternationalTransaction(String? currency, double? feesAmount) {
+    if (currency == null || currency.isEmpty) {
+      return (feesAmount ?? 0) > 0;
+    }
+
+    return currency.trim().toUpperCase() != 'SAR' || (feesAmount ?? 0) > 0;
+  }
 }
 
 class _ScoredLine {
@@ -1460,6 +1697,13 @@ class _AmountMatch {
 
   final double amount;
   final String? currencyCode;
+
+  _AmountMatch copyWith({double? amount, String? currencyCode}) {
+    return _AmountMatch(
+      amount: amount ?? this.amount,
+      currencyCode: currencyCode ?? this.currencyCode,
+    );
+  }
 }
 
 class _PaymentDetails {

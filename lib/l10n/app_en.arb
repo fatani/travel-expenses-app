@@ -73,6 +73,7 @@
   "tripDetailsDeleteExpenseError": "Failed to delete expense: {error}",
   "@tripDetailsDeleteExpenseError": {"placeholders": {"error": {}}},
   "tripDetailsExcludedCurrenciesWarning": "Some expenses in other currencies are not included in the total",
+  "tripDetailsNoExpensesInBaseCurrency": "No expenses in this currency",
   "tripDetailsEmptyExpensesTitle": "No expenses yet",
   "tripDetailsEmptyExpensesMessage": "Add your first manual expense for this trip.",
   "expenseFormCreateTitle": "New Expense",
@@ -147,5 +148,10 @@
   "smsTextRequired": "Paste the SMS text first.",
   "smsTripMissingError": "Trip is missing. Reopen this screen.",
   "smsSaveError": "Failed to save SMS expense: {error}",
-  "@smsSaveError": {"placeholders": {"error": {}}}
+  "@smsSaveError": {"placeholders": {"error": {}}},
+  "intlBreakdownTitle": "International breakdown",
+  "intlBilled": "Billed",
+  "intlFees": "Fees",
+  "intlTotalCharged": "Total charged",
+  "tripDetailsActuallyCharged": "Total charged (SAR)"
 }
