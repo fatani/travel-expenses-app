@@ -3,7 +3,7 @@ import 'package:travel_expenses/features/expenses/presentation/expense_option_la
 import 'package:travel_expenses/features/sms_parser/data/sms_parser_service.dart';
 
 void main() {
-  const parser = SmsParserService();
+  final parser = SmsParserService();
 
   test('extracts common values from a card purchase SMS', () {
     final result = parser.parse(
