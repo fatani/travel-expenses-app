@@ -451,6 +451,52 @@ void main() {
   );
 
   testWidgets(
+    'sms expense creation does not show currency warning when billed currency matches trip base and currency was parser-filled',
+    (tester) async {
+      final sarTrip = Trip.create(
+        id: 'trip-sar-d360',
+        name: 'Riyadh',
+        destination: 'Riyadh',
+        baseCurrency: 'SAR',
+      );
+      final repository = _FakeExpenseRepository();
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: SmsExpenseScreen(trip: sarTrip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+          ],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        '''
+بطاقة: 8263 VISA Ecommerce
+مبلغ: THB 10.00 (SAR 1.18)
+لدى: AMP*AIS SERVICES
+في: 08:01 2026-04-16
+''',
+      );
+
+      await tester.tap(find.text('Parse SMS'));
+      await tester.pumpAndSettle();
+
+      await tester.ensureVisible(find.text('Save Expense'));
+      await tester.tap(find.text('Save Expense'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Currency differs from trip base currency'), findsNothing);
+      expect(repository.createdExpenses, hasLength(1));
+      expect(repository.createdExpenses.single.currencyCode, 'THB');
+      expect(repository.createdExpenses.single.billedCurrency, 'SAR');
+    },
+  );
+
+  testWidgets(
     'sms form shows asterisks for required fields before validation',
     (tester) async {
       await tester.pumpWidget(
@@ -516,9 +562,6 @@ void main() {
       await tester.tap(find.text('Save Expense'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('Keep as-is'));
-      await tester.pumpAndSettle();
-
       expect(repository.createdExpenses, hasLength(1));
       expect(repository.createdExpenses.single.spentAt, DateTime(2026, 4, 20, 13, 24));
       expect(repository.createdExpenses.single.paymentNetwork, 'Visa');
@@ -566,9 +609,6 @@ Balance: SAR 2354.38
 
       await tester.ensureVisible(find.text('Save Expense'));
       await tester.tap(find.text('Save Expense'));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Keep as-is'));
       await tester.pumpAndSettle();
 
       expect(repository.createdExpenses, hasLength(1));

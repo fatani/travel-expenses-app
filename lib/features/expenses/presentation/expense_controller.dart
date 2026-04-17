@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../domain/expense.dart';
+import '../domain/money_model.dart';
 
 final expenseControllerProvider =
     AsyncNotifierProvider.family<ExpenseController, List<Expense>, String>(
@@ -32,6 +33,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     required String title,
     required double amount,
     required String currencyCode,
+    MoneyModel? moneyModel,
     double? transactionAmount,
     String? transactionCurrency,
     double? billedAmount,
@@ -50,20 +52,33 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     String? note,
     String? rawSmsText,
   }) async {
+    final normalizedMoney = moneyModel ??
+        MoneyModel(
+          transactionAmount: transactionAmount ?? amount,
+          transactionCurrency: transactionCurrency ?? currencyCode,
+          billedAmount: billedAmount,
+          billedCurrency: billedCurrency,
+          feesAmount: feesAmount,
+          feesCurrency: feesCurrency,
+          totalChargedAmount: totalChargedAmount,
+          totalChargedCurrency: totalChargedCurrency,
+          isInternational: isInternational ?? false,
+        );
+
     final expense = Expense.create(
       tripId: _tripId,
       title: title,
       amount: amount,
       currencyCode: currencyCode,
-      transactionAmount: transactionAmount ?? amount,
-      transactionCurrency: transactionCurrency ?? currencyCode,
-      billedAmount: billedAmount,
-      billedCurrency: billedCurrency,
-      feesAmount: feesAmount,
-      feesCurrency: feesCurrency,
-      totalChargedAmount: totalChargedAmount,
-      totalChargedCurrency: totalChargedCurrency,
-      isInternational: isInternational,
+      transactionAmount: normalizedMoney.transactionAmount ?? amount,
+      transactionCurrency: normalizedMoney.transactionCurrency ?? currencyCode,
+      billedAmount: normalizedMoney.billedAmount,
+      billedCurrency: normalizedMoney.billedCurrency,
+      feesAmount: normalizedMoney.feesAmount,
+      feesCurrency: normalizedMoney.feesCurrency,
+      totalChargedAmount: normalizedMoney.totalChargedAmount,
+      totalChargedCurrency: normalizedMoney.totalChargedCurrency,
+      isInternational: moneyModel?.isInternational ?? isInternational,
       spentAt: spentAt,
       paymentMethod: paymentMethod,
       paymentNetwork: paymentNetwork,
@@ -84,6 +99,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     required String title,
     required double amount,
     required String currencyCode,
+    MoneyModel? moneyModel,
     double? transactionAmount,
     String? transactionCurrency,
     double? billedAmount,
@@ -102,19 +118,32 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     String? note,
     String? rawSmsText,
   }) async {
+    final normalizedMoney = moneyModel ??
+        MoneyModel(
+          transactionAmount: transactionAmount ?? amount,
+          transactionCurrency: transactionCurrency ?? currencyCode,
+          billedAmount: billedAmount,
+          billedCurrency: billedCurrency,
+          feesAmount: feesAmount,
+          feesCurrency: feesCurrency,
+          totalChargedAmount: totalChargedAmount,
+          totalChargedCurrency: totalChargedCurrency,
+          isInternational: isInternational ?? expense.isInternational,
+        );
+
     final updatedExpense = expense.copyWith(
       title: title,
       amount: amount,
       currencyCode: currencyCode,
-      transactionAmount: transactionAmount ?? amount,
-      transactionCurrency: transactionCurrency ?? currencyCode,
-      billedAmount: billedAmount,
-      billedCurrency: billedCurrency,
-      feesAmount: feesAmount,
-      feesCurrency: feesCurrency,
-      totalChargedAmount: totalChargedAmount,
-      totalChargedCurrency: totalChargedCurrency,
-      isInternational: isInternational,
+      transactionAmount: normalizedMoney.transactionAmount ?? amount,
+      transactionCurrency: normalizedMoney.transactionCurrency ?? currencyCode,
+      billedAmount: normalizedMoney.billedAmount,
+      billedCurrency: normalizedMoney.billedCurrency,
+      feesAmount: normalizedMoney.feesAmount,
+      feesCurrency: normalizedMoney.feesCurrency,
+      totalChargedAmount: normalizedMoney.totalChargedAmount,
+      totalChargedCurrency: normalizedMoney.totalChargedCurrency,
+      isInternational: moneyModel?.isInternational ?? isInternational,
       spentAt: spentAt,
       paymentMethod: paymentMethod,
       paymentNetwork: paymentNetwork,

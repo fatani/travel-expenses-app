@@ -3,7 +3,7 @@ import 'package:travel_expenses/features/expenses/presentation/expense_option_la
 import 'package:travel_expenses/features/sms_parser/data/sms_parser_service.dart';
 
 void main() {
-  const parser = SmsParserService();
+  final parser = SmsParserService();
 
   test('extracts common values from a card purchase SMS', () {
     final result = parser.parse(
@@ -470,6 +470,304 @@ Balance: SAR 2956.62
       expect(result.suggestedPaymentChannel, 'POS Purchase');
       expect(result.suggestedPaymentMethod, 'Credit Card');
       expect(result.amount, isNot(2956.62));
+    });
+  });
+
+  group('D360', () {
+    test('D360 domestic transaction keeps SAR as amount and currency', () {
+      final result = parser.parse('''
+بطاقة: 4744 mada Apple Pay
+مبلغ: SAR 1,000.00
+لدى: JARIR BOOKSTORE-Apple Pay
+في: 16-04-2026 08:01
+''');
+
+      expect(result.transactionAmount, 1000.00);
+      expect(result.transactionCurrency, 'SAR');
+      expect(result.amount, 1000.00);
+      expect(result.currencyCode, 'SAR');
+      expect(result.billedAmount, isNull);
+      expect(result.totalChargedAmount, isNull);
+      expect(result.feesAmount, isNull);
+      expect(result.isInternational, isFalse);
+      expect(result.merchant, 'JARIR BOOKSTORE');
+      expect(result.spentAt, DateTime(2026, 4, 16, 8, 1));
+      expect(result.suggestedPaymentNetwork, 'Mada');
+      expect(result.suggestedPaymentMethod, 'Debit Card');
+      expect(result.suggestedPaymentChannel, 'Apple Pay');
+      expect(result.suggestedPaymentDetail, 'Apple Pay • 4744');
+    });
+
+    test('D360 international transaction keeps THB as amount and currency', () {
+      final result = parser.parse('''
+بطاقة: 8263 VISA Ecommerce
+مبلغ: THB 10.00 (SAR 1.18)
+لدى: AMP*AIS SERVICES
+في: 08:01 2026-04-16
+''');
+
+      expect(result.transactionAmount, 10.00);
+      expect(result.transactionCurrency, 'THB');
+      expect(result.amount, 10.00);
+      expect(result.currencyCode, 'THB');
+      expect(result.billedAmount, 1.18);
+      expect(result.billedCurrency, 'SAR');
+      expect(result.totalChargedAmount, isNull);
+      expect(result.totalChargedCurrency, isNull);
+      expect(result.feesAmount, isNull);
+      expect(result.isInternational, isTrue);
+      expect(result.merchant, 'AMP*AIS SERVICES');
+      expect(result.spentAt, DateTime(2026, 4, 16, 8, 1));
+    });
+
+    test('D360 future-proof: captures optional fees if present', () {
+      final result = parser.parse('''
+بطاقة: 8263 VISA Ecommerce
+مبلغ: THB 10.00 (SAR 1.18)
+رسوم: SAR 0.02
+لدى: AMP*AIS SERVICES
+في: 08:01 2026-04-16
+''');
+
+      expect(result.transactionAmount, 10.00);
+      expect(result.transactionCurrency, 'THB');
+      expect(result.billedAmount, 1.18);
+      expect(result.billedCurrency, 'SAR');
+      expect(result.feesAmount, 0.02);
+      expect(result.feesCurrency, 'SAR');
+      expect(result.totalChargedAmount, isNull);
+    });
+
+    test('D360 parses date format: time first then ISO date', () {
+      final result = parser.parse('''
+بطاقة: 8263 VISA Ecommerce
+مبلغ: THB 10.00 (SAR 1.18)
+لدى: AMP*AIS SERVICES
+في: 08:01 2026-04-16
+''');
+
+      expect(result.spentAt, DateTime(2026, 4, 16, 8, 1));
+    });
+
+    test('D360 parses date format: date first then time', () {
+      final result = parser.parse('''
+بطاقة: 4744 mada Apple Pay
+مبلغ: SAR 1,000.00
+لدى: JARIR BOOKSTORE
+في: 16-04-2026 08:01
+''');
+
+      expect(result.spentAt, DateTime(2026, 4, 16, 8, 1));
+    });
+
+    test('D360 extracts Apple Pay channel and Visa network', () {
+      final result = parser.parse('''
+بطاقة: 1331 VISA Apple Pay
+مبلغ: SAR 72.50
+لدى: AJLAN BROS
+في: 09:45 18/3/26
+''');
+
+      expect(result.suggestedPaymentNetwork, 'Visa');
+      expect(result.suggestedPaymentMethod, 'Credit Card');
+      expect(result.suggestedPaymentChannel, 'Apple Pay');
+      expect(result.suggestedPaymentDetail, 'Apple Pay • 1331');
+    });
+
+    test('D360 extracts Ecommerce channel label and keeps network separate', () {
+      final result = parser.parse('''
+بطاقة: 9519 mada Ecommerce
+مبلغ: SAR 73.74
+لدى: AMAZON SA
+في: 20:48 16/2/26
+''');
+
+      expect(result.suggestedPaymentNetwork, 'Mada');
+      expect(result.suggestedPaymentMethod, 'Debit Card');
+      expect(result.suggestedPaymentChannel, 'شراء عبر الإنترنت');
+      expect(result.suggestedPaymentDetail, 'Ecommerce • 9519');
+      expect(result.spentAt, DateTime(2026, 2, 16, 20, 48));
+    });
+
+    test('D360 defaults channel to POS when no Apple Pay/Google Pay/Ecommerce marker exists', () {
+      final result = parser.parse('''
+بطاقة: 9520 VISA
+مبلغ: SAR 85.00
+لدى: SAMPLE STORE
+في: 16-04-2026 08:01
+''');
+
+      expect(result.suggestedPaymentNetwork, 'Visa');
+      expect(result.suggestedPaymentChannel, 'شراء عبر نقاط البيع');
+    });
+  });
+
+  group('Barq', () {
+    test('Barq SAR domestic transaction', () {
+      final result = parser.parse('''
+بطاقة VISA **** 4321 نقاط البيع
+17.92 SAR
+لدى: Jarir Bookstore
+رصيد المحفظة: 500.00 SAR
+2026-03-17 11:38
+''');
+
+      expect(result.transactionAmount, 17.92);
+      expect(result.transactionCurrency, 'SAR');
+      expect(result.amount, 17.92);
+      expect(result.currencyCode, 'SAR');
+      expect(result.billedAmount, isNull);
+      expect(result.isInternational, isFalse);
+      expect(result.merchant, 'Jarir Bookstore');
+      expect(result.spentAt, DateTime(2026, 3, 17, 11, 38));
+      expect(result.suggestedPaymentNetwork, 'Visa');
+      expect(result.suggestedPaymentChannel, 'شراء عبر نقاط البيع');
+    });
+
+    test('Barq USD international transaction', () {
+      final result = parser.parse('''
+بطاقة VISA **** 4321 نقاط البيع
+10 USD (37.53 SAR)
+لدى: Amazon Global
+رصيد المحفظة: 400.00 SAR
+2026-03-17 11:38
+''');
+
+      expect(result.transactionAmount, 10.0);
+      expect(result.transactionCurrency, 'USD');
+      expect(result.amount, 10.0);
+      expect(result.currencyCode, 'USD');
+      expect(result.billedAmount, 37.53);
+      expect(result.billedCurrency, 'SAR');
+      expect(result.totalChargedAmount, isNull);
+      expect(result.isInternational, isTrue);
+      expect(result.merchant, 'Amazon Global');
+      expect(result.spentAt, DateTime(2026, 3, 17, 11, 38));
+    });
+
+    test('Barq USD international transaction supports reversed order', () {
+      final result = parser.parse('''
+بطاقة VISA **** 4321 نقاط البيع
+USD (37.53 SAR) 10
+لدى: Amazon Global
+رصيد المحفظة: 400.00 SAR
+2026-03-17 11:38
+''');
+
+      expect(result.transactionAmount, 10.0);
+      expect(result.transactionCurrency, 'USD');
+      expect(result.amount, 10.0);
+      expect(result.currencyCode, 'USD');
+      expect(result.billedAmount, 37.53);
+      expect(result.billedCurrency, 'SAR');
+      expect(result.totalChargedAmount, isNull);
+      expect(result.merchant, 'Amazon Global');
+      expect(result.currencyCode, isNot('THB'));
+    });
+
+    test('Barq THB international transaction', () {
+      final result = parser.parse('''
+بطاقة VISA **** 7788 عبر الانترنت
+150 THB (15.00 SAR)
+لدى: AIS Thailand
+رصيد المحفظة: 300.00 SAR
+2026-01-20 08:00
+''');
+
+      expect(result.transactionAmount, 150.0);
+      expect(result.transactionCurrency, 'THB');
+      expect(result.billedAmount, 15.00);
+      expect(result.billedCurrency, 'SAR');
+      expect(result.isInternational, isTrue);
+      expect(result.merchant, 'AIS Thailand');
+      expect(result.suggestedPaymentChannel, 'شراء عبر الإنترنت');
+    });
+
+    test('Barq Apple Pay channel', () {
+      final result = parser.parse('''
+بطاقة مدى **** 1111 Apple Pay
+55.00 SAR
+لدى: Starbucks
+رصيد المحفظة: 200.00 SAR
+2026-01-14 06:38
+''');
+
+      expect(result.suggestedPaymentNetwork, 'Mada');
+      expect(result.suggestedPaymentMethod, 'Debit Card');
+      expect(result.suggestedPaymentChannel, 'Apple Pay');
+      expect(result.suggestedPaymentDetail, 'Apple Pay • 1111');
+    });
+
+    test('Barq POS purchase', () {
+      final result = parser.parse('''
+بطاقة VISA **** 2222 نقاط البيع
+120.00 SAR
+لدى: Lulu Hypermarket
+رصيد المحفظة: 800.00 SAR
+2026-02-10 14:22
+''');
+
+      expect(result.suggestedPaymentChannel, 'شراء عبر نقاط البيع');
+      expect(result.suggestedPaymentNetwork, 'Visa');
+      expect(result.merchant, 'Lulu Hypermarket');
+      expect(result.spentAt, DateTime(2026, 2, 10, 14, 22));
+    });
+
+    test('Barq date format 1: في: prefix', () {
+      final result = parser.parse('''
+بطاقة مدى **** 9999 نقاط البيع
+30.00 SAR
+لدى: Test Store
+رصيد المحفظة: 100.00 SAR
+في:2026-01-14 06:38
+''');
+
+      expect(result.spentAt, DateTime(2026, 1, 14, 6, 38));
+    });
+
+    test('Barq date format 2: bare ISO datetime', () {
+      final result = parser.parse('''
+بطاقة VISA **** 1234 نقاط البيع
+25.00 SAR
+لدى: Test Store
+رصيد المحفظة: 100.00 SAR
+2026-03-17 11:38
+''');
+
+      expect(result.spentAt, DateTime(2026, 3, 17, 11, 38));
+    });
+
+    test('Barq balance line is ignored for amount', () {
+      final result = parser.parse('''
+بطاقة مدى **** 3333 نقاط البيع
+45.00 SAR
+لدى: Carrefour
+رصيد المحفظة: 9999.00 SAR
+2026-04-01 10:00
+''');
+
+      expect(result.amount, 45.00);
+      expect(result.amount, isNot(9999.00));
+    });
+
+    test('Barq exact failing message: reversed USD format with merchant and date', () {
+      final result = parser.parse('''
+شراء إنترنت
+بطاقة فيزا
+مبلغ USD (37.53 SAR) 10
+لدى WWW PERPLEXITY AI
+2026-03-17 11:38
+''');
+
+      expect(result.parserName, 'barq');
+      expect(result.transactionAmount, 10.0);
+      expect(result.transactionCurrency, 'USD');
+      expect(result.amount, 10.0);
+      expect(result.currencyCode, 'USD');
+      expect(result.billedAmount, 37.53);
+      expect(result.billedCurrency, 'SAR');
+      expect(result.merchant, contains('WWW PERPLEXITY AI'));
+      expect(result.spentAt, DateTime(2026, 3, 17, 11, 38));
     });
   });
 

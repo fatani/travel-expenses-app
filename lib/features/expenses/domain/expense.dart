@@ -1,3 +1,5 @@
+import 'money_model.dart';
+
 class Expense {
   const Expense({
     required this.id,
@@ -70,6 +72,11 @@ class Expense {
           isInternational ??
           _inferInternational(
             transactionCurrency: transactionCurrency ?? currencyCode,
+            transactionAmount: transactionAmount ?? amount,
+            billedAmount: billedAmount,
+            billedCurrency: billedCurrency,
+            totalChargedAmount: totalChargedAmount,
+            totalChargedCurrency: totalChargedCurrency,
             feesAmount: feesAmount,
           ),
       spentAt: spentAt ?? now,
@@ -92,7 +99,11 @@ class Expense {
       (map['transaction_amount'] as num?)?.toDouble() ?? legacyAmount;
     final transactionCurrency =
       (map['transaction_currency'] as String?) ?? legacyCurrencyCode;
+    final billedAmount = (map['billed_amount'] as num?)?.toDouble();
+    final billedCurrency = map['billed_currency'] as String?;
     final feesAmount = (map['fees_amount'] as num?)?.toDouble();
+    final totalChargedAmount = (map['total_charged_amount'] as num?)?.toDouble();
+    final totalChargedCurrency = map['total_charged_currency'] as String?;
 
     return Expense(
       id: map['id']! as String,
@@ -102,16 +113,21 @@ class Expense {
       currencyCode: transactionCurrency,
       transactionAmount: transactionAmount,
       transactionCurrency: transactionCurrency,
-      billedAmount: (map['billed_amount'] as num?)?.toDouble(),
-      billedCurrency: map['billed_currency'] as String?,
+      billedAmount: billedAmount,
+      billedCurrency: billedCurrency,
       feesAmount: feesAmount,
       feesCurrency: map['fees_currency'] as String?,
-      totalChargedAmount: (map['total_charged_amount'] as num?)?.toDouble(),
-      totalChargedCurrency: map['total_charged_currency'] as String?,
+      totalChargedAmount: totalChargedAmount,
+      totalChargedCurrency: totalChargedCurrency,
       isInternational:
           ((map['is_international'] as num?)?.toInt() ?? 0) == 1 ||
           _inferInternational(
             transactionCurrency: transactionCurrency,
+        transactionAmount: transactionAmount,
+        billedAmount: billedAmount,
+        billedCurrency: billedCurrency,
+        totalChargedAmount: totalChargedAmount,
+        totalChargedCurrency: totalChargedCurrency,
             feesAmount: feesAmount,
           ),
       spentAt: DateTime.parse(map['spent_at']! as String),
@@ -151,6 +167,20 @@ class Expense {
   final String? rawSmsText;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  MoneyModel get moneyModel {
+    return MoneyModel(
+      transactionAmount: transactionAmount,
+      transactionCurrency: transactionCurrency,
+      billedAmount: billedAmount,
+      billedCurrency: billedCurrency,
+      totalChargedAmount: totalChargedAmount,
+      totalChargedCurrency: totalChargedCurrency,
+      feesAmount: feesAmount,
+      feesCurrency: feesCurrency,
+      isInternational: isInternational,
+    );
+  }
 
   Expense copyWith({
     String? id,
@@ -241,9 +271,52 @@ class Expense {
 
   static bool _inferInternational({
     required String transactionCurrency,
+    required double transactionAmount,
+    required double? billedAmount,
+    required String? billedCurrency,
+    required double? totalChargedAmount,
+    required String? totalChargedCurrency,
     required double? feesAmount,
   }) {
-    return transactionCurrency.trim().toUpperCase() != 'SAR' ||
-        (feesAmount != null && feesAmount > 0);
+    final normalizedTransactionCurrency = transactionCurrency.trim().toUpperCase();
+    final billedDiffers = _moneyDiffers(
+      primaryAmount: transactionAmount,
+      primaryCurrency: normalizedTransactionCurrency,
+      candidateAmount: billedAmount,
+      candidateCurrency: billedCurrency,
+    );
+    final totalDiffers = _moneyDiffers(
+      primaryAmount: transactionAmount,
+      primaryCurrency: normalizedTransactionCurrency,
+      candidateAmount: totalChargedAmount,
+      candidateCurrency: totalChargedCurrency,
+    );
+
+    return normalizedTransactionCurrency != 'SAR' ||
+        feesAmount != null ||
+        billedDiffers ||
+        totalDiffers;
+  }
+
+  static bool _moneyDiffers({
+    required double primaryAmount,
+    required String primaryCurrency,
+    required double? candidateAmount,
+    required String? candidateCurrency,
+  }) {
+    if (candidateAmount == null && (candidateCurrency == null || candidateCurrency.trim().isEmpty)) {
+      return false;
+    }
+
+    final normalizedCandidateCurrency = candidateCurrency?.trim().toUpperCase();
+    final currencyDiffers =
+        normalizedCandidateCurrency != null &&
+        normalizedCandidateCurrency.isNotEmpty &&
+        normalizedCandidateCurrency != primaryCurrency;
+    final amountDiffers =
+        candidateAmount != null &&
+        (candidateAmount - primaryAmount).abs() > 0.000001;
+
+    return currencyDiffers || amountDiffers;
   }
 }

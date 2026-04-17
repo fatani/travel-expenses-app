@@ -13,6 +13,7 @@ import '../../expenses/presentation/expense_option_labels.dart';
 import '../../trips/domain/trip.dart';
 import '../data/sms_parser_service.dart';
 import '../domain/sms_parse_result.dart';
+import '../domain/sms_parse_result_money_mapper.dart';
 
 class SmsExpenseScreen extends ConsumerStatefulWidget {
   const SmsExpenseScreen({super.key, required this.trip});
@@ -40,6 +41,8 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
   SmsParseResult? _parseResult;
   bool _attemptedParse = false;
   bool _showValidationErrors = false;
+  bool _isApplyingParsedCurrency = false;
+  bool _didUserEditCurrency = false;
 
   @override
   void initState() {
@@ -48,6 +51,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     _titleController = TextEditingController();
     _amountController = TextEditingController();
     _currencyController = TextEditingController(text: widget.trip.baseCurrency);
+    _currencyController.addListener(_onCurrencyChangedByUser);
     _dateController = TextEditingController();
     _timeController = TextEditingController();
     _noteController = TextEditingController();
@@ -58,6 +62,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     _smsTextController.dispose();
     _titleController.dispose();
     _amountController.dispose();
+    _currencyController.removeListener(_onCurrencyChangedByUser);
     _currencyController.dispose();
     _dateController.dispose();
     _timeController.dispose();
@@ -385,8 +390,11 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       if (result.amount != null) {
         _amountController.text = result.amount!.toStringAsFixed(2);
       }
+      _isApplyingParsedCurrency = true;
       _currencyController.text =
           (result.currencyCode ?? widget.trip.baseCurrency).toUpperCase();
+      _isApplyingParsedCurrency = false;
+      _didUserEditCurrency = false;
       if (result.merchant != null && result.merchant!.isNotEmpty) {
         _titleController.text = result.merchant!;
       }
@@ -414,6 +422,13 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       }
     });
 
+  }
+
+  void _onCurrencyChangedByUser() {
+    if (_isApplyingParsedCurrency) {
+      return;
+    }
+    _didUserEditCurrency = true;
   }
 
   String? _validateSmsText(String? value) {
@@ -532,6 +547,16 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       return value;
     }
 
+    if (value == 'Apple Pay' ||
+        value == 'Google Pay' ||
+        value == 'شراء عبر نقاط البيع') {
+      return 'POS Purchase';
+    }
+
+    if (value == 'Ecommerce' || value == 'شراء عبر الإنترنت') {
+      return 'Online Purchase';
+    }
+
     if (value == 'POS International Purchase') {
       return 'POS Purchase';
     }
@@ -624,8 +649,16 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       _selectedPaymentChannel!,
     );
     final parsed = _parseResult;
+    final parsedMoney = parsed?.toMoneyModel();
+    final baseCurrency = widget.trip.baseCurrency.trim().toUpperCase();
+    final billedMatchesBaseCurrency =
+        parsed?.billedCurrency?.trim().toUpperCase() == baseCurrency;
+    final shouldWarnCurrencyMismatch =
+        _didUserEditCurrency &&
+        currencyCode != baseCurrency &&
+        !billedMatchesBaseCurrency;
 
-    if (currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
+    if (shouldWarnCurrencyMismatch) {
       final shouldKeepAsIs = await _confirmCurrencyMismatch(currencyCode);
       if (shouldKeepAsIs != true) {
         return;
@@ -641,6 +674,12 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         title: title,
         amount: transactionAmount,
         currencyCode: currencyCode,
+        moneyModel: parsedMoney?.copyWith(
+          transactionAmount: transactionAmount,
+          transactionCurrency: currencyCode,
+          isInternational: currencyCode.toUpperCase() != 'SAR' ||
+              parsedMoney.isInternational,
+        ),
         transactionAmount: transactionAmount,
         transactionCurrency: currencyCode,
         billedAmount: parsed?.billedAmount,
@@ -651,7 +690,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         totalChargedCurrency: parsed?.totalChargedCurrency,
         isInternational:
             currencyCode.toUpperCase() != 'SAR' ||
-            ((parsed?.feesAmount ?? 0) > 0),
+            (parsed?.feesAmount != null),
         category: _selectedCategory!,
         spentAt: _expenseDate!,
         paymentMethod: paymentMethod,
