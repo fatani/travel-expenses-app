@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 7;
+  static const int databaseVersion = 8;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -171,6 +171,10 @@ class AppDatabase {
         if (oldVersion < 7) {
           await _ensureExpensesFinancialColumns(db);
         }
+
+        if (oldVersion < 8) {
+          await _recomputeExpensesInternationalFlag(db);
+        }
       },
     );
   }
@@ -317,8 +321,30 @@ class AppDatabase {
     await db.execute(
       'UPDATE $expensesTable SET transaction_currency = currency_code WHERE transaction_currency IS NULL OR transaction_currency = ""',
     );
+    await _recomputeExpensesInternationalFlag(db);
+  }
+
+  Future<void> _recomputeExpensesInternationalFlag(Database db) async {
     await db.execute(
-      'UPDATE $expensesTable SET is_international = CASE WHEN UPPER(COALESCE(transaction_currency, currency_code, "")) != "SAR" OR COALESCE(fees_amount, 0) > 0 THEN 1 ELSE is_international END',
+      'UPDATE $expensesTable '
+      'SET is_international = CASE '
+      'WHEN UPPER(COALESCE(transaction_currency, currency_code, "")) != "SAR" '
+      'OR fees_amount IS NOT NULL '
+      'OR ('
+      '  billed_amount IS NOT NULL OR '
+      '  (billed_currency IS NOT NULL AND TRIM(billed_currency) != "")'
+      ') AND ('
+      '  UPPER(COALESCE(billed_currency, transaction_currency, currency_code, "")) != UPPER(COALESCE(transaction_currency, currency_code, "")) '
+      '  OR ABS(COALESCE(billed_amount, transaction_amount, amount) - COALESCE(transaction_amount, amount)) > 0.000001'
+      ') '
+      'OR ('
+      '  total_charged_amount IS NOT NULL OR '
+      '  (total_charged_currency IS NOT NULL AND TRIM(total_charged_currency) != "")'
+      ') AND ('
+      '  UPPER(COALESCE(total_charged_currency, transaction_currency, currency_code, "")) != UPPER(COALESCE(transaction_currency, currency_code, "")) '
+      '  OR ABS(COALESCE(total_charged_amount, transaction_amount, amount) - COALESCE(transaction_amount, amount)) > 0.000001'
+      ') '
+      'THEN 1 ELSE 0 END',
     );
   }
 }

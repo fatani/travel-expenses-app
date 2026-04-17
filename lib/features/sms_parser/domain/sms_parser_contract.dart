@@ -1,6 +1,8 @@
 import 'sms_parse_result.dart';
 
 enum SmsBank {
+  barq,
+  d360,
   snb,
   alRajhi,
   sab,

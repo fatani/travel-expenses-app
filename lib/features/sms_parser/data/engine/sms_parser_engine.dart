@@ -1,6 +1,8 @@
 import '../../domain/sms_parse_result.dart';
 import '../../domain/sms_parser_contract.dart';
 import '../parsers/al_rajhi_sms_parser.dart';
+import '../parsers/barq_sms_parser.dart';
+import '../parsers/d360_sms_parser.dart';
 import '../parsers/generic_sms_parser.dart';
 import '../parsers/sab_sms_parser.dart';
 import '../parsers/snb_sms_parser.dart';
@@ -16,6 +18,8 @@ class SmsParserEngine {
        _bankParsers =
            bankParsers ??
            const <SmsBankParser>[
+             BarqSmsParser(),
+             D360SmsParser(),
              SnbSmsParser(),
              AlRajhiSmsParser(),
              SabSmsParser(),

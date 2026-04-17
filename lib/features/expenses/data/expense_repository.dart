@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
 import '../domain/expense.dart';
+import '../domain/money_model.dart';
 
 class ExpenseRepository {
   ExpenseRepository(this._appDatabase, {Uuid? uuid})
@@ -38,6 +39,16 @@ class ExpenseRepository {
     );
 
     return rows.map(Expense.fromMap).toList();
+  }
+
+  Future<List<MoneyModel>> getMoneyModelsByTrip(String tripId) async {
+    final expenses = await getExpensesByTrip(tripId);
+    return expenses.map((expense) => expense.moneyModel).toList();
+  }
+
+  Future<List<MoneyModel>> getInternationalMoneyModelsByTrip(String tripId) async {
+    final moneyModels = await getMoneyModelsByTrip(tripId);
+    return moneyModels.where((money) => money.isInternational).toList();
   }
 
   Future<Expense?> getExpenseById(String id) async {
