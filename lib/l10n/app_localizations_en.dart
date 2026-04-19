@@ -456,4 +456,106 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDetailsActuallyCharged => 'Total charged (SAR)';
+
+  @override
+  String get tripDetailsReportTooltip => 'Trip report';
+
+  @override
+  String get tripReportsSummarySubtitle => 'Report Summary';
+
+  @override
+  String tripReportsLoadError(Object error) {
+    return 'Failed to load report: $error';
+  }
+
+  @override
+  String get tripReportsTotalBilled => 'Total billed';
+
+  @override
+  String get tripReportsTotalFees => 'Total fees';
+
+  @override
+  String get tripReportsByCategory => 'By category';
+
+  @override
+  String get tripReportsByTransactionCurrency => 'By transaction currency';
+
+  @override
+  String get tripReportsByPaymentNetwork => 'By payment network';
+
+  @override
+  String get tripReportsByPaymentChannel => 'By payment channel';
+
+  @override
+  String get tripReportsOverview => 'Overview';
+
+  @override
+  String get tripReportsTotalExpenses => 'Total expenses';
+
+  @override
+  String get tripReportsDomestic => 'Domestic';
+
+  @override
+  String get tripReportsInternational => 'International';
+
+  @override
+  String get tripReportsTopCategory => 'Top category';
+
+  @override
+  String tripReportsExpenseCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count expenses',
+      one: '1 expense',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripReportsSmartSummary => 'Smart summary';
+
+  @override
+  String get tripReportsTopSpending => 'Top spending';
+
+  @override
+  String tripReportsInsightDominantCurrency(Object currency, int percentage) {
+    return 'Most of your spending was in $currency ($percentage%)';
+  }
+
+  @override
+  String tripReportsInsightTopCategory(Object category) {
+    return 'Top category: $category';
+  }
+
+  @override
+  String tripReportsInsightDominantPaymentChannel(Object channel, int percentage) {
+    return 'Most spending used $channel ($percentage%)';
+  }
+
+  @override
+  String tripReportsInsightInternationalShare(int percentage) {
+    return 'International spending made up $percentage% of your expenses';
+  }
+
+  @override
+  String tripReportsInsightDomesticShare(int percentage) {
+    return 'Domestic spending made up $percentage% of your expenses';
+  }
+
+  @override
+  String get tripReportsInsightNoInternationalFees => 'No international fees were charged';
+
+  @override
+  String tripReportsInsightMultipleCurrencies(int count) {
+    return 'You\'re dealing with $count different currencies on this trip';
+  }
+
+  @override
+  String tripReportsInsightFeesPercentage(int percentage) {
+    return 'Fees represent $percentage% of your total spending';
+  }
+
+  @override
+  String get tripReportsInsightInternationalDominant => 'Most of your spending was international';
 }

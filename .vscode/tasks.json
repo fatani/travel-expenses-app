@@ -1,0 +1,203 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Flutter on emulator-5554",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"run",
+				"--debug",
+				"-d",
+				"emulator-5554"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Gen L10n",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"gen-l10n"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Flutter Analyze",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"analyze"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Flutter Analyze",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"analyze"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Flutter Test",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"test"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Run Flutter on emulator-5554",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"run",
+				"--debug",
+				"-d",
+				"emulator-5554"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Run Flutter on emulator-5554",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"run",
+				"--debug",
+				"-d",
+				"emulator-5554"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Flutter Analyze",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"analyze"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Flutter Test",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"test"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Flutter Analyze",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"analyze"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Run Flutter on emulator-5554",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"run",
+				"--debug",
+				"-d",
+				"emulator-5554"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Flutter Analyze",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"analyze"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Flutter Test",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"test"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Run Flutter on emulator-5554",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"run",
+				"--debug",
+				"-d",
+				"emulator-5554"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Run Flutter on emulator-5554",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"run",
+				"--debug",
+				"-d",
+				"emulator-5554"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Gen L10n",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"gen-l10n"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Flutter Analyze",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"analyze"
+			],
+			"isBackground": false
+		},
+		{
+			"label": "Flutter Test",
+			"type": "shell",
+			"command": "fvm",
+			"args": [
+				"flutter",
+				"test"
+			],
+			"isBackground": false
+		}
+	]
+}
