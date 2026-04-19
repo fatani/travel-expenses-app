@@ -940,6 +940,162 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total charged (SAR)'**
   String get tripDetailsActuallyCharged;
+
+  /// No description provided for @tripDetailsReportTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip report'**
+  String get tripDetailsReportTooltip;
+
+  /// No description provided for @tripReportsSummarySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Report Summary'**
+  String get tripReportsSummarySubtitle;
+
+  /// No description provided for @tripReportsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load report: {error}'**
+  String tripReportsLoadError(Object error);
+
+  /// No description provided for @tripReportsTotalBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Total billed'**
+  String get tripReportsTotalBilled;
+
+  /// No description provided for @tripReportsTotalFees.
+  ///
+  /// In en, this message translates to:
+  /// **'Total fees'**
+  String get tripReportsTotalFees;
+
+  /// No description provided for @tripReportsByCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'By category'**
+  String get tripReportsByCategory;
+
+  /// No description provided for @tripReportsByTransactionCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'By transaction currency'**
+  String get tripReportsByTransactionCurrency;
+
+  /// No description provided for @tripReportsByPaymentNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'By payment network'**
+  String get tripReportsByPaymentNetwork;
+
+  /// No description provided for @tripReportsByPaymentChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'By payment channel'**
+  String get tripReportsByPaymentChannel;
+
+  /// No description provided for @tripReportsOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get tripReportsOverview;
+
+  /// No description provided for @tripReportsTotalExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Total expenses'**
+  String get tripReportsTotalExpenses;
+
+  /// No description provided for @tripReportsDomestic.
+  ///
+  /// In en, this message translates to:
+  /// **'Domestic'**
+  String get tripReportsDomestic;
+
+  /// No description provided for @tripReportsInternational.
+  ///
+  /// In en, this message translates to:
+  /// **'International'**
+  String get tripReportsInternational;
+
+  /// No description provided for @tripReportsTopCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Top category'**
+  String get tripReportsTopCategory;
+
+  /// No description provided for @tripReportsExpenseCountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 expense} other{{count} expenses}}'**
+  String tripReportsExpenseCountLabel(int count);
+
+  /// No description provided for @tripReportsSmartSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart summary'**
+  String get tripReportsSmartSummary;
+
+  /// No description provided for @tripReportsTopSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Top spending'**
+  String get tripReportsTopSpending;
+
+  /// No description provided for @tripReportsInsightDominantCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Most of your spending was in {currency} ({percentage}%)'**
+  String tripReportsInsightDominantCurrency(Object currency, int percentage);
+
+  /// No description provided for @tripReportsInsightTopCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Top category: {category}'**
+  String tripReportsInsightTopCategory(Object category);
+
+  /// No description provided for @tripReportsInsightDominantPaymentChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Most spending used {channel} ({percentage}%)'**
+  String tripReportsInsightDominantPaymentChannel(Object channel, int percentage);
+
+  /// No description provided for @tripReportsInsightInternationalShare.
+  ///
+  /// In en, this message translates to:
+  /// **'International spending made up {percentage}% of your expenses'**
+  String tripReportsInsightInternationalShare(int percentage);
+
+  /// No description provided for @tripReportsInsightDomesticShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Domestic spending made up {percentage}% of your expenses'**
+  String tripReportsInsightDomesticShare(int percentage);
+
+  /// No description provided for @tripReportsInsightNoInternationalFees.
+  ///
+  /// In en, this message translates to:
+  /// **'No international fees were charged'**
+  String get tripReportsInsightNoInternationalFees;
+
+  /// No description provided for @tripReportsInsightMultipleCurrencies.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re dealing with {count} different currencies on this trip'**
+  String tripReportsInsightMultipleCurrencies(int count);
+
+  /// No description provided for @tripReportsInsightFeesPercentage.
+  ///
+  /// In en, this message translates to:
+  /// **'Fees represent {percentage}% of your total spending'**
+  String tripReportsInsightFeesPercentage(int percentage);
+
+  /// No description provided for @tripReportsInsightInternationalDominant.
+  ///
+  /// In en, this message translates to:
+  /// **'Most of your spending was international'**
+  String get tripReportsInsightInternationalDominant;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

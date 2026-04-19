@@ -456,4 +456,110 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripDetailsActuallyCharged => 'إجمالي المخصوم';
+
+  @override
+  String get tripDetailsReportTooltip => 'تقرير الرحلة';
+
+  @override
+  String get tripReportsSummarySubtitle => 'ملخص التقرير';
+
+  @override
+  String tripReportsLoadError(Object error) {
+    return 'تعذر تحميل التقرير: $error';
+  }
+
+  @override
+  String get tripReportsTotalBilled => 'إجمالي المبلغ المخصوم';
+
+  @override
+  String get tripReportsTotalFees => 'إجمالي الرسوم';
+
+  @override
+  String get tripReportsByCategory => 'حسب الفئة';
+
+  @override
+  String get tripReportsByTransactionCurrency => 'حسب عملة العملية';
+
+  @override
+  String get tripReportsByPaymentNetwork => 'حسب شبكة البطاقة';
+
+  @override
+  String get tripReportsByPaymentChannel => 'حسب قناة الدفع';
+
+  @override
+  String get tripReportsOverview => 'نظرة عامة';
+
+  @override
+  String get tripReportsTotalExpenses => 'إجمالي المصاريف';
+
+  @override
+  String get tripReportsDomestic => 'محلي';
+
+  @override
+  String get tripReportsInternational => 'دولي';
+
+  @override
+  String get tripReportsTopCategory => 'أعلى فئة';
+
+  @override
+  String tripReportsExpenseCountLabel(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مصروف',
+      many: '$count مصروفًا',
+      few: '$count مصاريف',
+      two: 'مصروفان',
+      one: 'مصروف واحد',
+      zero: '0 مصروف',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripReportsSmartSummary => 'ملخص ذكي';
+
+  @override
+  String get tripReportsTopSpending => 'الأعلى إنفاقًا';
+
+  @override
+  String tripReportsInsightDominantCurrency(Object currency, int percentage) {
+    return 'معظم إنفاقك كان بعملة $currency ($percentage%)';
+  }
+
+  @override
+  String tripReportsInsightTopCategory(Object category) {
+    return 'أعلى فئة: $category';
+  }
+
+  @override
+  String tripReportsInsightDominantPaymentChannel(Object channel, int percentage) {
+    return 'معظم الإنفاق تم عبر $channel ($percentage%)';
+  }
+
+  @override
+  String tripReportsInsightInternationalShare(int percentage) {
+    return 'الإنفاق الدولي شكّل $percentage% من مصاريفك';
+  }
+
+  @override
+  String tripReportsInsightDomesticShare(int percentage) {
+    return 'الإنفاق المحلي شكّل $percentage% من مصاريفك';
+  }
+
+  @override
+  String get tripReportsInsightNoInternationalFees => 'لم يتم فرض أي رسوم على عملياتك الدولية';
+
+  @override
+  String tripReportsInsightMultipleCurrencies(int count) {
+    return 'تتعامل مع $count عملات مختلفة خلال هذه الرحلة';
+  }
+
+  @override
+  String tripReportsInsightFeesPercentage(int percentage) {
+    return 'الرسوم تمثّل $percentage% من إجمالي إنفاقك';
+  }
+
+  @override
+  String get tripReportsInsightInternationalDominant => 'أغلب إنفاقك كان دوليًا';
 }

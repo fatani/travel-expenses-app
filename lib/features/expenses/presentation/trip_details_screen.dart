@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
+import 'package:travel_expenses/l10n/l10n_extension.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
+import '../../reports/presentation/trip_reports_screen.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/presentation/trip_form_screen.dart';
 import '../domain/expense.dart';
@@ -42,6 +44,16 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       appBar: AppBar(
         title: Text(_trip.name),
         actions: [
+          IconButton(
+            tooltip: context.l10n.tripDetailsReportTooltip,
+            onPressed: () => Navigator.push<void>(
+              context,
+              MaterialPageRoute<void>(
+                builder: (_) => TripReportsScreen(trip: _trip),
+              ),
+            ),
+            icon: const Icon(Icons.bar_chart_outlined),
+          ),
           IconButton(
             tooltip: l10n.tripDetailsEditTripTooltip,
             onPressed: _openTripEditor,
