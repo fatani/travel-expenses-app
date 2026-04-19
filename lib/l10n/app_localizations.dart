@@ -1096,6 +1096,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Most of your spending was international'**
   String get tripReportsInsightInternationalDominant;
+
+  /// No description provided for @globalReportsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Global reports'**
+  String get globalReportsTitle;
+
+  /// No description provided for @globalReportsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Across all trips'**
+  String get globalReportsSubtitle;
+
+  /// No description provided for @globalReportsTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Global reports'**
+  String get globalReportsTooltip;
+
+  /// No description provided for @globalReportsLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load global report: {error}'**
+  String globalReportsLoadError(Object error);
+
+  /// No description provided for @globalReportsEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No trips to analyze'**
+  String get globalReportsEmptyTitle;
+
+  /// No description provided for @globalReportsEmptyMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a trip first to unlock global financial insights.'**
+  String get globalReportsEmptyMessage;
+
+  /// No description provided for @globalReportsSmartSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Smart summary'**
+  String get globalReportsSmartSummary;
+
+  /// No description provided for @globalReportsOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get globalReportsOverview;
+
+  /// No description provided for @globalReportsTotalTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Total trips'**
+  String get globalReportsTotalTrips;
+
+  /// No description provided for @globalReportsTotalExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Total expenses'**
+  String get globalReportsTotalExpenses;
+
+  /// No description provided for @globalReportsTrackedDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Tracked trip days'**
+  String get globalReportsTrackedDays;
+
+  /// No description provided for @globalReportsTotalBilled.
+  ///
+  /// In en, this message translates to:
+  /// **'Total billed'**
+  String get globalReportsTotalBilled;
+
+  /// No description provided for @globalReportsAveragePerTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Average spending per trip'**
+  String get globalReportsAveragePerTrip;
+
+  /// No description provided for @globalReportsAveragePerDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Average daily spending'**
+  String get globalReportsAveragePerDay;
+
+  /// No description provided for @globalReportsTopCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Top category'**
+  String get globalReportsTopCategory;
+
+  /// No description provided for @globalReportsMostUsedPaymentChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Most used payment channel'**
+  String get globalReportsMostUsedPaymentChannel;
+
+  /// No description provided for @globalReportsMostUsedPaymentNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'Most used payment network'**
+  String get globalReportsMostUsedPaymentNetwork;
+
+  /// No description provided for @globalReportsDominantCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Dominant currency'**
+  String get globalReportsDominantCurrency;
+
+  /// No description provided for @globalReportsInternationalRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'International ratio'**
+  String get globalReportsInternationalRatio;
+
+  /// No description provided for @globalReportsDomesticRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'Domestic ratio'**
+  String get globalReportsDomesticRatio;
+
+  /// No description provided for @globalReportsInsightDominantPaymentChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Most of your expenses were via {channel}'**
+  String globalReportsInsightDominantPaymentChannel(Object channel);
+
+  /// No description provided for @globalReportsInsightDominantCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'Top spending category: {category}'**
+  String globalReportsInsightDominantCategory(Object category);
+
+  /// No description provided for @globalReportsInsightAverageSpendPerTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'Average spend per trip: {amount}'**
+  String globalReportsInsightAverageSpendPerTrip(Object amount);
+
+  /// No description provided for @globalReportsInsightDominantCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Most of your billed spending is in {currency} ({percentage}%)'**
+  String globalReportsInsightDominantCurrency(Object currency, int percentage);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

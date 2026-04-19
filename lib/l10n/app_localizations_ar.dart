@@ -562,4 +562,86 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripReportsInsightInternationalDominant => 'أغلب إنفاقك كان دوليًا';
+
+  @override
+  String get globalReportsTitle => 'التقرير الشامل';
+
+  @override
+  String get globalReportsSubtitle => 'عبر جميع الرحلات';
+
+  @override
+  String get globalReportsTooltip => 'التقرير الشامل';
+
+  @override
+  String globalReportsLoadError(Object error) {
+    return 'تعذر تحميل التقرير الشامل: $error';
+  }
+
+  @override
+  String get globalReportsEmptyTitle => 'لا توجد رحلات للتحليل';
+
+  @override
+  String get globalReportsEmptyMessage => 'أنشئ رحلة أولاً لعرض الرؤية المالية الشاملة.';
+
+  @override
+  String get globalReportsSmartSummary => 'ملخص ذكي';
+
+  @override
+  String get globalReportsOverview => 'نظرة عامة';
+
+  @override
+  String get globalReportsTotalTrips => 'إجمالي الرحلات';
+
+  @override
+  String get globalReportsTotalExpenses => 'إجمالي المصاريف';
+
+  @override
+  String get globalReportsTrackedDays => 'عدد أيام الرحلات المحتسبة';
+
+  @override
+  String get globalReportsTotalBilled => 'إجمالي المبلغ المخصوم';
+
+  @override
+  String get globalReportsAveragePerTrip => 'متوسط الصرف لكل رحلة';
+
+  @override
+  String get globalReportsAveragePerDay => 'متوسط الصرف اليومي';
+
+  @override
+  String get globalReportsTopCategory => 'أعلى فئة';
+
+  @override
+  String get globalReportsMostUsedPaymentChannel => 'قناة الدفع الأكثر استخدامًا';
+
+  @override
+  String get globalReportsMostUsedPaymentNetwork => 'شبكة البطاقة الأكثر استخدامًا';
+
+  @override
+  String get globalReportsDominantCurrency => 'العملة الأبرز';
+
+  @override
+  String get globalReportsInternationalRatio => 'النسبة الدولية';
+
+  @override
+  String get globalReportsDomesticRatio => 'النسبة المحلية';
+
+  @override
+  String globalReportsInsightDominantPaymentChannel(Object channel) {
+    return 'أغلب مصاريفك كانت عبر $channel';
+  }
+
+  @override
+  String globalReportsInsightDominantCategory(Object category) {
+    return 'أكثر فئة إنفاقًا: $category';
+  }
+
+  @override
+  String globalReportsInsightAverageSpendPerTrip(Object amount) {
+    return 'متوسط صرفك لكل رحلة: $amount';
+  }
+
+  @override
+  String globalReportsInsightDominantCurrency(Object currency, int percentage) {
+    return 'العملة الأبرز في إنفاقك هي $currency ($percentage%)';
+  }
 }
