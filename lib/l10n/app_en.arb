@@ -196,9 +196,13 @@
   "@globalReportsLoadError": {"placeholders": {"error": {}}},
   "globalReportsEmptyTitle": "No trips to analyze",
   "globalReportsEmptyMessage": "Create a trip first to unlock global financial insights.",
+  "globalReportsZeroTripsTitle": "No trips yet",
+  "globalReportsZeroTripsSubtitle": "Add your first trip to start tracking expenses and see global reports.",
+  "globalReportsSingleTripNote": "Add more trips to unlock smarter cross-trip comparisons.",
   "globalReportsSmartSummary": "Smart summary",
   "globalReportsOverview": "Overview",
   "globalReportsTotalTrips": "Total trips",
+  "globalReportsActiveTrips": "Trips with expenses",
   "globalReportsTotalExpenses": "Total expenses",
   "globalReportsTrackedDays": "Tracked trip days",
   "globalReportsTotalBilled": "Total billed",
@@ -217,5 +221,9 @@
   "globalReportsInsightAverageSpendPerTrip": "Average spend per trip: {amount}",
   "@globalReportsInsightAverageSpendPerTrip": {"placeholders": {"amount": {}}},
   "globalReportsInsightDominantCurrency": "Most of your billed spending is in {currency} ({percentage}%)",
-  "@globalReportsInsightDominantCurrency": {"placeholders": {"currency": {}, "percentage": {"type": "int"}}}
+  "@globalReportsInsightDominantCurrency": {"placeholders": {"currency": {}, "percentage": {"type": "int"}}},
+  "globalReportsInsightCurrencyDistribution": "Your spending is spread across {count} currencies",
+  "@globalReportsInsightCurrencyDistribution": {"placeholders": {"count": {"type": "int"}}},
+  "globalReportsInsightIntlDomesticRatio": "International {international}% vs domestic {domestic}%",
+  "@globalReportsInsightIntlDomesticRatio": {"placeholders": {"international": {"type": "int"}, "domestic": {"type": "int"}}}
 }

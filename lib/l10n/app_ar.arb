@@ -196,9 +196,13 @@
   "@globalReportsLoadError": {"placeholders": {"error": {}}},
   "globalReportsEmptyTitle": "لا توجد رحلات للتحليل",
   "globalReportsEmptyMessage": "أنشئ رحلة أولاً لعرض الرؤية المالية الشاملة.",
+  "globalReportsZeroTripsTitle": "لا توجد رحلات بعد",
+  "globalReportsZeroTripsSubtitle": "أضف أول رحلة لتبدأ في تتبع مصاريفك ورؤية التقارير الشاملة",
+  "globalReportsSingleTripNote": "أضف رحلات أكثر للحصول على مقارنات أذكى بين رحلاتك",
   "globalReportsSmartSummary": "ملخص ذكي",
   "globalReportsOverview": "نظرة عامة",
   "globalReportsTotalTrips": "إجمالي الرحلات",
+  "globalReportsActiveTrips": "رحلات بها مصاريف",
   "globalReportsTotalExpenses": "إجمالي المصاريف",
   "globalReportsTrackedDays": "عدد أيام الرحلات المحتسبة",
   "globalReportsTotalBilled": "إجمالي المبلغ المخصوم",
@@ -217,5 +221,9 @@
   "globalReportsInsightAverageSpendPerTrip": "متوسط صرفك لكل رحلة: {amount}",
   "@globalReportsInsightAverageSpendPerTrip": {"placeholders": {"amount": {}}},
   "globalReportsInsightDominantCurrency": "العملة الأبرز في إنفاقك هي {currency} ({percentage}%)",
-  "@globalReportsInsightDominantCurrency": {"placeholders": {"currency": {}, "percentage": {"type": "int"}}}
+  "@globalReportsInsightDominantCurrency": {"placeholders": {"currency": {}, "percentage": {"type": "int"}}},
+  "globalReportsInsightCurrencyDistribution": "إنفاقك موزّع على {count, plural, =1{عملة واحدة} =2{عملتين} other{{count} عملات}}",
+  "@globalReportsInsightCurrencyDistribution": {"placeholders": {"count": {"type": "int"}}},
+  "globalReportsInsightIntlDomesticRatio": "الدولي {international}% مقابل المحلي {domestic}%",
+  "@globalReportsInsightIntlDomesticRatio": {"placeholders": {"international": {"type": "int"}, "domestic": {"type": "int"}}}
 }

@@ -1,33 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/providers/database_providers.dart';
 import '../../../l10n/l10n_extension.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
 import '../../reports/domain/report_bucket.dart';
-import '../data/global_report_calculator.dart';
+import '../../trips/presentation/trip_form_screen.dart';
+import '../data/global_report_provider.dart';
 import '../domain/global_report_summary.dart';
-
-final _globalReportProvider = FutureProvider<GlobalReportSummary>((ref) async {
-  final tripRepository = ref.watch(tripRepositoryProvider);
-  final expenseRepository = ref.watch(expenseRepositoryProvider);
-
-  final trips = await tripRepository.getTrips();
-  final expenseLists = await Future.wait(
-    trips.map((trip) => expenseRepository.getExpensesByTrip(trip.id)),
-  );
-  final expenses = expenseLists.expand((items) => items).toList(growable: false);
-
-  const calculator = GlobalReportCalculator();
-  return calculator.calculate(trips: trips, expenses: expenses);
-});
 
 class GlobalReportsScreen extends ConsumerWidget {
   const GlobalReportsScreen({super.key});
 
+  Future<void> _openTripForm(BuildContext context, WidgetRef ref) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const TripFormScreen()),
+    );
+    ref.invalidate(globalReportProvider);
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(_globalReportProvider);
+    final summaryAsync = ref.watch(globalReportProvider);
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -54,7 +47,9 @@ class GlobalReportsScreen extends ConsumerWidget {
         ),
         data: (summary) {
           if (!summary.hasTrips) {
-            return const _EmptyGlobalReportsState();
+            return _EmptyGlobalReportsState(
+              onAddTrip: () => _openTripForm(context, ref),
+            );
           }
           return _GlobalReportBody(summary: summary);
         },
@@ -75,6 +70,10 @@ class _GlobalReportBody extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
+        if (summary.totalTrips == 1) ...[
+          const _SingleTripNoteCard(),
+          sectionGap,
+        ],
         if (summary.smartInsights.isNotEmpty) ...[
           _SmartInsightsCard(summary: summary),
           sectionGap,
@@ -88,16 +87,6 @@ class _GlobalReportBody extends StatelessWidget {
           _CurrencyBucketList(buckets: summary.totalBilledByCurrency),
           sectionGap,
         ],
-        if (summary.averageSpendPerTripByCurrency.isNotEmpty) ...[
-          _SectionHeader(title: context.l10n.globalReportsAveragePerTrip),
-          _CurrencyMetricList(metrics: summary.averageSpendPerTripByCurrency),
-          sectionGap,
-        ],
-        if (summary.averageDailySpendByCurrency.isNotEmpty) ...[
-          _SectionHeader(title: context.l10n.globalReportsAveragePerDay),
-          _CurrencyMetricList(metrics: summary.averageDailySpendByCurrency),
-          sectionGap,
-        ],
         const SizedBox(height: 24),
       ],
     );
@@ -105,7 +94,9 @@ class _GlobalReportBody extends StatelessWidget {
 }
 
 class _EmptyGlobalReportsState extends StatelessWidget {
-  const _EmptyGlobalReportsState();
+  const _EmptyGlobalReportsState({required this.onAddTrip});
+
+  final VoidCallback onAddTrip;
 
   @override
   Widget build(BuildContext context) {
@@ -118,15 +109,41 @@ class _EmptyGlobalReportsState extends StatelessWidget {
             const Icon(Icons.analytics_outlined, size: 40),
             const SizedBox(height: 12),
             Text(
-              context.l10n.globalReportsEmptyTitle,
+              context.l10n.globalReportsZeroTripsTitle,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              context.l10n.globalReportsEmptyMessage,
+              context.l10n.globalReportsZeroTripsSubtitle,
               textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: onAddTrip,
+              child: Text(context.l10n.tripsAddButton),
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SingleTripNoteCard extends StatelessWidget {
+  const _SingleTripNoteCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          context.l10n.globalReportsSingleTripNote,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       ),
     );
@@ -182,14 +199,14 @@ class _SummaryCards extends StatelessWidget {
         Expanded(
           child: _SummaryCountCard(
             title: context.l10n.globalReportsTotalTrips,
-            value: summary.totalTripCount.toString(),
+            value: summary.totalTrips.toString(),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _SummaryCountCard(
-            title: context.l10n.globalReportsTotalExpenses,
-            value: summary.totalExpenseCount.toString(),
+            title: context.l10n.globalReportsActiveTrips,
+            value: summary.activeTrips.toString(),
           ),
         ),
       ],
@@ -386,33 +403,6 @@ class _CurrencyBucketList extends StatelessWidget {
   }
 }
 
-class _CurrencyMetricList extends StatelessWidget {
-  const _CurrencyMetricList({required this.metrics});
-
-  final List<GlobalCurrencyMetric> metrics;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Column(
-        children: [
-          for (int index = 0; index < metrics.length; index++) ...[
-            if (index > 0) const Divider(height: 1, indent: 16, endIndent: 16),
-            ListTile(
-              dense: true,
-              title: Text(metrics[index].currency),
-              trailing: _AmountText(
-                amount: metrics[index].amount,
-                currency: metrics[index].currency,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
 class _AmountText extends StatelessWidget {
   const _AmountText({required this.amount, required this.currency});
 
@@ -451,6 +441,17 @@ String _localizeInsight(BuildContext context, GlobalReportInsight insight) {
       return context.l10n.globalReportsInsightDominantCurrency(
         insight.subject ?? '',
         insight.percentage ?? 0,
+      );
+    case GlobalReportInsightType.currencyDistribution:
+      return context.l10n.globalReportsInsightCurrencyDistribution(
+        insight.percentage ?? 0,
+      );
+    case GlobalReportInsightType.internationalDomesticRatio:
+      final internationalPct = insight.percentage ?? 0;
+      final domesticPct = 100 - internationalPct;
+      return context.l10n.globalReportsInsightIntlDomesticRatio(
+        internationalPct,
+        domesticPct,
       );
   }
 }

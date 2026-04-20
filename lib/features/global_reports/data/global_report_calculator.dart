@@ -10,10 +10,12 @@ class GlobalReportCalculator {
     required List<Trip> trips,
     required List<Expense> expenses,
   }) {
+    final totalTrips = trips.length;
     final tripIds = trips.map((trip) => trip.id).toSet();
     final relevantExpenses = expenses
         .where((expense) => tripIds.contains(expense.tripId))
         .toList(growable: false);
+    final activeTrips = relevantExpenses.map((expense) => expense.tripId).toSet().length;
 
     final totalExpenseCount = relevantExpenses.length;
     final internationalExpenseCount =
@@ -52,9 +54,12 @@ class GlobalReportCalculator {
     }
 
     final totalBilledByCurrency = _toBuckets(billedByCurrency);
-    final topCategory = _topAccumulatorKey(categoryTotals);
-    final mostUsedPaymentChannel = _topUsageKey(paymentChannelUsage);
-    final mostUsedPaymentNetwork = _topUsageKey(paymentNetworkUsage);
+    final isSingleTrip = totalTrips == 1;
+    final topCategory = isSingleTrip ? null : _topAccumulatorKey(categoryTotals);
+    final mostUsedPaymentChannel =
+      isSingleTrip ? null : _topUsageKey(paymentChannelUsage);
+    final mostUsedPaymentNetwork =
+      isSingleTrip ? null : _topUsageKey(paymentNetworkUsage);
     final dominantCurrency =
         totalBilledByCurrency.isEmpty ? null : totalBilledByCurrency.first.currency;
     final trackedTripDays = trips.fold<int>(
@@ -64,7 +69,7 @@ class GlobalReportCalculator {
 
     final averageSpendPerTripByCurrency = _buildAveragePerTripMetrics(
       totalBilledByCurrency: totalBilledByCurrency,
-      tripCount: trips.length,
+      tripCount: totalTrips,
     );
     final averageDailySpendByCurrency = _buildAverageDailyMetrics(
       totalBilledByCurrency: totalBilledByCurrency,
@@ -72,7 +77,9 @@ class GlobalReportCalculator {
     );
     final smartInsights = _buildSmartInsights(
       totalExpenseCount: totalExpenseCount,
-      totalTripCount: trips.length,
+      totalTripCount: totalTrips,
+      internationalExpenseCount: internationalExpenseCount,
+      domesticExpenseCount: domesticExpenseCount,
       mostUsedPaymentChannel: mostUsedPaymentChannel,
       mostUsedPaymentChannelCount:
           paymentChannelUsage[mostUsedPaymentChannel]?.count,
@@ -82,7 +89,8 @@ class GlobalReportCalculator {
     );
 
     return GlobalReportSummary(
-      totalTripCount: trips.length,
+      totalTrips: totalTrips,
+      activeTrips: activeTrips,
       totalExpenseCount: totalExpenseCount,
       internationalExpenseCount: internationalExpenseCount,
       domesticExpenseCount: domesticExpenseCount,
@@ -222,6 +230,8 @@ class GlobalReportCalculator {
   List<GlobalReportInsight> _buildSmartInsights({
     required int totalExpenseCount,
     required int totalTripCount,
+    required int internationalExpenseCount,
+    required int domesticExpenseCount,
     required String? mostUsedPaymentChannel,
     required int? mostUsedPaymentChannelCount,
     required String? dominantCategory,
@@ -229,6 +239,30 @@ class GlobalReportCalculator {
     required List<GlobalCurrencyMetric> averageSpendPerTripByCurrency,
   }) {
     final insights = <GlobalReportInsight>[];
+    final isSingleTrip = totalTripCount == 1;
+
+    if (isSingleTrip) {
+      if (totalBilledByCurrency.isNotEmpty) {
+        insights.add(
+          GlobalReportInsight(
+            type: GlobalReportInsightType.currencyDistribution,
+            percentage: totalBilledByCurrency.length,
+          ),
+        );
+      }
+
+      if (totalExpenseCount > 0) {
+        insights.add(
+          GlobalReportInsight(
+            type: GlobalReportInsightType.internationalDomesticRatio,
+            percentage: ((internationalExpenseCount / totalExpenseCount) * 100)
+                .round(),
+          ),
+        );
+      }
+
+      return insights.take(3).toList(growable: false);
+    }
 
     if (mostUsedPaymentChannel != null &&
         mostUsedPaymentChannelCount != null &&

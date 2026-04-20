@@ -59,7 +59,8 @@ void main() {
     test('returns empty summary for no trips', () {
       final summary = _calculator.calculate(trips: const [], expenses: const []);
 
-      expect(summary.totalTripCount, 0);
+      expect(summary.totalTrips, 0);
+      expect(summary.activeTrips, 0);
       expect(summary.totalExpenseCount, 0);
       expect(summary.totalBilledByCurrency, isEmpty);
       expect(summary.smartInsights, isEmpty);
@@ -127,7 +128,8 @@ void main() {
 
       final summary = _calculator.calculate(trips: trips, expenses: expenses);
 
-      expect(summary.totalTripCount, 2);
+      expect(summary.totalTrips, 2);
+      expect(summary.activeTrips, 2);
       expect(summary.totalExpenseCount, 4);
       expect(summary.totalBilledByCurrency.map((bucket) => bucket.currency), ['SAR', 'AED']);
       expect(summary.totalBilledByCurrency[0].totalAmount, 575.0);
@@ -189,6 +191,40 @@ void main() {
       expect(summary.smartInsights[2].currency, 'SAR');
     });
 
+    test('counts total trips separately from active trips', () {
+      final trips = [
+        _trip(
+          id: 'trip-1',
+          name: 'With expenses',
+          startDate: DateTime(2026, 5, 1),
+          endDate: DateTime(2026, 5, 2),
+        ),
+        _trip(
+          id: 'trip-2',
+          name: 'Without expenses',
+          startDate: DateTime(2026, 5, 10),
+          endDate: DateTime(2026, 5, 12),
+        ),
+      ];
+
+      final expenses = [
+        _expense(
+          tripId: 'trip-1',
+          amount: 140,
+          currency: 'SAR',
+          category: 'Food',
+          paymentNetwork: 'Visa',
+          paymentChannel: 'POS Purchase',
+        ),
+      ];
+
+      final summary = _calculator.calculate(trips: trips, expenses: expenses);
+
+      expect(summary.totalTrips, 2);
+      expect(summary.activeTrips, 1);
+      expect(summary.totalExpenseCount, 1);
+    });
+
     test('ignores expenses that do not belong to provided trips', () {
       final trips = [
         _trip(
@@ -219,7 +255,33 @@ void main() {
 
       expect(summary.totalExpenseCount, 1);
       expect(summary.totalBilledByCurrency.single.totalAmount, 100.0);
-      expect(summary.topCategory, 'Food');
+      expect(summary.topCategory, isNull);
+      expect(summary.mostUsedPaymentChannel, isNull);
+      expect(summary.mostUsedPaymentNetwork, isNull);
+      expect(summary.smartInsights.map((insight) => insight.type), [
+        GlobalReportInsightType.currencyDistribution,
+        GlobalReportInsightType.internationalDomesticRatio,
+      ]);
+      expect(summary.smartInsights[0].percentage, 1);
+      expect(summary.smartInsights[1].percentage, 0);
+      expect(
+        summary.smartInsights
+            .map((insight) => insight.type)
+            .contains(GlobalReportInsightType.dominantPaymentChannel),
+        isFalse,
+      );
+      expect(
+        summary.smartInsights
+            .map((insight) => insight.type)
+            .contains(GlobalReportInsightType.dominantCategory),
+        isFalse,
+      );
+      expect(
+        summary.smartInsights
+            .map((insight) => insight.type)
+            .contains(GlobalReportInsightType.dominantCurrency),
+        isFalse,
+      );
     });
   });
 }

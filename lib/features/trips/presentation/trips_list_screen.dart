@@ -17,6 +17,10 @@ class TripsListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final tripsState = ref.watch(tripsControllerProvider);
+    final showAddTripFab = tripsState.maybeWhen(
+      data: (trips) => trips.isNotEmpty,
+      orElse: () => false,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -92,11 +96,13 @@ class TripsListScreen extends ConsumerWidget {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _openTripForm(context),
-        icon: const Icon(Icons.add_rounded),
-        label: Text(l10n.tripsAddButton),
-      ),
+      floatingActionButton: showAddTripFab
+          ? FloatingActionButton.extended(
+              onPressed: () => _openTripForm(context),
+              icon: const Icon(Icons.add_rounded),
+              label: Text(l10n.tripsAddButton),
+            )
+          : null,
     );
   }
 

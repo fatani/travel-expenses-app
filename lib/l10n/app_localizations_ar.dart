@@ -584,6 +584,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get globalReportsEmptyMessage => 'أنشئ رحلة أولاً لعرض الرؤية المالية الشاملة.';
 
   @override
+  String get globalReportsZeroTripsTitle => 'لا توجد رحلات بعد';
+
+  @override
+  String get globalReportsZeroTripsSubtitle => 'أضف أول رحلة لتبدأ في تتبع مصاريفك ورؤية التقارير الشاملة';
+
+  @override
+  String get globalReportsSingleTripNote => 'أضف رحلات أكثر للحصول على مقارنات أذكى بين رحلاتك';
+
+  @override
   String get globalReportsSmartSummary => 'ملخص ذكي';
 
   @override
@@ -591,6 +600,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get globalReportsTotalTrips => 'إجمالي الرحلات';
+
+  @override
+  String get globalReportsActiveTrips => 'رحلات بها مصاريف';
 
   @override
   String get globalReportsTotalExpenses => 'إجمالي المصاريف';
@@ -643,5 +655,22 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String globalReportsInsightDominantCurrency(Object currency, int percentage) {
     return 'العملة الأبرز في إنفاقك هي $currency ($percentage%)';
+  }
+
+  @override
+  String globalReportsInsightCurrencyDistribution(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عملات',
+      two: 'عملتين',
+      one: 'عملة واحدة',
+    );
+    return 'إنفاقك موزّع على $_temp0';
+  }
+
+  @override
+  String globalReportsInsightIntlDomesticRatio(int international, int domestic) {
+    return 'الدولي $international% مقابل المحلي $domestic%';
   }
 }

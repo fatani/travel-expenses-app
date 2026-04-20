@@ -15,6 +15,8 @@ enum GlobalReportInsightType {
   dominantCategory,
   averageSpendPerTrip,
   dominantCurrency,
+  currencyDistribution,
+  internationalDomesticRatio,
 }
 
 class GlobalReportInsight {
@@ -35,7 +37,8 @@ class GlobalReportInsight {
 
 class GlobalReportSummary {
   const GlobalReportSummary({
-    required this.totalTripCount,
+    required this.totalTrips,
+    required this.activeTrips,
     required this.totalExpenseCount,
     required this.internationalExpenseCount,
     required this.domesticExpenseCount,
@@ -51,7 +54,8 @@ class GlobalReportSummary {
     required this.smartInsights,
   });
 
-  final int totalTripCount;
+  final int totalTrips;
+  final int activeTrips;
   final int totalExpenseCount;
   final int internationalExpenseCount;
   final int domesticExpenseCount;
@@ -66,7 +70,7 @@ class GlobalReportSummary {
   final String? dominantCategory;
   final List<GlobalReportInsight> smartInsights;
 
-  bool get hasTrips => totalTripCount > 0;
+  bool get hasTrips => totalTrips > 0;
   bool get hasExpenses => totalExpenseCount > 0;
 
   int get internationalRatioPercentage =>

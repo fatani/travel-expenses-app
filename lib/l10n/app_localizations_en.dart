@@ -580,6 +580,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get globalReportsEmptyMessage => 'Create a trip first to unlock global financial insights.';
 
   @override
+  String get globalReportsZeroTripsTitle => 'No trips yet';
+
+  @override
+  String get globalReportsZeroTripsSubtitle => 'Add your first trip to start tracking expenses and see global reports.';
+
+  @override
+  String get globalReportsSingleTripNote => 'Add more trips to unlock smarter cross-trip comparisons.';
+
+  @override
   String get globalReportsSmartSummary => 'Smart summary';
 
   @override
@@ -587,6 +596,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get globalReportsTotalTrips => 'Total trips';
+
+  @override
+  String get globalReportsActiveTrips => 'Trips with expenses';
 
   @override
   String get globalReportsTotalExpenses => 'Total expenses';
@@ -639,5 +651,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String globalReportsInsightDominantCurrency(Object currency, int percentage) {
     return 'Most of your billed spending is in $currency ($percentage%)';
+  }
+
+  @override
+  String globalReportsInsightCurrencyDistribution(int count) {
+    return 'Your spending is spread across $count currencies';
+  }
+
+  @override
+  String globalReportsInsightIntlDomesticRatio(int international, int domestic) {
+    return 'International $international% vs domestic $domestic%';
   }
 }

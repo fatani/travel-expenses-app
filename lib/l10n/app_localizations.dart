@@ -1133,6 +1133,24 @@ abstract class AppLocalizations {
   /// **'Create a trip first to unlock global financial insights.'**
   String get globalReportsEmptyMessage;
 
+  /// No description provided for @globalReportsZeroTripsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No trips yet'**
+  String get globalReportsZeroTripsTitle;
+
+  /// No description provided for @globalReportsZeroTripsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first trip to start tracking expenses and see global reports.'**
+  String get globalReportsZeroTripsSubtitle;
+
+  /// No description provided for @globalReportsSingleTripNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more trips to unlock smarter cross-trip comparisons.'**
+  String get globalReportsSingleTripNote;
+
   /// No description provided for @globalReportsSmartSummary.
   ///
   /// In en, this message translates to:
@@ -1150,6 +1168,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total trips'**
   String get globalReportsTotalTrips;
+
+  /// No description provided for @globalReportsActiveTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips with expenses'**
+  String get globalReportsActiveTrips;
 
   /// No description provided for @globalReportsTotalExpenses.
   ///
@@ -1240,6 +1264,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Most of your billed spending is in {currency} ({percentage}%)'**
   String globalReportsInsightDominantCurrency(Object currency, int percentage);
+
+  /// No description provided for @globalReportsInsightCurrencyDistribution.
+  ///
+  /// In en, this message translates to:
+  /// **'Your spending is spread across {count} currencies'**
+  String globalReportsInsightCurrencyDistribution(int count);
+
+  /// No description provided for @globalReportsInsightIntlDomesticRatio.
+  ///
+  /// In en, this message translates to:
+  /// **'International {international}% vs domestic {domestic}%'**
+  String globalReportsInsightIntlDomesticRatio(int international, int domestic);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
