@@ -558,4 +558,108 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripReportsInsightInternationalDominant => 'Most of your spending was international';
+
+  @override
+  String get globalReportsTitle => 'Global reports';
+
+  @override
+  String get globalReportsSubtitle => 'Across all trips';
+
+  @override
+  String get globalReportsTooltip => 'Global reports';
+
+  @override
+  String globalReportsLoadError(Object error) {
+    return 'Failed to load global report: $error';
+  }
+
+  @override
+  String get globalReportsEmptyTitle => 'No trips to analyze';
+
+  @override
+  String get globalReportsEmptyMessage => 'Create a trip first to unlock global financial insights.';
+
+  @override
+  String get globalReportsZeroTripsTitle => 'No trips yet';
+
+  @override
+  String get globalReportsZeroTripsSubtitle => 'Add your first trip to start tracking expenses and see global reports.';
+
+  @override
+  String get globalReportsSingleTripNote => 'Add more trips to unlock smarter cross-trip comparisons.';
+
+  @override
+  String get globalReportsSmartSummary => 'Smart summary';
+
+  @override
+  String get globalReportsOverview => 'Overview';
+
+  @override
+  String get globalReportsTotalTrips => 'Total trips';
+
+  @override
+  String get globalReportsActiveTrips => 'Trips with expenses';
+
+  @override
+  String get globalReportsTotalExpenses => 'Total expenses';
+
+  @override
+  String get globalReportsTrackedDays => 'Tracked trip days';
+
+  @override
+  String get globalReportsTotalBilled => 'Total billed';
+
+  @override
+  String get globalReportsAveragePerTrip => 'Average spending per trip';
+
+  @override
+  String get globalReportsAveragePerDay => 'Average daily spending';
+
+  @override
+  String get globalReportsTopCategory => 'Top category';
+
+  @override
+  String get globalReportsMostUsedPaymentChannel => 'Most used payment channel';
+
+  @override
+  String get globalReportsMostUsedPaymentNetwork => 'Most used payment network';
+
+  @override
+  String get globalReportsDominantCurrency => 'Dominant currency';
+
+  @override
+  String get globalReportsInternationalRatio => 'International ratio';
+
+  @override
+  String get globalReportsDomesticRatio => 'Domestic ratio';
+
+  @override
+  String globalReportsInsightDominantPaymentChannel(Object channel) {
+    return 'Most of your expenses were via $channel';
+  }
+
+  @override
+  String globalReportsInsightDominantCategory(Object category) {
+    return 'Top spending category: $category';
+  }
+
+  @override
+  String globalReportsInsightAverageSpendPerTrip(Object amount) {
+    return 'Average spend per trip: $amount';
+  }
+
+  @override
+  String globalReportsInsightDominantCurrency(Object currency, int percentage) {
+    return 'Most of your billed spending is in $currency ($percentage%)';
+  }
+
+  @override
+  String globalReportsInsightCurrencyDistribution(int count) {
+    return 'Your spending is spread across $count currencies';
+  }
+
+  @override
+  String globalReportsInsightIntlDomesticRatio(int international, int domestic) {
+    return 'International $international% vs domestic $domestic%';
+  }
 }

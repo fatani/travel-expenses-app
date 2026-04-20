@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/database_providers.dart';
+import '../../global_reports/data/global_report_provider.dart';
 import '../domain/trip.dart';
 
 final tripsControllerProvider =
@@ -79,6 +80,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
 
     try {
       await mutation();
+      ref.invalidate(globalReportProvider);
       state = AsyncData(await _loadTrips());
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
