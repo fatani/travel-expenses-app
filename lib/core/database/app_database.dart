@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 8;
+  static const int databaseVersion = 9;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -39,6 +39,7 @@ class AppDatabase {
       },
       onOpen: (db) async {
         await _ensureSettingsLocaleColumn(db);
+        await _ensureTripsBudgetCurrencyColumn(db);
         await _ensureExpensesRawSmsColumn(db);
         await _ensureExpensesPaymentDetailsColumns(db);
         await _ensureExpensesFinancialColumns(db);
@@ -53,6 +54,7 @@ class AppDatabase {
             end_date TEXT,
             base_currency TEXT NOT NULL,
             budget REAL,
+            budget_currency TEXT,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           )
@@ -175,6 +177,10 @@ class AppDatabase {
         if (oldVersion < 8) {
           await _recomputeExpensesInternationalFlag(db);
         }
+
+        if (oldVersion < 9) {
+          await _ensureTripsBudgetCurrencyColumn(db);
+        }
       },
     );
   }
@@ -193,6 +199,19 @@ class AppDatabase {
 
     await db.execute(
       "ALTER TABLE $settingsTable ADD COLUMN locale_code TEXT NOT NULL DEFAULT 'ar'",
+    );
+  }
+
+  Future<void> _ensureTripsBudgetCurrencyColumn(Database db) async {
+    final hasBudgetCurrency = await _hasColumn(db, tripsTable, 'budget_currency');
+
+    if (hasBudgetCurrency) {
+      return;
+    }
+
+    await db.execute('ALTER TABLE $tripsTable ADD COLUMN budget_currency TEXT');
+    await db.execute(
+      "UPDATE $tripsTable SET budget_currency = base_currency WHERE budget IS NOT NULL AND (budget_currency IS NULL OR budget_currency = '')",
     );
   }
 

@@ -257,6 +257,24 @@ abstract class AppLocalizations {
   /// **'2500'**
   String get tripFormBudgetHint;
 
+  /// No description provided for @tripFormBudgetCurrencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget currency (optional)'**
+  String get tripFormBudgetCurrencyLabel;
+
+  /// No description provided for @tripFormBudgetCurrencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'SAR'**
+  String get tripFormBudgetCurrencyHint;
+
+  /// No description provided for @tripFormBudgetCurrencyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a 3-letter currency code.'**
+  String get tripFormBudgetCurrencyInvalid;
+
   /// No description provided for @tripFormStartDateLabel.
   ///
   /// In en, this message translates to:
@@ -968,7 +986,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripReportsTotalFees.
   ///
   /// In en, this message translates to:
-  /// **'Total fees'**
+  /// **'Total international transaction fees'**
   String get tripReportsTotalFees;
 
   /// No description provided for @tripReportsByCategory.
@@ -1024,6 +1042,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Top category'**
   String get tripReportsTopCategory;
+
+  /// No description provided for @tripReportsBudgetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget guardrails'**
+  String get tripReportsBudgetTitle;
+
+  /// No description provided for @tripReportsBudgetAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget'**
+  String get tripReportsBudgetAmountLabel;
+
+  /// No description provided for @tripReportsBudgetCurrentSpendLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current spend'**
+  String get tripReportsBudgetCurrentSpendLabel;
+
+  /// No description provided for @tripReportsBudgetUsageLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Used'**
+  String get tripReportsBudgetUsageLabel;
+
+  /// No description provided for @tripReportsBudgetCurrencyMismatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget is set in a different currency, so usage cannot be compared safely.'**
+  String get tripReportsBudgetCurrencyMismatch;
+
+  /// No description provided for @tripReportsBudgetWarningNearLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Budget usage is close to the limit. Review the next spending decisions carefully.'**
+  String get tripReportsBudgetWarningNearLimit;
+
+  /// No description provided for @tripReportsBudgetWarningForecast.
+  ///
+  /// In en, this message translates to:
+  /// **'At the current pace, this trip is likely to exceed the budget before it ends.'**
+  String get tripReportsBudgetWarningForecast;
+
+  /// No description provided for @tripReportsBudgetWarningExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Current spending has already exceeded the trip budget.'**
+  String get tripReportsBudgetWarningExceeded;
+
+  /// No description provided for @tripPredictionSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Predictions'**
+  String get tripPredictionSectionTitle;
+
+  /// No description provided for @tripPredictionCurrentSpendTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current spend'**
+  String get tripPredictionCurrentSpendTitle;
+
+  /// No description provided for @tripPredictionBurnRateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current burn rate'**
+  String get tripPredictionBurnRateTitle;
+
+  /// No description provided for @tripPredictionForecastTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Forecast total until trip end'**
+  String get tripPredictionForecastTitle;
+
+  /// No description provided for @tripPredictionActionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended actions'**
+  String get tripPredictionActionsTitle;
+
+  /// No description provided for @tripPredictionActionBurnRisk.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current spending pace is high and could double before the trip ends.'**
+  String get tripPredictionActionBurnRisk;
+
+  /// No description provided for @tripPredictionActionSpendSpike.
+  ///
+  /// In en, this message translates to:
+  /// **'Your spending is accelerating near the end of the trip. Try spreading expenses more evenly to avoid financial pressure.'**
+  String get tripPredictionActionSpendSpike;
+
+  /// No description provided for @tripPredictionActionCategoryConcentration.
+  ///
+  /// In en, this message translates to:
+  /// **'A large share of your spending is on {category}. Review this category; it may be a chance to reduce costs.'**
+  String tripPredictionActionCategoryConcentration(Object category);
 
   /// No description provided for @tripReportsExpenseCountLabel.
   ///
@@ -1181,6 +1295,12 @@ abstract class AppLocalizations {
   /// **'Total expenses'**
   String get globalReportsTotalExpenses;
 
+  /// No description provided for @globalReportsTotalFees.
+  ///
+  /// In en, this message translates to:
+  /// **'Total international transaction fees'**
+  String get globalReportsTotalFees;
+
   /// No description provided for @globalReportsTrackedDays.
   ///
   /// In en, this message translates to:
@@ -1262,14 +1382,98 @@ abstract class AppLocalizations {
   /// No description provided for @globalReportsInsightDominantCurrency.
   ///
   /// In en, this message translates to:
-  /// **'Most of your billed spending is in {currency} ({percentage}%)'**
-  String globalReportsInsightDominantCurrency(Object currency, int percentage);
+  /// **'Your spending is concentrated in {currency}'**
+  String globalReportsInsightDominantCurrency(Object currency);
 
   /// No description provided for @globalReportsInsightCurrencyDistribution.
   ///
   /// In en, this message translates to:
-  /// **'Your spending is spread across {count} currencies'**
-  String globalReportsInsightCurrencyDistribution(int count);
+  /// **'You spent in multiple currencies across your trips'**
+  String get globalReportsInsightCurrencyDistribution;
+
+  /// No description provided for @globalReportsInsightCategoryVariation.
+  ///
+  /// In en, this message translates to:
+  /// **'Your spending was spread across more than one category'**
+  String get globalReportsInsightCategoryVariation;
+
+  /// No description provided for @globalReportsInsightPaymentVariation.
+  ///
+  /// In en, this message translates to:
+  /// **'Your payment behavior varies across channels or networks'**
+  String get globalReportsInsightPaymentVariation;
+
+  /// No description provided for @globalReportsBehavioralInsightsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Behavioral insights'**
+  String get globalReportsBehavioralInsightsTitle;
+
+  /// No description provided for @globalReportsBehavioralInsightTitleSpike.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending Spike'**
+  String get globalReportsBehavioralInsightTitleSpike;
+
+  /// No description provided for @globalReportsBehavioralInsightTitleCategoryDrift.
+  ///
+  /// In en, this message translates to:
+  /// **'Category Concentration'**
+  String get globalReportsBehavioralInsightTitleCategoryDrift;
+
+  /// No description provided for @globalReportsBehavioralInsightTitleFees.
+  ///
+  /// In en, this message translates to:
+  /// **'Fees Alert'**
+  String get globalReportsBehavioralInsightTitleFees;
+
+  /// No description provided for @globalReportsBehavioralInsightSpike.
+  ///
+  /// In en, this message translates to:
+  /// **'Your spending in the second half is {percentage}% higher than the first half.'**
+  String globalReportsBehavioralInsightSpike(int percentage);
+
+  /// No description provided for @globalReportsBehavioralInsightSpikeAbove300.
+  ///
+  /// In en, this message translates to:
+  /// **'Your spending in the second half is more than 3x the first half.'**
+  String get globalReportsBehavioralInsightSpikeAbove300;
+
+  /// No description provided for @globalReportsBehavioralInsightSpikeLarge.
+  ///
+  /// In en, this message translates to:
+  /// **'Your spending in the second half is significantly higher than the first half.'**
+  String get globalReportsBehavioralInsightSpikeLarge;
+
+  /// No description provided for @globalReportsBehavioralInsightSpikeNoticeable.
+  ///
+  /// In en, this message translates to:
+  /// **'Your spending in the second half is noticeably higher than the first half.'**
+  String get globalReportsBehavioralInsightSpikeNoticeable;
+
+  /// No description provided for @globalReportsBehavioralInsightCategoryDrift.
+  ///
+  /// In en, this message translates to:
+  /// **'More than {percentage}% of your spending was in {category}.'**
+  String globalReportsBehavioralInsightCategoryDrift(int percentage, Object category);
+
+  /// No description provided for @globalReportsBehavioralInsightFees.
+  ///
+  /// In en, this message translates to:
+  /// **'Fees are taking about {percentage}% of your spending. Consider a lower-fee payment method.'**
+  String globalReportsBehavioralInsightFees(int percentage);
+
+  /// No description provided for @globalReportsBehavioralInsightAttributionIn.
+  ///
+  /// In en, this message translates to:
+  /// **'📍 In:'**
+  String get globalReportsBehavioralInsightAttributionIn;
+
+  /// No description provided for @globalReportsBehavioralInsightAttributionTop.
+  ///
+  /// In en, this message translates to:
+  /// **'📊 Top impact:'**
+  String get globalReportsBehavioralInsightAttributionTop;
 
   /// No description provided for @globalReportsInsightIntlDomesticRatio.
   ///

@@ -5,6 +5,8 @@ enum TripReportInsightType {
   internationalDominant,
   feesPercentage,
   noInternationalFees,
+  spike,
+  categoryDrift,
   // kept for backward compat; not emitted by calculator anymore
   dominantCurrency,
   topCategory,

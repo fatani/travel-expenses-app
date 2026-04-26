@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/l10n_extension.dart';
+import '../../../shared/widgets/insight_card.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
+import '../../insights/domain/insight.dart';
 import '../../reports/domain/report_bucket.dart';
 import '../../trips/presentation/trip_form_screen.dart';
 import '../data/global_report_provider.dart';
@@ -74,8 +76,14 @@ class _GlobalReportBody extends StatelessWidget {
           const _SingleTripNoteCard(),
           sectionGap,
         ],
-        if (summary.smartInsights.isNotEmpty) ...[
+        if (summary.totalExpenseCount >= 3 && summary.smartInsights.isNotEmpty) ...[
           _SmartInsightsCard(summary: summary),
+          sectionGap,
+        ],
+        if (summary.behavioralInsights.isNotEmpty) ...[
+          _BehavioralInsightsSection(
+            insights: summary.behavioralInsights.take(2).toList(growable: false),
+          ),
           sectionGap,
         ],
         _SummaryCards(summary: summary),
@@ -214,6 +222,39 @@ class _SummaryCards extends StatelessWidget {
   }
 }
 
+class _BehavioralInsightsSection extends StatelessWidget {
+  const _BehavioralInsightsSection({required this.insights});
+
+  final List<Insight> insights;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text(
+            context.l10n.globalReportsBehavioralInsightsTitle,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ),
+        for (final insight in insights)
+          InsightCard(
+            title: _behavioralInsightTitle(context, insight),
+            description: _behavioralInsightDescription(context, insight),
+            attribution: _behavioralInsightAttribution(context, insight),
+          ),
+      ],
+    );
+  }
+}
+
 class _SummaryCountCard extends StatelessWidget {
   const _SummaryCountCard({
     required this.title,
@@ -273,25 +314,13 @@ class _OverviewCard extends StatelessWidget {
               style: theme.textTheme.titleMedium,
             ),
             const SizedBox(height: 12),
-            _OverviewRow(
-              label: context.l10n.globalReportsInternationalRatio,
-              value: '${summary.internationalRatioPercentage}%',
-            ),
-            _OverviewRow(
-              label: context.l10n.globalReportsDomesticRatio,
-              value: '${summary.domesticRatioPercentage}%',
-            ),
-            if (summary.trackedTripDays > 0)
-              _OverviewRow(
-                label: context.l10n.globalReportsTrackedDays,
-                value: summary.trackedTripDays.toString(),
-              ),
-            if (summary.dominantCurrency != null)
+            if (summary.uniqueTransactionCurrencyCount > 1 &&
+                summary.dominantCurrency != null)
               _OverviewRow(
                 label: context.l10n.globalReportsDominantCurrency,
                 value: summary.dominantCurrency!,
               ),
-            if (summary.dominantCategory != null)
+            if (summary.uniqueCategoryCount > 1 && summary.dominantCategory != null)
               _OverviewRow(
                 label: context.l10n.globalReportsTopCategory,
                 value: ExpenseOptionLabels.category(
@@ -299,7 +328,8 @@ class _OverviewCard extends StatelessWidget {
                   summary.dominantCategory!,
                 ),
               ),
-            if (summary.mostUsedPaymentChannel != null)
+            if (summary.uniquePaymentChannelCount > 1 &&
+                summary.mostUsedPaymentChannel != null)
               _OverviewRow(
                 label: context.l10n.globalReportsMostUsedPaymentChannel,
                 value: ExpenseOptionLabels.paymentChannel(
@@ -307,7 +337,8 @@ class _OverviewCard extends StatelessWidget {
                   summary.mostUsedPaymentChannel!,
                 ),
               ),
-            if (summary.mostUsedPaymentNetwork != null)
+            if (summary.uniquePaymentNetworkCount > 1 &&
+                summary.mostUsedPaymentNetwork != null)
               _OverviewRow(
                 label: context.l10n.globalReportsMostUsedPaymentNetwork,
                 value: ExpenseOptionLabels.paymentNetwork(
@@ -440,12 +471,9 @@ String _localizeInsight(BuildContext context, GlobalReportInsight insight) {
     case GlobalReportInsightType.dominantCurrency:
       return context.l10n.globalReportsInsightDominantCurrency(
         insight.subject ?? '',
-        insight.percentage ?? 0,
       );
     case GlobalReportInsightType.currencyDistribution:
-      return context.l10n.globalReportsInsightCurrencyDistribution(
-        insight.percentage ?? 0,
-      );
+      return context.l10n.globalReportsInsightCurrencyDistribution;
     case GlobalReportInsightType.internationalDomesticRatio:
       final internationalPct = insight.percentage ?? 0;
       final domesticPct = 100 - internationalPct;
@@ -453,6 +481,10 @@ String _localizeInsight(BuildContext context, GlobalReportInsight insight) {
         internationalPct,
         domesticPct,
       );
+    case GlobalReportInsightType.categoryVariation:
+      return context.l10n.globalReportsInsightCategoryVariation;
+    case GlobalReportInsightType.paymentVariation:
+      return context.l10n.globalReportsInsightPaymentVariation;
   }
 }
 
@@ -461,4 +493,50 @@ String _formatAmount(double amount) {
     return amount.toStringAsFixed(0);
   }
   return amount.toStringAsFixed(2);
+}
+
+String _behavioralInsightTitle(BuildContext context, Insight insight) {
+  return switch (insight.type) {
+    InsightType.spike => context.l10n.globalReportsBehavioralInsightTitleSpike,
+    InsightType.categoryDrift =>
+      context.l10n.globalReportsBehavioralInsightTitleCategoryDrift,
+    InsightType.fees => context.l10n.globalReportsBehavioralInsightTitleFees,
+  };
+}
+
+String _behavioralInsightDescription(BuildContext context, Insight insight) {
+  return switch (insight.type) {
+    InsightType.spike => _localizeSpikeBehavioralInsight(context, insight),
+    InsightType.categoryDrift =>
+      context.l10n.globalReportsBehavioralInsightCategoryDrift(
+        insight.percentage ?? 0,
+        ExpenseOptionLabels.category(context.l10n, insight.category ?? 'Other'),
+      ),
+    InsightType.fees => context.l10n.globalReportsBehavioralInsightFees(
+      insight.percentage ?? 0,
+    ),
+  };
+}
+
+String? _behavioralInsightAttribution(BuildContext context, Insight insight) {
+  final tripName = insight.tripName;
+  if (tripName == null || tripName.trim().isEmpty) {
+    return null;
+  }
+
+  return '${context.l10n.globalReportsBehavioralInsightAttributionTop} $tripName';
+}
+
+String _localizeSpikeBehavioralInsight(BuildContext context, Insight insight) {
+  final pct = insight.percentage;
+  if (pct == null) {
+    return context.l10n.globalReportsBehavioralInsightSpikeLarge;
+  }
+  if (pct > 300) {
+    return context.l10n.globalReportsBehavioralInsightSpikeAbove300;
+  }
+  if (pct >= 150) {
+    return context.l10n.globalReportsBehavioralInsightSpikeNoticeable;
+  }
+  return context.l10n.globalReportsBehavioralInsightSpike(pct);
 }
