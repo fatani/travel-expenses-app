@@ -7,7 +7,7 @@ import 'package:travel_expenses/l10n/app_localizations.dart';
 import 'package:travel_expenses/l10n/l10n_extension.dart';
 
 import '../../../core/providers/database_providers.dart';
-import '../../export/presentation/export_trip_button.dart';
+import '../../export/presentation/export_menu.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../reports/presentation/trip_reports_screen.dart';
 import '../../trips/domain/trip.dart';
@@ -45,10 +45,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       appBar: AppBar(
         title: Text(_trip.name),
         actions: [
-          Padding(
-            padding: const EdgeInsetsDirectional.only(end: 4),
-            child: ExportTripButton(trip: _trip, enabled: hasExpenses),
-          ),
+          ExportMenu(trip: _trip, enabled: hasExpenses),
           IconButton(
             tooltip: context.l10n.tripDetailsReportTooltip,
             onPressed: () => Navigator.push<void>(
