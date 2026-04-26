@@ -40,6 +40,7 @@ dependencies:
   intl: ^0.20.2
   path: ^1.9.1
   path_provider: ^2.1.5
+  pdf: ^3.11.3
   share_plus: ^10.1.4
   sqflite: ^2.4.2
   uuid: ^4.5.1
@@ -66,6 +67,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/fonts/NotoSansArabic-Regular.ttf
 
   # To add assets to your application, add an assets section, like this:
   # assets:
