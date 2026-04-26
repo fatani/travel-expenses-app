@@ -716,9 +716,10 @@ class _TripSummaryCard extends StatelessWidget {
   }
 
   String _formatBudget(Trip trip) {
+    final budgetCurrency = trip.budgetCurrency ?? trip.baseCurrency;
     final formatter = NumberFormat.currency(
-      name: trip.baseCurrency,
-      symbol: '${trip.baseCurrency} ',
+      name: budgetCurrency,
+      symbol: '$budgetCurrency ',
       decimalDigits: 2,
     );
     return formatter.format(trip.budget);

@@ -96,6 +96,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormBudgetHint => '2500';
 
   @override
+  String get tripFormBudgetCurrencyLabel => 'Budget currency (optional)';
+
+  @override
+  String get tripFormBudgetCurrencyHint => 'SAR';
+
+  @override
+  String get tripFormBudgetCurrencyInvalid => 'Enter a 3-letter currency code.';
+
+  @override
   String get tripFormStartDateLabel => 'Start date';
 
   @override
@@ -472,7 +481,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsTotalBilled => 'Total billed';
 
   @override
-  String get tripReportsTotalFees => 'Total fees';
+  String get tripReportsTotalFees => 'Total international transaction fees';
 
   @override
   String get tripReportsByCategory => 'By category';
@@ -500,6 +509,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripReportsTopCategory => 'Top category';
+
+  @override
+  String get tripReportsBudgetTitle => 'Budget guardrails';
+
+  @override
+  String get tripReportsBudgetAmountLabel => 'Budget';
+
+  @override
+  String get tripReportsBudgetCurrentSpendLabel => 'Current spend';
+
+  @override
+  String get tripReportsBudgetUsageLabel => 'Used';
+
+  @override
+  String get tripReportsBudgetCurrencyMismatch => 'Budget is set in a different currency, so usage cannot be compared safely.';
+
+  @override
+  String get tripReportsBudgetWarningNearLimit => 'Budget usage is close to the limit. Review the next spending decisions carefully.';
+
+  @override
+  String get tripReportsBudgetWarningForecast => 'At the current pace, this trip is likely to exceed the budget before it ends.';
+
+  @override
+  String get tripReportsBudgetWarningExceeded => 'Current spending has already exceeded the trip budget.';
+
+  @override
+  String get tripPredictionSectionTitle => 'Predictions';
+
+  @override
+  String get tripPredictionCurrentSpendTitle => 'Current spend';
+
+  @override
+  String get tripPredictionBurnRateTitle => 'Current burn rate';
+
+  @override
+  String get tripPredictionForecastTitle => 'Forecast total until trip end';
+
+  @override
+  String get tripPredictionActionsTitle => 'Recommended actions';
+
+  @override
+  String get tripPredictionActionBurnRisk => 'Your current spending pace is high and could double before the trip ends.';
+
+  @override
+  String get tripPredictionActionSpendSpike => 'Your spending is accelerating near the end of the trip. Try spreading expenses more evenly to avoid financial pressure.';
+
+  @override
+  String tripPredictionActionCategoryConcentration(Object category) {
+    return 'A large share of your spending is on $category. Review this category; it may be a chance to reduce costs.';
+  }
 
   @override
   String tripReportsExpenseCountLabel(int count) {
@@ -604,6 +663,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get globalReportsTotalExpenses => 'Total expenses';
 
   @override
+  String get globalReportsTotalFees => 'Total international transaction fees';
+
+  @override
   String get globalReportsTrackedDays => 'Tracked trip days';
 
   @override
@@ -649,14 +711,60 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String globalReportsInsightDominantCurrency(Object currency, int percentage) {
-    return 'Most of your billed spending is in $currency ($percentage%)';
+  String globalReportsInsightDominantCurrency(Object currency) {
+    return 'Your spending is concentrated in $currency';
   }
 
   @override
-  String globalReportsInsightCurrencyDistribution(int count) {
-    return 'Your spending is spread across $count currencies';
+  String get globalReportsInsightCurrencyDistribution => 'You spent in multiple currencies across your trips';
+
+  @override
+  String get globalReportsInsightCategoryVariation => 'Your spending was spread across more than one category';
+
+  @override
+  String get globalReportsInsightPaymentVariation => 'Your payment behavior varies across channels or networks';
+
+  @override
+  String get globalReportsBehavioralInsightsTitle => 'Behavioral insights';
+
+  @override
+  String get globalReportsBehavioralInsightTitleSpike => 'Spending Spike';
+
+  @override
+  String get globalReportsBehavioralInsightTitleCategoryDrift => 'Category Concentration';
+
+  @override
+  String get globalReportsBehavioralInsightTitleFees => 'Fees Alert';
+
+  @override
+  String globalReportsBehavioralInsightSpike(int percentage) {
+    return 'Your spending in the second half is $percentage% higher than the first half.';
   }
+
+  @override
+  String get globalReportsBehavioralInsightSpikeAbove300 => 'Your spending in the second half is more than 3x the first half.';
+
+  @override
+  String get globalReportsBehavioralInsightSpikeLarge => 'Your spending in the second half is significantly higher than the first half.';
+
+  @override
+  String get globalReportsBehavioralInsightSpikeNoticeable => 'Your spending in the second half is noticeably higher than the first half.';
+
+  @override
+  String globalReportsBehavioralInsightCategoryDrift(int percentage, Object category) {
+    return 'More than $percentage% of your spending was in $category.';
+  }
+
+  @override
+  String globalReportsBehavioralInsightFees(int percentage) {
+    return 'Fees are taking about $percentage% of your spending. Consider a lower-fee payment method.';
+  }
+
+  @override
+  String get globalReportsBehavioralInsightAttributionIn => '📍 In:';
+
+  @override
+  String get globalReportsBehavioralInsightAttributionTop => '📊 Top impact:';
 
   @override
   String globalReportsInsightIntlDomesticRatio(int international, int domestic) {

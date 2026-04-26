@@ -7,6 +7,7 @@ class Trip {
     this.startDate,
     this.endDate,
     this.budget,
+    this.budgetCurrency,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -19,6 +20,7 @@ class Trip {
     DateTime? startDate,
     DateTime? endDate,
     double? budget,
+    String? budgetCurrency,
   }) {
     final now = DateTime.now().toUtc();
 
@@ -30,6 +32,7 @@ class Trip {
       startDate: startDate,
       endDate: endDate,
       budget: budget,
+      budgetCurrency: budgetCurrency,
       createdAt: now,
       updatedAt: now,
     );
@@ -44,6 +47,7 @@ class Trip {
       startDate: _readDate(map['start_date']),
       endDate: _readDate(map['end_date']),
       budget: _readBudget(map['budget']),
+      budgetCurrency: _readBudgetCurrency(map),
       createdAt: DateTime.parse(map['created_at']! as String),
       updatedAt: DateTime.parse(map['updated_at']! as String),
     );
@@ -56,17 +60,21 @@ class Trip {
   final DateTime? startDate;
   final DateTime? endDate;
   final double? budget;
+  final String? budgetCurrency;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  static const Object _unset = Object();
 
   Trip copyWith({
     String? id,
     String? name,
     String? destination,
     String? baseCurrency,
-    DateTime? startDate,
-    DateTime? endDate,
-    double? budget,
+    Object? startDate = _unset,
+    Object? endDate = _unset,
+    Object? budget = _unset,
+    Object? budgetCurrency = _unset,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -75,9 +83,12 @@ class Trip {
       name: name ?? this.name,
       destination: destination ?? this.destination,
       baseCurrency: baseCurrency ?? this.baseCurrency,
-      startDate: startDate ?? this.startDate,
-      endDate: endDate ?? this.endDate,
-      budget: budget ?? this.budget,
+      startDate: identical(startDate, _unset) ? this.startDate : startDate as DateTime?,
+      endDate: identical(endDate, _unset) ? this.endDate : endDate as DateTime?,
+      budget: identical(budget, _unset) ? this.budget : budget as double?,
+      budgetCurrency: identical(budgetCurrency, _unset)
+          ? this.budgetCurrency
+          : budgetCurrency as String?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -92,6 +103,7 @@ class Trip {
       'start_date': startDate == null ? null : _writeDate(startDate!),
       'end_date': endDate == null ? null : _writeDate(endDate!),
       'budget': budget,
+      'budget_currency': budgetCurrency,
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
     };
@@ -111,6 +123,21 @@ class Trip {
     }
 
     return (value as num).toDouble();
+  }
+
+  static String? _readBudgetCurrency(Map<String, Object?> map) {
+    final value = map['budget_currency'] as String?;
+    if (value != null && value.trim().isNotEmpty) {
+      return value.trim().toUpperCase();
+    }
+
+    final budget = _readBudget(map['budget']);
+    if (budget == null) {
+      return null;
+    }
+
+    final baseCurrency = (map['base_currency'] as String?)?.trim().toUpperCase();
+    return (baseCurrency == null || baseCurrency.isEmpty) ? null : baseCurrency;
   }
 
   static String _writeDate(DateTime value) {

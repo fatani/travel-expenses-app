@@ -1,29 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
-import '../../../core/providers/database_providers.dart';
 import '../../../l10n/l10n_extension.dart';
+import '../../../shared/widgets/insight_card.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
+import '../../predictions/data/trip_prediction_provider.dart';
+import '../../predictions/domain/trip_prediction_summary.dart';
+import '../../predictions/presentation/trip_prediction_section.dart';
 import '../../trips/domain/trip.dart';
-import '../data/trip_report_calculator.dart';
+import '../data/trip_report_provider.dart';
 import '../domain/report_bucket.dart';
 import '../domain/trip_report_summary.dart';
-
-// ---------------------------------------------------------------------------
-// Provider
-// ---------------------------------------------------------------------------
-
-final _tripReportProvider =
-    FutureProvider.family<TripReportSummary, Trip>((ref, trip) async {
-  final repo = ref.watch(expenseRepositoryProvider);
-  final expenses = await repo.getExpensesByTrip(trip.id);
-  const calculator = TripReportCalculator();
-  return calculator.calculate(
-    tripId: trip.id,
-    tripName: trip.name,
-    expenses: expenses,
-  );
-});
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -36,7 +24,8 @@ class TripReportsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(_tripReportProvider(trip));
+    final summaryAsync = ref.watch(tripReportProvider(trip));
+    final predictionAsync = ref.watch(tripPredictionProvider(trip));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -57,7 +46,11 @@ class TripReportsScreen extends ConsumerWidget {
         error: (e, _) => Center(
           child: Text(context.l10n.tripReportsLoadError('$e')),
         ),
-        data: (summary) => _ReportBody(summary: summary),
+        data: (summary) => _ReportBody(
+          trip: trip,
+          summary: summary,
+          predictionSummary: predictionAsync.valueOrNull,
+        ),
       ),
     );
   }
@@ -68,19 +61,57 @@ class TripReportsScreen extends ConsumerWidget {
 // ---------------------------------------------------------------------------
 
 class _ReportBody extends StatelessWidget {
-  const _ReportBody({required this.summary});
+  const _ReportBody({
+    required this.trip,
+    required this.summary,
+    required this.predictionSummary,
+  });
 
+  final Trip trip;
   final TripReportSummary summary;
+  final TripPredictionSummary? predictionSummary;
 
   @override
   Widget build(BuildContext context) {
     const sectionGap = SizedBox(height: 20);
+    final categoryCount = _uniqueBucketKeyCount(summary.byCategory);
+    final transactionCurrencyCount =
+        _uniqueBucketKeyCount(summary.byTransactionCurrency);
+    final paymentNetworkCount = _uniqueBucketKeyCount(summary.byPaymentNetwork);
+    final paymentChannelCount = _uniqueBucketKeyCount(summary.byPaymentChannel);
+    final shouldShowPrediction =
+        predictionSummary != null &&
+        summary.totalExpenseCount >= 3 &&
+      predictionSummary!.elapsedDays >= 2;
+    final budgetStatus = _buildBudgetStatus(
+      trip: trip,
+      summary: summary,
+      predictionSummary: predictionSummary,
+    );
+
+    _debugPredictionVisibility(
+      expenseCount: summary.totalExpenseCount,
+      predictionSummary: predictionSummary,
+      shouldShowPrediction: shouldShowPrediction,
+    );
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
         if (summary.smartInsights.isNotEmpty) ...[
-          _SmartSummaryCard(summary: summary),
+          _TripInsightsSection(
+            insights: summary.smartInsights.take(1).toList(growable: false),
+          ),
+          sectionGap,
+        ],
+        if (shouldShowPrediction) ...[
+          TripPredictionSection(
+            summary: predictionSummary!,
+          ),
+          sectionGap,
+        ],
+        if (budgetStatus != null) ...[
+          _BudgetSection(status: budgetStatus),
           sectionGap,
         ],
         _OverviewCard(summary: summary),
@@ -107,7 +138,7 @@ class _ReportBody extends StatelessWidget {
           ),
           sectionGap,
         ],
-        if (summary.byCategory.isNotEmpty) ...[
+        if (summary.byCategory.isNotEmpty && categoryCount > 1) ...[
           _SectionHeader(title: context.l10n.tripReportsByCategory),
           _GroupedBucketCard(
             buckets: summary.byCategory,
@@ -116,7 +147,8 @@ class _ReportBody extends StatelessWidget {
           ),
           sectionGap,
         ],
-        if (summary.byTransactionCurrency.isNotEmpty) ...[
+        if (summary.byTransactionCurrency.isNotEmpty &&
+            transactionCurrencyCount > 1) ...[
           _SectionHeader(
             title: context.l10n.tripReportsByTransactionCurrency,
           ),
@@ -128,7 +160,7 @@ class _ReportBody extends StatelessWidget {
           ),
           sectionGap,
         ],
-        if (summary.byPaymentNetwork.isNotEmpty) ...[
+        if (summary.byPaymentNetwork.isNotEmpty && paymentNetworkCount > 1) ...[
           _SectionHeader(title: context.l10n.tripReportsByPaymentNetwork),
           _GroupedBucketCard(
             buckets: summary.byPaymentNetwork,
@@ -137,12 +169,12 @@ class _ReportBody extends StatelessWidget {
           ),
           sectionGap,
         ],
-        if (summary.byPaymentChannel.isNotEmpty) ...[
+        if (summary.byPaymentChannel.isNotEmpty && paymentChannelCount > 1) ...[
           _SectionHeader(title: context.l10n.tripReportsByPaymentChannel),
           _GroupedBucketCard(
             buckets: summary.byPaymentChannel,
             groupLabelType: _BucketGroupLabelType.paymentChannel,
-            topGroupKey: summary.topPaymentChannel,
+            topGroupKey: null,
           ),
           sectionGap,
         ],
@@ -211,40 +243,6 @@ class _OverviewCard extends StatelessWidget {
   }
 }
 
-class _SmartSummaryCard extends StatelessWidget {
-  const _SmartSummaryCard({required this.summary});
-
-  final TripReportSummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              context.l10n.tripReportsSmartSummary,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 10),
-            for (final insight in summary.smartInsights) ...[
-              _InsightLine(text: _localizeInsight(context, insight)),
-              if (insight != summary.smartInsights.last)
-                const SizedBox(height: 8),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Section helpers
 // ---------------------------------------------------------------------------
@@ -267,6 +265,141 @@ class _SectionHeader extends StatelessWidget {
               color: theme.colorScheme.primary,
             ),
       ),
+    );
+  }
+}
+
+enum _BudgetWarningLevel {
+  nearLimit,
+  forecastRisk,
+  exceeded,
+}
+
+class _BudgetStatus {
+  const _BudgetStatus({
+    required this.budgetAmount,
+    required this.budgetCurrency,
+    required this.canCompare,
+    this.currentSpend,
+    this.forecastSpend,
+    this.usedPercentage,
+    this.warningLevel,
+  });
+
+  final double budgetAmount;
+  final String budgetCurrency;
+  final bool canCompare;
+  final double? currentSpend;
+  final double? forecastSpend;
+  final int? usedPercentage;
+  final _BudgetWarningLevel? warningLevel;
+}
+
+class _BudgetSection extends StatelessWidget {
+  const _BudgetSection({required this.status});
+
+  final _BudgetStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final warningLevel = status.warningLevel;
+    final hasWarning = warningLevel != null;
+    final warningColors = _warningColors(theme, warningLevel);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              context.l10n.tripReportsBudgetTitle,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.primary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _StatRow(
+              label: context.l10n.tripReportsBudgetAmountLabel,
+              value: _formatMoney(status.budgetAmount, status.budgetCurrency),
+            ),
+            if (status.canCompare) ...[
+              _StatRow(
+                label: context.l10n.tripReportsBudgetCurrentSpendLabel,
+                value: _formatMoney(status.currentSpend ?? 0, status.budgetCurrency),
+              ),
+              _StatRow(
+                label: context.l10n.tripReportsBudgetUsageLabel,
+                value: '${status.usedPercentage ?? 0}%',
+              ),
+            ] else
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  context.l10n.tripReportsBudgetCurrencyMismatch,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            if (hasWarning) ...[
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: warningColors.$1,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _warningMessage(context, status),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: warningColors.$2,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TripInsightsSection extends StatelessWidget {
+  const _TripInsightsSection({
+    required this.insights,
+  });
+
+  final List<TripReportInsight> insights;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Text(
+            context.l10n.globalReportsBehavioralInsightsTitle,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.primary,
+            ),
+          ),
+        ),
+        for (final insight in insights)
+          InsightCard(
+            title: _tripInsightTitle(context, insight),
+            description: _tripInsightDescription(context, insight),
+            attribution: null,
+          ),
+      ],
     );
   }
 }
@@ -416,7 +549,9 @@ class _GroupedBucketCard extends StatelessWidget {
                               ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                       ),
-                      if (entry.key == topGroupKey) const _TopSpendingBadge(),
+                      if (groupLabelType == _BucketGroupLabelType.category &&
+                          entry.key == topGroupKey)
+                        const _TopSpendingBadge(),
                     ],
                   ),
                   const SizedBox(height: 4),
@@ -470,13 +605,10 @@ class _AmountAndCountColumn extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Directionality(
-          textDirection: TextDirection.ltr,
-          child: Text(
-            '${_formatAmount(amount)} $currency',
-            textAlign: TextAlign.end,
-            style: amountStyle,
-          ),
+        Text(
+          '${_formatAmount(amount)} $currency',
+          textAlign: TextAlign.end,
+          style: amountStyle,
         ),
         const SizedBox(height: 2),
         Text(
@@ -519,60 +651,6 @@ class _TopSpendingBadge extends StatelessWidget {
 // Formatting utilities
 // ---------------------------------------------------------------------------
 
-String _localizeInsight(BuildContext context, TripReportInsight insight) {
-  switch (insight.type) {
-    case TripReportInsightType.multipleCurrencies:
-      return context.l10n.tripReportsInsightMultipleCurrencies(
-        insight.percentage ?? 0,
-      );
-    case TripReportInsightType.internationalDominant:
-      return context.l10n.tripReportsInsightInternationalDominant;
-    case TripReportInsightType.feesPercentage:
-      return context.l10n.tripReportsInsightFeesPercentage(
-        insight.percentage ?? 0,
-      );
-    case TripReportInsightType.noInternationalFees:
-      return context.l10n.tripReportsInsightNoInternationalFees;
-    case TripReportInsightType.dominantCurrency:
-      return context.l10n.tripReportsInsightDominantCurrency(
-        insight.subject ?? '',
-        insight.percentage ?? 0,
-      );
-    case TripReportInsightType.topCategory:
-      return context.l10n.tripReportsInsightTopCategory(
-        ExpenseOptionLabels.category(context.l10n, insight.subject ?? 'Other'),
-      );
-    case TripReportInsightType.dominantPaymentChannel:
-      return context.l10n.tripReportsInsightDominantPaymentChannel(
-        ExpenseOptionLabels.paymentChannel(context.l10n, insight.subject ?? 'Other'),
-        insight.percentage ?? 0,
-      );
-    case TripReportInsightType.dominantTripTypeShare:
-      if (insight.isInternational == true) {
-        return context.l10n.tripReportsInsightInternationalShare(
-          insight.percentage ?? 0,
-        );
-      }
-      return context.l10n.tripReportsInsightDomesticShare(
-        insight.percentage ?? 0,
-      );
-  }
-}
-
-class _InsightLine extends StatelessWidget {
-  const _InsightLine({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: Theme.of(context).textTheme.bodyMedium,
-    );
-  }
-}
-
 String _formatAmount(double amount) {
   if (amount == amount.truncateToDouble()) {
     return amount.toStringAsFixed(0);
@@ -609,4 +687,162 @@ String _localizedBucketKey(
     case _BucketGroupLabelType.none:
       return key;
   }
+}
+
+String _tripInsightTitle(BuildContext context, TripReportInsight insight) {
+  return switch (insight.type) {
+    TripReportInsightType.spike =>
+      context.l10n.globalReportsBehavioralInsightTitleSpike,
+    TripReportInsightType.categoryDrift =>
+      context.l10n.globalReportsBehavioralInsightTitleCategoryDrift,
+    TripReportInsightType.feesPercentage =>
+      context.l10n.globalReportsBehavioralInsightTitleFees,
+    _ => context.l10n.globalReportsBehavioralInsightsTitle,
+  };
+}
+
+String _tripInsightDescription(
+  BuildContext context,
+  TripReportInsight insight,
+) {
+  return switch (insight.type) {
+    TripReportInsightType.spike => insight.percentage == null
+        ? context.l10n.globalReportsBehavioralInsightSpikeLarge
+        : (insight.percentage! > 300
+            ? context.l10n.globalReportsBehavioralInsightSpikeAbove300
+            : (insight.percentage! >= 150
+                ? context.l10n.globalReportsBehavioralInsightSpikeNoticeable
+                : context.l10n.globalReportsBehavioralInsightSpike(
+                    insight.percentage!,
+                  ))),
+    TripReportInsightType.categoryDrift =>
+      context.l10n.globalReportsBehavioralInsightCategoryDrift(
+        insight.percentage ?? 0,
+        ExpenseOptionLabels.category(context.l10n, insight.subject ?? 'Other'),
+      ),
+    TripReportInsightType.feesPercentage => context.l10n.globalReportsBehavioralInsightFees(
+      insight.percentage ?? 0,
+    ),
+    _ => '',
+  };
+}
+
+int _uniqueBucketKeyCount(List<ReportBucket> buckets) {
+  return buckets.map((bucket) => bucket.key).toSet().length;
+}
+
+_BudgetStatus? _buildBudgetStatus({
+  required Trip trip,
+  required TripReportSummary summary,
+  required TripPredictionSummary? predictionSummary,
+}) {
+  final budgetAmount = trip.budget;
+  if (budgetAmount == null || budgetAmount <= 0) {
+    return null;
+  }
+
+  final budgetCurrency = (trip.budgetCurrency ?? trip.baseCurrency).trim().toUpperCase();
+  if (budgetCurrency.isEmpty) {
+    return null;
+  }
+
+  ReportBucket? matchingBucket;
+  for (final bucket in summary.totalBilledByCurrency) {
+    if (bucket.currency.toUpperCase() == budgetCurrency) {
+      matchingBucket = bucket;
+      break;
+    }
+  }
+
+  final hasMatchingSpend = matchingBucket != null;
+  final canCompare = hasMatchingSpend || summary.totalExpenseCount == 0;
+  if (!canCompare) {
+    return _BudgetStatus(
+      budgetAmount: budgetAmount,
+      budgetCurrency: budgetCurrency,
+      canCompare: false,
+    );
+  }
+
+  final currentSpend = matchingBucket?.totalAmount ?? 0.0;
+  final usedPercentage = ((currentSpend / budgetAmount) * 100).round();
+  final forecastSpend = predictionSummary?.forecastTotalByCurrency[budgetCurrency];
+
+  _BudgetWarningLevel? warningLevel;
+  if (currentSpend >= budgetAmount) {
+    warningLevel = _BudgetWarningLevel.exceeded;
+  } else if ((predictionSummary?.isTripEnded ?? true) == false &&
+      forecastSpend != null &&
+      forecastSpend > budgetAmount) {
+    warningLevel = _BudgetWarningLevel.forecastRisk;
+  } else if (usedPercentage >= 80) {
+    warningLevel = _BudgetWarningLevel.nearLimit;
+  }
+
+  return _BudgetStatus(
+    budgetAmount: budgetAmount,
+    budgetCurrency: budgetCurrency,
+    canCompare: true,
+    currentSpend: currentSpend,
+    forecastSpend: forecastSpend,
+    usedPercentage: usedPercentage,
+    warningLevel: warningLevel,
+  );
+}
+
+String _warningMessage(BuildContext context, _BudgetStatus status) {
+  return switch (status.warningLevel) {
+    _BudgetWarningLevel.nearLimit =>
+      context.l10n.tripReportsBudgetWarningNearLimit,
+    _BudgetWarningLevel.forecastRisk =>
+      context.l10n.tripReportsBudgetWarningForecast,
+    _BudgetWarningLevel.exceeded =>
+      context.l10n.tripReportsBudgetWarningExceeded,
+    null => '',
+  };
+}
+
+(Color, Color) _warningColors(ThemeData theme, _BudgetWarningLevel? level) {
+  return switch (level) {
+    _BudgetWarningLevel.nearLimit => (
+        theme.colorScheme.tertiaryContainer,
+        theme.colorScheme.onTertiaryContainer,
+      ),
+    _BudgetWarningLevel.forecastRisk || _BudgetWarningLevel.exceeded => (
+        theme.colorScheme.errorContainer,
+        theme.colorScheme.onErrorContainer,
+      ),
+    null => (
+        theme.colorScheme.surfaceContainerHighest,
+        theme.colorScheme.onSurface,
+      ),
+  };
+}
+
+String _formatMoney(double amount, String currency) {
+  final formatter = NumberFormat.currency(
+    name: currency,
+    symbol: '$currency ',
+    decimalDigits: amount == amount.truncateToDouble() ? 0 : 2,
+  );
+  return formatter.format(amount);
+}
+
+void _debugPredictionVisibility({
+  required int expenseCount,
+  required TripPredictionSummary? predictionSummary,
+  required bool shouldShowPrediction,
+}) {
+  debugPrint(
+    '[TripReportScreen] '
+    'expenses=$expenseCount '
+    'summaryNull=${predictionSummary == null} '
+    'elapsed=${predictionSummary?.elapsedDays ?? -1} '
+    'remaining=${predictionSummary?.remainingDays ?? -1} '
+    'tripEnded=${predictionSummary?.isTripEnded ?? false} '
+    'burnRates=${predictionSummary?.burnRateByCurrency.length ?? 0} '
+    'forecasts=${predictionSummary?.forecastTotalByCurrency.length ?? 0} '
+    'actions=${predictionSummary?.actions.length ?? 0} '
+    'show=$shouldShowPrediction',
+  );
 }

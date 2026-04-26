@@ -96,6 +96,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripFormBudgetHint => '2500';
 
   @override
+  String get tripFormBudgetCurrencyLabel => 'عملة الميزانية (اختياري)';
+
+  @override
+  String get tripFormBudgetCurrencyHint => 'SAR';
+
+  @override
+  String get tripFormBudgetCurrencyInvalid => 'أدخل رمز عملة مكوّنًا من 3 أحرف.';
+
+  @override
   String get tripFormStartDateLabel => 'تاريخ البداية';
 
   @override
@@ -472,7 +481,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsTotalBilled => 'إجمالي المبلغ المخصوم';
 
   @override
-  String get tripReportsTotalFees => 'إجمالي الرسوم';
+  String get tripReportsTotalFees => 'إجمالي رسوم العمليات الدولية';
 
   @override
   String get tripReportsByCategory => 'حسب الفئة';
@@ -500,6 +509,56 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripReportsTopCategory => 'أعلى فئة';
+
+  @override
+  String get tripReportsBudgetTitle => 'حواجز الميزانية';
+
+  @override
+  String get tripReportsBudgetAmountLabel => 'الميزانية';
+
+  @override
+  String get tripReportsBudgetCurrentSpendLabel => 'الإنفاق الحالي';
+
+  @override
+  String get tripReportsBudgetUsageLabel => 'المستخدم';
+
+  @override
+  String get tripReportsBudgetCurrencyMismatch => 'الميزانية مضبوطة بعملة مختلفة، لذلك لا يمكن مقارنة الاستهلاك بشكل آمن.';
+
+  @override
+  String get tripReportsBudgetWarningNearLimit => 'استهلاك الميزانية اقترب من الحد. راجع قرارات الصرف القادمة بحذر.';
+
+  @override
+  String get tripReportsBudgetWarningForecast => 'وفق وتيرة الصرف الحالية، من المرجح أن تتجاوز هذه الرحلة الميزانية قبل نهايتها.';
+
+  @override
+  String get tripReportsBudgetWarningExceeded => 'الإنفاق الحالي تجاوز ميزانية الرحلة بالفعل.';
+
+  @override
+  String get tripPredictionSectionTitle => 'التوقعات';
+
+  @override
+  String get tripPredictionCurrentSpendTitle => 'الإجمالي الحالي';
+
+  @override
+  String get tripPredictionBurnRateTitle => 'معدل الحرق الحالي';
+
+  @override
+  String get tripPredictionForecastTitle => 'التوقع الإجمالي حتى نهاية الرحلة';
+
+  @override
+  String get tripPredictionActionsTitle => 'إجراءات مقترحة';
+
+  @override
+  String get tripPredictionActionBurnRisk => 'معدل صرفك الحالي مرتفع، وقد يتضاعف إجمالي إنفاقك قبل نهاية الرحلة.';
+
+  @override
+  String get tripPredictionActionSpendSpike => 'إنفاقك يتسارع في نهاية الرحلة. حاول توزيع المصاريف بشكل متوازن لتجنب الضغط المالي.';
+
+  @override
+  String tripPredictionActionCategoryConcentration(Object category) {
+    return 'جزء كبير من إنفاقك على $category. راجع هذه الفئة — قد تكون فرصة لتقليل المصاريف.';
+  }
 
   @override
   String tripReportsExpenseCountLabel(int count) {
@@ -608,6 +667,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get globalReportsTotalExpenses => 'إجمالي المصاريف';
 
   @override
+  String get globalReportsTotalFees => 'إجمالي رسوم العمليات الدولية';
+
+  @override
   String get globalReportsTrackedDays => 'عدد أيام الرحلات المحتسبة';
 
   @override
@@ -653,21 +715,60 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String globalReportsInsightDominantCurrency(Object currency, int percentage) {
-    return 'العملة الأبرز في إنفاقك هي $currency ($percentage%)';
+  String globalReportsInsightDominantCurrency(Object currency) {
+    return 'إنفاقك يتركز على عملة $currency';
   }
 
   @override
-  String globalReportsInsightCurrencyDistribution(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count عملات',
-      two: 'عملتين',
-      one: 'عملة واحدة',
-    );
-    return 'إنفاقك موزّع على $_temp0';
+  String get globalReportsInsightCurrencyDistribution => 'أنفقت بعملات متعددة خلال رحلاتك';
+
+  @override
+  String get globalReportsInsightCategoryVariation => 'وتوزع إنفاقك بين أكثر من فئة';
+
+  @override
+  String get globalReportsInsightPaymentVariation => 'نمط الدفع لديك متنوع عبر أكثر من قناة أو شبكة';
+
+  @override
+  String get globalReportsBehavioralInsightsTitle => 'إشارات ذكية';
+
+  @override
+  String get globalReportsBehavioralInsightTitleSpike => 'ارتفاع الإنفاق';
+
+  @override
+  String get globalReportsBehavioralInsightTitleCategoryDrift => 'تركيز الفئة';
+
+  @override
+  String get globalReportsBehavioralInsightTitleFees => 'تنبيه الرسوم';
+
+  @override
+  String globalReportsBehavioralInsightSpike(int percentage) {
+    return 'إنفاقك في النصف الثاني من الرحلة أعلى بنسبة $percentage% مقارنة بالنصف الأول.';
   }
+
+  @override
+  String get globalReportsBehavioralInsightSpikeAbove300 => 'إنفاقك في النصف الثاني أعلى بأكثر من 3 أضعاف مقارنة بالنصف الأول.';
+
+  @override
+  String get globalReportsBehavioralInsightSpikeLarge => 'إنفاقك في النصف الثاني أعلى بشكل كبير مقارنة بالنصف الأول.';
+
+  @override
+  String get globalReportsBehavioralInsightSpikeNoticeable => 'إنفاقك في النصف الثاني أعلى بشكل ملحوظ مقارنة بالنصف الأول.';
+
+  @override
+  String globalReportsBehavioralInsightCategoryDrift(int percentage, Object category) {
+    return 'أكثر من $percentage% من إنفاقك كان على فئة $category.';
+  }
+
+  @override
+  String globalReportsBehavioralInsightFees(int percentage) {
+    return 'الرسوم تستهلك حوالي $percentage% من إنفاقك. جرّب وسيلة دفع برسوم أقل.';
+  }
+
+  @override
+  String get globalReportsBehavioralInsightAttributionIn => '📍 في:';
+
+  @override
+  String get globalReportsBehavioralInsightAttributionTop => '📊 الأعلى تأثيرًا:';
 
   @override
   String globalReportsInsightIntlDomesticRatio(int international, int domestic) {

@@ -1,16 +1,24 @@
 import '../../expenses/domain/expense.dart';
+import '../../insights/data/insight_engine.dart';
+import '../../insights/domain/insight.dart';
 import '../../reports/domain/report_bucket.dart';
 import '../../trips/domain/trip.dart';
 import '../domain/global_report_summary.dart';
 
 class GlobalReportCalculator {
-  const GlobalReportCalculator();
+  const GlobalReportCalculator({InsightEngine insightEngine = const InsightEngine()})
+    : _insightEngine = insightEngine;
+
+  final InsightEngine _insightEngine;
 
   GlobalReportSummary calculate({
     required List<Trip> trips,
     required List<Expense> expenses,
   }) {
     final totalTrips = trips.length;
+    final tripNamesById = {
+      for (final trip in trips) trip.id: trip.name,
+    };
     final tripIds = trips.map((trip) => trip.id).toSet();
     final relevantExpenses = expenses
         .where((expense) => tripIds.contains(expense.tripId))
@@ -28,9 +36,8 @@ class GlobalReportCalculator {
     final paymentNetworkUsage = <String, _UsageAccumulator>{};
 
     for (final expense in relevantExpenses) {
-      final billedCurrency =
-          (expense.billedCurrency ?? expense.currencyCode).toUpperCase();
-      final billedAmount = expense.billedAmount ?? expense.amount;
+      final billedCurrency = expense.transactionCurrency.toUpperCase();
+      final billedAmount = expense.transactionAmount;
       final category = expense.category ?? 'Other';
       final paymentChannel =
           (expense.paymentChannel?.isNotEmpty == true)
@@ -77,16 +84,18 @@ class GlobalReportCalculator {
     );
     final smartInsights = _buildSmartInsights(
       totalExpenseCount: totalExpenseCount,
-      totalTripCount: totalTrips,
-      internationalExpenseCount: internationalExpenseCount,
-      domesticExpenseCount: domesticExpenseCount,
-      mostUsedPaymentChannel: mostUsedPaymentChannel,
-      mostUsedPaymentChannelCount:
-          paymentChannelUsage[mostUsedPaymentChannel]?.count,
-      dominantCategory: topCategory,
-      totalBilledByCurrency: totalBilledByCurrency,
-      averageSpendPerTripByCurrency: averageSpendPerTripByCurrency,
+      uniqueTransactionCurrencyCount: totalBilledByCurrency.length,
+      uniqueCategoryCount: categoryTotals.length,
+      uniquePaymentChannelCount: paymentChannelUsage.length,
+      uniquePaymentNetworkCount: paymentNetworkUsage.length,
     );
+    final behavioralInsights = relevantExpenses.length < 5
+      ? const <Insight>[]
+        : _insightEngine.build(
+            relevantExpenses,
+            maxInsights: 2,
+            tripNamesById: tripNamesById,
+          );
 
     return GlobalReportSummary(
       totalTrips: totalTrips,
@@ -103,7 +112,12 @@ class GlobalReportCalculator {
       mostUsedPaymentNetwork: mostUsedPaymentNetwork,
       dominantCurrency: dominantCurrency,
       dominantCategory: topCategory,
+      uniqueCategoryCount: categoryTotals.length,
+      uniquePaymentChannelCount: paymentChannelUsage.length,
+      uniquePaymentNetworkCount: paymentNetworkUsage.length,
+      uniqueTransactionCurrencyCount: totalBilledByCurrency.length,
       smartInsights: smartInsights,
+      behavioralInsights: behavioralInsights,
     );
   }
 
@@ -229,92 +243,53 @@ class GlobalReportCalculator {
 
   List<GlobalReportInsight> _buildSmartInsights({
     required int totalExpenseCount,
-    required int totalTripCount,
-    required int internationalExpenseCount,
-    required int domesticExpenseCount,
-    required String? mostUsedPaymentChannel,
-    required int? mostUsedPaymentChannelCount,
-    required String? dominantCategory,
-    required List<ReportBucket> totalBilledByCurrency,
-    required List<GlobalCurrencyMetric> averageSpendPerTripByCurrency,
+    required int uniqueTransactionCurrencyCount,
+    required int uniqueCategoryCount,
+    required int uniquePaymentChannelCount,
+    required int uniquePaymentNetworkCount,
   }) {
+    if (totalExpenseCount < 3) {
+      return const [];
+    }
+
+    final hasMeaningfulVariation =
+        uniqueTransactionCurrencyCount > 1 ||
+        uniqueCategoryCount > 1 ||
+        uniquePaymentChannelCount > 1 ||
+        uniquePaymentNetworkCount > 1;
+    if (!hasMeaningfulVariation) {
+      return const [];
+    }
+
     final insights = <GlobalReportInsight>[];
-    final isSingleTrip = totalTripCount == 1;
 
-    if (isSingleTrip) {
-      if (totalBilledByCurrency.isNotEmpty) {
-        insights.add(
-          GlobalReportInsight(
-            type: GlobalReportInsightType.currencyDistribution,
-            percentage: totalBilledByCurrency.length,
-          ),
-        );
-      }
-
-      if (totalExpenseCount > 0) {
-        insights.add(
-          GlobalReportInsight(
-            type: GlobalReportInsightType.internationalDomesticRatio,
-            percentage: ((internationalExpenseCount / totalExpenseCount) * 100)
-                .round(),
-          ),
-        );
-      }
-
-      return insights.take(3).toList(growable: false);
-    }
-
-    if (mostUsedPaymentChannel != null &&
-        mostUsedPaymentChannelCount != null &&
-        totalExpenseCount > 0) {
+    if (uniqueTransactionCurrencyCount > 1) {
       insights.add(
         GlobalReportInsight(
-          type: GlobalReportInsightType.dominantPaymentChannel,
-          subject: mostUsedPaymentChannel,
-          percentage: ((mostUsedPaymentChannelCount / totalExpenseCount) * 100)
-              .round(),
+          type: GlobalReportInsightType.currencyDistribution,
+          percentage: uniqueTransactionCurrencyCount,
         ),
       );
     }
 
-    if (dominantCategory != null) {
+    if (uniqueCategoryCount > 1) {
       insights.add(
         GlobalReportInsight(
-          type: GlobalReportInsightType.dominantCategory,
-          subject: dominantCategory,
+          type: GlobalReportInsightType.categoryVariation,
+          percentage: uniqueCategoryCount,
         ),
       );
     }
 
-    if (totalTripCount > 0 &&
-        averageSpendPerTripByCurrency.isNotEmpty &&
-        totalBilledByCurrency.length == 1) {
-      final average = averageSpendPerTripByCurrency.first;
+    if (uniquePaymentChannelCount > 1 || uniquePaymentNetworkCount > 1) {
       insights.add(
-        GlobalReportInsight(
-          type: GlobalReportInsightType.averageSpendPerTrip,
-          amount: average.amount,
-          currency: average.currency,
-        ),
-      );
-    } else if (totalBilledByCurrency.isNotEmpty) {
-      final totalBilled = totalBilledByCurrency.fold<double>(
-        0,
-        (sum, bucket) => sum + bucket.totalAmount,
-      );
-      final dominant = totalBilledByCurrency.first;
-      insights.add(
-        GlobalReportInsight(
-          type: GlobalReportInsightType.dominantCurrency,
-          subject: dominant.currency,
-          percentage: totalBilled <= 0
-              ? 0
-              : ((dominant.totalAmount / totalBilled) * 100).round(),
+        const GlobalReportInsight(
+          type: GlobalReportInsightType.paymentVariation,
         ),
       );
     }
 
-    return insights.take(3).toList(growable: false);
+    return insights.take(2).toList(growable: false);
   }
 }
 

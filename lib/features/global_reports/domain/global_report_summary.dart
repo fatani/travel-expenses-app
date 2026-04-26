@@ -1,4 +1,5 @@
 import '../../reports/domain/report_bucket.dart';
+import '../../insights/domain/insight.dart';
 
 class GlobalCurrencyMetric {
   const GlobalCurrencyMetric({
@@ -17,6 +18,8 @@ enum GlobalReportInsightType {
   dominantCurrency,
   currencyDistribution,
   internationalDomesticRatio,
+  categoryVariation,
+  paymentVariation,
 }
 
 class GlobalReportInsight {
@@ -51,7 +54,12 @@ class GlobalReportSummary {
     required this.mostUsedPaymentNetwork,
     required this.dominantCurrency,
     required this.dominantCategory,
+    required this.uniqueCategoryCount,
+    required this.uniquePaymentChannelCount,
+    required this.uniquePaymentNetworkCount,
+    required this.uniqueTransactionCurrencyCount,
     required this.smartInsights,
+    required this.behavioralInsights,
   });
 
   final int totalTrips;
@@ -68,7 +76,12 @@ class GlobalReportSummary {
   final String? mostUsedPaymentNetwork;
   final String? dominantCurrency;
   final String? dominantCategory;
+  final int uniqueCategoryCount;
+  final int uniquePaymentChannelCount;
+  final int uniquePaymentNetworkCount;
+  final int uniqueTransactionCurrencyCount;
   final List<GlobalReportInsight> smartInsights;
+  final List<Insight> behavioralInsights;
 
   bool get hasTrips => totalTrips > 0;
   bool get hasExpenses => totalExpenseCount > 0;

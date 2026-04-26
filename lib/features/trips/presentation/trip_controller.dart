@@ -31,6 +31,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
     required DateTime endDate,
     required String baseCurrency,
     double? budget,
+    String? budgetCurrency,
   }) async {
     final trip = Trip.create(
       name: name,
@@ -39,6 +40,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
       endDate: _normalizeDate(endDate),
       baseCurrency: baseCurrency,
       budget: budget,
+      budgetCurrency: budgetCurrency,
     );
 
     await _runMutation(() => ref.read(tripRepositoryProvider).createTrip(trip));
@@ -52,6 +54,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
     required DateTime endDate,
     required String baseCurrency,
     double? budget,
+    String? budgetCurrency,
   }) async {
     final updatedTrip = trip.copyWith(
       name: name,
@@ -60,6 +63,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
       endDate: _normalizeDate(endDate),
       baseCurrency: baseCurrency,
       budget: budget,
+      budgetCurrency: budgetCurrency,
     );
 
     await _runMutation(

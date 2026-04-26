@@ -1,4 +1,6 @@
 import '../../expenses/domain/expense.dart';
+import '../../insights/data/insight_engine.dart';
+import '../../insights/domain/insight.dart';
 import '../domain/report_bucket.dart';
 import '../domain/trip_report_summary.dart';
 
@@ -7,7 +9,10 @@ import '../domain/trip_report_summary.dart';
 /// All currency groupings are kept separate — amounts in different currencies
 /// are never summed together.
 class TripReportCalculator {
-  const TripReportCalculator();
+  const TripReportCalculator({InsightEngine insightEngine = const InsightEngine()})
+      : _insightEngine = insightEngine;
+
+  final InsightEngine _insightEngine;
 
   TripReportSummary calculate({
     required String tripId,
@@ -35,18 +40,14 @@ class TripReportCalculator {
     }
 
     final int total = expenses.length;
-    final int international =
-        expenses.where((e) => e.isInternational).length;
+    final int international = expenses.where((e) => e.isInternational).length;
     final int domestic = total - international;
-    final bool hasInternationalFees = expenses.any(
-      (e) => e.isInternational && (e.feesAmount ?? 0) > 0,
-    );
 
-    // --- billed totals (billedAmount ?? amount) grouped by currency ----------
+    // --- totals grouped by transaction currency -------------------------------
     final billedByCurrency = <String, _Accumulator>{};
     for (final e in expenses) {
-      final currency = (e.billedCurrency ?? e.currencyCode).toUpperCase();
-      final amount = e.billedAmount ?? e.amount;
+      final currency = e.transactionCurrency.toUpperCase();
+      final amount = e.transactionAmount;
       billedByCurrency
           .putIfAbsent(currency, () => _Accumulator())
           .add(amount);
@@ -65,12 +66,12 @@ class TripReportCalculator {
     }
 
     // --- by category (key = "categoryName|CURRENCY") -------------------------
-    // We group by category + billing currency to avoid currency mixing.
+    // We group by category + transaction currency to avoid currency mixing.
     final categoryMap = <String, Map<String, _Accumulator>>{};
     for (final e in expenses) {
       final cat = e.category ?? 'Other';
-      final currency = (e.billedCurrency ?? e.currencyCode).toUpperCase();
-      final amount = e.billedAmount ?? e.amount;
+      final currency = e.transactionCurrency.toUpperCase();
+      final amount = e.transactionAmount;
       categoryMap
           .putIfAbsent(cat, () => {})
           .putIfAbsent(currency, () => _Accumulator())
@@ -92,11 +93,11 @@ class TripReportCalculator {
       final network = (e.paymentNetwork?.isNotEmpty == true)
           ? e.paymentNetwork!
           : 'Other';
-      final currency = (e.billedCurrency ?? e.currencyCode).toUpperCase();
+      final currency = e.transactionCurrency.toUpperCase();
       networkMap
           .putIfAbsent(network, () => {})
           .putIfAbsent(currency, () => _Accumulator())
-          .add(e.billedAmount ?? e.amount);
+        .add(e.transactionAmount);
     }
 
     // --- by payment channel --------------------------------------------------
@@ -105,11 +106,11 @@ class TripReportCalculator {
       final channel = (e.paymentChannel?.isNotEmpty == true)
           ? e.paymentChannel!
           : 'Other';
-      final currency = (e.billedCurrency ?? e.currencyCode).toUpperCase();
+      final currency = e.transactionCurrency.toUpperCase();
       channelMap
           .putIfAbsent(channel, () => {})
           .putIfAbsent(currency, () => _Accumulator())
-          .add(e.billedAmount ?? e.amount);
+        .add(e.transactionAmount);
     }
 
     // --- top category (by total billed, first currency encountered) ----------
@@ -135,18 +136,15 @@ class TripReportCalculator {
         _toBuckets(feesByCurrency, keyFn: (k) => k);
     final topPaymentNetwork = _topNestedKey(networkMap);
     final topPaymentChannel = _topNestedKey(channelMap);
-    final totalBilledAmount = totalBilledByCurrencyBuckets.fold<double>(
-      0, (sum, b) => sum + b.totalAmount);
-    final totalFeesAmount = totalFeesByCurrencyBuckets.fold<double>(
-      0, (sum, b) => sum + b.totalAmount);
-    final smartInsights = _buildSmartInsights(
-      internationalExpenseCount: international,
-      domesticExpenseCount: domestic,
-      transactionCurrencyCount: txCurrencyMap.length,
-      totalBilledAmount: totalBilledAmount,
-      totalFeesAmount: totalFeesAmount,
-      hasInternationalFees: hasInternationalFees,
-    );
+    final smartInsights = (expenses.length < 5
+            ? const <Insight>[]
+            : _insightEngine.build(
+                expenses,
+                maxInsights: 1,
+                tripNamesById: {tripId: tripName},
+              ))
+        .map(_toTripInsight)
+        .toList(growable: false);
 
     return TripReportSummary(
       tripId: tripId,
@@ -222,58 +220,26 @@ class TripReportCalculator {
     return topKey;
   }
 
-  List<TripReportInsight> _buildSmartInsights({
-    required int internationalExpenseCount,
-    required int domesticExpenseCount,
-    required int transactionCurrencyCount,
-    required double totalBilledAmount,
-    required double totalFeesAmount,
-    required bool hasInternationalFees,
-  }) {
-    final insights = <TripReportInsight>[];
-
-    // 1. Dominant behavior first — most spending was abroad.
-    if (internationalExpenseCount > domesticExpenseCount &&
-        internationalExpenseCount > 0) {
-      insights.add(const TripReportInsight(
-        type: TripReportInsightType.internationalDominant,
-      ));
-    }
-
-    // 2. Context second — highlight cross-currency complexity.
-    if (transactionCurrencyCount > 1) {
-      insights.add(TripReportInsight(
-        type: TripReportInsightType.multipleCurrencies,
-        percentage: transactionCurrencyCount,
-      ));
-    }
-
-    // 3. Bonus fee signal last.
-    if (hasInternationalFees && totalBilledAmount > 0) {
-      final feePct = _toPercentage(totalFeesAmount, totalBilledAmount);
-      if (feePct > 0) {
-        insights.add(TripReportInsight(
+  TripReportInsight _toTripInsight(Insight insight) {
+    switch (insight.type) {
+      case InsightType.spike:
+        return TripReportInsight(
+          type: TripReportInsightType.spike,
+          subject: insight.tripName,
+          percentage: insight.percentage,
+        );
+      case InsightType.categoryDrift:
+        return TripReportInsight(
+          type: TripReportInsightType.categoryDrift,
+          subject: insight.category,
+          percentage: insight.percentage,
+        );
+      case InsightType.fees:
+        return TripReportInsight(
           type: TripReportInsightType.feesPercentage,
-          percentage: feePct,
-        ));
-      }
+          percentage: insight.percentage,
+        );
     }
-
-    // 3. Bonus reassurance last when no fees were charged.
-    if (internationalExpenseCount > 0 && !hasInternationalFees) {
-      insights.add(const TripReportInsight(
-        type: TripReportInsightType.noInternationalFees,
-      ));
-    }
-
-    return insights.take(3).toList(growable: false);
-  }
-
-  int _toPercentage(double value, double total) {
-    if (total <= 0) {
-      return 0;
-    }
-    return ((value / total) * 100).round();
   }
 }
 

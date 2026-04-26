@@ -24,6 +24,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   late final TextEditingController _destinationController;
   late final TextEditingController _baseCurrencyController;
   late final TextEditingController _budgetController;
+  late final TextEditingController _budgetCurrencyController;
   late final TextEditingController _startDateController;
   late final TextEditingController _endDateController;
 
@@ -45,6 +46,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     _budgetController = TextEditingController(
       text: trip?.budget?.toStringAsFixed(2) ?? '',
     );
+    _budgetCurrencyController = TextEditingController(
+      text: trip?.budgetCurrency ?? trip?.baseCurrency ?? '',
+    );
     _startDateController = TextEditingController();
     _endDateController = TextEditingController();
     _startDate = trip?.startDate;
@@ -58,6 +62,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     _destinationController.dispose();
     _baseCurrencyController.dispose();
     _budgetController.dispose();
+    _budgetCurrencyController.dispose();
     _startDateController.dispose();
     _endDateController.dispose();
     super.dispose();
@@ -138,6 +143,23 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
+                          controller: _budgetCurrencyController,
+                          textInputAction: TextInputAction.next,
+                          textCapitalization: TextCapitalization.characters,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(
+                              RegExp('[a-zA-Z]'),
+                            ),
+                            LengthLimitingTextInputFormatter(3),
+                          ],
+                          decoration: InputDecoration(
+                            labelText: l10n.tripFormBudgetCurrencyLabel,
+                            hintText: l10n.tripFormBudgetCurrencyHint,
+                          ),
+                          validator: _validateBudgetCurrency,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
                           controller: _startDateController,
                           readOnly: true,
                           decoration: InputDecoration(
@@ -212,6 +234,24 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     return null;
   }
 
+  String? _validateBudgetCurrency(String? value) {
+    final l10n = AppLocalizations.of(context)!;
+    final budgetText = _budgetController.text.trim();
+    final currency = value?.trim() ?? '';
+
+    if (budgetText.isEmpty) {
+      return null;
+    }
+    if (currency.isEmpty) {
+      return null;
+    }
+    if (currency.length != 3) {
+      return l10n.tripFormBudgetCurrencyInvalid;
+    }
+
+    return null;
+  }
+
   String? _validateStartDate(String? value) {
     final l10n = AppLocalizations.of(context)!;
     if (_startDate == null) {
@@ -271,6 +311,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
     final budgetText = _budgetController.text.trim();
     final budget = budgetText.isEmpty ? null : double.parse(budgetText);
+    final baseCurrency = _baseCurrencyController.text.trim().toUpperCase();
+    final budgetCurrencyText = _budgetCurrencyController.text.trim().toUpperCase();
+    final budgetCurrency = budget == null
+      ? null
+      : (budgetCurrencyText.isEmpty ? baseCurrency : budgetCurrencyText);
     final controller = ref.read(tripsControllerProvider.notifier);
 
     try {
@@ -280,8 +325,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           destination: _destinationController.text.trim(),
           startDate: _startDate!,
           endDate: _endDate!,
-          baseCurrency: _baseCurrencyController.text.trim().toUpperCase(),
+          baseCurrency: baseCurrency,
           budget: budget,
+          budgetCurrency: budgetCurrency,
         );
       } else {
         await controller.updateTrip(
@@ -290,8 +336,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           destination: _destinationController.text.trim(),
           startDate: _startDate!,
           endDate: _endDate!,
-          baseCurrency: _baseCurrencyController.text.trim().toUpperCase(),
+          baseCurrency: baseCurrency,
           budget: budget,
+          budgetCurrency: budgetCurrency,
         );
       }
 

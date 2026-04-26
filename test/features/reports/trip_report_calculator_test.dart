@@ -21,6 +21,7 @@ Expense _expense({
   String? paymentNetwork,
   String? paymentChannel,
   String paymentMethod = 'Credit Card',
+  DateTime? spentAt,
 }) {
   return Expense.create(
     tripId: 'trip-1',
@@ -38,7 +39,7 @@ Expense _expense({
     paymentNetwork: paymentNetwork,
     paymentChannel: paymentChannel,
     category: category,
-    spentAt: DateTime(2026, 1, 15),
+    spentAt: spentAt ?? DateTime(2026, 1, 15),
   );
 }
 
@@ -202,10 +203,10 @@ void main() {
         expect(summary.hasInternational, isTrue);
       });
 
-      test('billed totals are in SAR only', () {
+      test('totals are grouped by transaction currency', () {
         expect(summary.totalBilledByCurrency.length, 1);
-        expect(summary.totalBilledByCurrency.first.currency, 'SAR');
-        expect(summary.totalBilledByCurrency.first.totalAmount, 300.0);
+        expect(summary.totalBilledByCurrency.first.currency, 'USD');
+        expect(summary.totalBilledByCurrency.first.totalAmount, 80.0);
       });
 
       test('fees are correctly summed in SAR', () {
@@ -221,21 +222,8 @@ void main() {
         expect(summary.byTransactionCurrency.first.totalAmount, 80.0);
       });
 
-      test('smart insights include internationalDominant and feesPercentage', () {
-        // intl=2, domestic=0 → internationalDominant fires
-        // single txn currency (USD) → no multipleCurrencies
-        // fees exist → feesPercentage
-        expect(summary.smartInsights.length, 2);
-        expect(
-          summary.smartInsights.first.type,
-          TripReportInsightType.internationalDominant,
-        );
-        expect(
-          summary.smartInsights.last.type,
-          TripReportInsightType.feesPercentage,
-        );
-        // fees are 3.5 / 300 ≈ 1%
-        expect(summary.smartInsights.last.percentage, 1);
+      test('smart insights are empty when expenses are below minimum gate', () {
+        expect(summary.smartInsights, isEmpty);
       });
     });
 
@@ -294,10 +282,12 @@ void main() {
         expect(summary.domesticExpenseCount, 1);
       });
 
-      test('billed total is all SAR, not mixed', () {
-        expect(summary.totalBilledByCurrency.length, 1);
-        expect(summary.totalBilledByCurrency.first.currency, 'SAR');
-        expect(summary.totalBilledByCurrency.first.totalAmount, 825.0);
+      test('totals contain all currencies without merging', () {
+        expect(summary.totalBilledByCurrency.length, 3);
+        expect(summary.totalBilledByCurrency.map((b) => b.currency), ['SAR', 'USD', 'EUR']);
+        expect(summary.totalBilledByCurrency[0].totalAmount, 200.0);
+        expect(summary.totalBilledByCurrency[1].totalAmount, 100.0);
+        expect(summary.totalBilledByCurrency[2].totalAmount, 60.0);
       });
 
       test('byTransactionCurrency has SAR, USD, EUR buckets', () {
@@ -320,21 +310,12 @@ void main() {
         expect(summary.totalFeesByCurrency.first.totalAmount, 5.0);
       });
 
-      test('top category is Accommodation (375 SAR)', () {
-        expect(summary.topCategory, 'Accommodation');
+      test('top category is Food (200 SAR equivalent transaction total)', () {
+        expect(summary.topCategory, 'Food');
       });
 
-      test('smart insights: internationalDominant, multipleCurrencies, feesPercentage', () {
-        // Dominant behavior comes first, then context, then fees.
-        expect(summary.smartInsights.length, 3);
-        expect(summary.smartInsights[0].type, TripReportInsightType.internationalDominant);
-        expect(summary.smartInsights[1].type, TripReportInsightType.multipleCurrencies);
-        expect(summary.smartInsights[1].percentage, 3);
-        expect(summary.smartInsights[2].type, TripReportInsightType.feesPercentage);
-        expect(
-          summary.smartInsights.map((i) => i.type),
-          isNot(contains(TripReportInsightType.noInternationalFees)),
-        );
+      test('smart insights are empty when expenses are below minimum gate', () {
+        expect(summary.smartInsights, isEmpty);
       });
     });
 
@@ -415,7 +396,7 @@ void main() {
       });
     });
 
-    test('smart insights include noInternationalFees when applicable', () {
+    test('smart insights stay empty below minimum gate', () {
       final summary = _run([
         _expense(
           amount: 150,
@@ -437,16 +418,29 @@ void main() {
         ),
       ]);
 
-      expect(summary.smartInsights.length, 2);
-      expect(summary.smartInsights.first.type, TripReportInsightType.multipleCurrencies);
-      expect(summary.smartInsights.first.percentage, 2); // SAR + USD
-      expect(
-        summary.smartInsights.last.type,
-        TripReportInsightType.noInternationalFees,
-      );
+      expect(summary.smartInsights, isEmpty);
     });
 
-    test('noInternationalFees is not shown when any international expense has fees', () {
+    test('shows separate totals for two different currencies', () {
+      final summary = _run([
+        _expense(
+          amount: 2.36,
+          currency: 'SAR',
+          category: 'Food',
+        ),
+        _expense(
+          amount: 23000,
+          currency: 'VND',
+          category: 'Shopping',
+        ),
+      ]);
+
+      expect(summary.totalBilledByCurrency.map((b) => b.currency), ['VND', 'SAR']);
+      expect(summary.totalBilledByCurrency[0].totalAmount, 23000);
+      expect(summary.totalBilledByCurrency[1].totalAmount, 2.36);
+    });
+
+    test('insights stay empty below minimum gate even with fees', () {
       final summary = _run([
         _expense(
           amount: 150,
@@ -470,10 +464,75 @@ void main() {
         ),
       ]);
 
-      expect(
-        summary.smartInsights.map((insight) => insight.type),
-        isNot(contains(TripReportInsightType.noInternationalFees)),
-      );
+      expect(summary.smartInsights, isEmpty);
+    });
+
+    test('trip insights use shared engine and keep max 1 (spike priority)', () {
+      final summary = _run([
+        _expense(
+          amount: 40,
+          category: 'Food',
+          spentAt: DateTime(2026, 1, 1),
+        ),
+        _expense(
+          amount: 50,
+          category: 'Food',
+          spentAt: DateTime(2026, 1, 2),
+        ),
+        _expense(
+          amount: 180,
+          category: 'Food',
+          spentAt: DateTime(2026, 1, 3),
+        ),
+        _expense(
+          amount: 200,
+          category: 'Food',
+          spentAt: DateTime(2026, 1, 4),
+        ),
+        _expense(
+          amount: 220,
+          category: 'Transport',
+          spentAt: DateTime(2026, 1, 5),
+        ),
+      ]);
+
+      expect(summary.smartInsights.length, 1);
+      expect(summary.smartInsights.first.type, TripReportInsightType.spike);
+      expect(summary.smartInsights.first.percentage, greaterThan(0));
+    });
+
+    test('trip insights show category drift when spike condition is not met', () {
+      final summary = _run([
+        _expense(
+          amount: 100,
+          category: 'Food',
+          spentAt: DateTime(2026, 2, 1),
+        ),
+        _expense(
+          amount: 90,
+          category: 'Food',
+          spentAt: DateTime(2026, 2, 2),
+        ),
+        _expense(
+          amount: 110,
+          category: 'Food',
+          spentAt: DateTime(2026, 2, 3),
+        ),
+        _expense(
+          amount: 120,
+          category: 'Shopping',
+          spentAt: DateTime(2026, 2, 4),
+        ),
+        _expense(
+          amount: 80,
+          category: 'Transport',
+          spentAt: DateTime(2026, 2, 5),
+        ),
+      ]);
+
+      expect(summary.smartInsights.length, 1);
+      expect(summary.smartInsights.first.type, TripReportInsightType.categoryDrift);
+      expect(summary.smartInsights.first.percentage, greaterThanOrEqualTo(50));
     });
   });
 }
