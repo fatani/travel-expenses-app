@@ -245,6 +245,18 @@ abstract class AppLocalizations {
   /// **'Base currency'**
   String get tripFormCurrencyLabel;
 
+  /// No description provided for @tripFormMoreDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'More details'**
+  String get tripFormMoreDetails;
+
+  /// No description provided for @tripFormRequiredFieldsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter trip name, destination, and currency to continue'**
+  String get tripFormRequiredFieldsHint;
+
   /// No description provided for @tripFormBudgetLabel.
   ///
   /// In en, this message translates to:
@@ -346,6 +358,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save'**
   String get tripDetailsQuickAddSave;
+
+  /// No description provided for @tripDetailsQuickAddRecentMerchants.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent merchants'**
+  String get tripDetailsQuickAddRecentMerchants;
 
   /// No description provided for @tripDetailsQuickAddPaymentCash.
   ///

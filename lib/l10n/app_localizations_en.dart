@@ -90,6 +90,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormCurrencyLabel => 'Base currency';
 
   @override
+  String get tripFormMoreDetails => 'More details';
+
+  @override
+  String get tripFormRequiredFieldsHint => 'Enter trip name, destination, and currency to continue';
+
+  @override
   String get tripFormBudgetLabel => 'Budget (optional)';
 
   @override
@@ -141,6 +147,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDetailsQuickAddSave => 'Save';
+
+  @override
+  String get tripDetailsQuickAddRecentMerchants => 'Recent merchants';
 
   @override
   String get tripDetailsQuickAddPaymentCash => 'Cash';

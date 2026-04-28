@@ -1144,6 +1144,8 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
 
   late String _selectedCategory;
   late String _selectedPayment;
+  late final List<_RecentMerchant> _recentMerchants;
+  String? _selectedMerchantTitle;
   bool _didChangeCategory = false;
   bool _didChangePayment = false;
   bool _showValidationError = false;
@@ -1164,6 +1166,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
     super.initState();
 
     final defaults = _deriveDefaults(widget.expenses);
+    _recentMerchants = _deriveRecentMerchants(widget.expenses);
     _selectedCategory = defaults.category;
     _selectedPayment = defaults.payment;
   }
@@ -1270,6 +1273,48 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
               );
             }).toList(),
           ),
+          if (_recentMerchants.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              l10n.tripDetailsQuickAddRecentMerchants,
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: 6),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _recentMerchants.map((merchant) {
+                  final isSelected = _selectedMerchantTitle == merchant.title;
+                  return Padding(
+                    padding: const EdgeInsetsDirectional.only(end: 8),
+                    child: ChoiceChip(
+                      showCheckmark: false,
+                      selected: isSelected,
+                      label: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 160),
+                        child: Text(
+                          merchant.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                        ),
+                      ),
+                      selectedColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.12,
+                      ),
+                      backgroundColor: theme.colorScheme.surface,
+                      side: BorderSide(
+                        color: isSelected
+                            ? theme.colorScheme.primary.withValues(alpha: 0.35)
+                            : theme.colorScheme.outlineVariant,
+                      ),
+                      onSelected: (_) => _applyRecentMerchant(merchant),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
           Text(
             l10n.expenseFormPaymentMethodLabel,
@@ -1367,7 +1412,10 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
     final amount = double.parse(_amountController.text.trim());
     final now = DateTime.now();
     final paymentData = _mapQuickPaymentToSavedFields(_selectedPayment);
-    final title = _selectedCategory;
+    final merchantTitle = _selectedMerchantTitle?.trim();
+    final title = merchantTitle == null || merchantTitle.isEmpty
+      ? _selectedCategory
+      : merchantTitle;
 
     Navigator.of(context).pop(
       _QuickAddSheetResult.submit(
@@ -1413,6 +1461,102 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
       category: category,
       payment: payment,
     );
+  }
+
+  List<_RecentMerchant> _deriveRecentMerchants(
+    List<Expense> expenses, {
+    int limit = 8,
+  }) {
+    final sortedExpenses = [...expenses]..sort((a, b) {
+      final spentAtComparison = b.spentAt.compareTo(a.spentAt);
+      if (spentAtComparison != 0) {
+        return spentAtComparison;
+      }
+      return b.createdAt.compareTo(a.createdAt);
+    });
+
+    final seen = <String>{};
+    final recentMerchants = <_RecentMerchant>[];
+
+    for (final expense in sortedExpenses) {
+      final title = expense.title.trim();
+      if (!_isMerchantLikeTitle(title)) {
+        continue;
+      }
+
+      final key = title.toLowerCase();
+      if (!seen.add(key)) {
+        continue;
+      }
+
+      final category = expense.category?.trim();
+      recentMerchants.add(
+        _RecentMerchant(
+          title: title,
+          category: category == null || category.isEmpty ? null : category,
+        ),
+      );
+
+      if (recentMerchants.length >= limit) {
+        break;
+      }
+    }
+
+    return recentMerchants;
+  }
+
+  bool _isMerchantLikeTitle(String title) {
+    final normalized = title.trim().toLowerCase();
+    if (normalized.length < 3) {
+      return false;
+    }
+
+    final categoryNames = _quickCategories
+        .map((category) => category.toLowerCase())
+        .toSet();
+    if (categoryNames.contains(normalized)) {
+      return false;
+    }
+
+    final cleaned = normalized
+        .replaceAll(RegExp(r'[^a-z0-9 ]'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    if (cleaned.length < 3) {
+      return false;
+    }
+
+    const genericTitles = <String>{
+      'expense',
+      'expenses',
+      'purchase',
+      'payment',
+      'transaction',
+      'charge',
+      'item',
+      'misc',
+      'other',
+      'general',
+      'unknown',
+      'cost',
+    };
+
+    return !genericTitles.contains(cleaned);
+  }
+
+  void _applyRecentMerchant(_RecentMerchant merchant) {
+    setState(() {
+      _selectedMerchantTitle = merchant.title;
+      final merchantCategory = merchant.category;
+      if (
+          merchantCategory != null &&
+          _quickCategories.contains(merchantCategory)) {
+        if (_selectedCategory != merchantCategory) {
+          _didChangeCategory = true;
+        }
+        _selectedCategory = merchantCategory;
+      }
+    });
   }
 
   String _inferQuickPayment(Expense latest) {
@@ -1470,6 +1614,13 @@ class _QuickAddPaymentData {
   final String method;
   final String network;
   final String channel;
+}
+
+class _RecentMerchant {
+  const _RecentMerchant({required this.title, required this.category});
+
+  final String title;
+  final String? category;
 }
 
 class _QuickAddSubmitPayload {

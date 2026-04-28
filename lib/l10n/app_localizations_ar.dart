@@ -90,6 +90,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripFormCurrencyLabel => 'العملة الأساسية';
 
   @override
+  String get tripFormMoreDetails => 'تفاصيل إضافية';
+
+  @override
+  String get tripFormRequiredFieldsHint => 'أدخل اسم الرحلة، الوجهة، والعملة للمتابعة';
+
+  @override
   String get tripFormBudgetLabel => 'الميزانية (اختياري)';
 
   @override
@@ -141,6 +147,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripDetailsQuickAddSave => 'حفظ';
+
+  @override
+  String get tripDetailsQuickAddRecentMerchants => 'التجار الأخيرون';
 
   @override
   String get tripDetailsQuickAddPaymentCash => 'نقداً';
