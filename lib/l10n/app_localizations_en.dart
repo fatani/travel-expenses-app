@@ -137,6 +137,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsAddExpense => 'Add Expense';
 
   @override
+  String get tripDetailsQuickAddMoreDetails => 'More details';
+
+  @override
+  String get tripDetailsQuickAddSave => 'Save';
+
+  @override
+  String get tripDetailsQuickAddPaymentCash => 'Cash';
+
+  @override
+  String get tripDetailsQuickAddPaymentCard => 'Card';
+
+  @override
+  String get tripDetailsQuickAddPaymentWallet => 'Wallet';
+
+  @override
+  String get tripDetailsQuickAddExpenseAdded => 'Expense added';
+
+  @override
   String get tripDetailsEditTripTooltip => 'Edit trip';
 
   @override
@@ -770,4 +788,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String globalReportsInsightIntlDomesticRatio(int international, int domestic) {
     return 'International $international% vs domestic $domestic%';
   }
+
+  @override
+  String get tripStatusActive => 'Active';
+
+  @override
+  String get tripStatusUpcoming => 'Upcoming';
+
+  @override
+  String get tripStatusPast => 'Past';
 }

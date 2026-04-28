@@ -137,6 +137,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsAddExpense => 'إضافة مصروف';
 
   @override
+  String get tripDetailsQuickAddMoreDetails => 'تفاصيل أكثر';
+
+  @override
+  String get tripDetailsQuickAddSave => 'حفظ';
+
+  @override
+  String get tripDetailsQuickAddPaymentCash => 'نقداً';
+
+  @override
+  String get tripDetailsQuickAddPaymentCard => 'بطاقة';
+
+  @override
+  String get tripDetailsQuickAddPaymentWallet => 'محفظة';
+
+  @override
+  String get tripDetailsQuickAddExpenseAdded => 'تمت إضافة المصروف';
+
+  @override
   String get tripDetailsEditTripTooltip => 'تعديل الرحلة';
 
   @override
@@ -774,4 +792,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String globalReportsInsightIntlDomesticRatio(int international, int domestic) {
     return 'الدولي $international% مقابل المحلي $domestic%';
   }
+
+  @override
+  String get tripStatusActive => 'نشطة';
+
+  @override
+  String get tripStatusUpcoming => 'قادمة';
+
+  @override
+  String get tripStatusPast => 'منتهية';
 }

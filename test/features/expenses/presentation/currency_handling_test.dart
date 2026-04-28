@@ -58,8 +58,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('CNY 10.00'), findsOneWidget);
-      expect(find.text('CNY 30.00'), findsNothing);
+      expect(find.textContaining('10 CNY'), findsOneWidget);
+      expect(find.textContaining('30 CNY'), findsNothing);
       expect(
         find.text(
           'Some expenses in other currencies are not included in the total',
@@ -122,8 +122,8 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('SAR 50.00'), findsOneWidget);
-      expect(find.text('SAR 70.00'), findsNothing);
+      expect(find.textContaining('50 SAR'), findsOneWidget);
+      expect(find.textContaining('70 SAR'), findsNothing);
       expect(
         find.text(
           'Some expenses in other currencies are not included in the total',
@@ -187,9 +187,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No expenses in this currency'), findsOneWidget);
-      expect(find.text('CNY 0.00'), findsNothing);
+      expect(find.textContaining('0 CNY'), findsNothing);
       expect(find.text('Total charged (SAR)'), findsOneWidget);
-      expect(find.text('SAR 12.45'), findsOneWidget);
+      expect(find.textContaining('12.45 SAR'), findsOneWidget);
     },
   );
 
@@ -248,9 +248,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('لا توجد مصاريف بهذه العملة'), findsOneWidget);
-      expect(find.text('CNY 0.00'), findsNothing);
+      expect(find.textContaining('0 CNY'), findsNothing);
       expect(find.text('إجمالي المخصوم'), findsOneWidget);
-      expect(find.text('SAR 12.45'), findsOneWidget);
+      expect(find.textContaining('12.45 SAR'), findsOneWidget);
     },
   );
 

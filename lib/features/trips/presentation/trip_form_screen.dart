@@ -363,7 +363,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   void _syncDateFields() {
-    final formatter = DateFormat('dd MMM yyyy');
+    final formatter = DateFormat('dd MMM yyyy', 'en');
     _startDateController.text = _startDate == null
         ? ''
         : formatter.format(_startDate!);

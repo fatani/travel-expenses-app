@@ -335,6 +335,42 @@ abstract class AppLocalizations {
   /// **'Add Expense'**
   String get tripDetailsAddExpense;
 
+  /// No description provided for @tripDetailsQuickAddMoreDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'More details'**
+  String get tripDetailsQuickAddMoreDetails;
+
+  /// No description provided for @tripDetailsQuickAddSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get tripDetailsQuickAddSave;
+
+  /// No description provided for @tripDetailsQuickAddPaymentCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash'**
+  String get tripDetailsQuickAddPaymentCash;
+
+  /// No description provided for @tripDetailsQuickAddPaymentCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get tripDetailsQuickAddPaymentCard;
+
+  /// No description provided for @tripDetailsQuickAddPaymentWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get tripDetailsQuickAddPaymentWallet;
+
+  /// No description provided for @tripDetailsQuickAddExpenseAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense added'**
+  String get tripDetailsQuickAddExpenseAdded;
+
   /// No description provided for @tripDetailsEditTripTooltip.
   ///
   /// In en, this message translates to:
@@ -1480,6 +1516,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'International {international}% vs domestic {domestic}%'**
   String globalReportsInsightIntlDomesticRatio(int international, int domestic);
+
+  /// No description provided for @tripStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get tripStatusActive;
+
+  /// No description provided for @tripStatusUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get tripStatusUpcoming;
+
+  /// No description provided for @tripStatusPast.
+  ///
+  /// In en, this message translates to:
+  /// **'Past'**
+  String get tripStatusPast;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

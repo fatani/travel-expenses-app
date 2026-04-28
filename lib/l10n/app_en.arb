@@ -44,6 +44,12 @@
   "@tripFormSaveError": {"placeholders": {"error": {}}},
   "tripDetailsLoadError": "Could not load expenses.",
   "tripDetailsAddExpense": "Add Expense",
+  "tripDetailsQuickAddMoreDetails": "More details",
+  "tripDetailsQuickAddSave": "Save",
+  "tripDetailsQuickAddPaymentCash": "Cash",
+  "tripDetailsQuickAddPaymentCard": "Card",
+  "tripDetailsQuickAddPaymentWallet": "Wallet",
+  "tripDetailsQuickAddExpenseAdded": "Expense added",
   "tripDetailsEditTripTooltip": "Edit trip",
   "tripDetailsTotalExpenses": "Total expenses",
   "tripDetailsExpenseCount": "Expense count",
@@ -262,5 +268,8 @@
   "globalReportsBehavioralInsightAttributionIn": "📍 In:",
   "globalReportsBehavioralInsightAttributionTop": "📊 Top impact:",
   "globalReportsInsightIntlDomesticRatio": "International {international}% vs domestic {domestic}%",
-  "@globalReportsInsightIntlDomesticRatio": {"placeholders": {"international": {"type": "int"}, "domestic": {"type": "int"}}}
+  "@globalReportsInsightIntlDomesticRatio": {"placeholders": {"international": {"type": "int"}, "domestic": {"type": "int"}}},
+  "tripStatusActive": "Active",
+  "tripStatusUpcoming": "Upcoming",
+  "tripStatusPast": "Past"
 }

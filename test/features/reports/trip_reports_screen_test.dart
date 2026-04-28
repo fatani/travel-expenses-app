@@ -152,8 +152,8 @@ void main() {
       name: 'Active Trip',
       destination: 'Riyadh',
       baseCurrency: 'SAR',
-      startDate: DateTime(2026, 4, 1),
-      endDate: DateTime(2026, 4, 28),
+      startDate: DateTime.now().subtract(const Duration(days: 26)),
+      endDate: DateTime.now().add(const Duration(days: 2)),
     );
     final expenses = [
       _expense(tripId: trip.id, amount: 100, currency: 'SAR', category: 'Food'),

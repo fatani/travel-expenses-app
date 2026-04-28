@@ -44,6 +44,12 @@
   "@tripFormSaveError": {"placeholders": {"error": {}}},
   "tripDetailsLoadError": "تعذر تحميل المصاريف.",
   "tripDetailsAddExpense": "إضافة مصروف",
+  "tripDetailsQuickAddMoreDetails": "تفاصيل أكثر",
+  "tripDetailsQuickAddSave": "حفظ",
+  "tripDetailsQuickAddPaymentCash": "نقداً",
+  "tripDetailsQuickAddPaymentCard": "بطاقة",
+  "tripDetailsQuickAddPaymentWallet": "محفظة",
+  "tripDetailsQuickAddExpenseAdded": "تمت إضافة المصروف",
   "tripDetailsEditTripTooltip": "تعديل الرحلة",
   "tripDetailsTotalExpenses": "إجمالي المصاريف",
   "tripDetailsExpenseCount": "عدد المصاريف",
@@ -262,5 +268,8 @@
   "globalReportsBehavioralInsightAttributionIn": "📍 في:",
   "globalReportsBehavioralInsightAttributionTop": "📊 الأعلى تأثيرًا:",
   "globalReportsInsightIntlDomesticRatio": "الدولي {international}% مقابل المحلي {domestic}%",
-  "@globalReportsInsightIntlDomesticRatio": {"placeholders": {"international": {"type": "int"}, "domestic": {"type": "int"}}}
+  "@globalReportsInsightIntlDomesticRatio": {"placeholders": {"international": {"type": "int"}, "domestic": {"type": "int"}}},
+  "tripStatusActive": "نشطة",
+  "tripStatusUpcoming": "قادمة",
+  "tripStatusPast": "منتهية"
 }

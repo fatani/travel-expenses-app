@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:travel_expenses/l10n/app_localizations.dart';
 import 'package:travel_expenses/l10n/l10n_extension.dart';
 
@@ -16,6 +18,17 @@ import '../domain/expense.dart';
 import 'expense_controller.dart';
 import 'expense_form_screen.dart';
 import 'expense_option_labels.dart';
+
+String _formatAmountCurrency(double amount, String currencyCode) {
+  final normalizedCurrency = currencyCode.trim().toUpperCase();
+  final formatter = NumberFormat('#,##0.##', 'en');
+  return '${formatter.format(amount)} $normalizedCurrency';
+}
+
+String _formatAmountCurrencyLtr(double amount, String currencyCode) {
+  // LTR isolate keeps number+currency order stable in RTL locales.
+  return '\u2066${_formatAmountCurrency(amount, currencyCode)}\u2069';
+}
 
 class TripDetailsScreen extends ConsumerStatefulWidget {
   const TripDetailsScreen({super.key, required this.trip});
@@ -67,7 +80,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         data: (expenses) => _TripDetailsContent(
           trip: _trip,
           expenses: expenses,
-          onAddExpense: () => _openExpenseForm(),
+          onAddExpense: () => _openQuickAddSheet(expenses),
           onAddViaSms: _openSmsExpenseScreen,
           onEditExpense: (expense) => _openExpenseForm(expense: expense),
           onDeleteExpense: (expense) => _confirmDelete(expense),
@@ -101,7 +114,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       ),
       floatingActionButton: hasExpenses
           ? FloatingActionButton.extended(
-              onPressed: _openExpenseForm,
+              onPressed: () =>
+                  _openQuickAddSheet(expensesState.valueOrNull ?? const []),
               icon: const Icon(Icons.add_rounded),
               label: Text(l10n.tripDetailsAddExpense),
             )
@@ -132,6 +146,78 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         builder: (_) => ExpenseFormScreen(trip: _trip, expense: expense),
       ),
     );
+  }
+
+  Future<void> _openQuickAddSheet(List<Expense> expenses) async {
+    final result = await showModalBottomSheet<_QuickAddSheetResult>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      useSafeArea: true,
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: _QuickAddExpenseSheet(
+            trip: _trip,
+            expenses: expenses,
+          ),
+        );
+      },
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    if (result.openMoreDetails) {
+      await _openExpenseForm();
+      return;
+    }
+
+    final payload = result.payload;
+    if (payload == null) {
+      return;
+    }
+
+    unawaited(_createQuickExpense(payload));
+
+    HapticFeedback.lightImpact();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(AppLocalizations.of(context)!.tripDetailsQuickAddExpenseAdded),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> _createQuickExpense(_QuickAddSubmitPayload payload) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    try {
+      await ref
+          .read(expenseControllerProvider(_trip.id).notifier)
+          .createExpense(
+            title: payload.title,
+            amount: payload.amount,
+            currencyCode: payload.currencyCode,
+            category: payload.category,
+            spentAt: payload.spentAt,
+            paymentMethod: payload.payment.method,
+            paymentNetwork: payload.payment.network,
+            paymentChannel: payload.payment.channel,
+          );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.expenseFormSaveError('$error'))),
+      );
+    }
   }
 
   Future<void> _openSmsExpenseScreen() async {
@@ -406,12 +492,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   }
 
   String _formatCurrency(double amount, String currencyCode) {
-    final formatter = NumberFormat.currency(
-      name: currencyCode,
-      symbol: '$currencyCode ',
-      decimalDigits: 2,
-    );
-    return formatter.format(amount);
+    return _formatAmountCurrencyLtr(amount, currencyCode);
   }
 
   List<Expense> _totalableExpenses(List<Expense> expenses) {
@@ -695,8 +776,11 @@ class _TripSummaryCard extends StatelessWidget {
             const SizedBox(height: 8),
             Text(l10n.tripDetailsBaseCurrency(trip.baseCurrency)),
             const SizedBox(height: 8),
-            Text(_formatDateRange(context, trip)),
-            if (trip.budget != null) ...[
+            Directionality(
+              textDirection: ui.TextDirection.ltr,
+              child: Text(_formatDateRange(context, trip)),
+            ),
+            if (trip.budget != null && (trip.budget ?? 0) > 0) ...[
               const SizedBox(height: 8),
               Text(l10n.tripDetailsBudget(_formatBudget(trip))),
             ],
@@ -712,19 +796,13 @@ class _TripSummaryCard extends StatelessWidget {
       return l10n.tripsDatesNeedAttention;
     }
 
-    final localeName = Localizations.localeOf(context).toLanguageTag();
-    final formatter = DateFormat('dd MMM yyyy', localeName);
+    final formatter = DateFormat('dd MMM yyyy', 'en');
     return '${formatter.format(trip.startDate!)} - ${formatter.format(trip.endDate!)}';
   }
 
   String _formatBudget(Trip trip) {
     final budgetCurrency = trip.budgetCurrency ?? trip.baseCurrency;
-    final formatter = NumberFormat.currency(
-      name: budgetCurrency,
-      symbol: '$budgetCurrency ',
-      decimalDigits: 2,
-    );
-    return formatter.format(trip.budget);
+    return _formatAmountCurrencyLtr(trip.budget ?? 0, budgetCurrency);
   }
 }
 
@@ -744,7 +822,11 @@ class _StatCard extends StatelessWidget {
           children: [
             Text(label, style: Theme.of(context).textTheme.bodyMedium),
             const SizedBox(height: 8),
-            Text(value, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              value,
+              textDirection: ui.TextDirection.ltr,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ],
         ),
       ),
@@ -786,16 +868,6 @@ class _ExpenseCard extends StatelessWidget {
         expense.transactionCurrency.toUpperCase() !=
             primaryCurrency.toUpperCase();
 
-    final primaryFormatter = NumberFormat.currency(
-      name: primaryCurrency,
-      symbol: '$primaryCurrency ',
-      decimalDigits: 2,
-    );
-    final txFormatter = NumberFormat.currency(
-      name: expense.transactionCurrency,
-      symbol: '${expense.transactionCurrency} ',
-      decimalDigits: 2,
-    );
     final dateFormatter = DateFormat(
       expense.spentAt.hour != 0 || expense.spentAt.minute != 0
           ? 'dd MMM yyyy • HH:mm'
@@ -853,14 +925,15 @@ class _ExpenseCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      primaryFormatter.format(primaryAmount),
+                      _formatAmountCurrencyLtr(primaryAmount, primaryCurrency),
                       textAlign: TextAlign.end,
+                      textDirection: ui.TextDirection.ltr,
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     if (showSecondary) ...[
                       const SizedBox(height: 2),
                       Text(
-                        '≈ ${txFormatter.format(expense.transactionAmount)}',
+                        '≈ ${_formatAmountCurrencyLtr(expense.transactionAmount, expense.transactionCurrency)}',
                         textAlign: TextAlign.end,
                         textDirection: ui.TextDirection.ltr,
                         style: mutedStyle,
@@ -870,7 +943,7 @@ class _ExpenseCard extends StatelessWidget {
                         (expense.feesCurrency ?? '').isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        '${l10n.intlFees}: ${(expense.feesCurrency ?? '').toUpperCase()} ${expense.feesAmount!.toStringAsFixed(2)}',
+                        '${l10n.intlFees}: ${_formatAmountCurrencyLtr(expense.feesAmount!, expense.feesCurrency ?? '')}',
                         textAlign: TextAlign.end,
                         textDirection: ui.TextDirection.ltr,
                         style: mutedStyle,
@@ -1028,4 +1101,391 @@ class _EmptyFilteredState extends StatelessWidget {
       ),
     );
   }
+}
+
+class _QuickAddSheetResult {
+  const _QuickAddSheetResult.moreDetails()
+    : openMoreDetails = true,
+      payload = null;
+
+  const _QuickAddSheetResult.submit(_QuickAddSubmitPayload value)
+    : openMoreDetails = false,
+      payload = value;
+
+  final bool openMoreDetails;
+  final _QuickAddSubmitPayload? payload;
+}
+
+class _QuickAddExpenseSheet extends ConsumerStatefulWidget {
+  const _QuickAddExpenseSheet({required this.trip, required this.expenses});
+
+  final Trip trip;
+  final List<Expense> expenses;
+
+  @override
+  ConsumerState<_QuickAddExpenseSheet> createState() =>
+      _QuickAddExpenseSheetState();
+}
+
+class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
+  final TextEditingController _amountController = TextEditingController();
+  final TextInputFormatter _amountFormatter = TextInputFormatter.withFunction((
+    oldValue,
+    newValue,
+  ) {
+    final candidate = newValue.text;
+    if (candidate.isEmpty) {
+      return newValue;
+    }
+
+    final isValid = RegExp(r'^\d*\.?\d*$').hasMatch(candidate);
+    return isValid ? newValue : oldValue;
+  });
+
+  late String _selectedCategory;
+  late String _selectedPayment;
+  bool _didChangeCategory = false;
+  bool _didChangePayment = false;
+  bool _showValidationError = false;
+
+  static const List<String> _quickCategories = <String>[
+    'Food',
+    'Transport',
+    'Accommodation',
+    'Shopping',
+    'Entertainment',
+    'Other',
+  ];
+
+  static const List<String> _quickPayments = <String>['Cash', 'Card', 'Wallet'];
+
+  @override
+  void initState() {
+    super.initState();
+
+    final defaults = _deriveDefaults(widget.expenses);
+    _selectedCategory = defaults.category;
+    _selectedPayment = defaults.payment;
+  }
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+
+    final amountError = _showValidationError ? _validateAmount(l10n) : null;
+    final currencyCode = widget.trip.baseCurrency.trim().toUpperCase();
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            l10n.tripDetailsAddExpense,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            textDirection: TextDirection.ltr,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _amountController,
+                  autofocus: true,
+                  textDirection: TextDirection.ltr,
+                  textAlign: TextAlign.start,
+                  textInputAction: TextInputAction.done,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  inputFormatters: [_amountFormatter],
+                  onSubmitted: (_) => _save(),
+                  decoration: InputDecoration(
+                    labelText: l10n.expenseFormAmountLabel,
+                    hintText: l10n.expenseFormAmountHint,
+                    errorText: amountError,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Padding(
+                padding: const EdgeInsets.only(top: 18),
+                child: Text(
+                  currencyCode,
+                  textDirection: TextDirection.ltr,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.expenseFormCategoryLabel,
+            style: theme.textTheme.titleSmall,
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _quickCategories.map((category) {
+              final isSelected = _selectedCategory == category;
+              final selectedAlpha = _didChangeCategory ? 0.22 : 0.10;
+              final selectedBorderAlpha = _didChangeCategory ? 0.45 : 0.25;
+              return ChoiceChip(
+                showCheckmark: false,
+                label: Text(ExpenseOptionLabels.category(l10n, category)),
+                labelStyle: theme.textTheme.labelLarge?.copyWith(
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface,
+                ),
+                selectedColor: theme.colorScheme.primary.withValues(
+                  alpha: selectedAlpha,
+                ),
+                backgroundColor: theme.colorScheme.surface,
+                side: BorderSide(
+                  color: isSelected
+                      ? theme.colorScheme.primary.withValues(
+                          alpha: selectedBorderAlpha,
+                        )
+                      : theme.colorScheme.outlineVariant,
+                ),
+                selected: isSelected,
+                onSelected: (_) {
+                  setState(() {
+                    if (_selectedCategory != category) {
+                      _didChangeCategory = true;
+                    }
+                    _selectedCategory = category;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.expenseFormPaymentMethodLabel,
+            style: theme.textTheme.titleSmall,
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _quickPayments.map((payment) {
+              final isSelected = _selectedPayment == payment;
+              final selectedAlpha = _didChangePayment ? 0.22 : 0.10;
+              final selectedBorderAlpha = _didChangePayment ? 0.45 : 0.25;
+              return ChoiceChip(
+                showCheckmark: false,
+                label: Text(_paymentLabel(l10n, payment)),
+                labelStyle: theme.textTheme.labelLarge?.copyWith(
+                  color: isSelected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurface,
+                ),
+                selectedColor: theme.colorScheme.primary.withValues(
+                  alpha: selectedAlpha,
+                ),
+                backgroundColor: theme.colorScheme.surface,
+                side: BorderSide(
+                  color: isSelected
+                      ? theme.colorScheme.primary.withValues(
+                          alpha: selectedBorderAlpha,
+                        )
+                      : theme.colorScheme.outlineVariant,
+                ),
+                selected: isSelected,
+                onSelected: (_) {
+                  setState(() {
+                    if (_selectedPayment != payment) {
+                      _didChangePayment = true;
+                    }
+                    _selectedPayment = payment;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.of(context).pop(const _QuickAddSheetResult.moreDetails()),
+                child: Text(l10n.tripDetailsQuickAddMoreDetails),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _save,
+                  child: Text(l10n.tripDetailsQuickAddSave),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: MediaQuery.of(context).padding.bottom > 0 ? 2 : 0),
+        ],
+      ),
+    );
+  }
+
+  String? _validateAmount(AppLocalizations l10n) {
+    final value = _amountController.text.trim();
+    if (value.isEmpty) {
+      return l10n.commonRequiredField;
+    }
+    final parsed = double.tryParse(value);
+    if (parsed == null) {
+      return l10n.commonEnterValidNumber;
+    }
+    if (parsed <= 0) {
+      return l10n.expenseFormAmountPositive;
+    }
+    return null;
+  }
+
+  void _save() {
+    final l10n = AppLocalizations.of(context)!;
+
+    setState(() {
+      _showValidationError = true;
+    });
+
+    final amountError = _validateAmount(l10n);
+    if (amountError != null) {
+      return;
+    }
+
+    final amount = double.parse(_amountController.text.trim());
+    final now = DateTime.now();
+    final paymentData = _mapQuickPaymentToSavedFields(_selectedPayment);
+    final title = _selectedCategory;
+
+    Navigator.of(context).pop(
+      _QuickAddSheetResult.submit(
+        _QuickAddSubmitPayload(
+          title: title,
+          amount: amount,
+          currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
+          category: _selectedCategory,
+          spentAt: now,
+          payment: paymentData,
+        ),
+      ),
+    );
+  }
+
+  String _paymentLabel(AppLocalizations l10n, String value) {
+    switch (value) {
+      case 'Cash':
+        return l10n.tripDetailsQuickAddPaymentCash;
+      case 'Wallet':
+        return l10n.tripDetailsQuickAddPaymentWallet;
+      default:
+        return l10n.tripDetailsQuickAddPaymentCard;
+    }
+  }
+
+  _QuickAddDefaultCategoryPayment _deriveDefaults(List<Expense> expenses) {
+    if (expenses.isEmpty) {
+      return const _QuickAddDefaultCategoryPayment(
+        category: 'Food',
+        payment: 'Card',
+      );
+    }
+
+    final latest = expenses.first;
+    final category = _quickCategories.contains(latest.category)
+        ? latest.category!
+        : 'Food';
+
+    final payment = _inferQuickPayment(latest);
+
+    return _QuickAddDefaultCategoryPayment(
+      category: category,
+      payment: payment,
+    );
+  }
+
+  String _inferQuickPayment(Expense latest) {
+    final method = latest.paymentMethod;
+    if (method == 'Cash') {
+      return 'Cash';
+    }
+    if (method == 'Mobile Wallet') {
+      return 'Wallet';
+    }
+    return 'Card';
+  }
+
+  _QuickAddPaymentData _mapQuickPaymentToSavedFields(String payment) {
+    switch (payment) {
+      case 'Cash':
+        return const _QuickAddPaymentData(
+          method: 'Cash',
+          network: 'Other',
+          channel: 'Other',
+        );
+      case 'Wallet':
+        return const _QuickAddPaymentData(
+          method: 'Mobile Wallet',
+          network: 'Other',
+          channel: 'Other',
+        );
+      default:
+        return const _QuickAddPaymentData(
+          method: 'Credit Card',
+          network: 'Visa',
+          channel: 'POS Purchase',
+        );
+    }
+  }
+}
+
+class _QuickAddDefaultCategoryPayment {
+  const _QuickAddDefaultCategoryPayment({
+    required this.category,
+    required this.payment,
+  });
+
+  final String category;
+  final String payment;
+}
+
+class _QuickAddPaymentData {
+  const _QuickAddPaymentData({
+    required this.method,
+    required this.network,
+    required this.channel,
+  });
+
+  final String method;
+  final String network;
+  final String channel;
+}
+
+class _QuickAddSubmitPayload {
+  const _QuickAddSubmitPayload({
+    required this.title,
+    required this.amount,
+    required this.currencyCode,
+    required this.category,
+    required this.spentAt,
+    required this.payment,
+  });
+
+  final String title;
+  final double amount;
+  final String currencyCode;
+  final String category;
+  final DateTime spentAt;
+  final _QuickAddPaymentData payment;
 }
