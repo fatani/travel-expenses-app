@@ -10,10 +10,24 @@ import 'expense_controller.dart';
 import 'expense_option_labels.dart';
 
 class ExpenseFormScreen extends ConsumerStatefulWidget {
-  const ExpenseFormScreen({super.key, required this.trip, this.expense});
+  const ExpenseFormScreen({
+    super.key,
+    required this.trip,
+    this.expense,
+    this.initialAmount,
+    this.initialCategory,
+    this.initialPaymentMethod,
+    this.initialCurrency,
+    this.initialSpentAt,
+  });
 
   final Trip trip;
   final Expense? expense;
+  final String? initialAmount;
+  final String? initialCategory;
+  final String? initialPaymentMethod;
+  final String? initialCurrency;
+  final DateTime? initialSpentAt;
 
   bool get isEditMode => expense != null;
 
@@ -40,29 +54,52 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   void initState() {
     super.initState();
     final expense = widget.expense;
+    final initialPayment = _mapInitialPaymentMethod(widget.initialPaymentMethod);
     _titleController = TextEditingController(text: expense?.title ?? '');
     _amountController = TextEditingController(
-      text: expense == null ? '' : expense.amount.toStringAsFixed(2),
+      text: expense == null
+          ? (widget.initialAmount?.trim() ?? '')
+          : expense.amount.toStringAsFixed(2),
     );
     _currencyController = TextEditingController(
-      text: expense?.currencyCode ?? widget.trip.baseCurrency,
+      text:
+          expense?.currencyCode ?? widget.initialCurrency ?? widget.trip.baseCurrency,
     );
     _dateController = TextEditingController();
     _timeController = TextEditingController();
     _noteController = TextEditingController(text: expense?.note ?? '');
-    _selectedCategory = expense?.category;
+    _selectedCategory = expense?.category ?? widget.initialCategory;
     _selectedPaymentNetwork = expense?.paymentNetwork?.isNotEmpty == true
       ? expense!.paymentNetwork
       : expense != null
         ? 'Other'
-        : null;
+        : initialPayment?.network;
     _selectedPaymentChannel = expense?.paymentChannel?.isNotEmpty == true
       ? expense!.paymentChannel
       : expense != null
         ? 'Other'
-        : null;
-    _spentAt = expense?.spentAt ?? DateTime.now();
+        : initialPayment?.channel;
+    _spentAt = expense?.spentAt ?? widget.initialSpentAt ?? DateTime.now();
     _syncDateAndTimeFields(useLocale: false);
+  }
+
+  _InitialPaymentSelection? _mapInitialPaymentMethod(String? value) {
+    switch (value) {
+      case 'Cash':
+        return const _InitialPaymentSelection(network: 'Other', channel: 'Cash');
+      case 'Wallet':
+        return const _InitialPaymentSelection(
+          network: 'Other',
+          channel: 'Mobile Wallet',
+        );
+      case 'Card':
+        return const _InitialPaymentSelection(
+          network: 'Visa',
+          channel: 'POS Purchase',
+        );
+      default:
+        return null;
+    }
   }
 
   @override
@@ -185,34 +222,36 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           validator: _validateDropdown,
                         ),
                         const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          initialValue: _selectedPaymentNetwork,
-                          items: ExpenseOptionLabels.paymentNetworks
-                              .map(
-                                (paymentNetwork) => DropdownMenuItem<String>(
-                                  value: paymentNetwork,
-                                  child: Text(
-                                    ExpenseOptionLabels.paymentNetwork(
-                                      l10n,
-                                      paymentNetwork,
+                        if (_shouldShowPaymentNetwork) ...[
+                          DropdownButtonFormField<String>(
+                            initialValue: _selectedPaymentNetwork,
+                            items: ExpenseOptionLabels.paymentNetworks
+                                .map(
+                                  (paymentNetwork) => DropdownMenuItem<String>(
+                                    value: paymentNetwork,
+                                    child: Text(
+                                      ExpenseOptionLabels.paymentNetwork(
+                                        l10n,
+                                        paymentNetwork,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              )
-                              .toList(),
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormPaymentNetworkLabel,
+                                )
+                                .toList(),
+                            decoration: InputDecoration(
+                              labelText: _requiredLabel(
+                                l10n.expenseFormPaymentNetworkLabel,
+                              ),
                             ),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPaymentNetwork = value;
+                              });
+                            },
+                            validator: _validateDropdown,
                           ),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedPaymentNetwork = value;
-                            });
-                          },
-                          validator: _validateDropdown,
-                        ),
-                        const SizedBox(height: 16),
+                          const SizedBox(height: 16),
+                        ],
                         DropdownButtonFormField<String>(
                           initialValue: _selectedPaymentChannel,
                           items: ExpenseOptionLabels.paymentChannels
@@ -429,9 +468,13 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         : _titleController.text.trim();
     final amount = double.parse(_amountController.text.trim());
     final currencyCode = _currencyController.text.trim().toUpperCase();
+    final paymentChannel = _selectedPaymentChannel!;
+    final paymentNetwork = _isCashChannel(paymentChannel)
+        ? null
+        : (_selectedPaymentNetwork ?? 'Other');
     final paymentMethod = _resolvePaymentMethodCompatibility(
-      _selectedPaymentNetwork!,
-      _selectedPaymentChannel!,
+      paymentNetwork,
+      paymentChannel,
     );
 
     if (widget.expense == null &&
@@ -455,8 +498,8 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           category: _selectedCategory!,
           spentAt: _spentAt!,
           paymentMethod: paymentMethod,
-          paymentNetwork: _selectedPaymentNetwork!,
-          paymentChannel: _selectedPaymentChannel!,
+          paymentNetwork: paymentNetwork,
+          paymentChannel: paymentChannel,
           note: _noteController.text,
         );
       } else {
@@ -468,8 +511,8 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           category: _selectedCategory!,
           spentAt: _spentAt!,
           paymentMethod: paymentMethod,
-          paymentNetwork: _selectedPaymentNetwork!,
-          paymentChannel: _selectedPaymentChannel!,
+          paymentNetwork: paymentNetwork,
+          paymentChannel: paymentChannel,
           note: _noteController.text,
         );
       }
@@ -522,7 +565,16 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     );
   }
 
-  String _resolvePaymentMethodCompatibility(String network, String channel) {
+  String _resolvePaymentMethodCompatibility(String? network, String channel) {
+    if (channel == 'Cash') {
+      return 'Cash';
+    }
+    if (channel == 'Mobile Wallet') {
+      return 'Mobile Wallet';
+    }
+    if (network == null || network.isEmpty) {
+      return 'Other';
+    }
     if (network == 'Mada') {
       return 'Debit Card';
     }
@@ -552,4 +604,15 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   String _requiredLabel(String label) {
     return '$label *';
   }
+
+  bool get _shouldShowPaymentNetwork => !_isCashChannel(_selectedPaymentChannel);
+
+  bool _isCashChannel(String? channel) => channel == 'Cash';
+}
+
+class _InitialPaymentSelection {
+  const _InitialPaymentSelection({required this.network, required this.channel});
+
+  final String network;
+  final String channel;
 }

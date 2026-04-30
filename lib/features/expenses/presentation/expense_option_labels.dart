@@ -32,6 +32,8 @@ class ExpenseOptionLabels {
   static const List<String> paymentChannels = <String>[
     'POS Purchase',
     'Online Purchase',
+    'Cash',
+    'Mobile Wallet',
     'Other',
   ];
 
@@ -94,6 +96,11 @@ class ExpenseOptionLabels {
       case 'Online Purchase':
       case 'Online':
         return l10n.paymentChannelOnline;
+      case 'Cash':
+        return l10n.paymentMethodCash;
+      case 'Mobile Wallet':
+      case 'Wallet':
+        return l10n.paymentMethodMobileWallet;
       default:
         return l10n.paymentChannelOther;
     }

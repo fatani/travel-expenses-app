@@ -140,10 +140,25 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     });
   }
 
-  Future<void> _openExpenseForm({Expense? expense}) async {
+  Future<void> _openExpenseForm({
+    Expense? expense,
+    String? initialAmount,
+    String? initialCategory,
+    String? initialPaymentMethod,
+    String? initialCurrency,
+    DateTime? initialSpentAt,
+  }) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => ExpenseFormScreen(trip: _trip, expense: expense),
+        builder: (_) => ExpenseFormScreen(
+          trip: _trip,
+          expense: expense,
+          initialAmount: initialAmount,
+          initialCategory: initialCategory,
+          initialPaymentMethod: initialPaymentMethod,
+          initialCurrency: initialCurrency,
+          initialSpentAt: initialSpentAt,
+        ),
       ),
     );
   }
@@ -172,7 +187,14 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     }
 
     if (result.openMoreDetails) {
-      await _openExpenseForm();
+      final draft = result.draft;
+      await _openExpenseForm(
+        initialAmount: draft?.amountText,
+        initialCategory: draft?.category,
+        initialPaymentMethod: draft?.paymentMethod,
+        initialCurrency: draft?.currencyCode,
+        initialSpentAt: draft?.spentAt,
+      );
       return;
     }
 
@@ -1104,16 +1126,19 @@ class _EmptyFilteredState extends StatelessWidget {
 }
 
 class _QuickAddSheetResult {
-  const _QuickAddSheetResult.moreDetails()
+  const _QuickAddSheetResult.moreDetails(_QuickAddDraftPayload value)
     : openMoreDetails = true,
-      payload = null;
+      payload = null,
+      draft = value;
 
   const _QuickAddSheetResult.submit(_QuickAddSubmitPayload value)
     : openMoreDetails = false,
-      payload = value;
+      payload = value,
+      draft = null;
 
   final bool openMoreDetails;
   final _QuickAddSubmitPayload? payload;
+  final _QuickAddDraftPayload? draft;
 }
 
 class _QuickAddExpenseSheet extends ConsumerStatefulWidget {
@@ -1363,8 +1388,19 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
           Row(
             children: [
               TextButton(
-                onPressed: () =>
-                    Navigator.of(context).pop(const _QuickAddSheetResult.moreDetails()),
+                onPressed: () {
+                  Navigator.of(context).pop(
+                    _QuickAddSheetResult.moreDetails(
+                      _QuickAddDraftPayload(
+                        amountText: _amountController.text,
+                        category: _selectedCategory,
+                        paymentMethod: _selectedPayment,
+                        currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
+                        spentAt: DateTime.now(),
+                      ),
+                    ),
+                  );
+                },
                 child: Text(l10n.tripDetailsQuickAddMoreDetails),
               ),
               const SizedBox(width: 8),
@@ -1639,4 +1675,20 @@ class _QuickAddSubmitPayload {
   final String category;
   final DateTime spentAt;
   final _QuickAddPaymentData payment;
+}
+
+class _QuickAddDraftPayload {
+  const _QuickAddDraftPayload({
+    required this.amountText,
+    required this.category,
+    required this.paymentMethod,
+    required this.currencyCode,
+    required this.spentAt,
+  });
+
+  final String amountText;
+  final String category;
+  final String paymentMethod;
+  final String currencyCode;
+  final DateTime spentAt;
 }
