@@ -1552,6 +1552,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Past'**
   String get tripStatusPast;
+
+  /// No description provided for @cardFormAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Card'**
+  String get cardFormAddTitle;
+
+  /// No description provided for @cardFormEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Card'**
+  String get cardFormEditTitle;
+
+  /// No description provided for @cardFormBankLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank'**
+  String get cardFormBankLabel;
+
+  /// No description provided for @cardFormCardNetworkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card network'**
+  String get cardFormCardNetworkLabel;
+
+  /// No description provided for @cardFormCardTierLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card tier'**
+  String get cardFormCardTierLabel;
+
+  /// No description provided for @cardFormLast4Label.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 4 digits'**
+  String get cardFormLast4Label;
+
+  /// No description provided for @cardFormLast4Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'1234'**
+  String get cardFormLast4Hint;
+
+  /// No description provided for @cardFormCardPreviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card preview'**
+  String get cardFormCardPreviewLabel;
+
+  /// No description provided for @cardFormSaveCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Card'**
+  String get cardFormSaveCreate;
+
+  /// No description provided for @cardFormSaveEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get cardFormSaveEdit;
+
+  /// No description provided for @cardFormLast4Invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 4 digits must be exactly 4 digits.'**
+  String get cardFormLast4Invalid;
+
+  /// No description provided for @cardFormDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'This card already exists'**
+  String get cardFormDuplicate;
+
+  /// No description provided for @cardBankSNB.
+  ///
+  /// In en, this message translates to:
+  /// **'SNB'**
+  String get cardBankSNB;
+
+  /// No description provided for @cardBankAlRajhi.
+  ///
+  /// In en, this message translates to:
+  /// **'Al Rajhi'**
+  String get cardBankAlRajhi;
+
+  /// No description provided for @cardBankSAB.
+  ///
+  /// In en, this message translates to:
+  /// **'SAB'**
+  String get cardBankSAB;
+
+  /// No description provided for @cardBankD360.
+  ///
+  /// In en, this message translates to:
+  /// **'D360'**
+  String get cardBankD360;
+
+  /// No description provided for @cardBankBarq.
+  ///
+  /// In en, this message translates to:
+  /// **'Barq'**
+  String get cardBankBarq;
+
+  /// No description provided for @cardBankOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get cardBankOther;
+
+  /// No description provided for @cardNetworkVisa.
+  ///
+  /// In en, this message translates to:
+  /// **'Visa'**
+  String get cardNetworkVisa;
+
+  /// No description provided for @cardNetworkMastercard.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastercard'**
+  String get cardNetworkMastercard;
+
+  /// No description provided for @cardNetworkMada.
+  ///
+  /// In en, this message translates to:
+  /// **'Mada'**
+  String get cardNetworkMada;
+
+  /// No description provided for @cardNetworkOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get cardNetworkOther;
+
+  /// No description provided for @cardTierInfinite.
+  ///
+  /// In en, this message translates to:
+  /// **'Infinite'**
+  String get cardTierInfinite;
+
+  /// No description provided for @cardTierSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Signature'**
+  String get cardTierSignature;
+
+  /// No description provided for @cardTierPlatinum.
+  ///
+  /// In en, this message translates to:
+  /// **'Platinum'**
+  String get cardTierPlatinum;
+
+  /// No description provided for @cardTierClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get cardTierClassic;
+
+  /// No description provided for @cardTierWorld.
+  ///
+  /// In en, this message translates to:
+  /// **'World'**
+  String get cardTierWorld;
+
+  /// No description provided for @cardTierWorldElite.
+  ///
+  /// In en, this message translates to:
+  /// **'World Elite'**
+  String get cardTierWorldElite;
+
+  /// No description provided for @cardTierOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get cardTierOther;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

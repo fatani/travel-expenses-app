@@ -5,6 +5,7 @@ import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../expenses/presentation/trip_details_screen.dart';
 import '../../global_reports/presentation/global_reports_screen.dart';
+import '../../settings/presentation/settings_screen.dart';
 import '../../settings/presentation/settings_controller.dart';
 import '../../../shared/widgets/language_toggle_button.dart';
 import '../domain/trip.dart';
@@ -40,6 +41,12 @@ class TripsListScreen extends ConsumerWidget {
                   tooltip: l10n.globalReportsTooltip,
                   onPressed: () => _openGlobalReports(context),
                   icon: const Icon(Icons.analytics_outlined),
+                ),
+                const SizedBox(width: 4),
+                IconButton(
+                  tooltip: 'Settings',
+                  onPressed: () => _openSettings(context),
+                  icon: const Icon(Icons.settings_outlined),
                 ),
                 const SizedBox(width: 4),
                 LanguageToggleButton(
@@ -172,6 +179,12 @@ class TripsListScreen extends ConsumerWidget {
   Future<void> _openGlobalReports(BuildContext context) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(builder: (_) => const GlobalReportsScreen()),
+    );
+  }
+
+  Future<void> _openSettings(BuildContext context) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
     );
   }
 

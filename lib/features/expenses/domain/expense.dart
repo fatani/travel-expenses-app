@@ -24,6 +24,7 @@ class Expense {
     this.category,
     this.note,
     this.rawSmsText,
+    this.cardProfileId,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -51,6 +52,7 @@ class Expense {
     String? category,
     String? note,
     String? rawSmsText,
+    int? cardProfileId,
   }) {
     final now = DateTime.now().toUtc();
 
@@ -87,6 +89,7 @@ class Expense {
       category: category,
       note: note,
       rawSmsText: rawSmsText,
+      cardProfileId: cardProfileId,
       createdAt: now,
       updatedAt: now,
     );
@@ -138,6 +141,7 @@ class Expense {
       category: map['category'] as String?,
       note: map['note'] as String?,
       rawSmsText: map['raw_sms_text'] as String?,
+      cardProfileId: map['card_profile_id'] as int?,
       createdAt: DateTime.parse(map['created_at']! as String),
       updatedAt: DateTime.parse(map['updated_at']! as String),
     );
@@ -165,8 +169,11 @@ class Expense {
   final String? category;
   final String? note;
   final String? rawSmsText;
+  final int? cardProfileId;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  static const Object sentinel = Object();
 
   MoneyModel get moneyModel {
     return MoneyModel(
@@ -205,6 +212,7 @@ class Expense {
     String? category,
     String? note,
     String? rawSmsText,
+    Object? cardProfileId = sentinel,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -231,6 +239,9 @@ class Expense {
       category: category ?? this.category,
       note: note ?? this.note,
       rawSmsText: rawSmsText ?? this.rawSmsText,
+      cardProfileId: identical(cardProfileId, sentinel)
+          ? this.cardProfileId
+          : cardProfileId as int?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -260,6 +271,7 @@ class Expense {
       'category': category,
       'note': note,
       'raw_sms_text': rawSmsText,
+      'card_profile_id': cardProfileId,
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
     };

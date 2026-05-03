@@ -54,6 +54,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     String source = 'manual',
     String? note,
     String? rawSmsText,
+    int? cardProfileId,
   }) async {
     final normalizedMoney = moneyModel ??
         MoneyModel(
@@ -90,6 +91,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       category: category,
       note: _normalizeText(note),
       rawSmsText: _normalizeText(rawSmsText),
+      cardProfileId: cardProfileId,
     );
 
     await _runMutation(
@@ -120,6 +122,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     String source = 'manual',
     String? note,
     String? rawSmsText,
+    Object? cardProfileId = Expense.sentinel,
   }) async {
     final normalizedMoney = moneyModel ??
         MoneyModel(
@@ -155,6 +158,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       category: category,
       note: _normalizeText(note),
       rawSmsText: _normalizeText(rawSmsText),
+      cardProfileId: cardProfileId,
     );
 
     await _runMutation(

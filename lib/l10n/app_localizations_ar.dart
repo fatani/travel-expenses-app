@@ -810,4 +810,91 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripStatusPast => 'منتهية';
+
+  @override
+  String get cardFormAddTitle => 'إضافة بطاقة';
+
+  @override
+  String get cardFormEditTitle => 'تعديل البطاقة';
+
+  @override
+  String get cardFormBankLabel => 'البنك';
+
+  @override
+  String get cardFormCardNetworkLabel => 'شبكة البطاقة';
+
+  @override
+  String get cardFormCardTierLabel => 'فئة البطاقة';
+
+  @override
+  String get cardFormLast4Label => 'آخر 4 أرقام';
+
+  @override
+  String get cardFormLast4Hint => '1234';
+
+  @override
+  String get cardFormCardPreviewLabel => 'معاينة البطاقة';
+
+  @override
+  String get cardFormSaveCreate => 'حفظ البطاقة';
+
+  @override
+  String get cardFormSaveEdit => 'حفظ التغييرات';
+
+  @override
+  String get cardFormLast4Invalid => 'يجب أن تكون آخر 4 أرقام بالضبط 4 أرقام.';
+
+  @override
+  String get cardFormDuplicate => 'هذه البطاقة مضافة مسبقًا';
+
+  @override
+  String get cardBankSNB => 'الأهلي';
+
+  @override
+  String get cardBankAlRajhi => 'الراجحي';
+
+  @override
+  String get cardBankSAB => 'ساب';
+
+  @override
+  String get cardBankD360 => 'دال 360';
+
+  @override
+  String get cardBankBarq => 'برق';
+
+  @override
+  String get cardBankOther => 'أخرى';
+
+  @override
+  String get cardNetworkVisa => 'فيزا';
+
+  @override
+  String get cardNetworkMastercard => 'ماستركارد';
+
+  @override
+  String get cardNetworkMada => 'مدى';
+
+  @override
+  String get cardNetworkOther => 'أخرى';
+
+  @override
+  String get cardTierInfinite => 'إنفينيت';
+
+  @override
+  String get cardTierSignature => 'سيغنتشر';
+
+  @override
+  String get cardTierPlatinum => 'بلاتينيوم';
+
+  @override
+  String get cardTierClassic => 'كلاسيك';
+
+  @override
+  String get cardTierWorld => 'وورلد';
+
+  @override
+  String get cardTierWorldElite => 'وورلد إيليت';
+
+  @override
+  String get cardTierOther => 'أخرى';
 }

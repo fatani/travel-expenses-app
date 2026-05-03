@@ -806,4 +806,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripStatusPast => 'Past';
+
+  @override
+  String get cardFormAddTitle => 'Add Card';
+
+  @override
+  String get cardFormEditTitle => 'Edit Card';
+
+  @override
+  String get cardFormBankLabel => 'Bank';
+
+  @override
+  String get cardFormCardNetworkLabel => 'Card network';
+
+  @override
+  String get cardFormCardTierLabel => 'Card tier';
+
+  @override
+  String get cardFormLast4Label => 'Last 4 digits';
+
+  @override
+  String get cardFormLast4Hint => '1234';
+
+  @override
+  String get cardFormCardPreviewLabel => 'Card preview';
+
+  @override
+  String get cardFormSaveCreate => 'Save Card';
+
+  @override
+  String get cardFormSaveEdit => 'Save Changes';
+
+  @override
+  String get cardFormLast4Invalid => 'Last 4 digits must be exactly 4 digits.';
+
+  @override
+  String get cardFormDuplicate => 'This card already exists';
+
+  @override
+  String get cardBankSNB => 'SNB';
+
+  @override
+  String get cardBankAlRajhi => 'Al Rajhi';
+
+  @override
+  String get cardBankSAB => 'SAB';
+
+  @override
+  String get cardBankD360 => 'D360';
+
+  @override
+  String get cardBankBarq => 'Barq';
+
+  @override
+  String get cardBankOther => 'Other';
+
+  @override
+  String get cardNetworkVisa => 'Visa';
+
+  @override
+  String get cardNetworkMastercard => 'Mastercard';
+
+  @override
+  String get cardNetworkMada => 'Mada';
+
+  @override
+  String get cardNetworkOther => 'Other';
+
+  @override
+  String get cardTierInfinite => 'Infinite';
+
+  @override
+  String get cardTierSignature => 'Signature';
+
+  @override
+  String get cardTierPlatinum => 'Platinum';
+
+  @override
+  String get cardTierClassic => 'Classic';
+
+  @override
+  String get cardTierWorld => 'World';
+
+  @override
+  String get cardTierWorldElite => 'World Elite';
+
+  @override
+  String get cardTierOther => 'Other';
 }

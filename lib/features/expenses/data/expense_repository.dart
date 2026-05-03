@@ -103,4 +103,23 @@ class ExpenseRepository {
 
     return ((result.first['total'] as num?) ?? 0).toDouble();
   }
+
+  /// Returns the card_profile_id of the most recent card expense for the given
+  /// trip, or null if no card expense exists. Only considers expenses whose
+  /// payment_channel is a card channel (POS Purchase / Online Purchase).
+  Future<int?> getLastCardExpenseCardId(String tripId) async {
+    final db = await _appDatabase.database;
+    final rows = await db.query(
+      AppDatabase.expensesTable,
+      columns: ['card_profile_id'],
+      where:
+          'trip_id = ? AND card_profile_id IS NOT NULL'
+          ' AND payment_channel IN (?, ?)',
+      whereArgs: [tripId, 'POS Purchase', 'Online Purchase'],
+      orderBy: 'spent_at DESC, created_at DESC',
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return rows.first['card_profile_id'] as int?;
+  }
 }

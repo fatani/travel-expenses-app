@@ -5,11 +5,12 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 9;
+  static const int databaseVersion = 11;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
   static const String settingsTable = 'settings';
+  static const String cardsTable = 'cards';
 
   Database? _database;
 
@@ -43,6 +44,8 @@ class AppDatabase {
         await _ensureExpensesRawSmsColumn(db);
         await _ensureExpensesPaymentDetailsColumns(db);
         await _ensureExpensesFinancialColumns(db);
+        await _ensureExpensesCardProfileIdColumn(db);
+        await _ensureCardsProfileColumns(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -84,6 +87,7 @@ class AppDatabase {
             category TEXT,
             note TEXT,
             raw_sms_text TEXT,
+            card_profile_id INTEGER,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
@@ -95,6 +99,15 @@ class AppDatabase {
             id INTEGER PRIMARY KEY,
             currency_code TEXT NOT NULL,
             locale_code TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $cardsTable (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           )
@@ -180,6 +193,14 @@ class AppDatabase {
 
         if (oldVersion < 9) {
           await _ensureTripsBudgetCurrencyColumn(db);
+        }
+
+        if (oldVersion < 10) {
+          await _ensureCardsTable(db);
+        }
+
+        if (oldVersion < 11) {
+          await _ensureExpensesCardProfileIdColumn(db);
         }
       },
     );
@@ -341,6 +362,61 @@ class AppDatabase {
       'UPDATE $expensesTable SET transaction_currency = currency_code WHERE transaction_currency IS NULL OR transaction_currency = ""',
     );
     await _recomputeExpensesInternationalFlag(db);
+  }
+
+  Future<void> _ensureExpensesCardProfileIdColumn(Database db) async {
+    final hasColumn = await _hasColumn(db, expensesTable, 'card_profile_id');
+    if (hasColumn) {
+      return;
+    }
+    await db.execute(
+      'ALTER TABLE $expensesTable ADD COLUMN card_profile_id INTEGER',
+    );
+  }
+
+  Future<void> _ensureCardsProfileColumns(Database db) async {
+    final hasBankName = await _hasColumn(db, cardsTable, 'bank_name');
+    if (!hasBankName) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN bank_name TEXT');
+    }
+
+    final hasCardNetwork = await _hasColumn(db, cardsTable, 'card_network');
+    if (!hasCardNetwork) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN card_network TEXT');
+    }
+
+    final hasCardTier = await _hasColumn(db, cardsTable, 'card_tier');
+    if (!hasCardTier) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN card_tier TEXT');
+    }
+
+    final hasLast4 = await _hasColumn(db, cardsTable, 'last4');
+    if (!hasLast4) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN last4 TEXT');
+    }
+
+    final hasDisplayName = await _hasColumn(db, cardsTable, 'display_name');
+    if (!hasDisplayName) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN display_name TEXT');
+    }
+  }
+
+  Future<void> _ensureCardsTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [cardsTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+    await db.execute('''
+      CREATE TABLE $cardsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
   }
 
   Future<void> _recomputeExpensesInternationalFlag(Database db) async {

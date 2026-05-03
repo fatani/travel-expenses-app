@@ -6,8 +6,11 @@ import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../trips/domain/trip.dart';
 import '../domain/expense.dart';
+import '../../../core/providers/database_providers.dart';
 import 'expense_controller.dart';
 import 'expense_option_labels.dart';
+import '../../settings/presentation/cards_provider.dart';
+import '../../settings/domain/card_display_helper.dart';
 
 class ExpenseFormScreen extends ConsumerStatefulWidget {
   const ExpenseFormScreen({
@@ -47,6 +50,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   String? _selectedCategory;
   String? _selectedPaymentNetwork;
   String? _selectedPaymentChannel;
+  int? _selectedCardProfileId;
   DateTime? _spentAt;
   bool _showValidationErrors = false;
 
@@ -80,7 +84,37 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         ? 'Other'
         : initialPayment?.channel;
     _spentAt = expense?.spentAt ?? widget.initialSpentAt ?? DateTime.now();
+    _selectedCardProfileId = expense?.cardProfileId;
     _syncDateAndTimeFields(useLocale: false);
+
+    if (!widget.isEditMode) {
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _initLastUsedCard(),
+      );
+    }
+  }
+
+  /// Queries the last card used in this trip and auto-selects it if it still
+  /// exists. Only runs for new expenses and only when the current channel is
+  /// already a card channel. Falls through silently on any error.
+  Future<void> _initLastUsedCard() async {
+    if (!mounted) return;
+    if (!_isCardPaymentChannel(_selectedPaymentChannel)) return;
+
+    final lastCardId = await ref
+        .read(expenseRepositoryProvider)
+        .getLastCardExpenseCardId(widget.trip.id);
+    if (!mounted || lastCardId == null) return;
+
+    // Verify the card still exists in the repository.
+    // If cards haven't loaded yet, skip — _CardDropdown handles single-card auto-select.
+    final cards = ref.read(cardsProvider).valueOrNull;
+    if (!mounted || cards == null) return;
+
+    if (cards.any((c) => c.id == lastCardId) &&
+        _selectedCardProfileId == null) {
+      setState(() => _selectedCardProfileId = lastCardId);
+    }
   }
 
   _InitialPaymentSelection? _mapInitialPaymentMethod(String? value) {
@@ -275,9 +309,21 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           onChanged: (value) {
                             setState(() {
                               _selectedPaymentChannel = value;
+                              if (!_isCardPaymentChannel(value)) {
+                                _selectedCardProfileId = null;
+                              }
                             });
                           },
                           validator: _validateDropdown,
+                        ),
+                        _CardDropdown(
+                          selectedCardProfileId: _selectedCardProfileId,
+                          isCardPayment: _isCardPayment,
+                          onChanged: (id) {
+                            setState(() {
+                              _selectedCardProfileId = id;
+                            });
+                          },
                         ),
                         const SizedBox(height: 16),
                         Row(
@@ -501,6 +547,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           paymentNetwork: paymentNetwork,
           paymentChannel: paymentChannel,
           note: _noteController.text,
+          cardProfileId: _selectedCardProfileId,
         );
       } else {
         await controller.updateExpense(
@@ -514,6 +561,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           paymentNetwork: paymentNetwork,
           paymentChannel: paymentChannel,
           note: _noteController.text,
+          cardProfileId: _selectedCardProfileId,
         );
       }
 
@@ -607,6 +655,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
 
   bool get _shouldShowPaymentNetwork => !_isCashChannel(_selectedPaymentChannel);
 
+  bool get _isCardPayment => _isCardPaymentChannel(_selectedPaymentChannel);
+
+  bool _isCardPaymentChannel(String? channel) =>
+      channel == 'POS Purchase' || channel == 'Online Purchase';
+
   bool _isCashChannel(String? channel) => channel == 'Cash';
 }
 
@@ -615,4 +668,88 @@ class _InitialPaymentSelection {
 
   final String network;
   final String channel;
+}
+
+/// Renders a card dropdown only when [isCardPayment] is true and cards exist.
+/// Auto-selects the card when there is exactly one card available.
+class _CardDropdown extends ConsumerStatefulWidget {
+  const _CardDropdown({
+    required this.selectedCardProfileId,
+    required this.onChanged,
+    required this.isCardPayment,
+  });
+
+  final int? selectedCardProfileId;
+  final ValueChanged<int?> onChanged;
+  final bool isCardPayment;
+
+  @override
+  ConsumerState<_CardDropdown> createState() => _CardDropdownState();
+}
+
+class _CardDropdownState extends ConsumerState<_CardDropdown> {
+  bool _didAutoSelect = false;
+
+  @override
+  void didUpdateWidget(_CardDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset so we can auto-select again if user switches back to card payment.
+    if (!oldWidget.isCardPayment && widget.isCardPayment) {
+      _didAutoSelect = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.isCardPayment) return const SizedBox.shrink();
+
+    final cardsAsync = ref.watch(cardsProvider);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final label = isArabic ? 'البطاقة' : 'Card';
+    final noneLabel = isArabic ? 'بدون بطاقة' : 'None';
+
+    return cardsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, _) => const SizedBox.shrink(),
+      data: (cards) {
+        if (cards.isEmpty) return const SizedBox.shrink();
+
+        // Auto-select when only one card exists and nothing is selected yet.
+        if (!_didAutoSelect &&
+            widget.selectedCardProfileId == null &&
+            cards.length == 1) {
+          _didAutoSelect = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onChanged(cards.first.id);
+          });
+        }
+
+        return Column(
+          children: [
+            const SizedBox(height: 16),
+            DropdownButtonFormField<int?>(
+              key: ValueKey(widget.selectedCardProfileId),
+              initialValue: widget.selectedCardProfileId,
+              items: [
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text(noneLabel),
+                ),
+                ...cards.map(
+                  (card) => DropdownMenuItem<int?>(
+                    value: card.id,
+                    child: Text(
+                      CardDisplayHelper.getDisplayStringWithIcon(context, card),
+                    ),
+                  ),
+                ),
+              ],
+              decoration: InputDecoration(labelText: label),
+              onChanged: widget.onChanged,
+            ),
+          ],
+        );
+      },
+    );
+  }
 }

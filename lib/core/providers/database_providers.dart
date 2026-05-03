@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/expenses/data/expense_repository.dart';
+import '../../features/settings/data/card_repository.dart';
 import '../../features/settings/data/settings_repository.dart';
 import '../../features/trips/data/trip_repository.dart';
 import '../database/app_database.dart';
@@ -21,4 +22,8 @@ final expenseRepositoryProvider = Provider<ExpenseRepository>((ref) {
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return SettingsRepository(ref.watch(appDatabaseProvider));
+});
+
+final cardRepositoryProvider = Provider<CardRepository>((ref) {
+  return CardRepository(ref.watch(appDatabaseProvider));
 });
