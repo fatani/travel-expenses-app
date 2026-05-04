@@ -10,6 +10,7 @@ import '../../settings/presentation/settings_controller.dart';
 import '../../../shared/widgets/language_toggle_button.dart';
 import '../domain/trip.dart';
 import 'trip_controller.dart';
+import 'trips_empty_state_screen.dart';
 import 'trip_form_screen.dart';
 
 class TripsListScreen extends ConsumerWidget {
@@ -64,7 +65,8 @@ class TripsListScreen extends ConsumerWidget {
       body: tripsState.when(
         data: (trips) {
           if (trips.isEmpty) {
-            return _EmptyTripsState(onAddTrip: () => _openTripForm(context));
+            final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+            return TripsEmptyStateScreen(isArabic: isArabic);
           }
 
           return RefreshIndicator(
@@ -348,55 +350,6 @@ class _TripCard extends StatelessWidget {
     );
 
     return formatter.format(trip.budget);
-  }
-}
-
-class _EmptyTripsState extends StatelessWidget {
-  const _EmptyTripsState({required this.onAddTrip});
-
-  final VoidCallback onAddTrip;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.luggage_rounded,
-                size: 56,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.tripsEmptyTitle,
-                style: theme.textTheme.headlineSmall,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.tripsEmptyMessage,
-                style: theme.textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: onAddTrip,
-                icon: const Icon(Icons.add_rounded),
-                label: Text(l10n.tripsAddButton),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 
