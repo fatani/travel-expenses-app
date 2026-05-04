@@ -1,17 +1,9 @@
-import 'dart:math' as math;
-
 import '../../expenses/domain/expense.dart';
-import '../../insights/data/insight_engine.dart';
-import '../../insights/domain/insight.dart';
 import '../../trips/domain/trip.dart';
 import '../domain/trip_prediction_summary.dart';
 
 class TripPredictionCalculator {
-  const TripPredictionCalculator({
-    InsightEngine insightEngine = const InsightEngine(),
-  }) : _insightEngine = insightEngine;
-
-  final InsightEngine _insightEngine;
+  const TripPredictionCalculator();
 
   TripPredictionSummary? calculate({
     required Trip trip,
@@ -31,109 +23,120 @@ class TripPredictionCalculator {
     final today = _dateOnly((asOf ?? DateTime.now()).toLocal());
     final startDate = _dateOnly(tripStart.toLocal());
     final endDate = _dateOnly(tripEnd.toLocal());
-    final isTripEnded = today.isAfter(endDate);
 
-    final rawElapsedDays = today.isAfter(endDate)
-        ? endDate.difference(startDate).inDays
-        : today.difference(startDate).inDays;
-    final totalTripDays = endDate.difference(startDate).inDays;
-    final elapsedDays = math.max(1, math.min(rawElapsedDays, totalTripDays));
+    // Consider a trip ended on its end date to avoid forecasting beyond the plan.
+    if (!today.isBefore(endDate)) {
+      return null;
+    }
+
+    final elapsedDays = today.isBefore(startDate)
+        ? 0
+        : _inclusiveDaysBetween(startDate, today.isAfter(endDate) ? endDate : today);
 
     if (elapsedDays < 2) {
       return null;
     }
 
-    final remainingDays = math.max(0, endDate.difference(today).inDays);
+    final remainingDays = endDate.difference(today).inDays;
 
-    final totalSpendByCurrency = <String, double>{};
+    final currentSpentByCurrency = <String, double>{};
+    final dailySpentByCurrency = <String, Map<DateTime, double>>{};
     for (final expense in expenses) {
       final currency = expense.transactionCurrency.toUpperCase();
-      totalSpendByCurrency[currency] =
-          (totalSpendByCurrency[currency] ?? 0) + expense.transactionAmount;
+      final spentDate = _dateOnly(expense.spentAt.toLocal());
+      currentSpentByCurrency[currency] =
+          (currentSpentByCurrency[currency] ?? 0) + expense.transactionAmount;
+      final dailyMap = dailySpentByCurrency.putIfAbsent(currency, () => {});
+      dailyMap[spentDate] = (dailyMap[spentDate] ?? 0) + expense.transactionAmount;
     }
 
-    if (totalSpendByCurrency.isEmpty) {
+    if (currentSpentByCurrency.isEmpty) {
       return null;
     }
 
     final burnRateByCurrency = <String, double>{};
     final forecastTotalByCurrency = <String, double>{};
 
-    totalSpendByCurrency.forEach((currency, currentSpent) {
-      final burnRate = currentSpent / elapsedDays;
+    currentSpentByCurrency.forEach((currency, currentSpent) {
+      final dailyTotals = (dailySpentByCurrency[currency] ?? const <DateTime, double>{})
+          .entries
+          .toList(growable: false)
+        ..sort((a, b) => a.key.compareTo(b.key));
+
+      final weightedDailySpend = _weightedDailySpend(dailyTotals);
+      final burnRate = weightedDailySpend ?? (currentSpent / elapsedDays);
+
       burnRateByCurrency[currency] = burnRate;
       forecastTotalByCurrency[currency] =
           currentSpent + (burnRate * remainingDays);
     });
 
-    final insights = _insightEngine.build(expenses, maxInsights: 2);
-    final actions = _buildActions(
-      totalSpendByCurrency: totalSpendByCurrency,
-      burnRateByCurrency: burnRateByCurrency,
-      remainingDays: remainingDays,
-      insights: insights,
+    final budgetWarning = _buildBudgetWarning(
+      trip: trip,
+      forecastTotalByCurrency: forecastTotalByCurrency,
     );
 
     return TripPredictionSummary(
       elapsedDays: elapsedDays,
       remainingDays: remainingDays,
-      isTripEnded: isTripEnded,
-      totalSpendByCurrency: totalSpendByCurrency,
       burnRateByCurrency: burnRateByCurrency,
       forecastTotalByCurrency: forecastTotalByCurrency,
-      actions: actions,
+      hasBudgetWarning: budgetWarning != null,
+      budgetWarningMessage: budgetWarning,
     );
   }
 
-  List<TripDecisionAction> _buildActions({
-    required Map<String, double> totalSpendByCurrency,
-    required Map<String, double> burnRateByCurrency,
-    required int remainingDays,
-    required List<Insight> insights,
+  String? _buildBudgetWarning({
+    required Trip trip,
+    required Map<String, double> forecastTotalByCurrency,
   }) {
-    final prioritized = <TripDecisionAction>[];
-
-    final hasBurnRisk = totalSpendByCurrency.entries.any((entry) {
-      final burnRate = burnRateByCurrency[entry.key] ?? 0;
-      return (burnRate * remainingDays) > entry.value;
-    });
-    if (hasBurnRisk) {
-      prioritized.add(
-        const TripDecisionAction(type: TripDecisionActionType.burnRisk),
-      );
+    final budget = trip.budget;
+    if (budget == null || budget <= 0) {
+      return null;
     }
 
-    final spikeInsight = insights.where(
-      (insight) => insight.type == InsightType.spike,
-    );
-    if (spikeInsight.isNotEmpty) {
-      prioritized.add(
-        TripDecisionAction(
-          type: TripDecisionActionType.spendSpike,
-          // Keep display context causal even when exact spike percentage is omitted.
-          percentage: spikeInsight.first.percentage ?? 50,
-        ),
-      );
+    final budgetCurrency = trip.baseCurrency.trim().toUpperCase();
+    if (budgetCurrency.isEmpty) {
+      return null;
     }
 
-    final categoryInsight = insights.where(
-      (insight) => insight.type == InsightType.categoryDrift,
-    );
-    if (categoryInsight.isNotEmpty &&
-        (categoryInsight.first.percentage ?? 0) >= 50) {
-      prioritized.add(
-        TripDecisionAction(
-          type: TripDecisionActionType.categoryConcentration,
-          category: categoryInsight.first.category,
-          percentage: categoryInsight.first.percentage,
-        ),
-      );
+    final forecastInBudgetCurrency = forecastTotalByCurrency[budgetCurrency];
+    if (forecastInBudgetCurrency == null) {
+      return null;
     }
 
-    return prioritized.take(2).toList(growable: false);
+    if (forecastInBudgetCurrency > budget) {
+      return 'من المتوقع أن تتجاوز ميزانيتك الحالية. قد تصل إلى حد الميزانية قبل نهاية الرحلة';
+    }
+
+    return null;
   }
 
   DateTime _dateOnly(DateTime date) {
     return DateTime(date.year, date.month, date.day);
+  }
+
+  int _inclusiveDaysBetween(DateTime start, DateTime end) {
+    return end.difference(start).inDays + 1;
+  }
+
+  double? _weightedDailySpend(List<MapEntry<DateTime, double>> dailyTotals) {
+    if (dailyTotals.length < 3) {
+      return null;
+    }
+
+    double weightedSum = 0;
+    int weightSum = 0;
+    for (var i = 0; i < dailyTotals.length; i++) {
+      final weight = i + 1;
+      weightedSum += dailyTotals[i].value * weight;
+      weightSum += weight;
+    }
+
+    if (weightSum == 0) {
+      return null;
+    }
+
+    return weightedSum / weightSum;
   }
 }

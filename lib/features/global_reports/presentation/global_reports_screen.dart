@@ -524,7 +524,11 @@ String? _behavioralInsightAttribution(BuildContext context, Insight insight) {
     return null;
   }
 
-  return '${context.l10n.globalReportsBehavioralInsightAttributionTop} $tripName';
+  final attributionLabel = (insight.contributorTripCount ?? 0) > 1
+      ? context.l10n.globalReportsBehavioralInsightAttributionTop
+      : context.l10n.globalReportsBehavioralInsightAttributionIn;
+
+  return '$attributionLabel $tripName';
 }
 
 String _localizeSpikeBehavioralInsight(BuildContext context, Insight insight) {

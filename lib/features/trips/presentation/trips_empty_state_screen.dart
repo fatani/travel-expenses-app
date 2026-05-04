@@ -2,8 +2,13 @@ import 'package:flutter/material.dart';
 
 class TripsEmptyStateScreen extends StatelessWidget {
   final bool isArabic;
+  final VoidCallback onStartTrip;
 
-  const TripsEmptyStateScreen({super.key, this.isArabic = true});
+  const TripsEmptyStateScreen({
+    super.key,
+    this.isArabic = true,
+    required this.onStartTrip,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -135,21 +140,29 @@ class TripsEmptyStateScreen extends StatelessWidget {
               /// CTA
               Padding(
                 padding: const EdgeInsets.all(16),
-                child: Container(
-                  height: 56,
-                  decoration: BoxDecoration(
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(18),
+                  child: InkWell(
                     borderRadius: BorderRadius.circular(18),
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      data.cta,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
+                    onTap: onStartTrip,
+                    child: Ink(
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          data.cta,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -174,24 +187,41 @@ class _BenefitItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Text(
-              text,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF0F172A),
-              ),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Icon(icon, color: Colors.grey),
-        ],
+        children: isRtl
+            ? [
+                Flexible(
+                  child: Text(
+                    text,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Icon(icon, color: Colors.grey),
+              ]
+            : [
+                Icon(icon, color: Colors.grey),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    text,
+                    textAlign: TextAlign.left,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xFF0F172A),
+                    ),
+                  ),
+                ),
+              ],
       ),
     );
   }

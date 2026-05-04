@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../../global_reports/data/global_report_provider.dart';
-import '../../predictions/data/trip_prediction_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
 import '../domain/expense.dart';
 import '../domain/money_model.dart';
@@ -122,7 +121,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     String source = 'manual',
     String? note,
     String? rawSmsText,
-    Object? cardProfileId = Expense.sentinel,
+    int? cardProfileId,
   }) async {
     final normalizedMoney = moneyModel ??
         MoneyModel(
@@ -183,7 +182,6 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       await mutation();
       ref.invalidate(globalReportProvider);
       ref.invalidate(tripReportProvider);
-      ref.invalidate(tripPredictionProvider);
       state = AsyncData(await _loadExpenses());
     } catch (error, stackTrace) {
       state = AsyncValue.error(error, stackTrace);
