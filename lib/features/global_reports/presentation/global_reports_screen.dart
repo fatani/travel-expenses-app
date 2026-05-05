@@ -6,6 +6,7 @@ import '../../../shared/widgets/insight_card.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
 import '../../insights/domain/insight.dart';
 import '../../reports/domain/report_bucket.dart';
+import '../../trips/domain/trip.dart';
 import '../../trips/presentation/trip_form_screen.dart';
 import '../data/global_report_provider.dart';
 import '../domain/global_report_summary.dart';
@@ -14,8 +15,8 @@ class GlobalReportsScreen extends ConsumerWidget {
   const GlobalReportsScreen({super.key});
 
   Future<void> _openTripForm(BuildContext context, WidgetRef ref) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => const TripFormScreen()),
+    await Navigator.of(context).push<Trip?>(
+      MaterialPageRoute<Trip?>(builder: (_) => const TripFormScreen()),
     );
     ref.invalidate(globalReportProvider);
   }

@@ -245,18 +245,6 @@ abstract class AppLocalizations {
   /// **'Base currency'**
   String get tripFormCurrencyLabel;
 
-  /// No description provided for @tripFormMoreDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'More details'**
-  String get tripFormMoreDetails;
-
-  /// No description provided for @tripFormRequiredFieldsHint.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter trip name, destination, and currency to continue'**
-  String get tripFormRequiredFieldsHint;
-
   /// No description provided for @tripFormBudgetLabel.
   ///
   /// In en, this message translates to:
@@ -268,24 +256,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'2500'**
   String get tripFormBudgetHint;
-
-  /// No description provided for @tripFormBudgetCurrencyLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Budget currency (optional)'**
-  String get tripFormBudgetCurrencyLabel;
-
-  /// No description provided for @tripFormBudgetCurrencyHint.
-  ///
-  /// In en, this message translates to:
-  /// **'SAR'**
-  String get tripFormBudgetCurrencyHint;
-
-  /// No description provided for @tripFormBudgetCurrencyInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a 3-letter currency code.'**
-  String get tripFormBudgetCurrencyInvalid;
 
   /// No description provided for @tripFormStartDateLabel.
   ///
@@ -346,48 +316,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Expense'**
   String get tripDetailsAddExpense;
-
-  /// No description provided for @tripDetailsQuickAddMoreDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'More details'**
-  String get tripDetailsQuickAddMoreDetails;
-
-  /// No description provided for @tripDetailsQuickAddSave.
-  ///
-  /// In en, this message translates to:
-  /// **'Save'**
-  String get tripDetailsQuickAddSave;
-
-  /// No description provided for @tripDetailsQuickAddRecentMerchants.
-  ///
-  /// In en, this message translates to:
-  /// **'Recent merchants'**
-  String get tripDetailsQuickAddRecentMerchants;
-
-  /// No description provided for @tripDetailsQuickAddPaymentCash.
-  ///
-  /// In en, this message translates to:
-  /// **'Cash'**
-  String get tripDetailsQuickAddPaymentCash;
-
-  /// No description provided for @tripDetailsQuickAddPaymentCard.
-  ///
-  /// In en, this message translates to:
-  /// **'Card'**
-  String get tripDetailsQuickAddPaymentCard;
-
-  /// No description provided for @tripDetailsQuickAddPaymentWallet.
-  ///
-  /// In en, this message translates to:
-  /// **'Wallet'**
-  String get tripDetailsQuickAddPaymentWallet;
-
-  /// No description provided for @tripDetailsQuickAddExpenseAdded.
-  ///
-  /// In en, this message translates to:
-  /// **'Expense added'**
-  String get tripDetailsQuickAddExpenseAdded;
 
   /// No description provided for @tripDetailsEditTripTooltip.
   ///
@@ -574,6 +502,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add your first manual expense for this trip.'**
   String get tripDetailsEmptyExpensesMessage;
+
+  /// No description provided for @noExpensesHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first expense now'**
+  String get noExpensesHeadline;
+
+  /// No description provided for @noExpensesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first expense in seconds'**
+  String get noExpensesSubtitle;
+
+  /// No description provided for @noExpensesAddFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Add First Expense'**
+  String get noExpensesAddFirst;
+
+  /// No description provided for @noExpensesAddViaSms.
+  ///
+  /// In en, this message translates to:
+  /// **'Add via Bank SMS'**
+  String get noExpensesAddViaSms;
+
+  /// No description provided for @noExpensesTipLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Tip'**
+  String get noExpensesTipLabel;
+
+  /// No description provided for @noExpensesTipBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Once you add your first expense, you\'ll understand where your money goes'**
+  String get noExpensesTipBody;
+
+  /// No description provided for @tripDetailsQuickAddExpenseAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense added'**
+  String get tripDetailsQuickAddExpenseAdded;
+
+  /// No description provided for @tripDetailsQuickAddRecentMerchants.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent merchants'**
+  String get tripDetailsQuickAddRecentMerchants;
+
+  /// No description provided for @tripDetailsQuickAddMoreDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'More details'**
+  String get tripDetailsQuickAddMoreDetails;
+
+  /// No description provided for @tripDetailsQuickAddSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get tripDetailsQuickAddSave;
+
+  /// No description provided for @tripDetailsQuickAddPaymentCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash'**
+  String get tripDetailsQuickAddPaymentCash;
+
+  /// No description provided for @tripDetailsQuickAddPaymentWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Wallet'**
+  String get tripDetailsQuickAddPaymentWallet;
+
+  /// No description provided for @tripDetailsQuickAddPaymentCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get tripDetailsQuickAddPaymentCard;
+
+  /// No description provided for @cardBankSNB.
+  ///
+  /// In en, this message translates to:
+  /// **'SNB'**
+  String get cardBankSNB;
+
+  /// No description provided for @cardBankAlRajhi.
+  ///
+  /// In en, this message translates to:
+  /// **'Al Rajhi'**
+  String get cardBankAlRajhi;
+
+  /// No description provided for @cardBankSAB.
+  ///
+  /// In en, this message translates to:
+  /// **'SAB'**
+  String get cardBankSAB;
+
+  /// No description provided for @cardBankD360.
+  ///
+  /// In en, this message translates to:
+  /// **'D360'**
+  String get cardBankD360;
+
+  /// No description provided for @cardBankBarq.
+  ///
+  /// In en, this message translates to:
+  /// **'Barq'**
+  String get cardBankBarq;
+
+  /// No description provided for @cardBankOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get cardBankOther;
+
+  /// No description provided for @cardNetworkVisa.
+  ///
+  /// In en, this message translates to:
+  /// **'Visa'**
+  String get cardNetworkVisa;
+
+  /// No description provided for @cardNetworkMastercard.
+  ///
+  /// In en, this message translates to:
+  /// **'Mastercard'**
+  String get cardNetworkMastercard;
+
+  /// No description provided for @cardNetworkMada.
+  ///
+  /// In en, this message translates to:
+  /// **'Mada'**
+  String get cardNetworkMada;
+
+  /// No description provided for @cardNetworkOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get cardNetworkOther;
+
+  /// No description provided for @cardTierInfinite.
+  ///
+  /// In en, this message translates to:
+  /// **'Infinite'**
+  String get cardTierInfinite;
+
+  /// No description provided for @cardTierSignature.
+  ///
+  /// In en, this message translates to:
+  /// **'Signature'**
+  String get cardTierSignature;
+
+  /// No description provided for @cardTierPlatinum.
+  ///
+  /// In en, this message translates to:
+  /// **'Platinum'**
+  String get cardTierPlatinum;
+
+  /// No description provided for @cardTierClassic.
+  ///
+  /// In en, this message translates to:
+  /// **'Classic'**
+  String get cardTierClassic;
+
+  /// No description provided for @cardTierWorld.
+  ///
+  /// In en, this message translates to:
+  /// **'World'**
+  String get cardTierWorld;
+
+  /// No description provided for @cardTierWorldElite.
+  ///
+  /// In en, this message translates to:
+  /// **'World Elite'**
+  String get cardTierWorldElite;
+
+  /// No description provided for @cardTierOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get cardTierOther;
+
+  /// No description provided for @cardFormEditTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Card'**
+  String get cardFormEditTitle;
+
+  /// No description provided for @cardFormAddTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Card'**
+  String get cardFormAddTitle;
+
+  /// No description provided for @cardFormBankLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank'**
+  String get cardFormBankLabel;
+
+  /// No description provided for @cardFormCardNetworkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card network'**
+  String get cardFormCardNetworkLabel;
+
+  /// No description provided for @cardFormCardTierLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card tier'**
+  String get cardFormCardTierLabel;
+
+  /// No description provided for @cardFormLast4Label.
+  ///
+  /// In en, this message translates to:
+  /// **'Last 4 digits'**
+  String get cardFormLast4Label;
+
+  /// No description provided for @cardFormLast4Hint.
+  ///
+  /// In en, this message translates to:
+  /// **'1234'**
+  String get cardFormLast4Hint;
+
+  /// No description provided for @cardFormCardPreviewLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card preview'**
+  String get cardFormCardPreviewLabel;
+
+  /// No description provided for @cardFormSaveEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get cardFormSaveEdit;
+
+  /// No description provided for @cardFormSaveCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Card'**
+  String get cardFormSaveCreate;
+
+  /// No description provided for @cardFormDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'A card with these details already exists.'**
+  String get cardFormDuplicate;
 
   /// No description provided for @expenseFormCreateTitle.
   ///
@@ -1097,65 +1271,11 @@ abstract class AppLocalizations {
   /// **'Top category'**
   String get tripReportsTopCategory;
 
-  /// No description provided for @tripReportsBudgetTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Budget guardrails'**
-  String get tripReportsBudgetTitle;
-
-  /// No description provided for @tripReportsBudgetAmountLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Budget'**
-  String get tripReportsBudgetAmountLabel;
-
-  /// No description provided for @tripReportsBudgetCurrentSpendLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Current spend'**
-  String get tripReportsBudgetCurrentSpendLabel;
-
-  /// No description provided for @tripReportsBudgetUsageLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Used'**
-  String get tripReportsBudgetUsageLabel;
-
-  /// No description provided for @tripReportsBudgetCurrencyMismatch.
-  ///
-  /// In en, this message translates to:
-  /// **'Budget is set in a different currency, so usage cannot be compared safely.'**
-  String get tripReportsBudgetCurrencyMismatch;
-
-  /// No description provided for @tripReportsBudgetWarningNearLimit.
-  ///
-  /// In en, this message translates to:
-  /// **'Budget usage is close to the limit. Review the next spending decisions carefully.'**
-  String get tripReportsBudgetWarningNearLimit;
-
-  /// No description provided for @tripReportsBudgetWarningForecast.
-  ///
-  /// In en, this message translates to:
-  /// **'At the current pace, this trip is likely to exceed the budget before it ends.'**
-  String get tripReportsBudgetWarningForecast;
-
-  /// No description provided for @tripReportsBudgetWarningExceeded.
-  ///
-  /// In en, this message translates to:
-  /// **'Current spending has already exceeded the trip budget.'**
-  String get tripReportsBudgetWarningExceeded;
-
   /// No description provided for @tripPredictionSectionTitle.
   ///
   /// In en, this message translates to:
   /// **'Predictions'**
   String get tripPredictionSectionTitle;
-
-  /// No description provided for @tripPredictionCurrentSpendTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Current spend'**
-  String get tripPredictionCurrentSpendTitle;
 
   /// No description provided for @tripPredictionBurnRateTitle.
   ///
@@ -1168,30 +1288,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Forecast total until trip end'**
   String get tripPredictionForecastTitle;
-
-  /// No description provided for @tripPredictionActionsTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Recommended actions'**
-  String get tripPredictionActionsTitle;
-
-  /// No description provided for @tripPredictionActionBurnRisk.
-  ///
-  /// In en, this message translates to:
-  /// **'Your current spending pace is high and could double before the trip ends.'**
-  String get tripPredictionActionBurnRisk;
-
-  /// No description provided for @tripPredictionActionSpendSpike.
-  ///
-  /// In en, this message translates to:
-  /// **'Your spending is accelerating near the end of the trip. Try spreading expenses more evenly to avoid financial pressure.'**
-  String get tripPredictionActionSpendSpike;
-
-  /// No description provided for @tripPredictionActionCategoryConcentration.
-  ///
-  /// In en, this message translates to:
-  /// **'A large share of your spending is on {category}. Review this category; it may be a chance to reduce costs.'**
-  String tripPredictionActionCategoryConcentration(Object category);
 
   /// No description provided for @tripReportsExpenseCountLabel.
   ///
@@ -1534,198 +1630,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'International {international}% vs domestic {domestic}%'**
   String globalReportsInsightIntlDomesticRatio(int international, int domestic);
-
-  /// No description provided for @tripStatusActive.
-  ///
-  /// In en, this message translates to:
-  /// **'Active'**
-  String get tripStatusActive;
-
-  /// No description provided for @tripStatusUpcoming.
-  ///
-  /// In en, this message translates to:
-  /// **'Upcoming'**
-  String get tripStatusUpcoming;
-
-  /// No description provided for @tripStatusPast.
-  ///
-  /// In en, this message translates to:
-  /// **'Past'**
-  String get tripStatusPast;
-
-  /// No description provided for @cardFormAddTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Add Card'**
-  String get cardFormAddTitle;
-
-  /// No description provided for @cardFormEditTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Edit Card'**
-  String get cardFormEditTitle;
-
-  /// No description provided for @cardFormBankLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Bank'**
-  String get cardFormBankLabel;
-
-  /// No description provided for @cardFormCardNetworkLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Card network'**
-  String get cardFormCardNetworkLabel;
-
-  /// No description provided for @cardFormCardTierLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Card tier'**
-  String get cardFormCardTierLabel;
-
-  /// No description provided for @cardFormLast4Label.
-  ///
-  /// In en, this message translates to:
-  /// **'Last 4 digits'**
-  String get cardFormLast4Label;
-
-  /// No description provided for @cardFormLast4Hint.
-  ///
-  /// In en, this message translates to:
-  /// **'1234'**
-  String get cardFormLast4Hint;
-
-  /// No description provided for @cardFormCardPreviewLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Card preview'**
-  String get cardFormCardPreviewLabel;
-
-  /// No description provided for @cardFormSaveCreate.
-  ///
-  /// In en, this message translates to:
-  /// **'Save Card'**
-  String get cardFormSaveCreate;
-
-  /// No description provided for @cardFormSaveEdit.
-  ///
-  /// In en, this message translates to:
-  /// **'Save Changes'**
-  String get cardFormSaveEdit;
-
-  /// No description provided for @cardFormLast4Invalid.
-  ///
-  /// In en, this message translates to:
-  /// **'Last 4 digits must be exactly 4 digits.'**
-  String get cardFormLast4Invalid;
-
-  /// No description provided for @cardFormDuplicate.
-  ///
-  /// In en, this message translates to:
-  /// **'This card already exists'**
-  String get cardFormDuplicate;
-
-  /// No description provided for @cardBankSNB.
-  ///
-  /// In en, this message translates to:
-  /// **'SNB'**
-  String get cardBankSNB;
-
-  /// No description provided for @cardBankAlRajhi.
-  ///
-  /// In en, this message translates to:
-  /// **'Al Rajhi'**
-  String get cardBankAlRajhi;
-
-  /// No description provided for @cardBankSAB.
-  ///
-  /// In en, this message translates to:
-  /// **'SAB'**
-  String get cardBankSAB;
-
-  /// No description provided for @cardBankD360.
-  ///
-  /// In en, this message translates to:
-  /// **'D360'**
-  String get cardBankD360;
-
-  /// No description provided for @cardBankBarq.
-  ///
-  /// In en, this message translates to:
-  /// **'Barq'**
-  String get cardBankBarq;
-
-  /// No description provided for @cardBankOther.
-  ///
-  /// In en, this message translates to:
-  /// **'Other'**
-  String get cardBankOther;
-
-  /// No description provided for @cardNetworkVisa.
-  ///
-  /// In en, this message translates to:
-  /// **'Visa'**
-  String get cardNetworkVisa;
-
-  /// No description provided for @cardNetworkMastercard.
-  ///
-  /// In en, this message translates to:
-  /// **'Mastercard'**
-  String get cardNetworkMastercard;
-
-  /// No description provided for @cardNetworkMada.
-  ///
-  /// In en, this message translates to:
-  /// **'Mada'**
-  String get cardNetworkMada;
-
-  /// No description provided for @cardNetworkOther.
-  ///
-  /// In en, this message translates to:
-  /// **'Other'**
-  String get cardNetworkOther;
-
-  /// No description provided for @cardTierInfinite.
-  ///
-  /// In en, this message translates to:
-  /// **'Infinite'**
-  String get cardTierInfinite;
-
-  /// No description provided for @cardTierSignature.
-  ///
-  /// In en, this message translates to:
-  /// **'Signature'**
-  String get cardTierSignature;
-
-  /// No description provided for @cardTierPlatinum.
-  ///
-  /// In en, this message translates to:
-  /// **'Platinum'**
-  String get cardTierPlatinum;
-
-  /// No description provided for @cardTierClassic.
-  ///
-  /// In en, this message translates to:
-  /// **'Classic'**
-  String get cardTierClassic;
-
-  /// No description provided for @cardTierWorld.
-  ///
-  /// In en, this message translates to:
-  /// **'World'**
-  String get cardTierWorld;
-
-  /// No description provided for @cardTierWorldElite.
-  ///
-  /// In en, this message translates to:
-  /// **'World Elite'**
-  String get cardTierWorldElite;
-
-  /// No description provided for @cardTierOther.
-  ///
-  /// In en, this message translates to:
-  /// **'Other'**
-  String get cardTierOther;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

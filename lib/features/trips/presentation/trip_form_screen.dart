@@ -28,7 +28,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   late final TextEditingController _nameController;
   late final TextEditingController _destinationController;
   late final TextEditingController _currencyController;
-  String _baseCurrencyValue = '';
   late final TextEditingController _budgetController;
   late final TextEditingController _budgetCurrencyController;
   late final TextEditingController _notesController;
@@ -37,7 +36,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
   DateTime? _startDate;
   DateTime? _endDate;
-  bool _canSubmitRequiredFields = false;
   bool _didSeedDefaults = false;
 
   @override
@@ -49,8 +47,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     _destinationController = TextEditingController(
       text: trip?.destination ?? '',
     );
-    _baseCurrencyValue = trip?.baseCurrency ?? '';
-    _currencyController = TextEditingController(text: _baseCurrencyValue);
+    _currencyController = TextEditingController(text: trip?.baseCurrency ?? '');
     _budgetController = TextEditingController(
       text: trip?.budget?.toStringAsFixed(2) ?? '',
     );
@@ -61,14 +58,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     _startDateController = TextEditingController();
     _endDateController = TextEditingController();
 
-    _nameController.addListener(_updateSubmitEnabledState);
-    _currencyController.addListener(_syncCurrencyFromText);
-
     _startDate = trip?.startDate;
     _endDate = trip?.endDate;
     _syncDateFields();
-
-    _updateSubmitEnabledState();
   }
 
   @override
@@ -92,12 +84,14 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     }
 
     _didSeedDefaults = true;
-    final isArabic =
-        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+    final locale = Localizations.localeOf(context);
+    final isArabic = locale.languageCode.toLowerCase() == 'ar';
 
-    if (_baseCurrencyValue.trim().isEmpty) {
-      _baseCurrencyValue = isArabic ? 'SAR' : 'USD';
-      _currencyController.text = _baseCurrencyValue;
+    if (_currencyController.text.trim().isEmpty) {
+      _currencyController.text = _resolveDefaultCurrency(
+        isArabic: isArabic,
+        locale: locale,
+      );
     }
     final defaultName = getDefaultTripName(isArabic);
     if (_nameController.text.trim().isEmpty ||
@@ -105,23 +99,19 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         _nameController.text == 'My new trip') {
       _nameController.text = defaultName;
     }
-
-    _updateSubmitEnabledState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isSaving = ref.watch(tripsControllerProvider).isLoading;
     final isArabic =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-    final canCreate = !isSaving && _canSubmitRequiredFields;
 
     return Form(
       key: _formKey,
       child: CreateTripVisualScreen(
         isArabic: isArabic,
         tripNameController: _nameController,
-        onCreateTrip: canCreate ? _submit : () {},
+        onCreateTrip: _submit,
         onToggleLanguage: () => _toggleLanguage(isArabic: isArabic),
         onCustomizeTrip: _openCustomizeTripSheet,
         onBack: () => Navigator.of(context).pop(),
@@ -324,14 +314,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     );
   }
 
-  String? _validateRequired(String? value) {
-    final l10n = AppLocalizations.of(context)!;
-    if (value == null || value.trim().isEmpty) {
-      return l10n.commonRequiredField;
-    }
-    return null;
-  }
-
   String? _validateBudget(String? value) {
     final l10n = AppLocalizations.of(context)!;
     if (value == null || value.trim().isEmpty) {
@@ -394,31 +376,27 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   Future<void> _submit() async {
-    final requiredName = _validateRequired(_nameController.text);
-    if (requiredName != null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(requiredName)));
+    if (ref.read(tripsControllerProvider).isLoading) {
       return;
     }
-
-    final currencyCode = _extractCurrencyCode(_currencyController.text);
-    if (currencyCode.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(_validateRequired('')!)));
-      return;
-    }
-
-    _baseCurrencyValue = currencyCode;
 
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
+    final locale = Localizations.localeOf(context);
+    final isArabic = locale.languageCode.toLowerCase() == 'ar';
+    final resolvedName = _nameController.text.trim().isEmpty
+        ? getDefaultTripName(isArabic)
+        : _nameController.text.trim();
+    final baseCurrency = _resolveDefaultCurrency(
+      isArabic: isArabic,
+      locale: locale,
+    );
+    _currencyController.text = baseCurrency;
+
     final budgetText = _budgetController.text.trim();
     final budget = budgetText.isEmpty ? null : double.parse(budgetText);
-    final baseCurrency = _baseCurrencyValue.trim().toUpperCase();
     final budgetCurrencyText =
         _budgetCurrencyController.text.trim().toUpperCase();
     final budgetCurrency = budget == null
@@ -428,8 +406,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
     try {
       if (widget.trip == null) {
-        await controller.createTrip(
-          name: _nameController.text.trim(),
+        final createdTrip = await controller.createTrip(
+          name: resolvedName,
           destination: _destinationController.text.trim(),
           startDate: _startDate,
           endDate: _endDate,
@@ -437,10 +415,16 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           budget: budget,
           budgetCurrency: budgetCurrency,
         );
+
+        if (!mounted) {
+          return;
+        }
+
+        Navigator.of(context).pop(createdTrip);
       } else {
         await controller.updateTrip(
           trip: widget.trip!,
-          name: _nameController.text.trim(),
+          name: resolvedName,
           destination: _destinationController.text.trim(),
           startDate: _startDate,
           endDate: _endDate,
@@ -454,7 +438,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         return;
       }
 
-      Navigator.of(context).pop();
+      if (widget.trip != null) {
+        Navigator.of(context).pop();
+      }
     } catch (error) {
       if (!mounted) {
         return;
@@ -478,28 +464,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         _endDate == null ? '' : formatter.format(_endDate!);
   }
 
-  void _updateSubmitEnabledState() {
-    final canSubmit = _nameController.text.trim().isNotEmpty &&
-        _baseCurrencyValue.trim().length == 3;
-
-    if (_canSubmitRequiredFields == canSubmit) {
-      return;
-    }
-
-    setState(() {
-      _canSubmitRequiredFields = canSubmit;
-    });
-  }
-
-  void _syncCurrencyFromText() {
-    final parsed = _extractCurrencyCode(_currencyController.text);
-    if (_baseCurrencyValue == parsed) {
-      return;
-    }
-    _baseCurrencyValue = parsed;
-    _updateSubmitEnabledState();
-  }
-
   String _extractCurrencyCode(String value) {
     final normalized = value.trim().toUpperCase();
     if (normalized.isEmpty) {
@@ -516,6 +480,34 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       return '';
     }
     return candidate.substring(0, 3);
+  }
+
+  String _resolveDefaultCurrency({
+    required bool isArabic,
+    required Locale locale,
+  }) {
+    final typedCurrency = _extractCurrencyCode(_currencyController.text);
+    if (typedCurrency.isNotEmpty) {
+      return typedCurrency;
+    }
+
+    final trips = ref.read(tripsControllerProvider).valueOrNull ?? const [];
+    final sortedTrips = [...trips]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+
+    for (final trip in sortedTrips) {
+      final candidate = _extractCurrencyCode(trip.baseCurrency);
+      if (candidate.isNotEmpty) {
+        return candidate;
+      }
+    }
+
+    final isSaudiLocale = locale.countryCode?.toUpperCase() == 'SA';
+    if (isArabic || isSaudiLocale) {
+      return 'SAR';
+    }
+
+    return 'USD';
   }
 }
 

@@ -90,25 +90,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormCurrencyLabel => 'Base currency';
 
   @override
-  String get tripFormMoreDetails => 'More details';
-
-  @override
-  String get tripFormRequiredFieldsHint => 'Enter trip name, destination, and currency to continue';
-
-  @override
   String get tripFormBudgetLabel => 'Budget (optional)';
 
   @override
   String get tripFormBudgetHint => '2500';
-
-  @override
-  String get tripFormBudgetCurrencyLabel => 'Budget currency (optional)';
-
-  @override
-  String get tripFormBudgetCurrencyHint => 'SAR';
-
-  @override
-  String get tripFormBudgetCurrencyInvalid => 'Enter a 3-letter currency code.';
 
   @override
   String get tripFormStartDateLabel => 'Start date';
@@ -141,27 +126,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDetailsAddExpense => 'Add Expense';
-
-  @override
-  String get tripDetailsQuickAddMoreDetails => 'More details';
-
-  @override
-  String get tripDetailsQuickAddSave => 'Save';
-
-  @override
-  String get tripDetailsQuickAddRecentMerchants => 'Recent merchants';
-
-  @override
-  String get tripDetailsQuickAddPaymentCash => 'Cash';
-
-  @override
-  String get tripDetailsQuickAddPaymentCard => 'Card';
-
-  @override
-  String get tripDetailsQuickAddPaymentWallet => 'Wallet';
-
-  @override
-  String get tripDetailsQuickAddExpenseAdded => 'Expense added';
 
   @override
   String get tripDetailsEditTripTooltip => 'Edit trip';
@@ -263,6 +227,129 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDetailsEmptyExpensesMessage => 'Add your first manual expense for this trip.';
+
+  @override
+  String get noExpensesHeadline => 'Add your first expense now';
+
+  @override
+  String get noExpensesSubtitle => 'Add your first expense in seconds';
+
+  @override
+  String get noExpensesAddFirst => 'Add First Expense';
+
+  @override
+  String get noExpensesAddViaSms => 'Add via Bank SMS';
+
+  @override
+  String get noExpensesTipLabel => 'Tip';
+
+  @override
+  String get noExpensesTipBody => 'Once you add your first expense, you\'ll understand where your money goes';
+
+  @override
+  String get tripDetailsQuickAddExpenseAdded => 'Expense added';
+
+  @override
+  String get tripDetailsQuickAddRecentMerchants => 'Recent merchants';
+
+  @override
+  String get tripDetailsQuickAddMoreDetails => 'More details';
+
+  @override
+  String get tripDetailsQuickAddSave => 'Save';
+
+  @override
+  String get tripDetailsQuickAddPaymentCash => 'Cash';
+
+  @override
+  String get tripDetailsQuickAddPaymentWallet => 'Wallet';
+
+  @override
+  String get tripDetailsQuickAddPaymentCard => 'Card';
+
+  @override
+  String get cardBankSNB => 'SNB';
+
+  @override
+  String get cardBankAlRajhi => 'Al Rajhi';
+
+  @override
+  String get cardBankSAB => 'SAB';
+
+  @override
+  String get cardBankD360 => 'D360';
+
+  @override
+  String get cardBankBarq => 'Barq';
+
+  @override
+  String get cardBankOther => 'Other';
+
+  @override
+  String get cardNetworkVisa => 'Visa';
+
+  @override
+  String get cardNetworkMastercard => 'Mastercard';
+
+  @override
+  String get cardNetworkMada => 'Mada';
+
+  @override
+  String get cardNetworkOther => 'Other';
+
+  @override
+  String get cardTierInfinite => 'Infinite';
+
+  @override
+  String get cardTierSignature => 'Signature';
+
+  @override
+  String get cardTierPlatinum => 'Platinum';
+
+  @override
+  String get cardTierClassic => 'Classic';
+
+  @override
+  String get cardTierWorld => 'World';
+
+  @override
+  String get cardTierWorldElite => 'World Elite';
+
+  @override
+  String get cardTierOther => 'Other';
+
+  @override
+  String get cardFormEditTitle => 'Edit Card';
+
+  @override
+  String get cardFormAddTitle => 'Add Card';
+
+  @override
+  String get cardFormBankLabel => 'Bank';
+
+  @override
+  String get cardFormCardNetworkLabel => 'Card network';
+
+  @override
+  String get cardFormCardTierLabel => 'Card tier';
+
+  @override
+  String get cardFormLast4Label => 'Last 4 digits';
+
+  @override
+  String get cardFormLast4Hint => '1234';
+
+  @override
+  String get cardFormCardPreviewLabel => 'Card preview';
+
+  @override
+  String get cardFormSaveEdit => 'Save Changes';
+
+  @override
+  String get cardFormSaveCreate => 'Add Card';
+
+  @override
+  String get cardFormDuplicate => 'A card with these details already exists.';
 
   @override
   String get expenseFormCreateTitle => 'New Expense';
@@ -538,54 +625,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsTopCategory => 'Top category';
 
   @override
-  String get tripReportsBudgetTitle => 'Budget guardrails';
-
-  @override
-  String get tripReportsBudgetAmountLabel => 'Budget';
-
-  @override
-  String get tripReportsBudgetCurrentSpendLabel => 'Current spend';
-
-  @override
-  String get tripReportsBudgetUsageLabel => 'Used';
-
-  @override
-  String get tripReportsBudgetCurrencyMismatch => 'Budget is set in a different currency, so usage cannot be compared safely.';
-
-  @override
-  String get tripReportsBudgetWarningNearLimit => 'Budget usage is close to the limit. Review the next spending decisions carefully.';
-
-  @override
-  String get tripReportsBudgetWarningForecast => 'At the current pace, this trip is likely to exceed the budget before it ends.';
-
-  @override
-  String get tripReportsBudgetWarningExceeded => 'Current spending has already exceeded the trip budget.';
-
-  @override
   String get tripPredictionSectionTitle => 'Predictions';
-
-  @override
-  String get tripPredictionCurrentSpendTitle => 'Current spend';
 
   @override
   String get tripPredictionBurnRateTitle => 'Current burn rate';
 
   @override
   String get tripPredictionForecastTitle => 'Forecast total until trip end';
-
-  @override
-  String get tripPredictionActionsTitle => 'Recommended actions';
-
-  @override
-  String get tripPredictionActionBurnRisk => 'Your current spending pace is high and could double before the trip ends.';
-
-  @override
-  String get tripPredictionActionSpendSpike => 'Your spending is accelerating near the end of the trip. Try spreading expenses more evenly to avoid financial pressure.';
-
-  @override
-  String tripPredictionActionCategoryConcentration(Object category) {
-    return 'A large share of your spending is on $category. Review this category; it may be a chance to reduce costs.';
-  }
 
   @override
   String tripReportsExpenseCountLabel(int count) {
@@ -797,100 +843,4 @@ class AppLocalizationsEn extends AppLocalizations {
   String globalReportsInsightIntlDomesticRatio(int international, int domestic) {
     return 'International $international% vs domestic $domestic%';
   }
-
-  @override
-  String get tripStatusActive => 'Active';
-
-  @override
-  String get tripStatusUpcoming => 'Upcoming';
-
-  @override
-  String get tripStatusPast => 'Past';
-
-  @override
-  String get cardFormAddTitle => 'Add Card';
-
-  @override
-  String get cardFormEditTitle => 'Edit Card';
-
-  @override
-  String get cardFormBankLabel => 'Bank';
-
-  @override
-  String get cardFormCardNetworkLabel => 'Card network';
-
-  @override
-  String get cardFormCardTierLabel => 'Card tier';
-
-  @override
-  String get cardFormLast4Label => 'Last 4 digits';
-
-  @override
-  String get cardFormLast4Hint => '1234';
-
-  @override
-  String get cardFormCardPreviewLabel => 'Card preview';
-
-  @override
-  String get cardFormSaveCreate => 'Save Card';
-
-  @override
-  String get cardFormSaveEdit => 'Save Changes';
-
-  @override
-  String get cardFormLast4Invalid => 'Last 4 digits must be exactly 4 digits.';
-
-  @override
-  String get cardFormDuplicate => 'This card already exists';
-
-  @override
-  String get cardBankSNB => 'SNB';
-
-  @override
-  String get cardBankAlRajhi => 'Al Rajhi';
-
-  @override
-  String get cardBankSAB => 'SAB';
-
-  @override
-  String get cardBankD360 => 'D360';
-
-  @override
-  String get cardBankBarq => 'Barq';
-
-  @override
-  String get cardBankOther => 'Other';
-
-  @override
-  String get cardNetworkVisa => 'Visa';
-
-  @override
-  String get cardNetworkMastercard => 'Mastercard';
-
-  @override
-  String get cardNetworkMada => 'Mada';
-
-  @override
-  String get cardNetworkOther => 'Other';
-
-  @override
-  String get cardTierInfinite => 'Infinite';
-
-  @override
-  String get cardTierSignature => 'Signature';
-
-  @override
-  String get cardTierPlatinum => 'Platinum';
-
-  @override
-  String get cardTierClassic => 'Classic';
-
-  @override
-  String get cardTierWorld => 'World';
-
-  @override
-  String get cardTierWorldElite => 'World Elite';
-
-  @override
-  String get cardTierOther => 'Other';
 }

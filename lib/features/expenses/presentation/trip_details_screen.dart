@@ -82,6 +82,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           expenses: expenses,
           onAddExpense: () => _openQuickAddSheet(expenses),
           onAddViaSms: _openSmsExpenseScreen,
+          onFixDates: _openTripEditor,
           onEditExpense: (expense) => _openExpenseForm(expense: expense),
           onDeleteExpense: (expense) => _confirmDelete(expense),
         ),
@@ -124,8 +125,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _openTripEditor() async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => TripFormScreen(trip: _trip)),
+    await Navigator.of(context).push<Trip?>(
+      MaterialPageRoute<Trip?>(builder: (_) => TripFormScreen(trip: _trip)),
     );
 
     final refreshedTrip = await ref.read(tripRepositoryProvider).getTripById(
@@ -296,6 +297,7 @@ class _TripDetailsContent extends StatefulWidget {
     required this.expenses,
     required this.onAddExpense,
     required this.onAddViaSms,
+    this.onFixDates,
     required this.onEditExpense,
     required this.onDeleteExpense,
   });
@@ -304,6 +306,7 @@ class _TripDetailsContent extends StatefulWidget {
   final List<Expense> expenses;
   final VoidCallback onAddExpense;
   final VoidCallback onAddViaSms;
+  final VoidCallback? onFixDates;
   final ValueChanged<Expense> onEditExpense;
   final ValueChanged<Expense> onDeleteExpense;
 
@@ -358,24 +361,21 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
         });
     final hasSarTotal = sarTotal > 0;
     final listBottomPadding = MediaQuery.of(context).padding.bottom + 128;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final datesMissing = widget.trip.startDate == null || widget.trip.endDate == null;
+    final dateRangeText = datesMissing ? null : _formatDateRangeText(widget.trip);
 
     if (!hasExpenses) {
-      return Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            _TripSummaryCard(trip: widget.trip),
-            const SizedBox(height: 16),
-            Expanded(
-              child: Center(
-                child: _EmptyExpensesState(
-                  onAddExpense: widget.onAddExpense,
-                  onAddViaSms: widget.onAddViaSms,
-                ),
-              ),
-            ),
-          ],
-        ),
+      return NoExpensesPremiumState(
+        isArabic: isArabic,
+        tripName: widget.trip.name,
+        baseCurrency: widget.trip.baseCurrency,
+        datesMissing: datesMissing,
+        dateRangeText: dateRangeText,
+        onAddExpense: widget.onAddExpense,
+        onAddViaSms: widget.onAddViaSms,
+        onFixDates: widget.onFixDates,
+        onDismissTip: null,
       );
     }
 
@@ -515,6 +515,11 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
 
   String _formatCurrency(double amount, String currencyCode) {
     return _formatAmountCurrencyLtr(amount, currencyCode);
+  }
+
+  String _formatDateRangeText(Trip trip) {
+    final formatter = DateFormat('dd MMM yyyy', 'en');
+    return '${formatter.format(trip.startDate!)} - ${formatter.format(trip.endDate!)}';
   }
 
   List<Expense> _totalableExpenses(List<Expense> expenses) {
@@ -998,90 +1003,600 @@ class _ExpenseCard extends StatelessWidget {
   }
 }
 
-class _EmptyExpensesState extends StatelessWidget {
-  const _EmptyExpensesState({
-    required this.onAddExpense,
-    required this.onAddViaSms,
-  });
-
+class NoExpensesPremiumState extends StatelessWidget {
+  final bool isArabic;
+  final String tripName;
+  final String baseCurrency;
+  final bool datesMissing;
+  final String? dateRangeText;
   final VoidCallback onAddExpense;
   final VoidCallback onAddViaSms;
+  final VoidCallback? onFixDates;
+  final VoidCallback? onDismissTip;
+
+  const NoExpensesPremiumState({
+    super.key,
+    required this.isArabic,
+    required this.tripName,
+    required this.baseCurrency,
+    required this.datesMissing,
+    required this.dateRangeText,
+    required this.onAddExpense,
+    required this.onAddViaSms,
+    this.onFixDates,
+    this.onDismissTip,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final colorScheme = Theme.of(context).colorScheme;
-    return ConstrainedBox(
-      constraints: const BoxConstraints(maxWidth: 420),
-      child: Card(
+    final direction = isArabic ? TextDirection.rtl : TextDirection.ltr;
+
+    return Directionality(
+      textDirection: direction,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
+        child: Column(
+          children: [
+            _NoExpensesTripSummaryCard(
+              isArabic: isArabic,
+              tripName: tripName,
+              baseCurrency: baseCurrency,
+              datesMissing: datesMissing,
+              dateRangeText: dateRangeText,
+              onFixDates: onFixDates,
+            ),
+            const SizedBox(height: 22),
+            _NoExpensesCard(
+              isArabic: isArabic,
+              onAddExpense: onAddExpense,
+              onAddViaSms: onAddViaSms,
+              onDismissTip: onDismissTip,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoExpensesTripSummaryCard extends StatelessWidget {
+  final bool isArabic;
+  final String tripName;
+  final String baseCurrency;
+  final bool datesMissing;
+  final String? dateRangeText;
+  final VoidCallback? onFixDates;
+
+  const _NoExpensesTripSummaryCard({
+    required this.isArabic,
+    required this.tripName,
+    required this.baseCurrency,
+    required this.datesMissing,
+    required this.dateRangeText,
+    this.onFixDates,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
         color: Colors.white,
-        elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        shadowColor: Colors.transparent,
-        child: Container(
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.045),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Image.asset(
+            'assets/travel.png',
+            width: 124,
+            height: 124,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => const Icon(
+              Icons.flight_takeoff,
+              size: 72,
+              color: Color(0xFF7C3AED),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment:
+                  isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  alignment: isArabic ? WrapAlignment.end : WrapAlignment.start,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 8,
+                  children: [
+                    Text(
+                      tripName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE0F2F1),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Text(
+                        isArabic ? 'نشطة' : 'Active',
+                        style: const TextStyle(
+                          color: Color(0xFF00897B),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _NoExpensesInfoLine(
+                  isArabic: isArabic,
+                  icon: Icons.monetization_on_outlined,
+                  label: isArabic ? 'العملة الأساسية' : 'Base currency',
+                  trailing: baseCurrency,
+                  trailingColor: const Color(0xFF00897B),
+                ),
+                const SizedBox(height: 12),
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: onFixDates,
+                  child: _NoExpensesInfoLine(
+                    isArabic: isArabic,
+                    icon: Icons.calendar_month_outlined,
+                    label: datesMissing
+                        ? (isArabic
+                            ? 'التواريخ تحتاج تحديد'
+                            : 'Dates need attention')
+                        : (dateRangeText ?? ''),
+                    subtitle: datesMissing
+                        ? (isArabic
+                            ? 'حدد تاريخ البداية والنهاية'
+                            : 'Set start and end dates')
+                        : null,
+                    trailingIcon: Icons.chevron_right,
+                    labelColor: datesMissing
+                        ? const Color(0xFFF97316)
+                        : const Color(0xFF0F172A),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NoExpensesInfoLine extends StatelessWidget {
+  final bool isArabic;
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final String? trailing;
+  final IconData? trailingIcon;
+  final Color? labelColor;
+  final Color? trailingColor;
+
+  const _NoExpensesInfoLine({
+    required this.isArabic,
+    required this.icon,
+    required this.label,
+    this.subtitle,
+    this.trailing,
+    this.trailingIcon,
+    this.labelColor,
+    this.trailingColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Expanded(
+      child: Column(
+        crossAxisAlignment:
+            isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w800,
+              color: labelColor ?? const Color(0xFF0F172A),
+            ),
+          ),
+          if (subtitle != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              subtitle!,
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.blueGrey.shade400,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    return Row(
+      children: isArabic
+          ? [
+              if (trailingIcon != null)
+                Icon(trailingIcon, color: Colors.grey.shade400),
+              if (trailing != null)
+                Text(
+                  trailing!,
+                  style: TextStyle(
+                    color: trailingColor ?? const Color(0xFF0F172A),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+              const SizedBox(width: 10),
+              content,
+              const SizedBox(width: 10),
+              Icon(icon, size: 22, color: Colors.grey.shade700),
+            ]
+          : [
+              Icon(icon, size: 22, color: Colors.grey.shade700),
+              const SizedBox(width: 10),
+              content,
+              const SizedBox(width: 10),
+              if (trailing != null)
+                Text(
+                  trailing!,
+                  style: TextStyle(
+                    color: trailingColor ?? const Color(0xFF0F172A),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 15,
+                  ),
+                ),
+              if (trailingIcon != null)
+                Icon(trailingIcon, color: Colors.grey.shade400),
+            ],
+    );
+  }
+}
+
+class _NoExpensesCard extends StatefulWidget {
+  final bool isArabic;
+  final VoidCallback onAddExpense;
+  final VoidCallback onAddViaSms;
+  final VoidCallback? onDismissTip;
+
+  const _NoExpensesCard({
+    required this.isArabic,
+    required this.onAddExpense,
+    required this.onAddViaSms,
+    this.onDismissTip,
+  });
+
+  @override
+  State<_NoExpensesCard> createState() => _NoExpensesCardState();
+}
+
+class _NoExpensesCardState extends State<_NoExpensesCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _animController;
+  late final Animation<double> _fadeScale;
+
+  @override
+  void initState() {
+    super.initState();
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 550),
+    );
+    _fadeScale = CurvedAnimation(
+      parent: _animController,
+      curve: Curves.easeOutCubic,
+    );
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = widget.isArabic;
+    final l = AppLocalizations.of(context)!;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(22, 28, 22, 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.055),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          FadeTransition(
+            opacity: _fadeScale,
+            child: ScaleTransition(
+              scale: Tween<double>(begin: 0.88, end: 1.0).animate(_fadeScale),
+              child: Image.asset(
+                'assets/FirstExpense.png',
+                height: 170,
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l.noExpensesHeadline,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 25,
+              height: 1.25,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFF0F172A),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            l.noExpensesSubtitle,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              height: 1.45,
+              fontWeight: FontWeight.w500,
+              color: Colors.blueGrey.shade400,
+            ),
+          ),
+          const SizedBox(height: 24),
+          _AnimatedCta(
+            animController: _animController,
+            child: _GradientActionButton(
+              label: l.noExpensesAddFirst,
+              icon: Icons.auto_awesome,
+              onTap: widget.onAddExpense,
+            ),
+          ),
+          const SizedBox(height: 20),
+          _AnimatedCta(
+            animController: _animController,
+            child: _OutlineActionButton(
+              label: l.noExpensesAddViaSms,
+              icon: Icons.sms_outlined,
+              onTap: widget.onAddViaSms,
+            ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.07),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: isArabic
+                  ? [
+                      if (widget.onDismissTip != null)
+                        GestureDetector(
+                          onTap: widget.onDismissTip,
+                          child: Icon(Icons.close, color: Colors.grey.shade400, size: 16),
+                        ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              l.noExpensesTipLabel,
+                              style: const TextStyle(
+                                color: Color(0xFF7C3AED),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              l.noExpensesTipBody,
+                              textAlign: TextAlign.right,
+                              style: TextStyle(
+                                color: Colors.blueGrey.shade500,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12.5,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.lightbulb_outline,
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.7),
+                        size: 18,
+                      ),
+                    ]
+                  : [
+                      Icon(
+                        Icons.lightbulb_outline,
+                        color: const Color(0xFF7C3AED).withValues(alpha: 0.7),
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l.noExpensesTipLabel,
+                              style: const TextStyle(
+                                color: Color(0xFF7C3AED),
+                                fontWeight: FontWeight.w800,
+                                fontSize: 13,
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              l.noExpensesTipBody,
+                              style: TextStyle(
+                                color: Colors.blueGrey.shade500,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 12.5,
+                                height: 1.35,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (widget.onDismissTip != null)
+                        GestureDetector(
+                          onTap: widget.onDismissTip,
+                          child: Icon(Icons.close, color: Colors.grey.shade400, size: 16),
+                        ),
+                    ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnimatedCta extends StatelessWidget {
+  final AnimationController animController;
+  final Widget child;
+
+  const _AnimatedCta({required this.animController, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: Tween<double>(begin: 0.98, end: 1.0).animate(
+        CurvedAnimation(parent: animController, curve: Curves.easeOutCubic),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _GradientActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _GradientActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(22),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(22),
+        onTap: onTap,
+        child: Ink(
+          height: 58,
+          width: double.infinity,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(22),
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF2563EB),
+                Color(0xFF7C3AED),
+              ],
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.22),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
             ],
           ),
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.receipt_long_rounded,
-                size: 40,
-                color: colorScheme.primary.withValues(alpha: 0.8),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                l10n.tripDetailsEmptyExpensesTitle,
-                style: Theme.of(context).textTheme.titleLarge,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                l10n.tripDetailsEmptyExpensesMessage,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: onAddExpense,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: colorScheme.primary,
-                    foregroundColor: colorScheme.onPrimary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+          child: Center(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: Colors.white, size: 22),
+                const SizedBox(width: 10),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
                   ),
-                  icon: const Icon(Icons.add_rounded),
-                  label: Text(l10n.tripDetailsAddExpense),
                 ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: onAddViaSms,
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: colorScheme.primary,
-                    side: BorderSide(
-                      color: colorScheme.primary.withValues(alpha: 0.35),
-                    ),
-                  ),
-                  icon: const Icon(Icons.sms_outlined),
-                  label: Text(l10n.tripDetailsAddViaSms),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _OutlineActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _OutlineActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onTap,
+      icon: Icon(icon, color: const Color(0xFF7C3AED)),
+      label: Text(
+        label,
+        style: const TextStyle(
+          color: Color(0xFF7C3AED),
+          fontSize: 16,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      style: OutlinedButton.styleFrom(
+        minimumSize: const Size.fromHeight(54),
+        side: const BorderSide(color: Color(0xFF7C3AED), width: 1.2),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        backgroundColor: const Color(0xFFF7F2FF),
       ),
     );
   }

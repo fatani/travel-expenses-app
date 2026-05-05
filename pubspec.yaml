@@ -70,6 +70,7 @@ flutter:
 
   assets:
     - assets/travel.png
+    - assets/FirstExpense.png
     - assets/fonts/NotoSansArabic-Regular.ttf
 
   # To add assets to your application, add an assets section, like this:

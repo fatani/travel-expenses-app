@@ -24,7 +24,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
     }
   }
 
-  Future<void> createTrip({
+  Future<Trip> createTrip({
     required String name,
     required String destination,
     DateTime? startDate,
@@ -43,7 +43,17 @@ class TripsController extends AsyncNotifier<List<Trip>> {
       budgetCurrency: budgetCurrency,
     );
 
-    await _runMutation(() => ref.read(tripRepositoryProvider).createTrip(trip));
+    state = const AsyncLoading();
+
+    try {
+      final createdTrip = await ref.read(tripRepositoryProvider).createTrip(trip);
+      ref.invalidate(globalReportProvider);
+      state = AsyncData(await _loadTrips());
+      return createdTrip;
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
   }
 
   Future<void> updateTrip({

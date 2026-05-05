@@ -90,25 +90,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripFormCurrencyLabel => 'العملة الأساسية';
 
   @override
-  String get tripFormMoreDetails => 'تفاصيل إضافية';
-
-  @override
-  String get tripFormRequiredFieldsHint => 'أدخل اسم الرحلة، الوجهة، والعملة للمتابعة';
-
-  @override
   String get tripFormBudgetLabel => 'الميزانية (اختياري)';
 
   @override
   String get tripFormBudgetHint => '2500';
-
-  @override
-  String get tripFormBudgetCurrencyLabel => 'عملة الميزانية (اختياري)';
-
-  @override
-  String get tripFormBudgetCurrencyHint => 'SAR';
-
-  @override
-  String get tripFormBudgetCurrencyInvalid => 'أدخل رمز عملة مكوّنًا من 3 أحرف.';
 
   @override
   String get tripFormStartDateLabel => 'تاريخ البداية';
@@ -141,27 +126,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripDetailsAddExpense => 'إضافة مصروف';
-
-  @override
-  String get tripDetailsQuickAddMoreDetails => 'تفاصيل أكثر';
-
-  @override
-  String get tripDetailsQuickAddSave => 'حفظ';
-
-  @override
-  String get tripDetailsQuickAddRecentMerchants => 'التجار الأخيرون';
-
-  @override
-  String get tripDetailsQuickAddPaymentCash => 'نقداً';
-
-  @override
-  String get tripDetailsQuickAddPaymentCard => 'بطاقة';
-
-  @override
-  String get tripDetailsQuickAddPaymentWallet => 'محفظة';
-
-  @override
-  String get tripDetailsQuickAddExpenseAdded => 'تمت إضافة المصروف';
 
   @override
   String get tripDetailsEditTripTooltip => 'تعديل الرحلة';
@@ -263,6 +227,129 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripDetailsEmptyExpensesMessage => 'أضف أول مصروف لهذه الرحلة';
+
+  @override
+  String get noExpensesHeadline => 'أضف أول مصروف الآن';
+
+  @override
+  String get noExpensesSubtitle => 'أضف مصروفك الأول خلال ثواني';
+
+  @override
+  String get noExpensesAddFirst => 'أضف أول مصروف';
+
+  @override
+  String get noExpensesAddViaSms => 'إضافة من رسالة البنك';
+
+  @override
+  String get noExpensesTipLabel => 'نصيحة';
+
+  @override
+  String get noExpensesTipBody => 'بمجرد إضافة أول مصروف، ستفهم أين تذهب أموالك';
+
+  @override
+  String get tripDetailsQuickAddExpenseAdded => 'تم إضافة المصروف';
+
+  @override
+  String get tripDetailsQuickAddRecentMerchants => 'المحلات الأخيرة';
+
+  @override
+  String get tripDetailsQuickAddMoreDetails => 'تفاصيل إضافية';
+
+  @override
+  String get tripDetailsQuickAddSave => 'حفظ';
+
+  @override
+  String get tripDetailsQuickAddPaymentCash => 'نقدي';
+
+  @override
+  String get tripDetailsQuickAddPaymentWallet => 'محفظة';
+
+  @override
+  String get tripDetailsQuickAddPaymentCard => 'بطاقة';
+
+  @override
+  String get cardBankSNB => 'بنك الأهلي';
+
+  @override
+  String get cardBankAlRajhi => 'مصرف الراجحي';
+
+  @override
+  String get cardBankSAB => 'البنك السعودي للاستثمار';
+
+  @override
+  String get cardBankD360 => 'D360';
+
+  @override
+  String get cardBankBarq => 'برق';
+
+  @override
+  String get cardBankOther => 'أخرى';
+
+  @override
+  String get cardNetworkVisa => 'فيزا';
+
+  @override
+  String get cardNetworkMastercard => 'ماستركارد';
+
+  @override
+  String get cardNetworkMada => 'مدى';
+
+  @override
+  String get cardNetworkOther => 'أخرى';
+
+  @override
+  String get cardTierInfinite => 'إنفينيت';
+
+  @override
+  String get cardTierSignature => 'سيجنتشر';
+
+  @override
+  String get cardTierPlatinum => 'بلاتينيوم';
+
+  @override
+  String get cardTierClassic => 'كلاسيك';
+
+  @override
+  String get cardTierWorld => 'وورلد';
+
+  @override
+  String get cardTierWorldElite => 'وورلد إليت';
+
+  @override
+  String get cardTierOther => 'أخرى';
+
+  @override
+  String get cardFormEditTitle => 'تعديل البطاقة';
+
+  @override
+  String get cardFormAddTitle => 'إضافة بطاقة';
+
+  @override
+  String get cardFormBankLabel => 'البنك';
+
+  @override
+  String get cardFormCardNetworkLabel => 'شبكة البطاقة';
+
+  @override
+  String get cardFormCardTierLabel => 'فئة البطاقة';
+
+  @override
+  String get cardFormLast4Label => 'آخر 4 أرقام';
+
+  @override
+  String get cardFormLast4Hint => '1234';
+
+  @override
+  String get cardFormCardPreviewLabel => 'معاينة البطاقة';
+
+  @override
+  String get cardFormSaveEdit => 'حفظ التغييرات';
+
+  @override
+  String get cardFormSaveCreate => 'إضافة بطاقة';
+
+  @override
+  String get cardFormDuplicate => 'توجد بطاقة بهذه التفاصيل بالفعل.';
 
   @override
   String get expenseFormCreateTitle => 'مصروف جديد';
@@ -538,54 +625,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsTopCategory => 'أعلى فئة';
 
   @override
-  String get tripReportsBudgetTitle => 'حواجز الميزانية';
-
-  @override
-  String get tripReportsBudgetAmountLabel => 'الميزانية';
-
-  @override
-  String get tripReportsBudgetCurrentSpendLabel => 'الإنفاق الحالي';
-
-  @override
-  String get tripReportsBudgetUsageLabel => 'المستخدم';
-
-  @override
-  String get tripReportsBudgetCurrencyMismatch => 'الميزانية مضبوطة بعملة مختلفة، لذلك لا يمكن مقارنة الاستهلاك بشكل آمن.';
-
-  @override
-  String get tripReportsBudgetWarningNearLimit => 'استهلاك الميزانية اقترب من الحد. راجع قرارات الصرف القادمة بحذر.';
-
-  @override
-  String get tripReportsBudgetWarningForecast => 'وفق وتيرة الصرف الحالية، من المرجح أن تتجاوز هذه الرحلة الميزانية قبل نهايتها.';
-
-  @override
-  String get tripReportsBudgetWarningExceeded => 'الإنفاق الحالي تجاوز ميزانية الرحلة بالفعل.';
-
-  @override
   String get tripPredictionSectionTitle => 'التوقعات';
-
-  @override
-  String get tripPredictionCurrentSpendTitle => 'الإجمالي الحالي';
 
   @override
   String get tripPredictionBurnRateTitle => 'معدل الحرق الحالي';
 
   @override
   String get tripPredictionForecastTitle => 'التوقع الإجمالي حتى نهاية الرحلة';
-
-  @override
-  String get tripPredictionActionsTitle => 'إجراءات مقترحة';
-
-  @override
-  String get tripPredictionActionBurnRisk => 'معدل صرفك الحالي مرتفع، وقد يتضاعف إجمالي إنفاقك قبل نهاية الرحلة.';
-
-  @override
-  String get tripPredictionActionSpendSpike => 'إنفاقك يتسارع في نهاية الرحلة. حاول توزيع المصاريف بشكل متوازن لتجنب الضغط المالي.';
-
-  @override
-  String tripPredictionActionCategoryConcentration(Object category) {
-    return 'جزء كبير من إنفاقك على $category. راجع هذه الفئة — قد تكون فرصة لتقليل المصاريف.';
-  }
 
   @override
   String tripReportsExpenseCountLabel(int count) {
@@ -801,100 +847,4 @@ class AppLocalizationsAr extends AppLocalizations {
   String globalReportsInsightIntlDomesticRatio(int international, int domestic) {
     return 'الدولي $international% مقابل المحلي $domestic%';
   }
-
-  @override
-  String get tripStatusActive => 'نشطة';
-
-  @override
-  String get tripStatusUpcoming => 'قادمة';
-
-  @override
-  String get tripStatusPast => 'منتهية';
-
-  @override
-  String get cardFormAddTitle => 'إضافة بطاقة';
-
-  @override
-  String get cardFormEditTitle => 'تعديل البطاقة';
-
-  @override
-  String get cardFormBankLabel => 'البنك';
-
-  @override
-  String get cardFormCardNetworkLabel => 'شبكة البطاقة';
-
-  @override
-  String get cardFormCardTierLabel => 'فئة البطاقة';
-
-  @override
-  String get cardFormLast4Label => 'آخر 4 أرقام';
-
-  @override
-  String get cardFormLast4Hint => '1234';
-
-  @override
-  String get cardFormCardPreviewLabel => 'معاينة البطاقة';
-
-  @override
-  String get cardFormSaveCreate => 'حفظ البطاقة';
-
-  @override
-  String get cardFormSaveEdit => 'حفظ التغييرات';
-
-  @override
-  String get cardFormLast4Invalid => 'يجب أن تكون آخر 4 أرقام بالضبط 4 أرقام.';
-
-  @override
-  String get cardFormDuplicate => 'هذه البطاقة مضافة مسبقًا';
-
-  @override
-  String get cardBankSNB => 'الأهلي';
-
-  @override
-  String get cardBankAlRajhi => 'الراجحي';
-
-  @override
-  String get cardBankSAB => 'ساب';
-
-  @override
-  String get cardBankD360 => 'دال 360';
-
-  @override
-  String get cardBankBarq => 'برق';
-
-  @override
-  String get cardBankOther => 'أخرى';
-
-  @override
-  String get cardNetworkVisa => 'فيزا';
-
-  @override
-  String get cardNetworkMastercard => 'ماستركارد';
-
-  @override
-  String get cardNetworkMada => 'مدى';
-
-  @override
-  String get cardNetworkOther => 'أخرى';
-
-  @override
-  String get cardTierInfinite => 'إنفينيت';
-
-  @override
-  String get cardTierSignature => 'سيغنتشر';
-
-  @override
-  String get cardTierPlatinum => 'بلاتينيوم';
-
-  @override
-  String get cardTierClassic => 'كلاسيك';
-
-  @override
-  String get cardTierWorld => 'وورلد';
-
-  @override
-  String get cardTierWorldElite => 'وورلد إيليت';
-
-  @override
-  String get cardTierOther => 'أخرى';
 }

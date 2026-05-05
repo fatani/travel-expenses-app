@@ -151,9 +151,15 @@ class TripsListScreen extends ConsumerWidget {
   }
 
   Future<void> _openTripForm(BuildContext context, {Trip? trip}) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => TripFormScreen(trip: trip)),
+    final createdTrip = await Navigator.of(context).push<Trip?>(
+      MaterialPageRoute<Trip?>(builder: (_) => TripFormScreen(trip: trip)),
     );
+
+    if (!context.mounted || trip != null || createdTrip == null) {
+      return;
+    }
+
+    await _openTripDetails(context, createdTrip);
   }
 
   Future<void> _openTripDetails(BuildContext context, Trip trip) async {

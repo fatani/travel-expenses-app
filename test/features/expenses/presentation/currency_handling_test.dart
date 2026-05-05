@@ -255,7 +255,7 @@ void main() {
   );
 
   testWidgets(
-    'empty trip details state keeps trip summary fixed and does not scroll',
+    'empty trip details state renders premium CTAs',
     (tester) async {
       final repository = _FakeExpenseRepository(initialExpenses: const []);
 
@@ -270,16 +270,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final titleFinder = find.text(trip.name).first;
-      final emptyStateFinder = find.text('No expenses yet');
-      final initialPosition = tester.getTopLeft(titleFinder);
+      final emptyStateFinder = find.text('Add your first expense now');
 
       expect(emptyStateFinder, findsOneWidget);
-
-      await tester.drag(find.byType(Scaffold), const Offset(0, -300));
-      await tester.pumpAndSettle();
-
-      expect(tester.getTopLeft(titleFinder), equals(initialPosition));
+      expect(find.text('Add via Bank SMS'), findsOneWidget);
     },
   );
 
