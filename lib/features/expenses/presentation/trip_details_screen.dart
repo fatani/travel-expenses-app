@@ -1,10 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 import 'package:travel_expenses/l10n/l10n_extension.dart';
 
@@ -168,6 +170,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final result = await showModalBottomSheet<_QuickAddSheetResult>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       showDragHandle: true,
       useSafeArea: true,
       builder: (sheetContext) {
@@ -175,7 +178,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
           ),
-          child: _QuickAddExpenseSheet(
+          child: QuickAddExpenseSheet(
             trip: _trip,
             expenses: expenses,
           ),
@@ -1656,18 +1659,18 @@ class _QuickAddSheetResult {
   final _QuickAddDraftPayload? draft;
 }
 
-class _QuickAddExpenseSheet extends ConsumerStatefulWidget {
-  const _QuickAddExpenseSheet({required this.trip, required this.expenses});
+class QuickAddExpenseSheet extends ConsumerStatefulWidget {
+  const QuickAddExpenseSheet({super.key, required this.trip, required this.expenses});
 
   final Trip trip;
   final List<Expense> expenses;
 
   @override
-  ConsumerState<_QuickAddExpenseSheet> createState() =>
+  ConsumerState<QuickAddExpenseSheet> createState() =>
       _QuickAddExpenseSheetState();
 }
 
-class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
+class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   final TextEditingController _amountController = TextEditingController();
   final TextInputFormatter _amountFormatter = TextInputFormatter.withFunction((
     oldValue,
@@ -1682,13 +1685,16 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
     return isValid ? newValue : oldValue;
   });
 
-  late String _selectedCategory;
-  late String _selectedPayment;
-  late final List<_RecentMerchant> _recentMerchants;
-  String? _selectedMerchantTitle;
-  bool _didChangeCategory = false;
-  bool _didChangePayment = false;
+  String _selectedCategory = 'Other';
+  String? _animatingCategory;
   bool _showValidationError = false;
+  bool _userSelectedCategory = false;
+  bool _isPrefilledFromMemory = false;
+  Map<String, String> _amountCategoryMemory = {};
+
+  static const String _prefsLastAmountKey = 'last_amount';
+  static const String _prefsLastCategoryKey = 'last_category';
+  static const String _prefsAmountMemoryKey = 'amount_memory';
 
   static const List<String> _quickCategories = <String>[
     'Food',
@@ -1699,16 +1705,80 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
     'Other',
   ];
 
-  static const List<String> _quickPayments = <String>['Cash', 'Card', 'Wallet'];
-
   @override
   void initState() {
     super.initState();
+    _userSelectedCategory = false;
+    _loadPreferences();
+  }
 
-    final defaults = _deriveDefaults(widget.expenses);
-    _recentMerchants = _deriveRecentMerchants(widget.expenses);
-    _selectedCategory = defaults.category;
-    _selectedPayment = defaults.payment;
+  String _amountRangeKey(double amount) {
+    if (amount < 20) return '0-20';
+    if (amount < 80) return '20-80';
+    if (amount < 300) return '80-300';
+    return '300+';
+  }
+
+  void _applyCategorySuggestion(double amount) {
+    if (_userSelectedCategory) return;
+
+    // Priority 2: learned memory
+    final range = _amountRangeKey(amount);
+    if (_applyAdaptiveMemorySuggestion(range)) {
+      return;
+    }
+
+    // Priority 3: static fallback heuristic
+    _applyHeuristicSuggestion(amount);
+  }
+
+  bool _applyAdaptiveMemorySuggestion(String rangeKey) {
+    final rememberedCategory = _amountCategoryMemory[rangeKey];
+    if (rememberedCategory == null) {
+      return false;
+    }
+    _selectedCategory = rememberedCategory;
+    return true;
+  }
+
+  void _applyHeuristicSuggestion(double amount) {
+    if (amount < 20) {
+      _selectedCategory = 'Food';
+      return;
+    }
+    if (amount < 80) {
+      _selectedCategory = 'Transport';
+      return;
+    }
+    if (amount < 300) {
+      _selectedCategory = 'Shopping';
+      return;
+    }
+    _selectedCategory = 'Accommodation';
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastAmount = prefs.getDouble(_prefsLastAmountKey);
+    final lastCategory = prefs.getString(_prefsLastCategoryKey);
+    final memoryData = prefs.getString(_prefsAmountMemoryKey);
+    if (mounted) {
+      setState(() {
+        if (lastAmount != null) {
+          _amountController.text = lastAmount.toStringAsFixed(2);
+          _selectedCategory = lastCategory ?? 'Other';
+          _isPrefilledFromMemory = true;
+        } else {
+          _selectedCategory = lastCategory ?? 'Other';
+          _isPrefilledFromMemory = false;
+        }
+        if (memoryData != null) {
+          _amountCategoryMemory = Map<String, String>.from(
+            jsonDecode(memoryData) as Map,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -1721,214 +1791,210 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final sheetHeight = MediaQuery.sizeOf(context).height * 0.42;
+    final amountText = _amountController.text.trim();
+    final amount = double.tryParse(amountText);
+    final canSave = amount != null && amount > 0;
 
     final amountError = _showValidationError ? _validateAmount(l10n) : null;
-    final currencyCode = widget.trip.baseCurrency.trim().toUpperCase();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            l10n.tripDetailsAddExpense,
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            textDirection: TextDirection.ltr,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _amountController,
-                  autofocus: true,
-                  textDirection: TextDirection.ltr,
-                  textAlign: TextAlign.start,
-                  textInputAction: TextInputAction.done,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [_amountFormatter],
-                  onSubmitted: (_) => _save(),
-                  decoration: InputDecoration(
-                    labelText: l10n.expenseFormAmountLabel,
-                    hintText: l10n.expenseFormAmountHint,
-                    errorText: amountError,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Padding(
-                padding: const EdgeInsets.only(top: 18),
-                child: Text(
-                  currencyCode,
-                  textDirection: TextDirection.ltr,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            l10n.expenseFormCategoryLabel,
-            style: theme.textTheme.titleSmall,
-          ),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _quickCategories.map((category) {
-              final isSelected = _selectedCategory == category;
-              final selectedAlpha = _didChangeCategory ? 0.22 : 0.10;
-              final selectedBorderAlpha = _didChangeCategory ? 0.45 : 0.25;
-              return ChoiceChip(
-                showCheckmark: false,
-                label: Text(ExpenseOptionLabels.category(l10n, category)),
-                labelStyle: theme.textTheme.labelLarge?.copyWith(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurface,
-                ),
-                selectedColor: theme.colorScheme.primary.withValues(
-                  alpha: selectedAlpha,
-                ),
-                backgroundColor: theme.colorScheme.surface,
-                side: BorderSide(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withValues(
-                          alpha: selectedBorderAlpha,
-                        )
-                      : theme.colorScheme.outlineVariant,
-                ),
-                selected: isSelected,
-                onSelected: (_) {
-                  setState(() {
-                    if (_selectedCategory != category) {
-                      _didChangeCategory = true;
-                    }
-                    _selectedCategory = category;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          if (_recentMerchants.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Text(
-              l10n.tripDetailsQuickAddRecentMerchants,
-              style: theme.textTheme.titleSmall,
-            ),
-            const SizedBox(height: 6),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _recentMerchants.map((merchant) {
-                  final isSelected = _selectedMerchantTitle == merchant.title;
-                  return Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 8),
-                    child: ChoiceChip(
-                      showCheckmark: false,
-                      selected: isSelected,
-                      label: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 160),
-                        child: Text(
-                          merchant.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                        ),
-                      ),
-                      selectedColor: theme.colorScheme.primary.withValues(
-                        alpha: 0.12,
-                      ),
-                      backgroundColor: theme.colorScheme.surface,
-                      side: BorderSide(
-                        color: isSelected
-                            ? theme.colorScheme.primary.withValues(alpha: 0.35)
-                            : theme.colorScheme.outlineVariant,
-                      ),
-                      onSelected: (_) => _applyRecentMerchant(merchant),
-                    ),
-                  );
-                }).toList(),
-              ),
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Container(
+        height: sheetHeight,
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 24,
+              offset: const Offset(0, -8),
             ),
           ],
-          const SizedBox(height: 12),
-          Text(
-            l10n.expenseFormPaymentMethodLabel,
-            style: theme.textTheme.titleSmall,
-          ),
-          const SizedBox(height: 6),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _quickPayments.map((payment) {
-              final isSelected = _selectedPayment == payment;
-              final selectedAlpha = _didChangePayment ? 0.22 : 0.10;
-              final selectedBorderAlpha = _didChangePayment ? 0.45 : 0.25;
-              return ChoiceChip(
-                showCheckmark: false,
-                label: Text(_paymentLabel(l10n, payment)),
-                labelStyle: theme.textTheme.labelLarge?.copyWith(
-                  color: isSelected
-                      ? theme.colorScheme.primary
-                      : theme.colorScheme.onSurface,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 44,
+              height: 5,
+              decoration: BoxDecoration(
+                color: const Color(0xFFCBD5E1),
+                borderRadius: BorderRadius.circular(20),
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: _amountController,
+              autofocus: true,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.center,
+              cursorColor: const Color(0xFF0F172A),
+              textInputAction: TextInputAction.done,
+              inputFormatters: [_amountFormatter],
+              onSubmitted: (_) => _save(),
+              onChanged: (value) {
+                setState(() {
+                  _isPrefilledFromMemory = false;
+                  final amount = double.tryParse(value);
+                  if (amount != null) {
+                    _applyCategorySuggestion(amount);
+                  }
+                });
+              },
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w800,
+                color: _isPrefilledFromMemory
+                    ? const Color(0xFF64748B)
+                    : const Color(0xFF0F172A),
+              ),
+              decoration: InputDecoration(
+                hintText: _amountController.text.isEmpty ? '0.00' : '',
+                hintStyle: TextStyle(
+                  fontSize: 30,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.blueGrey.shade200,
                 ),
-                selectedColor: theme.colorScheme.primary.withValues(
-                  alpha: selectedAlpha,
-                ),
-                backgroundColor: theme.colorScheme.surface,
-                side: BorderSide(
-                  color: isSelected
-                      ? theme.colorScheme.primary.withValues(
-                          alpha: selectedBorderAlpha,
-                        )
-                      : theme.colorScheme.outlineVariant,
-                ),
-                selected: isSelected,
-                onSelected: (_) {
-                  setState(() {
-                    if (_selectedPayment != payment) {
-                      _didChangePayment = true;
-                    }
-                    _selectedPayment = payment;
-                  });
-                },
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(
-                    _QuickAddSheetResult.moreDetails(
-                      _QuickAddDraftPayload(
-                        amountText: _amountController.text,
-                        category: _selectedCategory,
-                        paymentMethod: _selectedPayment,
-                        currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
-                        spentAt: DateTime.now(),
+                errorText: amountError,
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: _quickCategories.map((category) {
+                final isSelected = _selectedCategory == category;
+                final isAnimating = _animatingCategory == category;
+                final selectedColor = _isPrefilledFromMemory && !_userSelectedCategory
+                    ? const Color(0xFFA78BFA)
+                    : const Color(0xFF7C3AED);
+                return AnimatedScale(
+                  scale: isAnimating ? 0.95 : 1.0,
+                  duration: const Duration(milliseconds: 120),
+                  curve: Curves.easeOut,
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _isPrefilledFromMemory = false;
+                        _userSelectedCategory = true;
+                        _selectedCategory = category;
+                        _animatingCategory = category;
+                      });
+                      Future<void>.delayed(const Duration(milliseconds: 120), () {
+                        if (!mounted) {
+                          return;
+                        }
+                        setState(() {
+                          if (_animatingCategory == category) {
+                            _animatingCategory = null;
+                          }
+                        });
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 160),
+                      curve: Curves.easeOut,
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? selectedColor
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: selectedColor.withValues(alpha: 0.25),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                            : const [],
+                      ),
+                      child: Text(
+                        ExpenseOptionLabels.category(l10n, category),
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: isSelected ? Colors.white : Colors.black87,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
-                  );
-                },
-                child: Text(l10n.tripDetailsQuickAddMoreDetails),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _save,
-                  child: Text(l10n.tripDetailsQuickAddSave),
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: Opacity(
+                opacity: canSave ? 1.0 : 0.65,
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(18),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: canSave ? _save : null,
+                    child: Ink(
+                      height: 58,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                        ),
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.auto_awesome, color: Colors.white, size: 19),
+                            const SizedBox(width: 8),
+                            Text(
+                              l10n.tripDetailsQuickAddSave,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-            ],
-          ),
-          SizedBox(height: MediaQuery.of(context).padding.bottom > 0 ? 2 : 0),
-        ],
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () {
+                // Save category memory for next time
+                _savePreferences();
+
+                Navigator.of(context).pop(
+                  _QuickAddSheetResult.moreDetails(
+                    _QuickAddDraftPayload(
+                      amountText: _amountController.text,
+                      category: _selectedCategory,
+                      paymentMethod: _defaultQuickPayment.method,
+                      currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
+                      spentAt: DateTime.now(),
+                    ),
+                  ),
+                );
+              },
+              child: Text(l10n.tripDetailsQuickAddMoreDetails),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1962,197 +2028,39 @@ class _QuickAddExpenseSheetState extends ConsumerState<_QuickAddExpenseSheet> {
 
     final amount = double.parse(_amountController.text.trim());
     final now = DateTime.now();
-    final paymentData = _mapQuickPaymentToSavedFields(_selectedPayment);
-    final merchantTitle = _selectedMerchantTitle?.trim();
-    final title = merchantTitle == null || merchantTitle.isEmpty
-      ? _selectedCategory
-      : merchantTitle;
+
+    // Save category memory for next time
+    _savePreferences(amount);
 
     Navigator.of(context).pop(
       _QuickAddSheetResult.submit(
         _QuickAddSubmitPayload(
-          title: title,
+          title: _selectedCategory,
           amount: amount,
           currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
           category: _selectedCategory,
           spentAt: now,
-          payment: paymentData,
+          payment: _defaultQuickPayment,
         ),
       ),
     );
   }
 
-  String _paymentLabel(AppLocalizations l10n, String value) {
-    switch (value) {
-      case 'Cash':
-        return l10n.tripDetailsQuickAddPaymentCash;
-      case 'Wallet':
-        return l10n.tripDetailsQuickAddPaymentWallet;
-      default:
-        return l10n.tripDetailsQuickAddPaymentCard;
+  Future<void> _savePreferences([double? amount]) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_prefsLastCategoryKey, _selectedCategory);
+    if (amount != null) {
+      await prefs.setDouble(_prefsLastAmountKey, amount);
+      final range = _amountRangeKey(amount);
+      _amountCategoryMemory[range] = _selectedCategory;
+      await prefs.setString(_prefsAmountMemoryKey, jsonEncode(_amountCategoryMemory));
     }
   }
-
-  _QuickAddDefaultCategoryPayment _deriveDefaults(List<Expense> expenses) {
-    if (expenses.isEmpty) {
-      return const _QuickAddDefaultCategoryPayment(
-        category: 'Food',
-        payment: 'Card',
-      );
-    }
-
-    final latest = expenses.first;
-    final category = _quickCategories.contains(latest.category)
-        ? latest.category!
-        : 'Food';
-
-    final payment = _inferQuickPayment(latest);
-
-    return _QuickAddDefaultCategoryPayment(
-      category: category,
-      payment: payment,
-    );
-  }
-
-  List<_RecentMerchant> _deriveRecentMerchants(
-    List<Expense> expenses, {
-    int limit = 8,
-  }) {
-    final sortedExpenses = [...expenses]..sort((a, b) {
-      final spentAtComparison = b.spentAt.compareTo(a.spentAt);
-      if (spentAtComparison != 0) {
-        return spentAtComparison;
-      }
-      return b.createdAt.compareTo(a.createdAt);
-    });
-
-    final seen = <String>{};
-    final recentMerchants = <_RecentMerchant>[];
-
-    for (final expense in sortedExpenses) {
-      final title = expense.title.trim();
-      if (!_isMerchantLikeTitle(title)) {
-        continue;
-      }
-
-      final key = title.toLowerCase();
-      if (!seen.add(key)) {
-        continue;
-      }
-
-      final category = expense.category?.trim();
-      recentMerchants.add(
-        _RecentMerchant(
-          title: title,
-          category: category == null || category.isEmpty ? null : category,
-        ),
-      );
-
-      if (recentMerchants.length >= limit) {
-        break;
-      }
-    }
-
-    return recentMerchants;
-  }
-
-  bool _isMerchantLikeTitle(String title) {
-    final normalized = title.trim().toLowerCase();
-    if (normalized.length < 3) {
-      return false;
-    }
-
-    final categoryNames = _quickCategories
-        .map((category) => category.toLowerCase())
-        .toSet();
-    if (categoryNames.contains(normalized)) {
-      return false;
-    }
-
-    final cleaned = normalized
-        .replaceAll(RegExp(r'[^a-z0-9 ]'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    if (cleaned.length < 3) {
-      return false;
-    }
-
-    const genericTitles = <String>{
-      'expense',
-      'expenses',
-      'purchase',
-      'payment',
-      'transaction',
-      'charge',
-      'item',
-      'misc',
-      'other',
-      'general',
-      'unknown',
-      'cost',
-    };
-
-    return !genericTitles.contains(cleaned);
-  }
-
-  void _applyRecentMerchant(_RecentMerchant merchant) {
-    setState(() {
-      _selectedMerchantTitle = merchant.title;
-      final merchantCategory = merchant.category;
-      if (
-          merchantCategory != null &&
-          _quickCategories.contains(merchantCategory)) {
-        if (_selectedCategory != merchantCategory) {
-          _didChangeCategory = true;
-        }
-        _selectedCategory = merchantCategory;
-      }
-    });
-  }
-
-  String _inferQuickPayment(Expense latest) {
-    final method = latest.paymentMethod;
-    if (method == 'Cash') {
-      return 'Cash';
-    }
-    if (method == 'Mobile Wallet') {
-      return 'Wallet';
-    }
-    return 'Card';
-  }
-
-  _QuickAddPaymentData _mapQuickPaymentToSavedFields(String payment) {
-    switch (payment) {
-      case 'Cash':
-        return const _QuickAddPaymentData(
-          method: 'Cash',
-          network: 'Other',
-          channel: 'Other',
-        );
-      case 'Wallet':
-        return const _QuickAddPaymentData(
-          method: 'Mobile Wallet',
-          network: 'Other',
-          channel: 'Other',
-        );
-      default:
-        return const _QuickAddPaymentData(
-          method: 'Credit Card',
-          network: 'Visa',
-          channel: 'POS Purchase',
-        );
-    }
-  }
-}
-
-class _QuickAddDefaultCategoryPayment {
-  const _QuickAddDefaultCategoryPayment({
-    required this.category,
-    required this.payment,
-  });
-
-  final String category;
-  final String payment;
+  static const _QuickAddPaymentData _defaultQuickPayment = _QuickAddPaymentData(
+    method: 'Credit Card',
+    network: 'Visa',
+    channel: 'POS Purchase',
+  );
 }
 
 class _QuickAddPaymentData {
@@ -2165,13 +2073,6 @@ class _QuickAddPaymentData {
   final String method;
   final String network;
   final String channel;
-}
-
-class _RecentMerchant {
-  const _RecentMerchant({required this.title, required this.category});
-
-  final String title;
-  final String? category;
 }
 
 class _QuickAddSubmitPayload {
