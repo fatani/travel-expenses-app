@@ -19,156 +19,167 @@ class TripsEmptyStateScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F8FB),
         body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 20),
-
-                      /// Image
-                      Opacity(
-                        opacity: 0.72,
-                        child: Image.asset(
-                          'assets/travel.png',
-                          height: 140,
-                        ),
-                      ),
-
-                      const SizedBox(height: 24),
-
-                      /// Title
-                      Text(
-                        data.title,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF0F172A),
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      /// Description
-                      Text(
-                        data.description,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          color: Colors.grey,
-                        ),
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      /// Speed
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            data.speed,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Colors.grey,
+          child: PrimaryScrollController.none(
+            child: Column(
+              mainAxisSize: MainAxisSize.max,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Align(
+                  alignment: Alignment.topCenter,
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                            /// Image
+                            Opacity(
+                              opacity: 0.72,
+                              child: Image.asset(
+                                'assets/travel.png',
+                                height: 140,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          const Icon(Icons.timer_outlined, size: 18, color: Colors.grey),
-                        ],
-                      ),
 
-                      const SizedBox(height: 10),
+                            const SizedBox(height: 16),
 
-                      /// Trust
-                      Text(
-                        data.trust,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
+                            /// Title
+                            Text(
+                              data.title,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
 
-                      const SizedBox(height: 28),
+                            const SizedBox(height: 8),
 
-                      _BenefitItem(icon: Icons.location_on_outlined, text: data.b1),
-                      _BenefitItem(icon: Icons.attach_money, text: data.b2),
-                      _BenefitItem(icon: Icons.bar_chart, text: data.b3),
+                            /// Description
+                            Text(
+                              data.description,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                color: Colors.grey,
+                              ),
+                            ),
 
-                      const SizedBox(height: 28),
+                            const SizedBox(height: 12),
 
-                      Opacity(
-                        opacity: 0.5,
-                        child: Column(
-                          children: [
-                            _BenefitItem(icon: Icons.public, text: data.s1),
-                            _BenefitItem(icon: Icons.category, text: data.s2),
-                            _BenefitItem(icon: Icons.credit_card, text: data.s3),
+                            /// Speed
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  data.speed,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(Icons.timer_outlined, size: 18, color: Colors.grey),
+                              ],
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            /// Trust
+                            Text(
+                              data.trust,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey,
+                              ),
+                            ),
+
+                            const SizedBox(height: 20),
+
+                            _BenefitItem(icon: Icons.location_on_outlined, text: data.b1),
+                            _BenefitItem(icon: Icons.attach_money, text: data.b2),
+                            _BenefitItem(icon: Icons.bar_chart, text: data.b3),
+
+                            const SizedBox(height: 20),
+
+                            Opacity(
+                              opacity: 0.5,
+                              child: Column(
+                                children: [
+                                  _BenefitItem(icon: Icons.public, text: data.s1),
+                                  _BenefitItem(icon: Icons.category, text: data.s2),
+                                  _BenefitItem(icon: Icons.credit_card, text: data.s3),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// Urgency
+                            RichText(
+                              textAlign: TextAlign.center,
+                              text: TextSpan(
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF0F172A),
+                                ),
+                                children: [
+                                  TextSpan(text: data.urgency1),
+                                  TextSpan(
+                                    text: data.urgencyHighlight,
+                                    style: const TextStyle(color: Colors.red),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 30),
                           ],
                         ),
                       ),
+                    ),
 
-                      const SizedBox(height: 24),
-
-                      /// Urgency
-                      RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF0F172A),
-                          ),
-                          children: [
-                            TextSpan(text: data.urgency1),
-                            TextSpan(
-                              text: data.urgencyHighlight,
-                              style: const TextStyle(color: Colors.red),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-                    ],
-                  ),
-                ),
-              ),
-
-              /// CTA
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(18),
-                  child: InkWell(
+                /// CTA
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  child: Material(
+                    color: Colors.transparent,
                     borderRadius: BorderRadius.circular(18),
-                    onTap: onStartTrip,
-                    child: Ink(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(18),
+                      onTap: onStartTrip,
+                      child: Ink(
+                        height: 56,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                          ),
                         ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          data.cta,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.bold,
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: Text(
+                              data.cta,
+                              maxLines: 2,
+                              textAlign: TextAlign.center,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
