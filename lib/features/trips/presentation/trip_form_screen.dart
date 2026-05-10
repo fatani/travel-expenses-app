@@ -248,93 +248,99 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             final mediaQuery = MediaQuery.of(context);
-            final sheetHeight = mediaQuery.size.height * 0.78;
+            final sheetHeight = mediaQuery.size.height * 0.72;
 
-            return AnimatedPadding(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
-              child: Align(
-                alignment: Alignment.bottomCenter,
-                child: Container(
-                  width: mediaQuery.size.width,
-                  height: sheetHeight,
-                  clipBehavior: Clip.antiAlias,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(24)),
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 10),
-                      Container(
-                        width: 44,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE2E8F0),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
+            return Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: mediaQuery.size.width,
+                height: sheetHeight,
+                clipBehavior: Clip.antiAlias,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+                child: Column(
+                  children: [
+                    /// Drag Handle
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 44,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(999),
                       ),
-                      const SizedBox(height: 12),
-                      Expanded(
+                    ),
+                    const SizedBox(height: 12),
+
+                    /// Scrollable Content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        padding: EdgeInsets.only(
+                          bottom: mediaQuery.viewInsets.bottom + 8,
+                        ),
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                           child: _buildAdditionalDetails(l10n),
                         ),
                       ),
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.fromLTRB(
-                          20,
-                          12,
-                          20,
-                          20 + mediaQuery.padding.bottom,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF0F172A)
-                                  .withValues(alpha: 0.06),
-                              blurRadius: 14,
-                              offset: const Offset(0, -4),
-                            ),
-                          ],
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
+                    ),
+
+                    /// Save Button (Fixed at bottom)
+                    Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.fromLTRB(
+                        20,
+                        12,
+                        20,
+                        20 + mediaQuery.padding.bottom,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF0F172A)
+                                .withValues(alpha: 0.06),
+                            blurRadius: 14,
+                            offset: const Offset(0, -4),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        borderRadius: BorderRadius.circular(20),
+                        child: InkWell(
                           borderRadius: BorderRadius.circular(20),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () => Navigator.of(sheetContext).pop(),
-                            child: Container(
-                              width: double.infinity,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0xFF2563EB),
-                                    Color(0xFF7C3AED),
-                                  ],
-                                ),
+                          onTap: () => Navigator.of(sheetContext).pop(),
+                          child: Container(
+                            width: double.infinity,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0xFF2563EB),
+                                  Color(0xFF7C3AED),
+                                ],
                               ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                l10n.tripFormSaveDetails,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                ),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              l10n.tripFormSaveDetails,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             );
