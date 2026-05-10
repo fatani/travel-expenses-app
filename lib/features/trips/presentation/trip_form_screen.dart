@@ -14,6 +14,25 @@ String getDefaultTripName(bool isArabic) {
   return isArabic ? 'رحلتي الجديدة' : 'My new trip';
 }
 
+const List<String> _kSupportedCurrencies = [
+  'SAR - Saudi Riyal',
+  'USD - US Dollar',
+  'EUR - Euro',
+  'GBP - British Pound',
+  'AED - UAE Dirham',
+  'KWD - Kuwaiti Dinar',
+  'QAR - Qatari Riyal',
+  'BHD - Bahraini Dinar',
+  'OMR - Omani Rial',
+  'TRY - Turkish Lira',
+  'CNY - Chinese Yuan',
+  'JPY - Japanese Yen',
+  'THB - Thai Baht',
+  'VND - Vietnamese Dong',
+  'IDR - Indonesian Rupiah',
+  'MYR - Malaysian Ringgit',
+];
+
 class TripFormScreen extends ConsumerStatefulWidget {
   const TripFormScreen({super.key, this.trip});
 
@@ -40,7 +59,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
   DateTime? _startDate;
   DateTime? _endDate;
-  bool _didSeedDefaults = false;
+  bool _didInitDependencies = false;
+  String? _lastLocaleTag;
+  bool _isDatePickerOpen = false;
 
   @override
   void initState() {
@@ -64,7 +85,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
     _startDate = trip?.startDate;
     _endDate = trip?.endDate;
-    _syncDateFields();
   }
 
   @override
@@ -83,12 +103,23 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_didSeedDefaults || widget.isEditMode) {
+    final locale = Localizations.localeOf(context);
+    final localeTag = locale.toLanguageTag();
+
+    if (_lastLocaleTag != localeTag) {
+      _lastLocaleTag = localeTag;
+      _syncDateFields();
+    }
+
+    if (_didInitDependencies) {
+      return;
+    }
+    _didInitDependencies = true;
+
+    if (widget.isEditMode) {
       return;
     }
 
-    _didSeedDefaults = true;
-    final locale = Localizations.localeOf(context);
     final isArabic = locale.languageCode.toLowerCase() == 'ar';
 
     if (_currencyController.text.trim().isEmpty) {
@@ -138,6 +169,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final l10n = AppLocalizations.of(context)!;
     final textDirection = isArabic ? TextDirection.rtl : TextDirection.ltr;
     final canSave = !_hasInvalidDateRange &&
+        !_isDatePickerOpen &&
         !ref.watch(tripsControllerProvider).isLoading;
 
     return Directionality(
@@ -204,7 +236,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                                       ? Alignment.centerRight
                                       : Alignment.centerLeft,
                                   child: Text(
-                                    l10n.tripFormEndDateAfterStart,
+                                    _dateRangeErrorText,
                                     style: const TextStyle(
                                       color: Colors.red,
                                       fontWeight: FontWeight.w600,
@@ -270,19 +302,14 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           Divider(height: 20, color: dividerColor),
           TextFormField(
             controller: _currencyController,
-            textInputAction: TextInputAction.next,
-            textCapitalization: TextCapitalization.characters,
+            readOnly: true,
             textDirection: TextDirection.ltr,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp('[a-zA-Z -]')),
-              LengthLimitingTextInputFormatter(20),
-              _UpperCaseTextFormatter(),
-            ],
             decoration: _secondaryDetailsDecoration(
               labelText: l10n.tripFormCurrencyLabel,
               hintText: 'USD - US Dollar',
               suffixIcon: const Icon(Icons.keyboard_arrow_down),
             ),
+            onTap: () => _showCurrencyPicker(context),
           ),
           Divider(height: 20, color: dividerColor),
           TextFormField(
@@ -366,6 +393,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     AppLocalizations l10n, {
     required FocusNode budgetFocusNode,
     required FocusNode notesFocusNode,
+    Future<void> Function(bool isStartDate)? onPickDate,
   }) {
     final dividerColor = Theme.of(
       context,
@@ -395,19 +423,14 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           Divider(height: 20, color: dividerColor),
           TextFormField(
             controller: _currencyController,
-            textInputAction: TextInputAction.next,
-            textCapitalization: TextCapitalization.characters,
+            readOnly: true,
             textDirection: TextDirection.ltr,
-            inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp('[a-zA-Z -]')),
-              LengthLimitingTextInputFormatter(20),
-              _UpperCaseTextFormatter(),
-            ],
             decoration: _secondaryDetailsDecoration(
               labelText: l10n.tripFormCurrencyLabel,
               hintText: 'USD - US Dollar',
               suffixIcon: const Icon(Icons.keyboard_arrow_down),
             ),
+            onTap: () => _showCurrencyPicker(context),
           ),
           Divider(height: 20, color: dividerColor),
           TextFormField(
@@ -417,7 +440,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               labelText: l10n.tripFormStartDateLabel,
               suffixIcon: const Icon(Icons.calendar_today_rounded),
             ),
-            onTap: () => _selectDate(isStartDate: true),
+            onTap: () => onPickDate?.call(true) ?? _selectDate(isStartDate: true),
             validator: _validateStartDate,
           ),
           Divider(height: 20, color: dividerColor),
@@ -428,7 +451,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               labelText: l10n.tripFormEndDateLabel,
               suffixIcon: const Icon(Icons.calendar_today_rounded),
             ),
-            onTap: () => _selectDate(isStartDate: false),
+            onTap:
+                () => onPickDate?.call(false) ?? _selectDate(isStartDate: false),
             validator: _validateEndDate,
           ),
           Divider(height: 20, color: dividerColor),
@@ -584,10 +608,36 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                             l10n,
                             budgetFocusNode: budgetFocusNode,
                             notesFocusNode: notesFocusNode,
+                            onPickDate: (isStartDate) async {
+                              await _selectDate(
+                                isStartDate: isStartDate,
+                                onUiRefresh: () {
+                                  setModalState(() {});
+                                },
+                              );
+                            },
                           ),
                         ),
                       ),
                     ),
+
+                    if (_hasInvalidDateRange)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                        child: Align(
+                          alignment: _isCurrentLocaleArabic
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Text(
+                            _dateRangeErrorText,
+                            style: const TextStyle(
+                              color: Color(0xFFDC2626),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
 
                     /// Save Button (Fixed at bottom)
                     Container(
@@ -612,28 +662,44 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                       child: Material(
                         color: Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () => Navigator.of(sheetContext).pop(),
-                          child: Container(
-                            width: double.infinity,
-                            height: 56,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFF2563EB),
-                                  Color(0xFF7C3AED),
-                                ],
+                        child: Opacity(
+                          opacity:
+                              (_hasInvalidDateRange || _isDatePickerOpen)
+                              ? 0.55
+                              : 1,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: (_hasInvalidDateRange || _isDatePickerOpen)
+                                ? null
+                                : () => Navigator.of(sheetContext).pop(),
+                            child: Container(
+                              width: double.infinity,
+                              height: 56,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                gradient: (_hasInvalidDateRange ||
+                                        _isDatePickerOpen)
+                                    ? const LinearGradient(
+                                        colors: [
+                                          Color(0xFF94A3B8),
+                                          Color(0xFF64748B),
+                                        ],
+                                      )
+                                    : const LinearGradient(
+                                        colors: [
+                                          Color(0xFF2563EB),
+                                          Color(0xFF7C3AED),
+                                        ],
+                                      ),
                               ),
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              l10n.tripFormSaveDetails,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
+                              alignment: Alignment.center,
+                              child: Text(
+                                l10n.tripFormSaveDetails,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                           ),
@@ -703,7 +769,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     if (_startDate != null &&
         _endDate != null &&
         _startDate!.isAfter(_endDate!)) {
-      return AppLocalizations.of(context)!.tripFormStartDateBeforeEnd;
+      return _dateRangeErrorText;
     }
     return null;
   }
@@ -712,35 +778,117 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     if (_startDate != null &&
         _endDate != null &&
         _startDate!.isAfter(_endDate!)) {
-      return AppLocalizations.of(context)!.tripFormEndDateAfterStart;
+      return _dateRangeErrorText;
     }
     return null;
   }
 
-  Future<void> _selectDate({required bool isStartDate}) async {
+  Future<void> _showCurrencyPicker(BuildContext context) async {
+    final selected = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CurrencyPickerSheet(
+        currentValue: _currencyController.text,
+      ),
+    );
+    if (selected != null && mounted) {
+      setState(() {
+        _currencyController.text = selected;
+      });
+    }
+  }
+
+  Future<void> _selectDate({
+    required bool isStartDate,
+    VoidCallback? onUiRefresh,
+  }) async {
     final initialDate = isStartDate
         ? (_startDate ?? _endDate ?? DateTime.now())
         : (_endDate ?? _startDate ?? DateTime.now());
+    final isArabic = _isCurrentLocaleArabic;
 
-    final selectedDate = await showDatePicker(
-      context: context,
-      initialDate: DateUtils.dateOnly(initialDate),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
-    );
+    setState(() {
+      _isDatePickerOpen = true;
+    });
+    onUiRefresh?.call();
+
+    DateTime? selectedDate;
+    try {
+      selectedDate = await showDatePicker(
+        context: context,
+        initialDate: DateUtils.dateOnly(initialDate),
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+        useRootNavigator: true,
+        barrierColor: const Color(0x99000000),
+        builder: (context, child) {
+          final theme = Theme.of(context);
+
+          return Theme(
+            data: theme.copyWith(
+              colorScheme: theme.colorScheme.copyWith(
+                primary: const Color(0xFF7C3AED),
+                onPrimary: Colors.white,
+                onSurface: const Color(0xFF0F172A),
+                surface: Colors.white,
+              ),
+              dialogTheme: theme.dialogTheme.copyWith(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+              ),
+              datePickerTheme: theme.datePickerTheme.copyWith(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                headerBackgroundColor: const Color(0xFF7C3AED),
+                headerForegroundColor: Colors.white,
+                confirmButtonStyle: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF7C3AED),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                ),
+                cancelButtonStyle: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF64748B),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+              textButtonTheme: TextButtonThemeData(
+                style: TextButton.styleFrom(
+                  textStyle: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+            child: Directionality(
+              textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+              child: child ?? const SizedBox.shrink(),
+            ),
+          );
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isDatePickerOpen = false;
+        });
+        onUiRefresh?.call();
+      }
+    }
 
     if (selectedDate == null) {
       return;
     }
+    final chosenDate = selectedDate;
 
     setState(() {
       if (isStartDate) {
-        _startDate = DateUtils.dateOnly(selectedDate);
+        _startDate = DateUtils.dateOnly(chosenDate);
       } else {
-        _endDate = DateUtils.dateOnly(selectedDate);
+        _endDate = DateUtils.dateOnly(chosenDate);
       }
       _syncDateFields();
     });
+    onUiRefresh?.call();
 
     _formKey.currentState?.validate();
   }
@@ -827,11 +975,25 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   void _syncDateFields() {
-    final formatter = DateFormat('dd MMM yyyy', 'en');
     _startDateController.text =
-        _startDate == null ? '' : formatter.format(_startDate!);
-    _endDateController.text =
-        _endDate == null ? '' : formatter.format(_endDate!);
+        _startDate == null ? '' : _formatDate(_startDate!);
+    _endDateController.text = _endDate == null ? '' : _formatDate(_endDate!);
+  }
+
+  bool get _isCurrentLocaleArabic {
+    return Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+  }
+
+  String get _dateRangeErrorText {
+    return _isCurrentLocaleArabic
+        ? 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية'
+        : 'End date must be after start date';
+  }
+
+  String _formatDate(DateTime date) {
+    final localeCode = _isCurrentLocaleArabic ? 'ar' : 'en';
+    final pattern = _isCurrentLocaleArabic ? 'd MMMM y' : 'd MMM y';
+    return DateFormat(pattern, localeCode).format(date);
   }
 
   String _extractCurrencyCode(String value) {
@@ -878,6 +1040,145 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     }
 
     return 'USD';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Currency Picker Sheet
+// ---------------------------------------------------------------------------
+
+class _CurrencyPickerSheet extends StatefulWidget {
+  const _CurrencyPickerSheet({required this.currentValue});
+
+  final String currentValue;
+
+  @override
+  State<_CurrencyPickerSheet> createState() => _CurrencyPickerSheetState();
+}
+
+class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
+  final _searchController = TextEditingController();
+  List<String> _filtered = _kSupportedCurrencies;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final query = _searchController.text.trim().toLowerCase();
+    setState(() {
+      _filtered = query.isEmpty
+          ? _kSupportedCurrencies
+          : _kSupportedCurrencies
+              .where((c) => c.toLowerCase().contains(query))
+              .toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearch);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  bool _isCurrentlySelected(String currency) {
+    final code = currency.split(' - ').first;
+    final value = widget.currentValue.trim().toUpperCase();
+    return value == currency.toUpperCase() || value == code;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+
+    return Container(
+      height: mediaQuery.size.height * 0.65 + mediaQuery.viewInsets.bottom,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
+        child: Column(
+          children: [
+            // Drag handle
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            // Search field
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: TextField(
+                controller: _searchController,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                textDirection: TextDirection.ltr,
+                decoration: InputDecoration(
+                  hintText: 'Search currency...',
+                  prefixIcon: const Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                ),
+              ),
+            ),
+            // Currency list
+            Expanded(
+              child: ListView.builder(
+                itemCount: _filtered.length,
+                itemBuilder: (context, index) {
+                  final currency = _filtered[index];
+                  final parts = currency.split(' - ');
+                  final code = parts.first;
+                  final name = parts.length > 1 ? parts.last : currency;
+                  final selected = _isCurrentlySelected(currency);
+
+                  return ListTile(
+                    leading: Container(
+                      width: 48,
+                      alignment: Alignment.center,
+                      child: Text(
+                        code,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                    title: Text(name),
+                    trailing: selected
+                        ? Icon(
+                            Icons.check_circle,
+                            color: Theme.of(context).colorScheme.primary,
+                          )
+                        : null,
+                    selected: selected,
+                    selectedTileColor: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.08),
+                    onTap: () => Navigator.of(context).pop(currency),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

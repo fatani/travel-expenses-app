@@ -1690,6 +1690,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   bool _showValidationError = false;
   bool _userSelectedCategory = false;
   bool _isPrefilledFromMemory = false;
+  double? _lastAmountSuggestion;
   Map<String, String> _amountCategoryMemory = {};
 
   static const String _prefsLastAmountKey = 'last_amount';
@@ -1765,10 +1766,11 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     if (mounted) {
       setState(() {
         if (lastAmount != null) {
-          _amountController.text = lastAmount.toStringAsFixed(2);
+          _lastAmountSuggestion = lastAmount;
           _selectedCategory = lastCategory ?? 'Other';
           _isPrefilledFromMemory = true;
         } else {
+          _lastAmountSuggestion = null;
           _selectedCategory = lastCategory ?? 'Other';
           _isPrefilledFromMemory = false;
         }
@@ -1795,6 +1797,9 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     final amountText = _amountController.text.trim();
     final amount = double.tryParse(amountText);
     final canSave = amount != null && amount > 0;
+    final amountHint = _lastAmountSuggestion != null
+      ? _lastAmountSuggestion!.toStringAsFixed(2)
+      : '0.00';
 
     final amountError = _showValidationError ? _validateAmount(l10n) : null;
 
@@ -1854,7 +1859,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                     : const Color(0xFF0F172A),
               ),
               decoration: InputDecoration(
-                hintText: _amountController.text.isEmpty ? '0.00' : '',
+                hintText: amountHint,
                 hintStyle: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
