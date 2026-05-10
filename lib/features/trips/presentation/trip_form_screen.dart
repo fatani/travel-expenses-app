@@ -143,7 +143,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     return Directionality(
       textDirection: textDirection,
       child: Scaffold(
-        resizeToAvoidBottomInset: true,
+        resizeToAvoidBottomInset: false,
         backgroundColor: const Color(0xFFF8FAFF),
         body: SafeArea(
           child: Stack(
@@ -912,177 +912,175 @@ class CreateTripVisualScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textDirection = isArabic ? TextDirection.rtl : TextDirection.ltr;
-    final mediaQuery = MediaQuery.of(context);
+    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
     return Directionality(
       textDirection: textDirection,
       child: Scaffold(
-        resizeToAvoidBottomInset: true,
+        resizeToAvoidBottomInset: false,
         backgroundColor: const Color(0xFFF8FAFF),
         body: SafeArea(
           child: PrimaryScrollController.none(
             child: Stack(
               children: [
                 const Positioned.fill(child: _SoftBackground()),
-                AnimatedPadding(
-                  duration: const Duration(milliseconds: 180),
-                  curve: Curves.easeOut,
-                  padding: EdgeInsets.only(bottom: mediaQuery.viewInsets.bottom),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            InkWell(
-                              borderRadius: BorderRadius.circular(8),
-                              onTap: onToggleLanguage,
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 4,
-                                ),
-                                child: Text(
-                                  'AR | EN',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.blueGrey.shade400,
-                                  ),
-                                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.max,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: onToggleLanguage,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 4,
                               ),
-                            ),
-                            _BackButton(onTap: onBack),
-                          ],
-                        ),
-                        const SizedBox(height: 30),
-                        Expanded(
-                          child: Align(
-                            alignment: Alignment.topCenter,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.topCenter,
-                              child: SizedBox(
-                                width: mediaQuery.size.width - 48,
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    Image.asset(
-                                      'assets/travel.png',
-                                      height: 150,
-                                      errorBuilder: (context, error, stackTrace) =>
-                                          const Icon(
-                                        Icons.flight_takeoff,
-                                        size: 92,
-                                        color: Color(0xFF7C3AED),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 30),
-                                    Text(
-                                      isArabic
-                                          ? 'ابدأ رحلتك ✈️'
-                                          : 'Start your trip ✈️',
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 32,
-                                        height: 1.15,
-                                        fontWeight: FontWeight.w900,
-                                        color: Color(0xFF0F172A),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      isArabic
-                                          ? 'أنشئ رحلتك وابدأ تتبع مصاريفك بسهولة'
-                                          : 'Create your trip and start tracking expenses easily',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 17,
-                                        height: 1.5,
-                                        fontWeight: FontWeight.w500,
-                                        color: Colors.blueGrey.shade300,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 34),
-                                    _TripNameCard(
-                                      isArabic: isArabic,
-                                      controller: tripNameController,
-                                    ),
-                                    const SizedBox(height: 24),
-                                    _GradientButton(
-                                      label: isArabic
-                                          ? 'إنشاء الرحلة'
-                                          : 'Create Trip',
-                                      onTap: onCreateTrip,
-                                    ),
-                                    const SizedBox(height: 30),
-                                    Row(
-                                      children: [
-                                        const Expanded(
-                                          child: Divider(color: Color(0xFFE2E8F0)),
-                                        ),
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                          ),
-                                          child: Text(
-                                            isArabic ? 'أو' : 'or',
-                                            style: TextStyle(
-                                              color: Colors.blueGrey.shade300,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                          ),
-                                        ),
-                                        const Expanded(
-                                          child: Divider(color: Color(0xFFE2E8F0)),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 24),
-                                    InkWell(
-                                      borderRadius: BorderRadius.circular(18),
-                                      onTap: onCustomizeTrip,
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 12,
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            const Icon(
-                                              Icons.settings_outlined,
-                                              color: Color(0xFF7C3AED),
-                                              size: 26,
-                                            ),
-                                            const SizedBox(width: 10),
-                                            Text(
-                                              isArabic
-                                                  ? 'تخصيص الرحلة (اختياري)'
-                                                  : 'Customize trip (optional)',
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.w700,
-                                                color: Color(0xFF0F172A),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 70),
-                                  ],
+                              child: Text(
+                                'AR | EN',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.blueGrey.shade400,
                                 ),
                               ),
                             ),
                           ),
+                          _BackButton(onTap: onBack),
+                        ],
+                      ),
+                      const SizedBox(height: 30),
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: OverflowBox(
+                            alignment: Alignment.topCenter,
+                            minHeight: 0,
+                            maxHeight: double.infinity,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                Image.asset(
+                                  'assets/travel.png',
+                                  height: 150,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(
+                                    Icons.flight_takeoff,
+                                    size: 92,
+                                    color: Color(0xFF7C3AED),
+                                  ),
+                                ),
+                                const SizedBox(height: 30),
+                                Text(
+                                  isArabic
+                                      ? 'ابدأ رحلتك ✈️'
+                                      : 'Start your trip ✈️',
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 32,
+                                    height: 1.15,
+                                    fontWeight: FontWeight.w900,
+                                    color: Color(0xFF0F172A),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Text(
+                                  isArabic
+                                      ? 'أنشئ رحلتك وابدأ تتبع مصاريفك بسهولة'
+                                      : 'Create your trip and start tracking expenses easily',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 17,
+                                    height: 1.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.blueGrey.shade300,
+                                  ),
+                                ),
+                                const SizedBox(height: 34),
+                                _TripNameCard(
+                                  isArabic: isArabic,
+                                  controller: tripNameController,
+                                ),
+                                const SizedBox(height: 24),
+                                _GradientButton(
+                                  label:
+                                      isArabic ? 'إنشاء الرحلة' : 'Create Trip',
+                                  onTap: onCreateTrip,
+                                ),
+                                if (!keyboardOpen) ...[
+                                  const SizedBox(height: 30),
+                                  Row(
+                                    children: [
+                                      const Expanded(
+                                        child: Divider(
+                                          color: Color(0xFFE2E8F0),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                        ),
+                                        child: Text(
+                                          isArabic ? 'أو' : 'or',
+                                          style: TextStyle(
+                                            color: Colors.blueGrey.shade300,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                      const Expanded(
+                                        child: Divider(
+                                          color: Color(0xFFE2E8F0),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  InkWell(
+                                    borderRadius: BorderRadius.circular(18),
+                                    onTap: onCustomizeTrip,
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 14,
+                                        vertical: 12,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.settings_outlined,
+                                            color: Color(0xFF7C3AED),
+                                            size: 26,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Text(
+                                            isArabic
+                                                ? 'تخصيص الرحلة (اختياري)'
+                                                : 'Customize trip (optional)',
+                                            style: const TextStyle(
+                                              fontSize: 18,
+                                              fontWeight: FontWeight.w700,
+                                              color: Color(0xFF0F172A),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 70),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
