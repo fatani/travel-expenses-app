@@ -275,6 +275,12 @@ abstract class AppLocalizations {
   /// **'Create Trip'**
   String get tripFormSaveCreate;
 
+  /// No description provided for @tripFormSaveDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Save details'**
+  String get tripFormSaveDetails;
+
   /// No description provided for @tripFormSaveEdit.
   ///
   /// In en, this message translates to:

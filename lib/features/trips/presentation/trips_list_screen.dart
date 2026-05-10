@@ -32,49 +32,54 @@ class TripsListScreen extends ConsumerWidget {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(l10n.tripsTitle),
-        actions: [
-          if (!showOnlyLanguageToggle) ...[
-            IconButton(
-              tooltip: l10n.globalReportsTooltip,
-              onPressed: () => _openGlobalReports(context),
-              icon: const Icon(Icons.analytics_outlined),
-            ),
-            IconButton(
-              tooltip: l10n.settingsLanguageTooltip,
-              onPressed: () => _openSettings(context),
-              icon: const Icon(Icons.settings_outlined),
-            ),
-            const SizedBox(width: 4),
-            LanguageToggleButton(
-              currentLocaleCode: currentLocaleCode,
-              isLoading: settingsState.isLoading,
-              onToggle: () => _toggleLanguage(context, ref, currentLocaleCode),
-            ),
-            const SizedBox(width: 12),
-          ],
-          if (showOnlyLanguageToggle) ...[
-            TextButton(
-              onPressed: settingsState.isLoading
-                  ? null
-                  : () => _toggleLanguage(context, ref, currentLocaleCode),
-              style: TextButton.styleFrom(
-                foregroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
-                textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+      appBar: showOnlyLanguageToggle
+          ? AppBar(
+              title: null,
+              actions: [
+                TextButton(
+                  onPressed: settingsState.isLoading
+                      ? null
+                      : () => _toggleLanguage(context, ref, currentLocaleCode),
+                  style: TextButton.styleFrom(
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onSurfaceVariant,
+                    textStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: const Text('AR | EN'),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text('AR | EN'),
+                const SizedBox(width: 12),
+              ],
+            )
+          : AppBar(
+              title: Text(l10n.tripsTitle),
+              actions: [
+                IconButton(
+                  tooltip: l10n.globalReportsTooltip,
+                  onPressed: () => _openGlobalReports(context),
+                  icon: const Icon(Icons.analytics_outlined),
+                ),
+                IconButton(
+                  tooltip: l10n.settingsLanguageTooltip,
+                  onPressed: () => _openSettings(context),
+                  icon: const Icon(Icons.settings_outlined),
+                ),
+                const SizedBox(width: 4),
+                LanguageToggleButton(
+                  currentLocaleCode: currentLocaleCode,
+                  isLoading: settingsState.isLoading,
+                  onToggle: () =>
+                      _toggleLanguage(context, ref, currentLocaleCode),
+                ),
+                const SizedBox(width: 12),
+              ],
             ),
-            const SizedBox(width: 12),
-          ],
-        ],
-      ),
       body: tripsState.when(
         data: (trips) {
           if (trips.isEmpty) {

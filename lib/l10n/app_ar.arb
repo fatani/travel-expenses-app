@@ -37,6 +37,7 @@
   "tripFormBudgetNonNegative": "يجب أن تكون الميزانية صفراً أو أكثر.",
   "tripFormStartDateBeforeEnd": "يجب ألا يكون تاريخ البداية بعد تاريخ النهاية.",
   "tripFormEndDateAfterStart": "يجب أن يكون تاريخ النهاية في نفس يوم البداية أو بعده.",
+  "tripFormSaveDetails": "حفظ التخصيصات",
   "tripFormSaveError": "فشل حفظ الرحلة: {error}",
   "@tripFormSaveError": {"placeholders": {"error": {}}},
   "tripDetailsLoadError": "تعذر تحميل المصاريف.",

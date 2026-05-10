@@ -105,6 +105,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripFormSaveCreate => 'إنشاء الرحلة';
 
   @override
+  String get tripFormSaveDetails => 'حفظ التخصيصات';
+
   String get tripFormSaveEdit => 'حفظ التغييرات';
 
   @override

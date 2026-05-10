@@ -105,6 +105,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormSaveCreate => 'Create Trip';
 
   @override
+  String get tripFormSaveDetails => 'Save details';
+
   String get tripFormSaveEdit => 'Save Changes';
 
   @override

@@ -37,6 +37,7 @@
   "tripFormBudgetNonNegative": "Budget must be zero or more.",
   "tripFormStartDateBeforeEnd": "Start date must be on or before the end date.",
   "tripFormEndDateAfterStart": "End date must be on or after the start date.",
+  "tripFormSaveDetails": "Save details",
   "tripFormSaveError": "Failed to save trip: {error}",
   "@tripFormSaveError": {"placeholders": {"error": {}}},
   "tripDetailsLoadError": "Could not load expenses.",
