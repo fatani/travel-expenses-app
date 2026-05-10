@@ -25,6 +25,8 @@ class TripFormScreen extends ConsumerStatefulWidget {
 
 class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _budgetFieldKey = GlobalKey();
+  final _notesFieldKey = GlobalKey();
   late final TextEditingController _nameController;
   late final TextEditingController _destinationController;
   late final TextEditingController _currencyController;
@@ -119,7 +121,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     );
   }
 
-  Widget _buildAdditionalDetails(AppLocalizations l10n) {
+  Widget _buildAdditionalDetails(
+    AppLocalizations l10n, {
+    required FocusNode budgetFocusNode,
+    required FocusNode notesFocusNode,
+  }) {
     final dividerColor = Theme.of(
       context,
     ).colorScheme.outlineVariant.withValues(alpha: 0.35);
@@ -185,27 +191,39 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             validator: _validateEndDate,
           ),
           Divider(height: 20, color: dividerColor),
-          TextFormField(
-            controller: _budgetController,
-            textInputAction: TextInputAction.next,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
+
+          /// Budget Field with GlobalKey
+          Container(
+            key: _budgetFieldKey,
+            child: TextFormField(
+              controller: _budgetController,
+              focusNode: budgetFocusNode,
+              textInputAction: TextInputAction.next,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: _secondaryDetailsDecoration(
+                labelText: l10n.tripFormBudgetLabel,
+                hintText: l10n.tripFormBudgetHint,
+              ),
+              validator: _validateBudget,
             ),
-            decoration: _secondaryDetailsDecoration(
-              labelText: l10n.tripFormBudgetLabel,
-              hintText: l10n.tripFormBudgetHint,
-            ),
-            validator: _validateBudget,
           ),
           Divider(height: 20, color: dividerColor),
-          TextFormField(
-            controller: _notesController,
-            textInputAction: TextInputAction.done,
-            minLines: 3,
-            maxLines: 4,
-            decoration: _secondaryDetailsDecoration(
-              labelText: _notesLabel(),
-              hintText: _notesHint(),
+
+          /// Notes Field with GlobalKey
+          Container(
+            key: _notesFieldKey,
+            child: TextFormField(
+              controller: _notesController,
+              focusNode: notesFocusNode,
+              textInputAction: TextInputAction.done,
+              minLines: 3,
+              maxLines: 4,
+              decoration: _secondaryDetailsDecoration(
+                labelText: _notesLabel(),
+                hintText: _notesHint(),
+              ),
             ),
           ),
         ],
@@ -238,6 +256,42 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
   Future<void> _openCustomizeTripSheet() async {
     final l10n = AppLocalizations.of(context)!;
+    final scrollController = ScrollController();
+    final budgetFocusNode = FocusNode();
+    final notesFocusNode = FocusNode();
+
+    /// Setup focus listeners for scroll-into-view
+    budgetFocusNode.addListener(() {
+      if (budgetFocusNode.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 120), () {
+          final fieldContext = _budgetFieldKey.currentContext;
+          if (fieldContext != null) {
+            Scrollable.ensureVisible(
+              fieldContext,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              alignment: 0.25,
+            );
+          }
+        });
+      }
+    });
+
+    notesFocusNode.addListener(() {
+      if (notesFocusNode.hasFocus) {
+        Future.delayed(const Duration(milliseconds: 120), () {
+          final fieldContext = _notesFieldKey.currentContext;
+          if (fieldContext != null) {
+            Scrollable.ensureVisible(
+              fieldContext,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+              alignment: 0.25,
+            );
+          }
+        });
+      }
+    });
 
     await showModalBottomSheet<void>(
       context: context,
@@ -277,14 +331,19 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                     /// Scrollable Content
                     Expanded(
                       child: SingleChildScrollView(
+                        controller: scrollController,
                         keyboardDismissBehavior:
                             ScrollViewKeyboardDismissBehavior.onDrag,
                         padding: EdgeInsets.only(
-                          bottom: mediaQuery.viewInsets.bottom + 8,
+                          bottom: mediaQuery.viewInsets.bottom + 120,
                         ),
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                          child: _buildAdditionalDetails(l10n),
+                          child: _buildAdditionalDetails(
+                            l10n,
+                            budgetFocusNode: budgetFocusNode,
+                            notesFocusNode: notesFocusNode,
+                          ),
                         ),
                       ),
                     ),
@@ -347,7 +406,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           },
         );
       },
-    );
+    ).whenComplete(() {
+      budgetFocusNode.dispose();
+      notesFocusNode.dispose();
+      scrollController.dispose();
+    });
   }
 
   String _notesLabel() {
