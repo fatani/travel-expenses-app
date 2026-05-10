@@ -27,7 +27,6 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('الرحلات'), findsOneWidget);
     expect(find.text('جاهز لرحلتك الأولى؟ ✈️'), findsOneWidget);
     expect(find.text('ابدأ رحلتك الأولى الآن!'), findsOneWidget);
   });

@@ -33,7 +33,7 @@
   "tripFormStartDateLabel": "Start date",
   "tripFormEndDateLabel": "End date",
   "tripFormSaveCreate": "Create Trip",
-  "tripFormSaveEdit": "Save Changes",
+  "tripFormSaveEdit": "Save changes",
   "tripFormBudgetNonNegative": "Budget must be zero or more.",
   "tripFormStartDateBeforeEnd": "Start date must be on or before the end date.",
   "tripFormEndDateAfterStart": "End date must be on or after the start date.",

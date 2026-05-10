@@ -275,16 +275,10 @@ abstract class AppLocalizations {
   /// **'Create Trip'**
   String get tripFormSaveCreate;
 
-  /// No description provided for @tripFormSaveDetails.
-  ///
-  /// In en, this message translates to:
-  /// **'Save details'**
-  String get tripFormSaveDetails;
-
   /// No description provided for @tripFormSaveEdit.
   ///
   /// In en, this message translates to:
-  /// **'Save Changes'**
+  /// **'Save changes'**
   String get tripFormSaveEdit;
 
   /// No description provided for @tripFormBudgetNonNegative.
@@ -304,6 +298,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'End date must be on or after the start date.'**
   String get tripFormEndDateAfterStart;
+
+  /// No description provided for @tripFormSaveDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Save details'**
+  String get tripFormSaveDetails;
 
   /// No description provided for @tripFormSaveError.
   ///

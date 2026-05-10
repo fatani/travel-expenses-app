@@ -105,9 +105,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormSaveCreate => 'Create Trip';
 
   @override
-  String get tripFormSaveDetails => 'Save details';
-
-  String get tripFormSaveEdit => 'Save Changes';
+  String get tripFormSaveEdit => 'Save changes';
 
   @override
   String get tripFormBudgetNonNegative => 'Budget must be zero or more.';
@@ -117,6 +115,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripFormEndDateAfterStart => 'End date must be on or after the start date.';
+
+  @override
+  String get tripFormSaveDetails => 'Save details';
 
   @override
   String tripFormSaveError(Object error) {

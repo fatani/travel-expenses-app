@@ -24,15 +24,16 @@ class TripsEmptyStateScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.max,
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                Align(
-                  alignment: Alignment.topCenter,
-                  child: SingleChildScrollView(
-                    physics: const NeverScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: SingleChildScrollView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
                             /// Image
                             Opacity(
                               opacity: 0.72,
@@ -140,6 +141,7 @@ class TripsEmptyStateScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                ),
 
                 /// CTA
                 Padding(

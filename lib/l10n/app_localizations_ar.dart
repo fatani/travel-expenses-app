@@ -105,8 +105,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripFormSaveCreate => 'إنشاء الرحلة';
 
   @override
-  String get tripFormSaveDetails => 'حفظ التخصيصات';
-
   String get tripFormSaveEdit => 'حفظ التغييرات';
 
   @override
@@ -117,6 +115,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripFormEndDateAfterStart => 'يجب أن يكون تاريخ النهاية في نفس يوم البداية أو بعده.';
+
+  @override
+  String get tripFormSaveDetails => 'حفظ التخصيصات';
 
   @override
   String tripFormSaveError(Object error) {

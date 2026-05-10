@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -107,16 +109,255 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   Widget build(BuildContext context) {
     final isArabic =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+    final isEditMode = widget.isEditMode;
 
     return Form(
       key: _formKey,
-      child: CreateTripVisualScreen(
-        isArabic: isArabic,
-        tripNameController: _nameController,
-        onCreateTrip: _submit,
-        onToggleLanguage: () => _toggleLanguage(isArabic: isArabic),
-        onCustomizeTrip: _openCustomizeTripSheet,
-        onBack: () => Navigator.of(context).pop(),
+      autovalidateMode:
+          isEditMode ? AutovalidateMode.always : AutovalidateMode.disabled,
+      child: isEditMode
+          ? _buildEditTripScreen(isArabic: isArabic)
+          : CreateTripVisualScreen(
+              isArabic: isArabic,
+              tripNameController: _nameController,
+              onCreateTrip: _submit,
+              onToggleLanguage: () => _toggleLanguage(isArabic: isArabic),
+              onCustomizeTrip: _openCustomizeTripSheet,
+              onBack: () => Navigator.of(context).pop(),
+            ),
+    );
+  }
+
+  bool get _hasInvalidDateRange {
+    return _startDate != null &&
+        _endDate != null &&
+        _startDate!.isAfter(_endDate!);
+  }
+
+  Widget _buildEditTripScreen({required bool isArabic}) {
+    final l10n = AppLocalizations.of(context)!;
+    final textDirection = isArabic ? TextDirection.rtl : TextDirection.ltr;
+    final canSave = !_hasInvalidDateRange &&
+        !ref.watch(tripsControllerProvider).isLoading;
+
+    return Directionality(
+      textDirection: textDirection,
+      child: Scaffold(
+        resizeToAvoidBottomInset: true,
+        backgroundColor: const Color(0xFFF8FAFF),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _SoftBackground()),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 20),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InkWell(
+                          borderRadius: BorderRadius.circular(8),
+                          onTap: () => _toggleLanguage(isArabic: isArabic),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 4,
+                            ),
+                            child: Text(
+                              'AR | EN',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.blueGrey.shade400,
+                              ),
+                            ),
+                          ),
+                        ),
+                        _BackButton(onTap: () => Navigator.of(context).pop()),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      l10n.tripFormEditTitle,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        height: 1.15,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior:
+                            ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: Column(
+                          children: [
+                            _buildEditDetailsCard(l10n),
+                            if (_hasInvalidDateRange)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 12),
+                                child: Align(
+                                  alignment: isArabic
+                                      ? Alignment.centerRight
+                                      : Alignment.centerLeft,
+                                  child: Text(
+                                    l10n.tripFormEndDateAfterStart,
+                                    style: const TextStyle(
+                                      color: Colors.red,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 22),
+                            _GradientButton(
+                              label: l10n.tripFormSaveEdit,
+                              onTap: canSave ? _submit : null,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEditDetailsCard(AppLocalizations l10n) {
+    final dividerColor = Theme.of(
+      context,
+    ).colorScheme.outlineVariant.withValues(alpha: 0.35);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: const Color(0xFFE2E8F0),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        children: [
+          TextFormField(
+            controller: _nameController,
+            textInputAction: TextInputAction.next,
+            decoration: _secondaryDetailsDecoration(
+              labelText: l10n.tripFormNameLabel,
+              hintText: l10n.tripFormNameHint,
+            ),
+          ),
+          Divider(height: 20, color: dividerColor),
+          TextFormField(
+            controller: _destinationController,
+            textInputAction: TextInputAction.next,
+            decoration: _secondaryDetailsDecoration(
+              labelText: l10n.tripFormDestinationLabel,
+              hintText: l10n.tripFormDestinationHint,
+            ),
+          ),
+          Divider(height: 20, color: dividerColor),
+          TextFormField(
+            controller: _currencyController,
+            textInputAction: TextInputAction.next,
+            textCapitalization: TextCapitalization.characters,
+            textDirection: TextDirection.ltr,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp('[a-zA-Z -]')),
+              LengthLimitingTextInputFormatter(20),
+              _UpperCaseTextFormatter(),
+            ],
+            decoration: _secondaryDetailsDecoration(
+              labelText: l10n.tripFormCurrencyLabel,
+              hintText: 'USD - US Dollar',
+              suffixIcon: const Icon(Icons.keyboard_arrow_down),
+            ),
+          ),
+          Divider(height: 20, color: dividerColor),
+          TextFormField(
+            controller: _startDateController,
+            readOnly: true,
+            decoration: _secondaryDetailsDecoration(
+              labelText: l10n.tripFormStartDateLabel,
+              suffixIcon: const Icon(Icons.calendar_today_rounded),
+            ),
+            onTap: () => _selectDate(isStartDate: true),
+            validator: _validateStartDate,
+          ),
+          Divider(height: 20, color: dividerColor),
+          TextFormField(
+            controller: _endDateController,
+            readOnly: true,
+            decoration: _secondaryDetailsDecoration(
+              labelText: l10n.tripFormEndDateLabel,
+              suffixIcon: const Icon(Icons.calendar_today_rounded),
+            ),
+            onTap: () => _selectDate(isStartDate: false),
+            validator: _validateEndDate,
+          ),
+          Divider(height: 20, color: dividerColor),
+          TextFormField(
+            controller: _budgetController,
+            textInputAction: TextInputAction.next,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: _secondaryDetailsDecoration(
+              labelText: l10n.tripFormBudgetLabel,
+              hintText: l10n.tripFormBudgetHint,
+            ),
+            validator: _validateBudget,
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: _budgetController,
+            builder: (context, value, child) {
+              if (value.text.trim().isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              return Column(
+                children: [
+                  Divider(height: 20, color: dividerColor),
+                  TextFormField(
+                    controller: _budgetCurrencyController,
+                    textInputAction: TextInputAction.next,
+                    textCapitalization: TextCapitalization.characters,
+                    textDirection: TextDirection.ltr,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp('[a-zA-Z -]')),
+                      LengthLimitingTextInputFormatter(20),
+                      _UpperCaseTextFormatter(),
+                    ],
+                    decoration: _secondaryDetailsDecoration(
+                      labelText: l10n.tripFormCurrencyLabel,
+                      hintText: 'USD',
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+          Divider(height: 20, color: dividerColor),
+          TextFormField(
+            controller: _notesController,
+            textInputAction: TextInputAction.done,
+            minLines: 3,
+            maxLines: 4,
+            decoration: _secondaryDetailsDecoration(
+              labelText: _notesLabel(),
+              hintText: _notesHint(),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -969,7 +1210,7 @@ class _TripNameCard extends StatelessWidget {
 
 class _GradientButton extends StatelessWidget {
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   const _GradientButton({
     required this.label,
@@ -989,15 +1230,23 @@ class _GradientButton extends StatelessWidget {
           width: double.infinity,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(22),
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF2563EB),
-                Color(0xFF7C3AED),
-              ],
+            gradient: LinearGradient(
+              colors: onTap == null
+                  ? const [
+                      Color(0xFF94A3B8),
+                      Color(0xFF94A3B8),
+                    ]
+                  : const [
+                      Color(0xFF2563EB),
+                      Color(0xFF7C3AED),
+                    ],
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF7C3AED).withValues(alpha: 0.22),
+                color: (onTap == null
+                        ? const Color(0xFF94A3B8)
+                        : const Color(0xFF7C3AED))
+                    .withValues(alpha: 0.22),
                 blurRadius: 22,
                 offset: const Offset(0, 10),
               ),
