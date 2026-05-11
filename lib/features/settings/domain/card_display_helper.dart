@@ -7,30 +7,58 @@ import 'card_profile_enums.dart';
 /// Helper to format CardProfile display consistently across the app.
 /// Ensures the same card format in both Arabic and English.
 class CardDisplayHelper {
+  static String? getBankLabel(BuildContext context, CardProfile card) {
+    final l10n = AppLocalizations.of(context)!;
+    return _resolveValue(
+      rawValue: card.bankName,
+      customValue: card.customBankName,
+      explicitOtherLabel: l10n.cardBankOther,
+      localizedLabel: (raw) => CardProfileEnumMapper.tryParseBank(raw)?.label(l10n),
+    );
+  }
+
+  static String? getNetworkLabel(BuildContext context, CardProfile card) {
+    final l10n = AppLocalizations.of(context)!;
+    return _resolveValue(
+      rawValue: card.cardNetwork,
+      customValue: card.customCardNetwork,
+      explicitOtherLabel: l10n.cardNetworkOther,
+      localizedLabel: (raw) => CardProfileEnumMapper.tryParseNetwork(raw)?.label(l10n),
+    );
+  }
+
+  static String? getTierLabel(BuildContext context, CardProfile card) {
+    final l10n = AppLocalizations.of(context)!;
+    return _resolveValue(
+      rawValue: card.cardTier,
+      customValue: card.customCardTier,
+      explicitOtherLabel: l10n.cardTierOther,
+      localizedLabel: (raw) => CardProfileEnumMapper.tryParseTier(raw)?.label(l10n),
+    );
+  }
+
   /// Generates a consistent display string for a card.
   /// Format: Bank + Network + Tier + "••••last4"
   /// Example: "SAB Mastercard World ••••4744"
   /// Fallback: Uses name for legacy cards without structured fields.
   static String getDisplayString(BuildContext context, CardProfile card) {
-    final l10n = AppLocalizations.of(context)!;
-
     // If card has structured fields, use them
     if (_hasStructuredFields(card)) {
       final parts = <String>[];
 
-      final bank = CardProfileEnumMapper.tryParseBank(card.bankName);
-      if (bank != null) {
-        parts.add(bank.label(l10n));
+      final bankLabel = getBankLabel(context, card);
+      if (bankLabel != null && bankLabel.isNotEmpty) {
+        parts.add(bankLabel);
       }
 
-      final network = CardProfileEnumMapper.tryParseNetwork(card.cardNetwork);
-      if (network != null) {
-        parts.add(network.label(l10n));
+      final networkLabel = getNetworkLabel(context, card);
+      if (networkLabel != null && networkLabel.isNotEmpty) {
+        parts.add(networkLabel);
       }
 
-      final tier = CardProfileEnumMapper.tryParseTier(card.cardTier);
-      if (tier != null && !_shouldHideTier(network, tier)) {
-        parts.add(tier.label(l10n));
+      final tierLabel = getTierLabel(context, card);
+      if (tierLabel != null && tierLabel.isNotEmpty && !_shouldHideTier(card)) {
+        parts.add(tierLabel);
       }
 
       String display = parts.isNotEmpty ? parts.join(' ') : _legacyFallback(card);
@@ -50,8 +78,11 @@ class CardDisplayHelper {
   /// Check if card has any structured fields
   static bool _hasStructuredFields(CardProfile card) {
     return (card.bankName != null && card.bankName!.isNotEmpty) ||
+      (card.customBankName != null && card.customBankName!.isNotEmpty) ||
         (card.cardNetwork != null && card.cardNetwork!.isNotEmpty) ||
+      (card.customCardNetwork != null && card.customCardNetwork!.isNotEmpty) ||
         (card.cardTier != null && card.cardTier!.isNotEmpty) ||
+      (card.customCardTier != null && card.customCardTier!.isNotEmpty) ||
         (card.last4 != null && card.last4!.isNotEmpty);
   }
 
@@ -63,12 +94,61 @@ class CardDisplayHelper {
     return card.name;
   }
 
-  static bool _shouldHideTier(CardNetwork? network, CardTier tier) {
+  static bool _shouldHideTier(CardProfile card) {
+    final explicitCustomTier = card.customCardTier?.trim();
+    if (explicitCustomTier != null && explicitCustomTier.isNotEmpty) {
+      return false;
+    }
+
+    final network = CardProfileEnumMapper.tryParseNetwork(card.cardNetwork);
+    final tier = CardProfileEnumMapper.tryParseTier(card.cardTier);
+    if (tier == null) {
+      return false;
+    }
     if (network == null) {
       return false;
     }
     return (network == CardNetwork.mada || network == CardNetwork.other) &&
         tier == CardTier.other;
+  }
+
+  static String? _resolveValue({
+    required String? rawValue,
+    required String? customValue,
+    required String explicitOtherLabel,
+    required String? Function(String rawValue) localizedLabel,
+  }) {
+    final trimmedCustom = customValue?.trim();
+    if (trimmedCustom != null && trimmedCustom.isNotEmpty) {
+      if (_isExplicitOther(trimmedCustom)) {
+        return null;
+      }
+      return trimmedCustom;
+    }
+
+    final trimmedRaw = rawValue?.trim();
+    if (trimmedRaw == null || trimmedRaw.isEmpty) {
+      return null;
+    }
+
+    if (_isExplicitOther(trimmedRaw)) {
+      return null;
+    }
+
+    final localized = localizedLabel(trimmedRaw);
+    if (localized != null) {
+      final isOther = _isExplicitOther(localized);
+      if (!isOther) {
+        return localized;
+      }
+    }
+
+    return trimmedRaw.isEmpty ? null : trimmedRaw;
+  }
+
+  static bool _isExplicitOther(String value) {
+    final normalized = value.trim().toLowerCase().replaceAll(' ', '');
+    return normalized == 'other' || normalized == 'اخرى' || normalized == 'أخرى';
   }
 
   /// Format with icon prefix (e.g., "💳 SAB Mastercard World ••••4744")

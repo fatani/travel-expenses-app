@@ -15,16 +15,22 @@ class CardsNotifier extends AsyncNotifier<List<CardProfile>> {
   Future<void> addCard({
     required String name,
     String? bankName,
+    String? customBankName,
     String? cardNetwork,
+    String? customCardNetwork,
     String? cardTier,
+    String? customCardTier,
     String? last4,
     String? displayName,
   }) async {
     await ref.read(cardRepositoryProvider).addCard(
           name: name,
           bankName: bankName,
+          customBankName: customBankName,
           cardNetwork: cardNetwork,
+          customCardNetwork: customCardNetwork,
           cardTier: cardTier,
+          customCardTier: customCardTier,
           last4: last4,
           displayName: displayName,
         );
@@ -35,8 +41,11 @@ class CardsNotifier extends AsyncNotifier<List<CardProfile>> {
     required int id,
     required String name,
     String? bankName,
+    String? customBankName,
     String? cardNetwork,
+    String? customCardNetwork,
     String? cardTier,
+    String? customCardTier,
     String? last4,
     String? displayName,
   }) async {
@@ -44,8 +53,11 @@ class CardsNotifier extends AsyncNotifier<List<CardProfile>> {
           id: id,
           name: name,
           bankName: bankName,
+          customBankName: customBankName,
           cardNetwork: cardNetwork,
+          customCardNetwork: customCardNetwork,
           cardTier: cardTier,
+          customCardTier: customCardTier,
           last4: last4,
           displayName: displayName,
         );

@@ -380,14 +380,35 @@ class AppDatabase {
       await db.execute('ALTER TABLE $cardsTable ADD COLUMN bank_name TEXT');
     }
 
+    final hasCustomBankName = await _hasColumn(db, cardsTable, 'custom_bank_name');
+    if (!hasCustomBankName) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN custom_bank_name TEXT');
+    }
+
     final hasCardNetwork = await _hasColumn(db, cardsTable, 'card_network');
     if (!hasCardNetwork) {
       await db.execute('ALTER TABLE $cardsTable ADD COLUMN card_network TEXT');
     }
 
+    final hasCustomCardNetwork = await _hasColumn(
+      db,
+      cardsTable,
+      'custom_card_network',
+    );
+    if (!hasCustomCardNetwork) {
+      await db.execute(
+        'ALTER TABLE $cardsTable ADD COLUMN custom_card_network TEXT',
+      );
+    }
+
     final hasCardTier = await _hasColumn(db, cardsTable, 'card_tier');
     if (!hasCardTier) {
       await db.execute('ALTER TABLE $cardsTable ADD COLUMN card_tier TEXT');
+    }
+
+    final hasCustomCardTier = await _hasColumn(db, cardsTable, 'custom_card_tier');
+    if (!hasCustomCardTier) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN custom_card_tier TEXT');
     }
 
     final hasLast4 = await _hasColumn(db, cardsTable, 'last4');
