@@ -11,16 +11,23 @@ enum _ExportType { csv, pdf }
 
 /// A popup-menu AppBar action that offers both CSV and PDF export for a trip.
 class ExportMenu extends ConsumerWidget {
-  const ExportMenu({super.key, required this.trip, required this.enabled});
+  const ExportMenu({
+    super.key,
+    required this.trip,
+    required this.enabled,
+    this.trigger,
+  });
 
   final Trip trip;
   final bool enabled;
+  final Widget? trigger;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return PopupMenuButton<_ExportType>(
       enabled: enabled,
-      icon: const Icon(Icons.file_download_outlined),
+      icon: trigger == null ? const Icon(Icons.file_download_outlined) : null,
+      padding: EdgeInsets.zero,
       tooltip: 'تصدير',
       onSelected: (type) => _handleExport(context, ref, type),
       itemBuilder: (_) => const [
@@ -33,6 +40,7 @@ class ExportMenu extends ConsumerWidget {
           child: Text('تصدير PDF'),
         ),
       ],
+      child: trigger,
     );
   }
 

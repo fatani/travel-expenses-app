@@ -58,24 +58,41 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_trip.name),
+        centerTitle: true,
+        title: Text(
+          _trip.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+        ),
         actions: [
-          ExportMenu(trip: _trip, enabled: hasExpenses),
-          IconButton(
-            tooltip: context.l10n.tripDetailsReportTooltip,
-            onPressed: () => Navigator.push<void>(
-              context,
-              MaterialPageRoute<void>(
-                builder: (_) => TripReportsScreen(trip: _trip),
-              ),
+          _TopActionWrapper(
+            child: ExportMenu(
+              trip: _trip,
+              enabled: hasExpenses,
+              trigger: const _TopActionIcon(icon: Icons.file_download_outlined),
             ),
-            icon: const Icon(Icons.bar_chart_outlined),
           ),
-          IconButton(
-            tooltip: l10n.tripDetailsEditTripTooltip,
-            onPressed: _openTripEditor,
-            icon: const Icon(Icons.edit_outlined),
+          _TopActionWrapper(
+            child: _TopActionIconButton(
+              tooltip: context.l10n.tripDetailsReportTooltip,
+              onPressed: () => Navigator.push<void>(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => TripReportsScreen(trip: _trip),
+                ),
+              ),
+              icon: Icons.bar_chart_outlined,
+            ),
           ),
+          _TopActionWrapper(
+            child: _TopActionIconButton(
+              tooltip: l10n.tripDetailsEditTripTooltip,
+              onPressed: _openTripEditor,
+              icon: Icons.edit_outlined,
+            ),
+          ),
+          const SizedBox(width: 2),
         ],
       ),
       body: expensesState.when(
@@ -115,14 +132,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           ),
         ),
       ),
-      floatingActionButton: hasExpenses
-          ? FloatingActionButton.extended(
-              onPressed: () =>
-                  _openQuickAddSheet(expensesState.valueOrNull ?? const []),
-              icon: const Icon(Icons.add_rounded),
-              label: Text(l10n.tripDetailsAddExpense),
-            )
-          : null,
     );
   }
 
@@ -390,7 +399,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
         padding: EdgeInsets.fromLTRB(16, 16, 16, listBottomPadding),
         children: [
           _TripSummaryCard(trip: widget.trip),
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
           Row(
             children: [
               Expanded(
@@ -447,46 +456,64 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             ),
           ],
           const SizedBox(height: 16),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              OutlinedButton.icon(
-                onPressed: widget.onAddViaSms,
-                icon: const Icon(Icons.sms_rounded),
-                label: Text(l10n.tripDetailsAddViaSms),
-              ),
-            ],
+          _PrimaryGradientButton(
+            label: l10n.tripDetailsAddExpense,
+            icon: Icons.add_rounded,
+            onTap: widget.onAddExpense,
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (value) {
-                    setState(() {
-                      _searchQuery = value.trim().toLowerCase();
-                    });
-                  },
-                  decoration: InputDecoration(
-                    labelText: l10n.tripDetailsSearchLabel,
-                    hintText: l10n.tripDetailsSearchHint,
-                    prefixIcon: const Icon(Icons.search_rounded),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.trim().toLowerCase();
+                      });
+                    },
+                    decoration: InputDecoration(
+                      labelText: l10n.tripDetailsSearchLabel,
+                      hintText: l10n.tripDetailsSearchHint,
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(14),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Badge(
-                isLabelVisible: _activeFilterCount > 0,
-                label: Text('$_activeFilterCount'),
-                child: IconButton.outlined(
-                  tooltip: l10n.tripDetailsFiltersAndSort,
-                  onPressed: () => _showFiltersBottomSheet(context),
-                  icon: const Icon(Icons.tune_rounded),
+                const SizedBox(width: 8),
+                Badge(
+                  isLabelVisible: _activeFilterCount > 0,
+                  label: Text('$_activeFilterCount'),
+                  child: IconButton.outlined(
+                    tooltip: l10n.tripDetailsFiltersAndSort,
+                    onPressed: () => _showFiltersBottomSheet(context),
+                    icon: const Icon(Icons.tune_rounded),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           const SizedBox(height: 20),
           Text(
@@ -794,29 +821,217 @@ class _TripSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Card(
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final status = _resolveStatus(isArabic);
+
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFF8FAFF), Color(0xFFF3EDFF)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
-            Text(trip.name, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 8),
-            Text(trip.destination),
-            const SizedBox(height: 8),
-            Text(l10n.tripDetailsBaseCurrency(trip.baseCurrency)),
-            const SizedBox(height: 8),
-            Directionality(
-              textDirection: ui.TextDirection.ltr,
-              child: Text(_formatDateRange(context, trip)),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: isArabic
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 10,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        alignment: isArabic
+                            ? WrapAlignment.end
+                            : WrapAlignment.start,
+                        children: [
+                          Text(
+                            trip.name,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w900,
+                                  color: const Color(0xFF0F172A),
+                                  letterSpacing: -0.4,
+                                ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: status.background,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              status.label,
+                              style: TextStyle(
+                                color: status.foreground,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.place_outlined,
+                            size: 18,
+                            color: Color(0xFF64748B),
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              trip.destination,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFF334155),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Directionality(
+                        textDirection: ui.TextDirection.ltr,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.calendar_month_outlined,
+                              size: 16,
+                              color: Color(0xFF64748B),
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                _formatDateRange(context, trip),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: const Color(0xFF475569),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: Image.asset(
+                    'assets/travel.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) => const Icon(
+                      Icons.flight_takeoff_rounded,
+                      size: 46,
+                      color: Color(0xFF7C3AED),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            if (trip.budget != null && (trip.budget ?? 0) > 0) ...[
-              const SizedBox(height: 8),
-              Text(l10n.tripDetailsBudget(_formatBudget(trip))),
-            ],
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    l10n.tripDetailsBaseCurrency(trip.baseCurrency),
+                    style: const TextStyle(
+                      color: Color(0xFF475569),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const Spacer(),
+                if (trip.budget != null && (trip.budget ?? 0) > 0)
+                  Text(
+                    l10n.tripDetailsBudget(_formatBudget(trip)),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF7C3AED),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+              ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  ({String label, Color background, Color foreground}) _resolveStatus(
+    bool isArabic,
+  ) {
+    if (trip.startDate == null || trip.endDate == null) {
+      return (
+        label: isArabic ? 'التواريخ ناقصة' : 'Dates Pending',
+        background: const Color(0xFFFFEDD5),
+        foreground: const Color(0xFF9A3412),
+      );
+    }
+
+    final now = DateTime.now();
+    if (now.isBefore(trip.startDate!)) {
+      return (
+        label: isArabic ? 'قادمة' : 'Upcoming',
+        background: const Color(0xFFDBEAFE),
+        foreground: const Color(0xFF1D4ED8),
+      );
+    }
+    if (now.isAfter(trip.endDate!)) {
+      return (
+        label: isArabic ? 'مكتملة' : 'Completed',
+        background: const Color(0xFFE2E8F0),
+        foreground: const Color(0xFF475569),
+      );
+    }
+
+    return (
+      label: isArabic ? 'نشطة' : 'Active',
+      background: const Color(0xFFDCFCE7),
+      foreground: const Color(0xFF166534),
     );
   }
 
@@ -845,19 +1060,45 @@ class _StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: Theme.of(context).textTheme.bodyMedium),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              textDirection: ui.TextDirection.ltr,
-              style: Theme.of(context).textTheme.titleLarge,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shadowColor: const Color(0xFF7C3AED).withValues(alpha: 0.06),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF475569),
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 0.1,
+                    ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                value,
+                textDirection: ui.TextDirection.ltr,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF0F172A),
+                      letterSpacing: -0.5,
+                    ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -907,99 +1148,137 @@ class _ExpenseCard extends StatelessWidget {
 
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
       color: Theme.of(context).colorScheme.onSurfaceVariant,
+      fontWeight: FontWeight.w500,
     );
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shadowColor: const Color(0xFF7C3AED).withValues(alpha: 0.05),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          expense.title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                                color: const Color(0xFF0F172A),
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} • ${ExpenseOptionLabels.paymentSummary(
+                            l10n,
+                            paymentMethodValue: expense.paymentMethod,
+                            paymentNetworkValue: expense.paymentNetwork,
+                            paymentChannelValue: expense.paymentChannel,
+                          )}',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          dateFormatter.format(expense.spentAt),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                        if (expense.note != null && expense.note!.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            expense.note!,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        expense.title,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        _formatAmountCurrencyLtr(primaryAmount, primaryCurrency),
+                        textAlign: TextAlign.end,
+                        textDirection: ui.TextDirection.ltr,
+                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF020617),
+                          letterSpacing: -0.3,
+                            ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} • ${ExpenseOptionLabels.paymentSummary(
-                          l10n,
-                          paymentMethodValue: expense.paymentMethod,
-                          paymentNetworkValue: expense.paymentNetwork,
-                          paymentChannelValue: expense.paymentChannel,
-                        )}',
-                      ),
-                      const SizedBox(height: 6),
-                      Text(dateFormatter.format(expense.spentAt)),
-                      if (expense.note != null && expense.note!.isNotEmpty) ...[
+                      if (showSecondary) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '≈ ${_formatAmountCurrencyLtr(expense.transactionAmount, expense.transactionCurrency)}',
+                          textAlign: TextAlign.end,
+                          textDirection: ui.TextDirection.ltr,
+                          style: mutedStyle,
+                        ),
+                      ],
+                      if (expense.feesAmount != null &&
+                          (expense.feesCurrency ?? '').isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Text(
-                          expense.note!,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
+                          '${l10n.intlFees}: ${_formatAmountCurrencyLtr(expense.feesAmount!, expense.feesCurrency ?? '')}',
+                          textAlign: TextAlign.end,
+                          textDirection: ui.TextDirection.ltr,
+                          style: mutedStyle,
                         ),
                       ],
                     ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      _formatAmountCurrencyLtr(primaryAmount, primaryCurrency),
-                      textAlign: TextAlign.end,
-                      textDirection: ui.TextDirection.ltr,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    if (showSecondary) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        '≈ ${_formatAmountCurrencyLtr(expense.transactionAmount, expense.transactionCurrency)}',
-                        textAlign: TextAlign.end,
-                        textDirection: ui.TextDirection.ltr,
-                        style: mutedStyle,
-                      ),
-                    ],
-                    if (expense.feesAmount != null &&
-                        (expense.feesCurrency ?? '').isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        '${l10n.intlFees}: ${_formatAmountCurrencyLtr(expense.feesAmount!, expense.feesCurrency ?? '')}',
-                        textAlign: TextAlign.end,
-                        textDirection: ui.TextDirection.ltr,
-                        style: mutedStyle,
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  tooltip: l10n.tripsEditTooltip,
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined),
-                ),
-                IconButton(
-                  tooltip: l10n.commonDelete,
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline_rounded),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    tooltip: l10n.tripsEditTooltip,
+                    onPressed: onEdit,
+                    icon: const Icon(Icons.edit_outlined, size: 20),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                  ),
+                  IconButton(
+                    tooltip: l10n.commonDelete,
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                    padding: const EdgeInsets.all(8),
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1508,6 +1787,131 @@ class _AnimatedCta extends StatelessWidget {
   }
 }
 
+class _TopActionWrapper extends StatelessWidget {
+  const _TopActionWrapper({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+      child: child,
+    );
+  }
+}
+
+class _TopActionIconButton extends StatelessWidget {
+  const _TopActionIconButton({
+    required this.tooltip,
+    required this.onPressed,
+    required this.icon,
+  });
+
+  final String tooltip;
+  final VoidCallback onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          customBorder: const CircleBorder(),
+          child: _TopActionIcon(icon: icon),
+        ),
+      ),
+    );
+  }
+}
+
+class _TopActionIcon extends StatelessWidget {
+  const _TopActionIcon({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Icon(icon, color: const Color(0xFF0F172A), size: 20),
+    );
+  }
+}
+
+class _PrimaryGradientButton extends StatelessWidget {
+  const _PrimaryGradientButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Ink(
+          height: 56,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.22),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GradientActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
@@ -1955,19 +2359,27 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                         gradient: const LinearGradient(
                           colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
                       ),
                       child: Center(
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.auto_awesome, color: Colors.white, size: 19),
-                            const SizedBox(width: 8),
+                            const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                            const SizedBox(width: 9),
                             Text(
                               l10n.tripDetailsQuickAddSave,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,
                                 fontSize: 16,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ],

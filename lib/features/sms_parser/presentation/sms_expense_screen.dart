@@ -76,12 +76,13 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     final isSaving = ref
         .watch(expenseControllerProvider(widget.trip.id))
         .isLoading;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.smsScreenTitle)),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           child: Form(
             key: _formKey,
             autovalidateMode: _showValidationErrors
@@ -90,288 +91,485 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _requiredLabel(l10n.smsInputLabel),
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _smsTextController,
-                          minLines: 5,
-                          maxLines: 8,
-                          decoration: InputDecoration(
-                            hintText: l10n.smsInputHint,
-                            border: const OutlineInputBorder(),
-                          ),
-                          validator: _validateSmsText,
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: _parseSms,
-                          icon: const Icon(Icons.auto_fix_high_rounded),
-                          label: Text(l10n.smsParseButton),
-                        ),
-                        if (_attemptedParse) ...[
-                          const SizedBox(height: 12),
-                          Text(
-                            _parseResult?.hasAnyValue == true
-                                ? l10n.smsParseDetectedMessage
-                                : l10n.smsParseNoResultMessage,
-                          ),
-                          if (_hasFinancialBreakdown(_parseResult)) ...[
-                            const SizedBox(height: 12),
-                            Card(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .surfaceContainerHighest,
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      l10n.intlBreakdownTitle,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.titleSmall,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    if (_parseResult?.billedAmount != null)
-                                      _BreakdownRow(
-                                        label: l10n.intlBilled,
-                                        value: _formatMoney(
-                                          _parseResult!.billedAmount!,
-                                          _parseResult!.billedCurrency,
-                                        ),
-                                      ),
-                                    if (_parseResult?.feesAmount != null)
-                                      _BreakdownRow(
-                                        label: l10n.intlFees,
-                                        value: _formatMoney(
-                                          _parseResult!.feesAmount!,
-                                          _parseResult!.feesCurrency,
-                                        ),
-                                        subtle: true,
-                                      ),
-                                    if (_parseResult?.totalChargedAmount !=
-                                        null)
-                                      _BreakdownRow(
-                                        label: l10n.intlTotalCharged,
-                                        value: _formatMoney(
-                                          _parseResult!.totalChargedAmount!,
-                                          _parseResult!.totalChargedCurrency,
-                                        ),
-                                        bold: true,
-                                      ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _titleController,
-                          textInputAction: TextInputAction.next,
-                          decoration: InputDecoration(
-                            labelText: l10n.smsTitleLabel,
-                            hintText: l10n.smsTitleHint,
-                            helperText: l10n.smsTitleHelper,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _amountController,
-                          textInputAction: TextInputAction.next,
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormAmountLabel,
-                            ),
-                            hintText: l10n.expenseFormAmountHint,
-                          ),
-                          validator: _validateAmount,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _currencyController,
-                          textInputAction: TextInputAction.next,
-                          textCapitalization: TextCapitalization.characters,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp('[a-zA-Z]'),
-                            ),
-                            LengthLimitingTextInputFormatter(3),
-                          ],
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormCurrencyLabel,
-                            ),
-                            helperText: l10n.smsCurrencyFallbackHelper(
-                              widget.trip.baseCurrency,
-                            ),
-                          ),
-                          validator: _validateRequired,
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _selectedCategory,
-                          items: ExpenseOptionLabels.categories
-                              .map(
-                                (category) => DropdownMenuItem<String>(
-                                  value: category,
-                                  child: Text(
-                                    ExpenseOptionLabels.category(
-                                      l10n,
-                                      category,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormCategoryLabel,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedCategory = value;
-                            });
-                          },
-                          validator: _validateDropdown,
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _selectedPaymentNetwork,
-                          items: ExpenseOptionLabels.paymentNetworks
-                              .map(
-                                (paymentNetwork) => DropdownMenuItem<String>(
-                                  value: paymentNetwork,
-                                  child: Text(
-                                    ExpenseOptionLabels.paymentNetwork(
-                                      l10n,
-                                      paymentNetwork,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormPaymentNetworkLabel,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedPaymentNetwork = value;
-                            });
-                          },
-                          validator: _validateDropdown,
-                        ),
-                        const SizedBox(height: 16),
-                        DropdownButtonFormField<String>(
-                          value: _selectedPaymentChannel,
-                          items: ExpenseOptionLabels.paymentChannels
-                              .map(
-                                (paymentChannel) => DropdownMenuItem<String>(
-                                  value: paymentChannel,
-                                  child: Text(
-                                    ExpenseOptionLabels.paymentChannel(
-                                      l10n,
-                                      paymentChannel,
-                                    ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormPaymentChannelLabel,
-                            ),
-                          ),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedPaymentChannel = value;
-                            });
-                          },
-                          validator: _validateDropdown,
-                        ),
-                        const SizedBox(height: 16),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextFormField(
-                                controller: _dateController,
-                                readOnly: true,
-                                decoration: InputDecoration(
-                                  labelText: _requiredLabel(
-                                    l10n.expenseFormDateLabel,
-                                  ),
-                                  suffixIcon: const Icon(
-                                    Icons.calendar_today_rounded,
-                                  ),
-                                ),
-                                onTap: _selectDate,
-                                validator: _validateDate,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: TextFormField(
-                                controller: _timeController,
-                                readOnly: true,
-                                decoration: InputDecoration(
-                                  labelText: l10n.expenseFormTimeLabel,
-                                  suffixIcon: const Icon(
-                                    Icons.access_time_rounded,
-                                  ),
-                                ),
-                                onTap: _selectTime,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _noteController,
-                          minLines: 2,
-                          maxLines: 4,
-                          decoration: InputDecoration(
-                            labelText: l10n.expenseFormNoteLabel,
-                            hintText: l10n.expenseFormNoteHint,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                _buildHeroSection(context, isArabic),
+                const SizedBox(height: 24),
+                _buildSmsInputCard(context, l10n),
                 const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving ? null : _saveExpense,
-                    child: Text(l10n.smsSaveButton),
+                if (_attemptedParse) ...[
+                  Text(
+                    _parseResult?.hasAnyValue == true
+                        ? l10n.smsParseDetectedMessage
+                        : l10n.smsParseNoResultMessage,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                   ),
+                  const SizedBox(height: 12),
+                  if (_hasFinancialBreakdown(_parseResult))
+                    _buildFinancialBreakdownCard(context, l10n),
+                  const SizedBox(height: 20),
+                ],
+                _buildExpenseDetailsCard(context, l10n),
+                const SizedBox(height: 24),
+                _buildSaveButton(context, l10n, isSaving),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeroSection(BuildContext context, bool isArabic) {
+    return Column(
+      crossAxisAlignment: isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      children: [
+        Center(
+          child: Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.message_rounded,
+              color: Color(0xFF7C3AED),
+              size: 36,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: Text(
+            isArabic ? 'أضف رسالة البنك' : 'Add bank message',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF0F172A),
+                  letterSpacing: -0.3,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Center(
+          child: Text(
+            isArabic
+                ? 'الصق الرسالة وسنملأ البيانات تلقائيًا'
+                : 'Paste the message and we\'ll fill the details automatically',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSmsInputCard(BuildContext context, AppLocalizations l10n) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shadowColor: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _requiredLabel(l10n.smsInputLabel),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _smsTextController,
+                minLines: 5,
+                maxLines: 8,
+                decoration: InputDecoration(
+                  hintText: l10n.smsInputHint,
+                  filled: true,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
+                validator: _validateSmsText,
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: _parseSms,
+                    child: Ink(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.auto_fix_high_rounded, color: Colors.white, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              '${AppLocalizations.of(context)!.smsParseButton} ✨',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 15,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFinancialBreakdownCard(BuildContext context, AppLocalizations l10n) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shadowColor: const Color(0xFF7C3AED).withValues(alpha: 0.05),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.intlBreakdownTitle,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF0F172A),
+                    ),
+              ),
+              const SizedBox(height: 12),
+              if (_parseResult?.billedAmount != null)
+                _BreakdownRow(
+                  label: l10n.intlBilled,
+                  value: _formatMoney(
+                    _parseResult!.billedAmount!,
+                    _parseResult!.billedCurrency,
+                  ),
+                ),
+              if (_parseResult?.feesAmount != null) ...[
+                const SizedBox(height: 8),
+                _BreakdownRow(
+                  label: l10n.intlFees,
+                  value: _formatMoney(
+                    _parseResult!.feesAmount!,
+                    _parseResult!.feesCurrency,
+                  ),
+                  subtle: true,
                 ),
               ],
+              if (_parseResult?.totalChargedAmount != null) ...[
+                const SizedBox(height: 10),
+                _BreakdownRow(
+                  label: l10n.intlTotalCharged,
+                  value: _formatMoney(
+                    _parseResult!.totalChargedAmount!,
+                    _parseResult!.totalChargedCurrency,
+                  ),
+                  bold: true,
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExpenseDetailsCard(BuildContext context, AppLocalizations l10n) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      shadowColor: const Color(0xFF7C3AED).withValues(alpha: 0.06),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _titleController,
+                textInputAction: TextInputAction.next,
+                decoration: InputDecoration(
+                  labelText: l10n.smsTitleLabel,
+                  hintText: l10n.smsTitleHint,
+                  helperText: l10n.smsTitleHelper,
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _amountController,
+                textInputAction: TextInputAction.next,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  labelText: _requiredLabel(
+                    l10n.expenseFormAmountLabel,
+                  ),
+                  hintText: l10n.expenseFormAmountHint,
+                ),
+                validator: _validateAmount,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _currencyController,
+                textInputAction: TextInputAction.next,
+                textCapitalization: TextCapitalization.characters,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                    RegExp('[a-zA-Z]'),
+                  ),
+                  LengthLimitingTextInputFormatter(3),
+                ],
+                decoration: InputDecoration(
+                  labelText: _requiredLabel(
+                    l10n.expenseFormCurrencyLabel,
+                  ),
+                  helperText: l10n.smsCurrencyFallbackHelper(
+                    widget.trip.baseCurrency,
+                  ),
+                ),
+                validator: _validateRequired,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedCategory,
+                items: ExpenseOptionLabels.categories
+                    .map(
+                      (category) => DropdownMenuItem<String>(
+                        value: category,
+                        child: Text(
+                          ExpenseOptionLabels.category(
+                            l10n,
+                            category,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                decoration: InputDecoration(
+                  labelText: _requiredLabel(
+                    l10n.expenseFormCategoryLabel,
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedCategory = value;
+                  });
+                },
+                validator: _validateDropdown,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedPaymentNetwork,
+                items: ExpenseOptionLabels.paymentNetworks
+                    .map(
+                      (paymentNetwork) => DropdownMenuItem<String>(
+                        value: paymentNetwork,
+                        child: Text(
+                          ExpenseOptionLabels.paymentNetwork(
+                            l10n,
+                            paymentNetwork,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                decoration: InputDecoration(
+                  labelText: _requiredLabel(
+                    l10n.expenseFormPaymentNetworkLabel,
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPaymentNetwork = value;
+                  });
+                },
+                validator: _validateDropdown,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: _selectedPaymentChannel,
+                items: ExpenseOptionLabels.paymentChannels
+                    .map(
+                      (paymentChannel) => DropdownMenuItem<String>(
+                        value: paymentChannel,
+                        child: Text(
+                          ExpenseOptionLabels.paymentChannel(
+                            l10n,
+                            paymentChannel,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+                decoration: InputDecoration(
+                  labelText: _requiredLabel(
+                    l10n.expenseFormPaymentChannelLabel,
+                  ),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedPaymentChannel = value;
+                  });
+                },
+                validator: _validateDropdown,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _dateController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: _requiredLabel(
+                          l10n.expenseFormDateLabel,
+                        ),
+                        suffixIcon: const Icon(
+                          Icons.calendar_today_rounded,
+                        ),
+                      ),
+                      onTap: _selectDate,
+                      validator: _validateDate,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _timeController,
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        labelText: l10n.expenseFormTimeLabel,
+                        suffixIcon: const Icon(
+                          Icons.access_time_rounded,
+                        ),
+                      ),
+                      onTap: _selectTime,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _noteController,
+                minLines: 2,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  labelText: l10n.expenseFormNoteLabel,
+                  hintText: l10n.expenseFormNoteHint,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSaveButton(BuildContext context, AppLocalizations l10n, bool isSaving) {
+    return SizedBox(
+      width: double.infinity,
+      child: Opacity(
+        opacity: isSaving ? 0.65 : 1.0,
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: isSaving ? null : _saveExpense,
+            child: Ink(
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  l10n.smsSaveButton,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 16,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ),
             ),
           ),
         ),
@@ -421,7 +619,6 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         _syncDateAndTimeFields();
       }
     });
-
   }
 
   void _onCurrencyChangedByUser() {
@@ -815,19 +1012,19 @@ class _BreakdownRow extends StatelessWidget {
         ? Theme.of(context).colorScheme.onSurfaceVariant
         : null;
     final style = bold
-        ? baseStyle?.copyWith(fontWeight: FontWeight.bold, color: color)
+        ? baseStyle?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: color ?? const Color(0xFF0F172A),
+          )
         : baseStyle?.copyWith(color: color);
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Directionality(
-        textDirection: ui.TextDirection.ltr,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: style),
-            Text(value, style: style),
-          ],
-        ),
+    return Directionality(
+      textDirection: ui.TextDirection.ltr,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: style),
+          Text(value, style: style),
+        ],
       ),
     );
   }

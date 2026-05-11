@@ -476,7 +476,9 @@ void main() {
 ''',
       );
 
-      await tester.tap(find.text('Parse SMS'));
+      await tester.tap(find.byWidgetPredicate(
+        (widget) => widget is Text && widget.data?.startsWith('Parse SMS') == true,
+      ));
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(find.text('Save Expense'));
@@ -541,7 +543,9 @@ void main() {
 ''',
       );
 
-      await tester.tap(find.text('Parse SMS'));
+      await tester.tap(find.byWidgetPredicate(
+        (widget) => widget is Text && widget.data?.startsWith('Parse SMS') == true,
+      ));
       await tester.pumpAndSettle();
 
       await tester.ensureVisible(find.byType(TextFormField).at(4));
@@ -593,7 +597,9 @@ Balance: SAR 2354.38
 ''',
       );
 
-      await tester.tap(find.text('Parse SMS'));
+      await tester.tap(find.byWidgetPredicate(
+        (widget) => widget is Text && widget.data?.startsWith('Parse SMS') == true,
+      ));
       await tester.pumpAndSettle();
 
       final channelState = tester.state<FormFieldState<String>>(
@@ -640,7 +646,9 @@ Balance: SAR 1141.56
 ''',
       );
 
-      await tester.tap(find.text('Parse SMS'));
+      await tester.tap(find.byWidgetPredicate(
+        (widget) => widget is Text && widget.data?.startsWith('Parse SMS') == true,
+      ));
       await tester.pumpAndSettle();
 
       expect(find.text('International breakdown'), findsOneWidget);
