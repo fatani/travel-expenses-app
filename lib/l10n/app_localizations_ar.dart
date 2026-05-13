@@ -500,6 +500,42 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsTitle => 'الإعدادات';
 
   @override
+  String get financialSettingsTitle => 'الإعدادات المالية';
+
+  @override
+  String get financialSettingsCardSubtitle => 'بلد الإقامة والعملة الرئيسية';
+
+  @override
+  String get financialSettingsHomeCountry => 'بلد الإقامة';
+
+  @override
+  String get financialSettingsHomeCurrency => 'العملة الرئيسية';
+
+  @override
+  String get financialSettingsStabilityHint => 'تغيير العملة الرئيسية الآن لن يغيّر لقطات العملات للرحلات السابقة.';
+
+  @override
+  String get financialSettingsChangeCountry => 'تغيير بلد الإقامة';
+
+  @override
+  String get financialProfileMissing => 'الملف المالي غير موجود.';
+
+  @override
+  String get financialOnboardingQuestion => 'أين تقيم؟';
+
+  @override
+  String get financialOnboardingSubtitle => 'اختر بلد إقامتك ليتم ضبط عملتك الرئيسية تلقائيًا.';
+
+  @override
+  String get financialCountrySearchHint => 'ابحث عن بلد';
+
+  @override
+  String get financialOnboardingContinue => 'متابعة';
+
+  @override
+  String get financialProfileSaveError => 'تعذر حفظ الملف المالي.';
+
+  @override
   String get settingsLanguageAction => 'اللغة';
 
   @override

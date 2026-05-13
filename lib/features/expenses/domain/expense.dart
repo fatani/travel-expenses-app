@@ -9,6 +9,11 @@ class Expense {
     required this.currencyCode,
     required this.transactionAmount,
     required this.transactionCurrency,
+    this.originalAmount,
+    this.originalCurrency,
+    this.convertedHomeAmount,
+    this.homeCurrency,
+    this.conversionRate,
     this.billedAmount,
     this.billedCurrency,
     this.feesAmount,
@@ -37,6 +42,11 @@ class Expense {
     String currencyCode = 'USD',
     double? transactionAmount,
     String? transactionCurrency,
+    double? originalAmount,
+    String? originalCurrency,
+    double? convertedHomeAmount,
+    String? homeCurrency,
+    double? conversionRate,
     double? billedAmount,
     String? billedCurrency,
     double? feesAmount,
@@ -64,6 +74,11 @@ class Expense {
       currencyCode: currencyCode,
       transactionAmount: transactionAmount ?? amount,
       transactionCurrency: transactionCurrency ?? currencyCode,
+      originalAmount: originalAmount ?? transactionAmount ?? amount,
+      originalCurrency: originalCurrency ?? transactionCurrency ?? currencyCode,
+      convertedHomeAmount: convertedHomeAmount,
+      homeCurrency: homeCurrency,
+      conversionRate: conversionRate,
       billedAmount: billedAmount,
       billedCurrency: billedCurrency,
       feesAmount: feesAmount,
@@ -102,6 +117,10 @@ class Expense {
       (map['transaction_amount'] as num?)?.toDouble() ?? legacyAmount;
     final transactionCurrency =
       (map['transaction_currency'] as String?) ?? legacyCurrencyCode;
+    final originalAmount =
+      (map['original_amount'] as num?)?.toDouble() ?? transactionAmount;
+    final originalCurrency =
+      (map['original_currency'] as String?) ?? transactionCurrency;
     final billedAmount = (map['billed_amount'] as num?)?.toDouble();
     final billedCurrency = map['billed_currency'] as String?;
     final feesAmount = (map['fees_amount'] as num?)?.toDouble();
@@ -116,6 +135,11 @@ class Expense {
       currencyCode: transactionCurrency,
       transactionAmount: transactionAmount,
       transactionCurrency: transactionCurrency,
+      originalAmount: originalAmount,
+      originalCurrency: originalCurrency,
+      convertedHomeAmount: (map['converted_home_amount'] as num?)?.toDouble(),
+      homeCurrency: map['home_currency'] as String?,
+      conversionRate: (map['conversion_rate'] as num?)?.toDouble(),
       billedAmount: billedAmount,
       billedCurrency: billedCurrency,
       feesAmount: feesAmount,
@@ -154,6 +178,11 @@ class Expense {
   final String currencyCode;
   final double transactionAmount;
   final String transactionCurrency;
+  final double? originalAmount;
+  final String? originalCurrency;
+  final double? convertedHomeAmount;
+  final String? homeCurrency;
+  final double? conversionRate;
   final double? billedAmount;
   final String? billedCurrency;
   final double? feesAmount;
@@ -197,6 +226,11 @@ class Expense {
     String? currencyCode,
     double? transactionAmount,
     String? transactionCurrency,
+    double? originalAmount,
+    String? originalCurrency,
+    double? convertedHomeAmount,
+    String? homeCurrency,
+    double? conversionRate,
     double? billedAmount,
     String? billedCurrency,
     double? feesAmount,
@@ -224,6 +258,11 @@ class Expense {
       currencyCode: currencyCode ?? this.currencyCode,
       transactionAmount: transactionAmount ?? this.transactionAmount,
       transactionCurrency: transactionCurrency ?? this.transactionCurrency,
+      originalAmount: originalAmount ?? this.originalAmount,
+      originalCurrency: originalCurrency ?? this.originalCurrency,
+      convertedHomeAmount: convertedHomeAmount ?? this.convertedHomeAmount,
+      homeCurrency: homeCurrency ?? this.homeCurrency,
+      conversionRate: conversionRate ?? this.conversionRate,
       billedAmount: billedAmount ?? this.billedAmount,
       billedCurrency: billedCurrency ?? this.billedCurrency,
       feesAmount: feesAmount ?? this.feesAmount,
@@ -256,6 +295,11 @@ class Expense {
       'currency_code': transactionCurrency,
       'transaction_amount': transactionAmount,
       'transaction_currency': transactionCurrency,
+      'original_amount': originalAmount,
+      'original_currency': originalCurrency,
+      'converted_home_amount': convertedHomeAmount,
+      'home_currency': homeCurrency,
+      'conversion_rate': conversionRate,
       'billed_amount': billedAmount,
       'billed_currency': billedCurrency,
       'fees_amount': feesAmount,

@@ -500,6 +500,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsTitle => 'Settings';
 
   @override
+  String get financialSettingsTitle => 'Financial settings';
+
+  @override
+  String get financialSettingsCardSubtitle => 'Home country and home currency';
+
+  @override
+  String get financialSettingsHomeCountry => 'Home country';
+
+  @override
+  String get financialSettingsHomeCurrency => 'Home currency';
+
+  @override
+  String get financialSettingsStabilityHint => 'Changing home currency now will not change historical trip snapshots.';
+
+  @override
+  String get financialSettingsChangeCountry => 'Change home country';
+
+  @override
+  String get financialProfileMissing => 'Financial profile not found.';
+
+  @override
+  String get financialOnboardingQuestion => 'Where do you live?';
+
+  @override
+  String get financialOnboardingSubtitle => 'Choose your home country so the app can set your home currency.';
+
+  @override
+  String get financialCountrySearchHint => 'Search country';
+
+  @override
+  String get financialOnboardingContinue => 'Continue';
+
+  @override
+  String get financialProfileSaveError => 'Could not save financial profile.';
+
+  @override
   String get settingsLanguageAction => 'Language';
 
   @override

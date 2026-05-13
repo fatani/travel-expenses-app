@@ -18,6 +18,12 @@ class SettingsController extends AsyncNotifier<AppSettings> {
     await _save((current) => current.copyWith(localeCode: localeCode));
   }
 
+  Future<void> updateCurrency(String currencyCode) async {
+    await _save(
+      (current) => current.copyWith(currencyCode: currencyCode.toUpperCase()),
+    );
+  }
+
   Future<void> _save(
     AppSettings Function(AppSettings current) transform,
   ) async {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../features/trips/presentation/trips_list_screen.dart';
+import 'home_entry_screen.dart';
 
 class AppRouter {
   const AppRouter._();
@@ -11,12 +11,12 @@ class AppRouter {
     switch (settings.name) {
       case home:
         return MaterialPageRoute<void>(
-          builder: (_) => const TripsListScreen(),
+          builder: (_) => const HomeEntryScreen(),
           settings: settings,
         );
       default:
         return MaterialPageRoute<void>(
-          builder: (_) => const TripsListScreen(),
+          builder: (_) => const HomeEntryScreen(),
           settings: const RouteSettings(name: home),
         );
     }

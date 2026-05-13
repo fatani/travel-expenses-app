@@ -4,13 +4,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_expenses/app/app.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
+import 'package:travel_expenses/features/financial_profile/domain/user_financial_profile.dart';
+import 'package:travel_expenses/features/financial_profile/presentation/financial_profile_onboarding_screen.dart';
+import 'package:travel_expenses/features/financial_profile/presentation/user_financial_profile_controller.dart';
 import 'package:travel_expenses/features/settings/data/settings_repository.dart';
 import 'package:travel_expenses/features/settings/domain/app_settings.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 
 void main() {
-  testWidgets('app initializes with trips list screen', (
+  testWidgets('app initializes with financial onboarding on first launch', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -20,6 +23,9 @@ void main() {
           settingsRepositoryProvider.overrideWithValue(
             _FakeSettingsRepository(),
           ),
+          userFinancialProfileControllerProvider.overrideWith(
+            _FakeUserFinancialProfileController.new,
+          ),
         ],
         child: const TravelExpensesApp(),
       ),
@@ -27,8 +33,7 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('جاهز لرحلتك الأولى؟ ✈️'), findsOneWidget);
-    expect(find.text('ابدأ رحلتك الأولى الآن!'), findsOneWidget);
+    expect(find.byType(FinancialProfileOnboardingScreen), findsOneWidget);
   });
 }
 
@@ -71,4 +76,9 @@ class _FakeSettingsRepository extends SettingsRepository {
 
   @override
   Future<AppSettings> saveSettings(AppSettings settings) async => settings;
+}
+
+class _FakeUserFinancialProfileController extends UserFinancialProfileController {
+  @override
+  Future<UserFinancialProfile?> build() async => null;
 }

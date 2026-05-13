@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/expenses/data/expense_repository.dart';
+import '../../features/financial_profile/data/user_financial_profile_repository.dart';
 import '../../features/settings/data/card_repository.dart';
 import '../../features/settings/data/settings_repository.dart';
 import '../../features/trips/data/trip_repository.dart';
@@ -27,3 +28,8 @@ final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
 final cardRepositoryProvider = Provider<CardRepository>((ref) {
   return CardRepository(ref.watch(appDatabaseProvider));
 });
+
+final userFinancialProfileRepositoryProvider =
+    Provider<UserFinancialProfileRepository>((ref) {
+      return UserFinancialProfileRepository(ref.watch(appDatabaseProvider));
+    });

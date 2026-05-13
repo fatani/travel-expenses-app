@@ -4,6 +4,8 @@ class Trip {
     required this.name,
     required this.destination,
     required this.baseCurrency,
+    required this.destinationCurrency,
+    required this.homeCurrencySnapshot,
     this.startDate,
     this.endDate,
     this.budget,
@@ -19,6 +21,8 @@ class Trip {
     required String name,
     required String destination,
     required String baseCurrency,
+    String? destinationCurrency,
+    String? homeCurrencySnapshot,
     DateTime? startDate,
     DateTime? endDate,
     double? budget,
@@ -33,6 +37,14 @@ class Trip {
       name: name,
       destination: destination,
       baseCurrency: baseCurrency,
+        destinationCurrency:
+          (destinationCurrency == null || destinationCurrency.trim().isEmpty)
+          ? baseCurrency
+          : destinationCurrency.trim().toUpperCase(),
+        homeCurrencySnapshot:
+          (homeCurrencySnapshot == null || homeCurrencySnapshot.trim().isEmpty)
+          ? baseCurrency
+          : homeCurrencySnapshot.trim().toUpperCase(),
       startDate: startDate,
       endDate: endDate,
       budget: budget,
@@ -50,6 +62,18 @@ class Trip {
       name: map['name']! as String,
       destination: (map['destination'] as String?) ?? '',
       baseCurrency: (map['base_currency'] as String?) ?? '',
+        destinationCurrency:
+          ((map['destination_currency'] as String?) ??
+              (map['base_currency'] as String?) ??
+              '')
+            .trim()
+            .toUpperCase(),
+        homeCurrencySnapshot:
+          ((map['home_currency_snapshot'] as String?) ??
+              (map['base_currency'] as String?) ??
+              '')
+            .trim()
+            .toUpperCase(),
       startDate: _readDate(map['start_date']),
       endDate: _readDate(map['end_date']),
       budget: _readBudget(map['budget']),
@@ -65,6 +89,8 @@ class Trip {
   final String name;
   final String destination;
   final String baseCurrency;
+  final String destinationCurrency;
+  final String homeCurrencySnapshot;
   final DateTime? startDate;
   final DateTime? endDate;
   final double? budget;
@@ -81,6 +107,8 @@ class Trip {
     String? name,
     String? destination,
     String? baseCurrency,
+    String? destinationCurrency,
+    String? homeCurrencySnapshot,
     Object? startDate = _unset,
     Object? endDate = _unset,
     Object? budget = _unset,
@@ -95,6 +123,8 @@ class Trip {
       name: name ?? this.name,
       destination: destination ?? this.destination,
       baseCurrency: baseCurrency ?? this.baseCurrency,
+      destinationCurrency: destinationCurrency ?? this.destinationCurrency,
+      homeCurrencySnapshot: homeCurrencySnapshot ?? this.homeCurrencySnapshot,
       startDate: identical(startDate, _unset) ? this.startDate : startDate as DateTime?,
       endDate: identical(endDate, _unset) ? this.endDate : endDate as DateTime?,
       budget: identical(budget, _unset) ? this.budget : budget as double?,
@@ -116,6 +146,8 @@ class Trip {
       'name': name,
       'destination': destination,
       'base_currency': baseCurrency,
+      'destination_currency': destinationCurrency,
+      'home_currency_snapshot': homeCurrencySnapshot,
       'start_date': startDate == null ? null : _writeDate(startDate!),
       'end_date': endDate == null ? null : _writeDate(endDate!),
       'budget': budget,

@@ -9,6 +9,7 @@ import 'package:travel_expenses/l10n/app_localizations.dart';
 import '../domain/country_database.dart';
 import '../domain/country_info.dart';
 import '../domain/trip.dart';
+import '../../financial_profile/presentation/user_financial_profile_controller.dart';
 import '../../settings/presentation/settings_controller.dart';
 import 'trip_controller.dart';
 
@@ -72,7 +73,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     _destinationController = TextEditingController(
       text: trip?.destination ?? '',
     );
-    _currencyController = TextEditingController(text: trip?.baseCurrency ?? '');
+    _currencyController = TextEditingController(
+      text: trip?.destinationCurrency ?? trip?.baseCurrency ?? '',
+    );
     _budgetController = TextEditingController(
       text: trip?.budget?.toStringAsFixed(2) ?? '',
     );
@@ -152,7 +155,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               onDestinationSelected: _onDestinationSelected,
               onDestinationCleared: _onDestinationCleared,
               onCustomDestinationSelected: _onCustomDestinationSelected,
-              onCreateTrip: (_selectedDestination != null || _isCustomDestinationFallback)
+                onCreateTrip: _selectedDestination != null
                   ? _submit
                   : null,
               onToggleLanguage: () => _toggleLanguage(isArabic: isArabic),
@@ -903,7 +906,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final selectedDestination = _selectedDestination;
     final customDestination = _destinationController.text.trim();
 
-    if (isCreateMode && selectedDestination == null && customDestination.isEmpty) {
+    if (isCreateMode && selectedDestination == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -925,15 +928,19 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final destinationCountryCode = isCreateMode
         ? selectedDestination?.countryCode
         : widget.trip!.destinationCountryCode;
+    final profile = ref.read(userFinancialProfileControllerProvider).valueOrNull;
     final typedCurrency = _extractCurrencyCode(_currencyController.text);
-    final baseCurrency = typedCurrency.isNotEmpty
-        ? typedCurrency
-        : (selectedDestination?.currencyCode ??
-            _resolveDefaultCurrency(isArabic: isArabic, locale: locale));
+    final destinationCurrency = selectedDestination?.currencyCode ?? typedCurrency;
+    final baseCurrency = destinationCurrency.isNotEmpty
+      ? destinationCurrency
+      : _resolveDefaultCurrency(isArabic: isArabic, locale: locale);
+    final homeCurrencySnapshot = profile?.homeCurrencyCode.trim().toUpperCase().isNotEmpty == true
+      ? profile!.homeCurrencyCode.trim().toUpperCase()
+      : baseCurrency;
     _currencyController.text = baseCurrency;
 
     final resolvedDestination = isCreateMode
-      ? (selectedDestination?.englishName ?? customDestination)
+      ? selectedDestination!.englishName
         : _destinationController.text.trim();
 
     final budgetText = _budgetController.text.trim();
@@ -953,6 +960,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           startDate: _startDate,
           endDate: _endDate,
           baseCurrency: baseCurrency,
+          destinationCurrency: baseCurrency,
+          homeCurrencySnapshot: homeCurrencySnapshot,
           budget: budget,
           budgetCurrency: budgetCurrency,
           isCustomTitle: isCustomTitle,
@@ -972,6 +981,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           startDate: _startDate,
           endDate: _endDate,
           baseCurrency: baseCurrency,
+          destinationCurrency: selectedDestination?.currencyCode,
           budget: budget,
           budgetCurrency: budgetCurrency,
           isCustomTitle: isCustomTitle,
@@ -1030,7 +1040,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     }
     setState(() {
       _selectedDestination = null;
-      _isCustomDestinationFallback = true;
+      _isCustomDestinationFallback = false;
       _destinationController.text = trimmed;
       if (_currencyController.text.trim().isEmpty) {
         final locale = Localizations.localeOf(context);
@@ -1106,6 +1116,16 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final typedCurrency = _extractCurrencyCode(_currencyController.text);
     if (typedCurrency.isNotEmpty) {
       return typedCurrency;
+    }
+
+    final profileCurrency = ref
+        .read(userFinancialProfileControllerProvider)
+        .valueOrNull
+        ?.homeCurrencyCode
+        .trim()
+        .toUpperCase();
+    if (profileCurrency != null && profileCurrency.isNotEmpty) {
+      return profileCurrency;
     }
 
     final trips = ref.read(tripsControllerProvider).valueOrNull ?? const [];

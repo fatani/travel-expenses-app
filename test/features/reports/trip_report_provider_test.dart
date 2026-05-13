@@ -122,6 +122,8 @@ void main() {
       startDate: DateTime(2026, 7, 1),
       endDate: DateTime(2026, 7, 3),
       baseCurrency: 'SAR',
+      destinationCurrency: 'SAR',
+      homeCurrencySnapshot: 'SAR',
     );
 
     final trip = (await container.read(tripsControllerProvider.future)).single;

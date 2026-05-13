@@ -129,6 +129,8 @@ void main() {
       startDate: DateTime(2026, 4, 1),
       endDate: DateTime(2026, 4, 2),
       baseCurrency: 'SAR',
+      destinationCurrency: 'SAR',
+      homeCurrencySnapshot: 'SAR',
     );
     await tripsController.createTrip(
       name: 'Trip 2',
@@ -136,6 +138,8 @@ void main() {
       startDate: DateTime(2026, 4, 3),
       endDate: DateTime(2026, 4, 4),
       baseCurrency: 'SAR',
+      destinationCurrency: 'SAR',
+      homeCurrencySnapshot: 'SAR',
     );
 
     final tripsBeforeDelete = await container.read(tripsControllerProvider.future);

@@ -1037,6 +1037,78 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// No description provided for @financialSettingsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial settings'**
+  String get financialSettingsTitle;
+
+  /// No description provided for @financialSettingsCardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Home country and home currency'**
+  String get financialSettingsCardSubtitle;
+
+  /// No description provided for @financialSettingsHomeCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Home country'**
+  String get financialSettingsHomeCountry;
+
+  /// No description provided for @financialSettingsHomeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Home currency'**
+  String get financialSettingsHomeCurrency;
+
+  /// No description provided for @financialSettingsStabilityHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing home currency now will not change historical trip snapshots.'**
+  String get financialSettingsStabilityHint;
+
+  /// No description provided for @financialSettingsChangeCountry.
+  ///
+  /// In en, this message translates to:
+  /// **'Change home country'**
+  String get financialSettingsChangeCountry;
+
+  /// No description provided for @financialProfileMissing.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial profile not found.'**
+  String get financialProfileMissing;
+
+  /// No description provided for @financialOnboardingQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Where do you live?'**
+  String get financialOnboardingQuestion;
+
+  /// No description provided for @financialOnboardingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your home country so the app can set your home currency.'**
+  String get financialOnboardingSubtitle;
+
+  /// No description provided for @financialCountrySearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search country'**
+  String get financialCountrySearchHint;
+
+  /// No description provided for @financialOnboardingContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get financialOnboardingContinue;
+
+  /// No description provided for @financialProfileSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save financial profile.'**
+  String get financialProfileSaveError;
+
   /// No description provided for @settingsLanguageAction.
   ///
   /// In en, this message translates to:
