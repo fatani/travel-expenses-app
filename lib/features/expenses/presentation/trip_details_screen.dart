@@ -15,6 +15,7 @@ import '../../export/presentation/export_menu.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../reports/presentation/trip_reports_screen.dart';
 import '../../trips/domain/trip.dart';
+import '../../trips/domain/trip_title_resolver.dart';
 import '../../trips/presentation/trip_form_screen.dart';
 import '../domain/expense.dart';
 import 'expense_controller.dart';
@@ -60,7 +61,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       appBar: AppBar(
         centerTitle: true,
         title: Text(
-          _trip.name,
+          TripTitleResolver.resolve(
+            _trip,
+            Localizations.localeOf(context).languageCode.toLowerCase() == 'ar',
+          ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           textAlign: TextAlign.center,
@@ -380,7 +384,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     if (!hasExpenses) {
       return NoExpensesPremiumState(
         isArabic: isArabic,
-        tripName: widget.trip.name,
+        tripName: TripTitleResolver.resolve(widget.trip, isArabic),
         baseCurrency: widget.trip.baseCurrency,
         datesMissing: datesMissing,
         dateRangeText: dateRangeText,
@@ -870,7 +874,7 @@ class _TripSummaryCard extends StatelessWidget {
                             : WrapAlignment.start,
                         children: [
                           Text(
-                            trip.name,
+                            TripTitleResolver.resolve(trip, isArabic),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.headlineSmall

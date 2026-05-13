@@ -8,6 +8,7 @@ import '../../predictions/data/trip_prediction_provider.dart';
 import '../../predictions/domain/trip_prediction_summary.dart';
 import '../../predictions/presentation/trip_prediction_section.dart';
 import '../../trips/domain/trip.dart';
+import '../../trips/domain/trip_title_resolver.dart';
 import '../data/trip_report_provider.dart';
 import '../domain/report_bucket.dart';
 import '../domain/trip_report_summary.dart';
@@ -30,7 +31,12 @@ class TripReportsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(trip.name),
+        title: Text(
+          TripTitleResolver.resolve(
+            trip,
+            Localizations.localeOf(context).languageCode.toLowerCase() == 'ar',
+          ),
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(20),
           child: Text(

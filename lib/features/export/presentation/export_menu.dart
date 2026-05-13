@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../../trips/domain/trip.dart';
+import '../../trips/domain/trip_title_resolver.dart';
 import '../data/trip_csv_exporter.dart';
 import '../data/trip_pdf_exporter.dart';
 
@@ -52,6 +53,13 @@ class ExportMenu extends ConsumerWidget {
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
 
+    // Resolve the trip title based on the active locale before any async gap.
+    final isArabic =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+    final exportTrip = trip.copyWith(
+      name: TripTitleResolver.resolve(trip, isArabic),
+    );
+
     try {
       final expenses = await ref
           .read(expenseRepositoryProvider)
@@ -70,14 +78,14 @@ class ExportMenu extends ConsumerWidget {
 
       if (type == _ExportType.csv) {
         final result = await TripCsvExporter().exportTrip(
-          trip: trip,
+          trip: exportTrip,
           expenses: expenses,
         );
         filePath = result.filePath;
         fileName = result.fileName;
       } else {
         final result = await TripPdfExporter().exportTrip(
-          trip: trip,
+          trip: exportTrip,
           expenses: expenses,
         );
         filePath = result.filePath;

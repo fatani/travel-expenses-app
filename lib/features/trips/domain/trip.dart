@@ -10,6 +10,8 @@ class Trip {
     this.budgetCurrency,
     required this.createdAt,
     required this.updatedAt,
+    this.isCustomTitle = false,
+    this.destinationCountryCode,
   });
 
   factory Trip.create({
@@ -21,6 +23,8 @@ class Trip {
     DateTime? endDate,
     double? budget,
     String? budgetCurrency,
+    bool isCustomTitle = false,
+    String? destinationCountryCode,
   }) {
     final now = DateTime.now().toUtc();
 
@@ -35,6 +39,8 @@ class Trip {
       budgetCurrency: budgetCurrency,
       createdAt: now,
       updatedAt: now,
+      isCustomTitle: isCustomTitle,
+      destinationCountryCode: destinationCountryCode,
     );
   }
 
@@ -50,6 +56,8 @@ class Trip {
       budgetCurrency: _readBudgetCurrency(map),
       createdAt: DateTime.parse(map['created_at']! as String),
       updatedAt: DateTime.parse(map['updated_at']! as String),
+      isCustomTitle: (map['is_custom_title'] as int? ?? 0) != 0,
+      destinationCountryCode: map['destination_country_code'] as String?,
     );
   }
 
@@ -63,6 +71,8 @@ class Trip {
   final String? budgetCurrency;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isCustomTitle;
+  final String? destinationCountryCode;
 
   static const Object _unset = Object();
 
@@ -77,6 +87,8 @@ class Trip {
     Object? budgetCurrency = _unset,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isCustomTitle,
+    Object? destinationCountryCode = _unset,
   }) {
     return Trip(
       id: id ?? this.id,
@@ -91,6 +103,10 @@ class Trip {
           : budgetCurrency as String?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isCustomTitle: isCustomTitle ?? this.isCustomTitle,
+      destinationCountryCode: identical(destinationCountryCode, _unset)
+          ? this.destinationCountryCode
+          : destinationCountryCode as String?,
     );
   }
 
@@ -106,6 +122,8 @@ class Trip {
       'budget_currency': budgetCurrency,
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
+      'is_custom_title': isCustomTitle ? 1 : 0,
+      'destination_country_code': destinationCountryCode,
     };
   }
 

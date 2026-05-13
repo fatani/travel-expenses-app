@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 11;
+  static const int databaseVersion = 12;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -46,6 +46,7 @@ class AppDatabase {
         await _ensureExpensesFinancialColumns(db);
         await _ensureExpensesCardProfileIdColumn(db);
         await _ensureCardsProfileColumns(db);
+        await _ensureTripsCustomTitleColumns(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -59,7 +60,9 @@ class AppDatabase {
             budget REAL,
             budget_currency TEXT,
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            updated_at TEXT NOT NULL,
+            is_custom_title INTEGER NOT NULL DEFAULT 0,
+            destination_country_code TEXT
           )
         ''');
 
@@ -201,6 +204,10 @@ class AppDatabase {
 
         if (oldVersion < 11) {
           await _ensureExpensesCardProfileIdColumn(db);
+        }
+
+        if (oldVersion < 12) {
+          await _ensureTripsCustomTitleColumns(db);
         }
       },
     );
@@ -419,6 +426,22 @@ class AppDatabase {
     final hasDisplayName = await _hasColumn(db, cardsTable, 'display_name');
     if (!hasDisplayName) {
       await db.execute('ALTER TABLE $cardsTable ADD COLUMN display_name TEXT');
+    }
+  }
+
+  Future<void> _ensureTripsCustomTitleColumns(Database db) async {
+    final hasIsCustomTitle = await _hasColumn(db, tripsTable, 'is_custom_title');
+    if (!hasIsCustomTitle) {
+      await db.execute(
+        'ALTER TABLE $tripsTable ADD COLUMN is_custom_title INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    final hasCountryCode = await _hasColumn(db, tripsTable, 'destination_country_code');
+    if (!hasCountryCode) {
+      await db.execute(
+        'ALTER TABLE $tripsTable ADD COLUMN destination_country_code TEXT',
+      );
     }
   }
 

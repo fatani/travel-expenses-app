@@ -3,6 +3,7 @@ import '../../insights/data/insight_engine.dart';
 import '../../insights/domain/insight.dart';
 import '../../reports/domain/report_bucket.dart';
 import '../../trips/domain/trip.dart';
+import '../../trips/domain/trip_title_resolver.dart';
 import '../domain/global_report_summary.dart';
 
 class GlobalReportCalculator {
@@ -14,10 +15,12 @@ class GlobalReportCalculator {
   GlobalReportSummary calculate({
     required List<Trip> trips,
     required List<Expense> expenses,
+    bool isArabic = false,
   }) {
     final totalTrips = trips.length;
     final tripNamesById = {
-      for (final trip in trips) trip.id: trip.name,
+      for (final trip in trips)
+        trip.id: TripTitleResolver.resolve(trip, isArabic),
     };
     final tripIds = trips.map((trip) => trip.id).toSet();
     final relevantExpenses = expenses

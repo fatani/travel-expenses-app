@@ -5,6 +5,8 @@ import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/global_reports/data/global_report_provider.dart';
+import 'package:travel_expenses/features/settings/domain/app_settings.dart';
+import 'package:travel_expenses/features/settings/presentation/settings_controller.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/features/trips/presentation/trip_controller.dart';
@@ -101,6 +103,11 @@ class _FakeExpenseRepository extends ExpenseRepository {
   }
 }
 
+class _FakeSettingsController extends SettingsController {
+  @override
+  Future<AppSettings> build() async => AppSettings.defaults();
+}
+
 void main() {
   test('global report refreshes after trip deletion', () async {
     final tripRepository = _FakeTripRepository();
@@ -109,6 +116,7 @@ void main() {
       overrides: [
         tripRepositoryProvider.overrideWithValue(tripRepository),
         expenseRepositoryProvider.overrideWithValue(expenseRepository),
+        settingsControllerProvider.overrideWith(_FakeSettingsController.new),
       ],
     );
     addTearDown(container.dispose);

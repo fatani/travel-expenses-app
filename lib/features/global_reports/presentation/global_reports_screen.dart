@@ -167,7 +167,6 @@ class _SmartSummaryHeroCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final primaryInsight = summary.smartInsights.first;
     final supportingInsights = summary.smartInsights.skip(1).toList(growable: false);
 
@@ -185,7 +184,7 @@ class _SmartSummaryHeroCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7C4DFF).withOpacity(0.08), // subtle purple shadow
+            color: const Color(0xFF7C4DFF).withValues(alpha: 0.08), // subtle purple shadow
             blurRadius: 18,
             offset: const Offset(0, 8),
           ),
@@ -202,7 +201,7 @@ class _SmartSummaryHeroCard extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFB39DDB).withOpacity(0.18), // muted lavender accent
+                    color: const Color(0xFFB39DDB).withValues(alpha: 0.18), // muted lavender accent
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -245,7 +244,7 @@ class _SmartSummaryHeroCard extends StatelessWidget {
                       child: Icon(
                         Icons.circle,
                         size: 7,
-                        color: const Color(0xFFB39DDB).withOpacity(0.75), // muted lavender dot
+                        color: const Color(0xFFB39DDB).withValues(alpha: 0.75), // muted lavender dot
                       ),
                     ),
                     const SizedBox(width: 8),

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/database_providers.dart';
+import '../../settings/presentation/settings_controller.dart';
 import 'global_report_calculator.dart';
 import '../domain/global_report_summary.dart';
 
@@ -9,6 +10,8 @@ final globalReportProvider = FutureProvider.autoDispose<GlobalReportSummary>((
 ) async {
   final tripRepository = ref.watch(tripRepositoryProvider);
   final expenseRepository = ref.watch(expenseRepositoryProvider);
+  final settings = await ref.watch(settingsControllerProvider.future);
+  final isArabic = settings.localeCode == 'ar';
 
   final trips = await tripRepository.getTrips();
   final expenseLists = await Future.wait(
@@ -17,5 +20,5 @@ final globalReportProvider = FutureProvider.autoDispose<GlobalReportSummary>((
   final expenses = expenseLists.expand((items) => items).toList(growable: false);
 
   const calculator = GlobalReportCalculator();
-  return calculator.calculate(trips: trips, expenses: expenses);
+  return calculator.calculate(trips: trips, expenses: expenses, isArabic: isArabic);
 });

@@ -8,6 +8,7 @@ import '../../global_reports/presentation/global_reports_screen.dart';
 import '../../settings/presentation/settings_controller.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../domain/trip.dart';
+import '../domain/trip_title_resolver.dart';
 import 'trip_controller.dart';
 import 'trips_empty_state_screen.dart';
 import 'trip_form_screen.dart';
@@ -296,7 +297,7 @@ class TripsListScreen extends ConsumerWidget {
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Text(
-                      trip.name,
+                      TripTitleResolver.resolve(trip, isArabic),
                       textAlign: TextAlign.center,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -456,7 +457,7 @@ class _TripCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            trip.name,
+                            TripTitleResolver.resolve(trip, isArabic),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(

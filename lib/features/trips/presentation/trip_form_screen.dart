@@ -6,13 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../domain/country_database.dart';
+import '../domain/country_info.dart';
 import '../domain/trip.dart';
 import '../../settings/presentation/settings_controller.dart';
 import 'trip_controller.dart';
-
-String getDefaultTripName(bool isArabic) {
-  return isArabic ? 'رحلتي الجديدة' : 'My new trip';
-}
 
 const List<String> _kSupportedCurrencies = [
   'SAR - Saudi Riyal',
@@ -59,6 +57,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
   DateTime? _startDate;
   DateTime? _endDate;
+  CountryInfo? _selectedDestination;
+  bool _isCustomDestinationFallback = false;
   bool _didInitDependencies = false;
   String? _lastLocaleTag;
   bool _isDatePickerOpen = false;
@@ -85,6 +85,10 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
     _startDate = trip?.startDate;
     _endDate = trip?.endDate;
+    _selectedDestination = trip == null
+      ? null
+      : (CountryDatabase.findByName(trip.destination) ??
+        CountryDatabase.findByCode(trip.destination));
   }
 
   @override
@@ -109,6 +113,10 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     if (_lastLocaleTag != localeTag) {
       _lastLocaleTag = localeTag;
       _syncDateFields();
+      if (!widget.isEditMode && _selectedDestination != null) {
+        _destinationController.text =
+            _selectedDestination!.getLocalizedName(locale.languageCode.toLowerCase() == 'ar');
+      }
     }
 
     if (_didInitDependencies) {
@@ -118,21 +126,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
     if (widget.isEditMode) {
       return;
-    }
-
-    final isArabic = locale.languageCode.toLowerCase() == 'ar';
-
-    if (_currencyController.text.trim().isEmpty) {
-      _currencyController.text = _resolveDefaultCurrency(
-        isArabic: isArabic,
-        locale: locale,
-      );
-    }
-    final defaultName = getDefaultTripName(isArabic);
-    if (_nameController.text.trim().isEmpty ||
-        _nameController.text == 'رحلتي الجديدة' ||
-        _nameController.text == 'My new trip') {
-      _nameController.text = defaultName;
     }
   }
 
@@ -150,8 +143,18 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           ? _buildEditTripScreen(isArabic: isArabic)
           : CreateTripVisualScreen(
               isArabic: isArabic,
-              tripNameController: _nameController,
-              onCreateTrip: _submit,
+              destinationController: _destinationController,
+              selectedDestination: _selectedDestination,
+              generatedTripTitle: _buildGeneratedTripTitle(
+                isArabic: isArabic,
+                destination: _selectedDestination,
+              ),
+              onDestinationSelected: _onDestinationSelected,
+              onDestinationCleared: _onDestinationCleared,
+              onCustomDestinationSelected: _onCustomDestinationSelected,
+              onCreateTrip: (_selectedDestination != null || _isCustomDestinationFallback)
+                  ? _submit
+                  : null,
               onToggleLanguage: () => _toggleLanguage(isArabic: isArabic),
               onCustomizeTrip: _openCustomizeTripSheet,
               onBack: () => Navigator.of(context).pop(),
@@ -413,11 +416,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       child: Column(
         children: [
           TextFormField(
-            controller: _destinationController,
+            controller: _nameController,
             textInputAction: TextInputAction.next,
             decoration: _secondaryDetailsDecoration(
-              labelText: l10n.tripFormDestinationLabel,
-              hintText: l10n.tripFormDestinationHint,
+              labelText: l10n.tripFormCustomTripNameLabel,
+              hintText: l10n.tripFormCustomTripNameHint,
             ),
           ),
           Divider(height: 20, color: dividerColor),
@@ -498,14 +501,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
   Future<void> _toggleLanguage({required bool isArabic}) async {
     final next = isArabic ? 'en' : 'ar';
-    final nextIsArabic = next == 'ar';
-
-    final defaultName = getDefaultTripName(nextIsArabic);
-    if (_nameController.text.trim().isEmpty ||
-        _nameController.text == 'رحلتي الجديدة' ||
-        _nameController.text == 'My new trip') {
-      _nameController.text = defaultName;
-    }
 
     try {
       await ref.read(settingsControllerProvider.notifier).updateLocale(next);
@@ -904,14 +899,42 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
     final locale = Localizations.localeOf(context);
     final isArabic = locale.languageCode.toLowerCase() == 'ar';
+    final isCreateMode = widget.trip == null;
+    final selectedDestination = _selectedDestination;
+    final customDestination = _destinationController.text.trim();
+
+    if (isCreateMode && selectedDestination == null && customDestination.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.tripFormDestinationRequired,
+          ),
+        ),
+      );
+      return;
+    }
+
     final resolvedName = _nameController.text.trim().isEmpty
-        ? getDefaultTripName(isArabic)
+        ? _buildGeneratedTripTitle(
+            isArabic: isArabic,
+            destination: selectedDestination,
+            customDestination: customDestination,
+          )
         : _nameController.text.trim();
-    final baseCurrency = _resolveDefaultCurrency(
-      isArabic: isArabic,
-      locale: locale,
-    );
+    final isCustomTitle = _nameController.text.trim().isNotEmpty;
+    final destinationCountryCode = isCreateMode
+        ? selectedDestination?.countryCode
+        : widget.trip!.destinationCountryCode;
+    final typedCurrency = _extractCurrencyCode(_currencyController.text);
+    final baseCurrency = typedCurrency.isNotEmpty
+        ? typedCurrency
+        : (selectedDestination?.currencyCode ??
+            _resolveDefaultCurrency(isArabic: isArabic, locale: locale));
     _currencyController.text = baseCurrency;
+
+    final resolvedDestination = isCreateMode
+      ? (selectedDestination?.englishName ?? customDestination)
+        : _destinationController.text.trim();
 
     final budgetText = _budgetController.text.trim();
     final budget = budgetText.isEmpty ? null : double.parse(budgetText);
@@ -923,15 +946,17 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final controller = ref.read(tripsControllerProvider.notifier);
 
     try {
-      if (widget.trip == null) {
+      if (isCreateMode) {
         final createdTrip = await controller.createTrip(
           name: resolvedName,
-          destination: _destinationController.text.trim(),
+          destination: resolvedDestination,
           startDate: _startDate,
           endDate: _endDate,
           baseCurrency: baseCurrency,
           budget: budget,
           budgetCurrency: budgetCurrency,
+          isCustomTitle: isCustomTitle,
+          destinationCountryCode: destinationCountryCode,
         );
 
         if (!mounted) {
@@ -943,12 +968,14 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         await controller.updateTrip(
           trip: widget.trip!,
           name: resolvedName,
-          destination: _destinationController.text.trim(),
+          destination: resolvedDestination,
           startDate: _startDate,
           endDate: _endDate,
           baseCurrency: baseCurrency,
           budget: budget,
           budgetCurrency: budgetCurrency,
+          isCustomTitle: isCustomTitle,
+          destinationCountryCode: destinationCountryCode,
         );
       }
 
@@ -972,6 +999,64 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         ),
       );
     }
+  }
+
+  void _onDestinationSelected(CountryInfo country) {
+    setState(() {
+      _selectedDestination = country;
+      _isCustomDestinationFallback = false;
+      _destinationController.text = country.getLocalizedName(_isCurrentLocaleArabic);
+      _currencyController.text = country.currencyCode;
+      if (_budgetCurrencyController.text.trim().isEmpty) {
+        _budgetCurrencyController.text = country.currencyCode;
+      }
+    });
+  }
+
+  void _onDestinationCleared() {
+    if (_selectedDestination == null && !_isCustomDestinationFallback) {
+      return;
+    }
+    setState(() {
+      _selectedDestination = null;
+      _isCustomDestinationFallback = false;
+    });
+  }
+
+  void _onCustomDestinationSelected(String destination) {
+    final trimmed = destination.trim();
+    if (trimmed.isEmpty) {
+      return;
+    }
+    setState(() {
+      _selectedDestination = null;
+      _isCustomDestinationFallback = true;
+      _destinationController.text = trimmed;
+      if (_currencyController.text.trim().isEmpty) {
+        final locale = Localizations.localeOf(context);
+        final isArabic = locale.languageCode.toLowerCase() == 'ar';
+        _currencyController.text = _resolveDefaultCurrency(
+          isArabic: isArabic,
+          locale: locale,
+        );
+      }
+    });
+  }
+
+  String _buildGeneratedTripTitle({
+    required bool isArabic,
+    required CountryInfo? destination,
+    String? customDestination,
+  }) {
+    if (destination == null) {
+      final fallbackName = customDestination?.trim() ?? '';
+      if (fallbackName.isEmpty) {
+        return '';
+      }
+      return isArabic ? 'رحلة $fallbackName' : '$fallbackName Trip';
+    }
+    final localizedName = destination.getLocalizedName(isArabic);
+    return isArabic ? 'رحلة $localizedName' : '$localizedName Trip';
   }
 
   void _syncDateFields() {
@@ -1194,8 +1279,13 @@ class _UpperCaseTextFormatter extends TextInputFormatter {
 
 class CreateTripVisualScreen extends StatelessWidget {
   final bool isArabic;
-  final TextEditingController tripNameController;
-  final VoidCallback onCreateTrip;
+  final TextEditingController destinationController;
+  final CountryInfo? selectedDestination;
+  final String generatedTripTitle;
+  final ValueChanged<CountryInfo> onDestinationSelected;
+  final VoidCallback onDestinationCleared;
+  final ValueChanged<String> onCustomDestinationSelected;
+  final VoidCallback? onCreateTrip;
   final VoidCallback onToggleLanguage;
   final VoidCallback onCustomizeTrip;
   final VoidCallback onBack;
@@ -1203,7 +1293,12 @@ class CreateTripVisualScreen extends StatelessWidget {
   const CreateTripVisualScreen({
     super.key,
     required this.isArabic,
-    required this.tripNameController,
+    required this.destinationController,
+    required this.selectedDestination,
+    required this.generatedTripTitle,
+    required this.onDestinationSelected,
+    required this.onDestinationCleared,
+    required this.onCustomDestinationSelected,
     required this.onCreateTrip,
     required this.onToggleLanguage,
     required this.onCustomizeTrip,
@@ -1212,6 +1307,7 @@ class CreateTripVisualScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final textDirection = isArabic ? TextDirection.rtl : TextDirection.ltr;
     final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
 
@@ -1279,9 +1375,7 @@ class CreateTripVisualScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 30),
                                 Text(
-                                  isArabic
-                                      ? 'ابدأ رحلتك ✈️'
-                                      : 'Start your trip ✈️',
+                                  l10n.createTripHeading,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(
                                     fontSize: 32,
@@ -1292,9 +1386,7 @@ class CreateTripVisualScreen extends StatelessWidget {
                                 ),
                                 const SizedBox(height: 12),
                                 Text(
-                                  isArabic
-                                      ? 'أنشئ رحلتك وابدأ تتبع مصاريفك بسهولة'
-                                      : 'Create your trip and start tracking expenses easily',
+                                  l10n.createTripSubheading,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
                                     fontSize: 17,
@@ -1304,14 +1396,30 @@ class CreateTripVisualScreen extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 34),
-                                _TripNameCard(
+                                _DestinationCard(
                                   isArabic: isArabic,
-                                  controller: tripNameController,
+                                  controller: destinationController,
+                                  selectedDestination: selectedDestination,
+                                  onCountrySelected: onDestinationSelected,
+                                  onSelectionCleared: onDestinationCleared,
+                                  onCustomDestinationSelected:
+                                      onCustomDestinationSelected,
                                 ),
+                                if (generatedTripTitle.isNotEmpty) ...[
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    l10n.tripFormCreateWithoutCustomTitle(generatedTripTitle),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: Colors.blueGrey.shade400,
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(height: 24),
                                 _GradientButton(
-                                  label:
-                                      isArabic ? 'إنشاء الرحلة' : 'Create Trip',
+                                  label: l10n.tripFormSaveCreate,
                                   onTap: onCreateTrip,
                                 ),
                                 if (!keyboardOpen) ...[
@@ -1393,18 +1501,26 @@ class CreateTripVisualScreen extends StatelessWidget {
   }
 }
 
-class _TripNameCard extends StatelessWidget {
+class _DestinationCard extends StatelessWidget {
   final bool isArabic;
   final TextEditingController controller;
+  final CountryInfo? selectedDestination;
+  final ValueChanged<CountryInfo> onCountrySelected;
+  final VoidCallback onSelectionCleared;
+  final ValueChanged<String> onCustomDestinationSelected;
 
-  const _TripNameCard({
+  const _DestinationCard({
     required this.isArabic,
     required this.controller,
+    required this.selectedDestination,
+    required this.onCountrySelected,
+    required this.onSelectionCleared,
+    required this.onCustomDestinationSelected,
   });
 
   @override
   Widget build(BuildContext context) {
-    final defaultName = getDefaultTripName(isArabic);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       width: double.infinity,
@@ -1429,13 +1545,13 @@ class _TripNameCard extends StatelessWidget {
                 isArabic ? MainAxisAlignment.end : MainAxisAlignment.start,
             children: [
               const Icon(
-                Icons.card_travel_outlined,
+                Icons.public_rounded,
                 color: Color(0xFF7C3AED),
                 size: 24,
               ),
               const SizedBox(width: 8),
               Text(
-                isArabic ? 'اسم الرحلة' : 'Trip name',
+                l10n.createTripHeading,
                 style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w800,
@@ -1447,54 +1563,187 @@ class _TripNameCard extends StatelessWidget {
 
           const SizedBox(height: 14),
 
-          TextField(
-            controller: controller,
-            textAlign: isArabic ? TextAlign.right : TextAlign.left,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
-            ),
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              hintText: defaultName,
-              hintStyle: TextStyle(
-                color: Colors.blueGrey.shade200,
-                fontWeight: FontWeight.w700,
-              ),
-              prefixIcon: isArabic
-                  ? null
-                  : const Icon(Icons.star_border, color: Color(0xFF7C3AED)),
-              suffixIcon: isArabic
-                  ? const Icon(Icons.star_border, color: Color(0xFF7C3AED))
-                  : null,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 18,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: const BorderSide(
-                  color: Color(0xFF7C3AED),
-                  width: 1.4,
+          Autocomplete<CountryInfo>(
+            optionsBuilder: (textEditingValue) {
+              return CountryDatabase.search(textEditingValue.text.trim());
+            },
+            displayStringForOption: (option) => option.getLocalizedName(isArabic),
+            onSelected: onCountrySelected,
+            fieldViewBuilder: (context, textController, focusNode, onFieldSubmitted) {
+              if (textController.text != controller.text) {
+                textController.text = controller.text;
+                textController.selection = TextSelection.collapsed(
+                  offset: textController.text.length,
+                );
+              }
+
+              return TextField(
+                controller: textController,
+                focusNode: focusNode,
+                textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF0F172A),
                 ),
-              ),
-            ),
+                onChanged: (value) {
+                  controller.text = value;
+                  final selected = selectedDestination;
+                  if (selected == null) {
+                    return;
+                  }
+                  final selectedLabels = <String>{
+                    selected.englishName.toLowerCase(),
+                    selected.arabicName,
+                    selected.countryCode.toLowerCase(),
+                    selected.currencyCode.toLowerCase(),
+                  };
+                  if (!selectedLabels.contains(value.trim().toLowerCase())) {
+                    onSelectionCleared();
+                  }
+                },
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  hintText: l10n.tripFormDestinationSearchLabel,
+                  hintStyle: TextStyle(
+                    color: Colors.blueGrey.shade200,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  prefixIcon: isArabic
+                      ? null
+                      : const Icon(Icons.search_rounded, color: Color(0xFF7C3AED)),
+                  suffixIcon: isArabic
+                      ? const Icon(Icons.search_rounded, color: Color(0xFF7C3AED))
+                      : null,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 18,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    borderSide: const BorderSide(
+                      color: Color(0xFF7C3AED),
+                      width: 1.4,
+                    ),
+                  ),
+                ),
+              );
+            },
+            optionsViewBuilder: (context, onSelected, options) {
+              final visibleOptions = options.take(8).toList(growable: false);
+              final query = controller.text.trim();
+              return Align(
+                alignment: isArabic ? Alignment.topRight : Alignment.topLeft,
+                child: Material(
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    width: MediaQuery.of(context).size.width - 48,
+                    constraints: const BoxConstraints(maxHeight: 260),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFD6CCFA)),
+                    ),
+                    child: visibleOptions.isEmpty
+                        ? InkWell(
+                            borderRadius: BorderRadius.circular(16),
+                            onTap: () {
+                              onCustomDestinationSelected(query);
+                              FocusScope.of(context).unfocus();
+                            },
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 16,
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 34,
+                                    height: 34,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFEDE8FF),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(
+                                      Icons.add_location_alt_outlined,
+                                      size: 18,
+                                      color: Color(0xFF6D49D8),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      l10n.tripFormCustomDestinationFallback,
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: Color(0xFF2F244F),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            shrinkWrap: true,
+                            itemCount: visibleOptions.length,
+                            itemBuilder: (context, index) {
+                              final country = visibleOptions[index];
+                              return ListTile(
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 2,
+                                ),
+                                leading: Text(
+                                  country.flagEmoji,
+                                  style: const TextStyle(fontSize: 22),
+                                ),
+                                title: Text(
+                                  country.getLocalizedName(isArabic),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  '${country.currencyCode} • ${country.currencyName}',
+                                  textDirection: TextDirection.ltr,
+                                ),
+                                trailing: Text(
+                                  country.countryCode,
+                                  style: const TextStyle(
+                                    color: Color(0xFF7A6AAE),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                onTap: () => onSelected(country),
+                              );
+                            },
+                          ),
+                  ),
+                ),
+              );
+            },
           ),
 
           const SizedBox(height: 12),
 
           Text(
-            isArabic ? 'يمكنك تغييره لاحقًا' : 'You can change it later',
+            selectedDestination == null
+                ? l10n.tripFormDestinationRequired
+                : l10n.tripFormCurrencyAutoSelected(selectedDestination!.currencyCode),
             style: TextStyle(
               fontSize: 15,
               color: Colors.blueGrey.shade300,
