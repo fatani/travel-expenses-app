@@ -11,6 +11,7 @@ import 'expense_controller.dart';
 import 'expense_option_labels.dart';
 import '../../settings/presentation/cards_provider.dart';
 import '../../settings/domain/card_display_helper.dart';
+import '../../settings/presentation/add_card_screen.dart';
 
 class ExpenseFormScreen extends ConsumerStatefulWidget {
   const ExpenseFormScreen({
@@ -51,6 +52,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   String? _selectedPaymentNetwork;
   String? _selectedPaymentChannel;
   int? _selectedCardProfileId;
+  int? _preferredCardProfileId;
   DateTime? _spentAt;
   bool _showValidationErrors = false;
 
@@ -95,25 +97,22 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   }
 
   /// Queries the last card used in this trip and auto-selects it if it still
-  /// exists. Only runs for new expenses and only when the current channel is
-  /// already a card channel. Falls through silently on any error.
+  /// exists. Falls through silently on any error.
   Future<void> _initLastUsedCard() async {
     if (!mounted) return;
-    if (!_isCardPaymentChannel(_selectedPaymentChannel)) return;
 
-    final lastCardId = await ref
-        .read(expenseRepositoryProvider)
-        .getLastCardExpenseCardId(widget.trip.id);
-    if (!mounted || lastCardId == null) return;
+    try {
+      final lastCardId = await ref
+          .read(expenseRepositoryProvider)
+          .getLastCardExpenseCardId(widget.trip.id);
+      if (!mounted || lastCardId == null) return;
 
-    // Verify the card still exists in the repository.
-    // If cards haven't loaded yet, skip — _CardDropdown handles single-card auto-select.
-    final cards = ref.read(cardsProvider).valueOrNull;
-    if (!mounted || cards == null) return;
-
-    if (cards.any((c) => c.id == lastCardId) &&
-        _selectedCardProfileId == null) {
-      setState(() => _selectedCardProfileId = lastCardId);
+      setState(() {
+        _preferredCardProfileId = lastCardId;
+      });
+    } catch (_) {
+      // Keep the form lightweight even when repository access is unavailable
+      // (for example in unit/widget tests without a real database).
     }
   }
 
@@ -156,21 +155,25 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final isSaving = ref
         .watch(expenseControllerProvider(widget.trip.id))
         .isLoading;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
         title: Text(
           widget.isEditMode
               ? l10n.expenseFormEditTitle
               : l10n.expenseFormCreateTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           child: Form(
             key: _formKey,
             autovalidateMode: _showValidationErrors
@@ -179,74 +182,89 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Card(
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.82),
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF0F172A).withValues(alpha: 0.05),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        _SectionLabel(
+                          title: isArabic ? 'البيانات الأساسية' : 'Basic expense',
+                        ),
                         TextFormField(
                           controller: _titleController,
                           textInputAction: TextInputAction.next,
-                          decoration: InputDecoration(
+                          decoration: _premiumInputDecoration(
+                            context,
                             labelText: l10n.expenseFormTitleLabel,
                             hintText: l10n.expenseFormTitleHint,
                             helperText: l10n.expenseFormTitleHelper,
                           ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: _amountController,
                           textInputAction: TextInputAction.next,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormAmountLabel,
-                            ),
+                          decoration: _premiumInputDecoration(
+                            context,
+                            labelText: _requiredLabel(l10n.expenseFormAmountLabel),
                             hintText: l10n.expenseFormAmountHint,
                           ),
                           validator: _validateAmount,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: _currencyController,
                           textInputAction: TextInputAction.next,
                           textCapitalization: TextCapitalization.characters,
                           inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp('[a-zA-Z]'),
-                            ),
+                            FilteringTextInputFormatter.allow(RegExp('[a-zA-Z]')),
                             LengthLimitingTextInputFormatter(3),
                           ],
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormCurrencyLabel,
-                            ),
+                          decoration: _premiumInputDecoration(
+                            context,
+                            labelText: _requiredLabel(l10n.expenseFormCurrencyLabel),
                             hintText: 'USD',
                           ),
                           validator: _validateRequired,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
+                        _SectionLabel(
+                          title: isArabic ? 'التصنيف' : 'Classification',
+                        ),
                         DropdownButtonFormField<String>(
+                          isExpanded: true,
                           initialValue: _selectedCategory,
                           items: ExpenseOptionLabels.categories
                               .map(
                                 (category) => DropdownMenuItem<String>(
                                   value: category,
                                   child: Text(
-                                    ExpenseOptionLabels.category(
-                                      l10n,
-                                      category,
-                                    ),
+                                    ExpenseOptionLabels.category(l10n, category),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               )
                               .toList(),
-                          decoration: InputDecoration(
-                            labelText: _requiredLabel(
-                              l10n.expenseFormCategoryLabel,
-                            ),
+                          decoration: _premiumInputDecoration(
+                            context,
+                            labelText: _requiredLabel(l10n.expenseFormCategoryLabel),
                           ),
                           onChanged: (value) {
                             setState(() {
@@ -255,38 +273,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           },
                           validator: _validateDropdown,
                         ),
-                        const SizedBox(height: 16),
-                        if (_shouldShowPaymentNetwork) ...[
-                          DropdownButtonFormField<String>(
-                            initialValue: _selectedPaymentNetwork,
-                            items: ExpenseOptionLabels.paymentNetworks
-                                .map(
-                                  (paymentNetwork) => DropdownMenuItem<String>(
-                                    value: paymentNetwork,
-                                    child: Text(
-                                      ExpenseOptionLabels.paymentNetwork(
-                                        l10n,
-                                        paymentNetwork,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                            decoration: InputDecoration(
-                              labelText: _requiredLabel(
-                                l10n.expenseFormPaymentNetworkLabel,
-                              ),
-                            ),
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedPaymentNetwork = value;
-                              });
-                            },
-                            validator: _validateDropdown,
-                          ),
-                          const SizedBox(height: 16),
-                        ],
+                        const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
+                          isExpanded: true,
                           initialValue: _selectedPaymentChannel,
                           items: ExpenseOptionLabels.paymentChannels
                               .map(
@@ -297,11 +286,14 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                                       l10n,
                                       paymentChannel,
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               )
                               .toList(),
-                          decoration: InputDecoration(
+                          decoration: _premiumInputDecoration(
+                            context,
                             labelText: _requiredLabel(
                               l10n.expenseFormPaymentChannelLabel,
                             ),
@@ -318,6 +310,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         ),
                         _CardDropdown(
                           selectedCardProfileId: _selectedCardProfileId,
+                          preferredCardProfileId: _preferredCardProfileId,
                           isCardPayment: _isCardPayment,
                           onChanged: (id) {
                             setState(() {
@@ -325,20 +318,20 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             });
                           },
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 18),
+                        _SectionLabel(
+                          title: isArabic ? 'التاريخ والملاحظات' : 'Date & Notes',
+                        ),
                         Row(
                           children: [
                             Expanded(
                               child: TextFormField(
                                 controller: _dateController,
                                 readOnly: true,
-                                decoration: InputDecoration(
-                                  labelText: _requiredLabel(
-                                    l10n.expenseFormDateLabel,
-                                  ),
-                                  suffixIcon: const Icon(
-                                    Icons.calendar_today_rounded,
-                                  ),
+                                decoration: _premiumInputDecoration(
+                                  context,
+                                  labelText: _requiredLabel(l10n.expenseFormDateLabel),
+                                  suffixIcon: const Icon(Icons.calendar_today_rounded),
                                 ),
                                 onTap: _selectDate,
                                 validator: _validateDate,
@@ -349,13 +342,10 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                               child: TextFormField(
                                 controller: _timeController,
                                 readOnly: true,
-                                decoration: InputDecoration(
-                                  labelText: _requiredLabel(
-                                    l10n.expenseFormTimeLabel,
-                                  ),
-                                  suffixIcon: const Icon(
-                                    Icons.access_time_rounded,
-                                  ),
+                                decoration: _premiumInputDecoration(
+                                  context,
+                                  labelText: _requiredLabel(l10n.expenseFormTimeLabel),
+                                  suffixIcon: const Icon(Icons.access_time_rounded),
                                 ),
                                 onTap: _selectTime,
                                 validator: _validateDate,
@@ -363,12 +353,13 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         TextFormField(
                           controller: _noteController,
                           minLines: 3,
                           maxLines: 5,
-                          decoration: InputDecoration(
+                          decoration: _premiumInputDecoration(
+                            context,
                             labelText: l10n.expenseFormNoteLabel,
                             hintText: l10n.expenseFormNoteHint,
                           ),
@@ -380,18 +371,84 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
-                  child: FilledButton(
-                    onPressed: isSaving ? null : _submit,
-                    child: Text(
-                      widget.isEditMode
-                          ? l10n.expenseFormSaveEdit
-                          : l10n.expenseFormSaveCreate,
+                  child: Opacity(
+                    opacity: isSaving ? 0.65 : 1,
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: isSaving ? null : _submit,
+                        child: Ink(
+                          height: 56,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF7C3AED).withValues(alpha: 0.24),
+                                blurRadius: 14,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              widget.isEditMode
+                                  ? (isArabic ? 'حفظ التغييرات' : 'Save changes')
+                                  : l10n.expenseFormSaveCreate,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 16,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  InputDecoration _premiumInputDecoration(
+    BuildContext context, {
+    required String labelText,
+    String? hintText,
+    String? helperText,
+    Widget? suffixIcon,
+  }) {
+    const fillColor = Color(0xFFF1F5F9);
+
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      helperText: helperText,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: fillColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+          width: 1.2,
         ),
       ),
     );
@@ -515,9 +572,10 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     final amount = double.parse(_amountController.text.trim());
     final currencyCode = _currencyController.text.trim().toUpperCase();
     final paymentChannel = _selectedPaymentChannel!;
+    final derivedCardNetwork = _deriveNetworkFromSelectedCard();
     final paymentNetwork = _isCashChannel(paymentChannel)
-        ? null
-        : (_selectedPaymentNetwork ?? 'Other');
+      ? null
+      : (derivedCardNetwork ?? _selectedPaymentNetwork);
     final paymentMethod = _resolvePaymentMethodCompatibility(
       paymentNetwork,
       paymentChannel,
@@ -653,14 +711,48 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     return '$label *';
   }
 
-  bool get _shouldShowPaymentNetwork => !_isCashChannel(_selectedPaymentChannel);
-
   bool get _isCardPayment => _isCardPaymentChannel(_selectedPaymentChannel);
 
   bool _isCardPaymentChannel(String? channel) =>
       channel == 'POS Purchase' || channel == 'Online Purchase';
 
   bool _isCashChannel(String? channel) => channel == 'Cash';
+
+  String? _deriveNetworkFromSelectedCard() {
+    final selectedCardId = _selectedCardProfileId;
+    if (selectedCardId == null || !_isCardPayment) {
+      return null;
+    }
+
+    final cards = ref.read(cardsProvider).valueOrNull;
+    if (cards == null || cards.isEmpty) {
+      return null;
+    }
+
+    dynamic matchedCard;
+    for (final card in cards) {
+      if (card.id == selectedCardId) {
+        matchedCard = card;
+        break;
+      }
+    }
+
+    if (matchedCard == null) {
+      return null;
+    }
+
+    final customNetwork = matchedCard.customCardNetwork?.trim();
+    if (customNetwork != null && customNetwork.isNotEmpty) {
+      return customNetwork;
+    }
+
+    final network = matchedCard.cardNetwork?.trim();
+    if (network == null || network.isEmpty) {
+      return null;
+    }
+
+    return network;
+  }
 }
 
 class _InitialPaymentSelection {
@@ -670,16 +762,40 @@ class _InitialPaymentSelection {
   final String channel;
 }
 
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: const Color(0xFF475569),
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.15,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+}
+
 /// Renders a card dropdown only when [isCardPayment] is true and cards exist.
 /// Auto-selects the card when there is exactly one card available.
 class _CardDropdown extends ConsumerStatefulWidget {
   const _CardDropdown({
     required this.selectedCardProfileId,
+    required this.preferredCardProfileId,
     required this.onChanged,
     required this.isCardPayment,
   });
 
   final int? selectedCardProfileId;
+  final int? preferredCardProfileId;
   final ValueChanged<int?> onChanged;
   final bool isCardPayment;
 
@@ -706,21 +822,61 @@ class _CardDropdownState extends ConsumerState<_CardDropdown> {
     final cardsAsync = ref.watch(cardsProvider);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final label = isArabic ? 'البطاقة' : 'Card';
-    final noneLabel = isArabic ? 'بدون بطاقة' : 'None';
+    final noneLabel = isArabic ? 'بدون بطاقة' : 'No card';
 
     return cardsAsync.when(
       loading: () => const SizedBox.shrink(),
       error: (error, _) => const SizedBox.shrink(),
       data: (cards) {
-        if (cards.isEmpty) return const SizedBox.shrink();
+        if (cards.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: const Color(0xFF64748B),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AddCardScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
+                label: Text(
+                  isArabic ? '+ إضافة بطاقة (اختياري)' : '+ Add card (optional)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          );
+        }
 
-        // Auto-select when only one card exists and nothing is selected yet.
+        final hasExplicitSelection = widget.selectedCardProfileId != null;
+        final preferredCardId = widget.preferredCardProfileId;
+        final hasPreferredCard = preferredCardId != null &&
+            cards.any((card) => card.id == preferredCardId);
+
+        // Auto-select preferred/last-used card when available, otherwise fallback
+        // to single-card auto-select.
         if (!_didAutoSelect &&
-            widget.selectedCardProfileId == null &&
-            cards.length == 1) {
+            !hasExplicitSelection &&
+            (hasPreferredCard || cards.length == 1)) {
+          final autoSelectedCardId = hasPreferredCard
+              ? preferredCardId
+              : cards.first.id;
           _didAutoSelect = true;
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) widget.onChanged(cards.first.id);
+            if (mounted) widget.onChanged(autoSelectedCardId);
           });
         }
 
@@ -728,23 +884,76 @@ class _CardDropdownState extends ConsumerState<_CardDropdown> {
           children: [
             const SizedBox(height: 16),
             DropdownButtonFormField<int?>(
+              isExpanded: true,
               key: ValueKey(widget.selectedCardProfileId),
               initialValue: widget.selectedCardProfileId,
+              selectedItemBuilder: (context) {
+                final selectedLabels = <String>[
+                  noneLabel,
+                  ...cards.map(
+                    (card) => CardDisplayHelper.getDisplayStringWithIcon(
+                      context,
+                      card,
+                    ),
+                  ),
+                ];
+                return selectedLabels
+                    .map(
+                      (labelText) => Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          labelText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList();
+              },
               items: [
                 DropdownMenuItem<int?>(
                   value: null,
-                  child: Text(noneLabel),
+                  child: Text(
+                    noneLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 ...cards.map(
                   (card) => DropdownMenuItem<int?>(
                     value: card.id,
                     child: Text(
                       CardDisplayHelper.getDisplayStringWithIcon(context, card),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ),
               ],
-              decoration: InputDecoration(labelText: label),
+              decoration: InputDecoration(
+                labelText: label,
+                filled: true,
+                fillColor: const Color(0xFFF1F5F9),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
+                    width: 1.4,
+                  ),
+                ),
+              ),
               onChanged: widget.onChanged,
             ),
           ],

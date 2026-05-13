@@ -8,8 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../../../core/providers/database_providers.dart';
 import '../../expenses/presentation/expense_controller.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
+import '../../settings/domain/card_display_helper.dart';
+import '../../settings/presentation/add_card_screen.dart';
+import '../../settings/presentation/cards_provider.dart';
 import '../../trips/domain/trip.dart';
 import '../data/sms_parser_service.dart';
 import '../domain/sms_parse_result.dart';
@@ -37,6 +41,8 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
   String? _selectedCategory;
   String? _selectedPaymentNetwork;
   String? _selectedPaymentChannel;
+  int? _selectedCardProfileId;
+  int? _preferredCardProfileId;
   DateTime? _expenseDate;
   SmsParseResult? _parseResult;
   bool _attemptedParse = false;
@@ -55,6 +61,29 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     _dateController = TextEditingController();
     _timeController = TextEditingController();
     _noteController = TextEditingController();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initLastUsedCard();
+    });
+  }
+
+  /// Queries the last card used in this trip and marks it as preferred.
+  /// Falls through silently on any error to keep this form lightweight.
+  Future<void> _initLastUsedCard() async {
+    if (!mounted) return;
+
+    try {
+      final lastCardId = await ref
+          .read(expenseRepositoryProvider)
+          .getLastCardExpenseCardId(widget.trip.id);
+      if (!mounted || lastCardId == null) return;
+
+      setState(() {
+        _preferredCardProfileId = lastCardId;
+      });
+    } catch (_) {
+      // Keep form usable in environments without repository/db access.
+    }
   }
 
   @override
@@ -333,6 +362,8 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
   }
 
   Widget _buildExpenseDetailsCard(BuildContext context, AppLocalizations l10n) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
     return Card(
       elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -351,32 +382,36 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _SectionLabel(
+                title: isArabic ? 'البيانات الأساسية' : 'Basic expense',
+              ),
               TextFormField(
                 controller: _titleController,
                 textInputAction: TextInputAction.next,
-                decoration: InputDecoration(
+                decoration: _premiumInputDecoration(
+                  context,
                   labelText: l10n.smsTitleLabel,
                   hintText: l10n.smsTitleHint,
                   helperText: l10n.smsTitleHelper,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _amountController,
                 textInputAction: TextInputAction.next,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
-                decoration: InputDecoration(
-                  labelText: _requiredLabel(
-                    l10n.expenseFormAmountLabel,
-                  ),
+                decoration: _premiumInputDecoration(
+                  context,
+                  labelText: _requiredLabel(l10n.expenseFormAmountLabel),
                   hintText: l10n.expenseFormAmountHint,
                 ),
                 validator: _validateAmount,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _currencyController,
                 textInputAction: TextInputAction.next,
@@ -387,19 +422,22 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                   ),
                   LengthLimitingTextInputFormatter(3),
                 ],
-                decoration: InputDecoration(
-                  labelText: _requiredLabel(
-                    l10n.expenseFormCurrencyLabel,
-                  ),
+                decoration: _premiumInputDecoration(
+                  context,
+                  labelText: _requiredLabel(l10n.expenseFormCurrencyLabel),
                   helperText: l10n.smsCurrencyFallbackHelper(
                     widget.trip.baseCurrency,
                   ),
                 ),
                 validator: _validateRequired,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 18),
+              _SectionLabel(
+                title: isArabic ? 'التصنيف' : 'Classification',
+              ),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                isExpanded: true,
+                initialValue: _selectedCategory,
                 items: ExpenseOptionLabels.categories
                     .map(
                       (category) => DropdownMenuItem<String>(
@@ -409,14 +447,15 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                             l10n,
                             category,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     )
                     .toList(),
-                decoration: InputDecoration(
-                  labelText: _requiredLabel(
-                    l10n.expenseFormCategoryLabel,
-                  ),
+                decoration: _premiumInputDecoration(
+                  context,
+                  labelText: _requiredLabel(l10n.expenseFormCategoryLabel),
                 ),
                 onChanged: (value) {
                   setState(() {
@@ -425,37 +464,10 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                 },
                 validator: _validateDropdown,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _selectedPaymentNetwork,
-                items: ExpenseOptionLabels.paymentNetworks
-                    .map(
-                      (paymentNetwork) => DropdownMenuItem<String>(
-                        value: paymentNetwork,
-                        child: Text(
-                          ExpenseOptionLabels.paymentNetwork(
-                            l10n,
-                            paymentNetwork,
-                          ),
-                        ),
-                      ),
-                    )
-                    .toList(),
-                decoration: InputDecoration(
-                  labelText: _requiredLabel(
-                    l10n.expenseFormPaymentNetworkLabel,
-                  ),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedPaymentNetwork = value;
-                  });
-                },
-                validator: _validateDropdown,
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                value: _selectedPaymentChannel,
+                isExpanded: true,
+                initialValue: _selectedPaymentChannel,
                 items: ExpenseOptionLabels.paymentChannels
                     .map(
                       (paymentChannel) => DropdownMenuItem<String>(
@@ -465,33 +477,49 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                             l10n,
                             paymentChannel,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     )
                     .toList(),
-                decoration: InputDecoration(
-                  labelText: _requiredLabel(
-                    l10n.expenseFormPaymentChannelLabel,
-                  ),
+                decoration: _premiumInputDecoration(
+                  context,
+                  labelText: _requiredLabel(l10n.expenseFormPaymentChannelLabel),
                 ),
                 onChanged: (value) {
                   setState(() {
                     _selectedPaymentChannel = value;
+                    if (!_isCardPaymentChannel(value)) {
+                      _selectedCardProfileId = null;
+                    }
                   });
                 },
                 validator: _validateDropdown,
               ),
-              const SizedBox(height: 16),
+              _SmsCardDropdown(
+                selectedCardProfileId: _selectedCardProfileId,
+                preferredCardProfileId: _preferredCardProfileId,
+                isCardPayment: _isCardPayment,
+                onChanged: (id) {
+                  setState(() {
+                    _selectedCardProfileId = id;
+                  });
+                },
+              ),
+              const SizedBox(height: 18),
+              _SectionLabel(
+                title: isArabic ? 'التاريخ والملاحظات' : 'Date & Notes',
+              ),
               Row(
                 children: [
                   Expanded(
                     child: TextFormField(
                       controller: _dateController,
                       readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: _requiredLabel(
-                          l10n.expenseFormDateLabel,
-                        ),
+                      decoration: _premiumInputDecoration(
+                        context,
+                        labelText: _requiredLabel(l10n.expenseFormDateLabel),
                         suffixIcon: const Icon(
                           Icons.calendar_today_rounded,
                         ),
@@ -505,23 +533,26 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                     child: TextFormField(
                       controller: _timeController,
                       readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: l10n.expenseFormTimeLabel,
+                      decoration: _premiumInputDecoration(
+                        context,
+                        labelText: _requiredLabel(l10n.expenseFormTimeLabel),
                         suffixIcon: const Icon(
                           Icons.access_time_rounded,
                         ),
                       ),
                       onTap: _selectTime,
+                      validator: _validateDate,
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               TextFormField(
                 controller: _noteController,
-                minLines: 2,
-                maxLines: 4,
-                decoration: InputDecoration(
+                minLines: 3,
+                maxLines: 5,
+                decoration: _premiumInputDecoration(
+                  context,
                   labelText: l10n.expenseFormNoteLabel,
                   hintText: l10n.expenseFormNoteHint,
                 ),
@@ -841,9 +872,19 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         : _titleController.text.trim();
     final transactionAmount = double.parse(_amountController.text.trim());
     final currencyCode = _currencyController.text.trim().toUpperCase();
+    final paymentChannel = _selectedPaymentChannel!;
+    final derivedCardNetwork = _deriveNetworkFromSelectedCard();
+    final inferredNetworkFromRawText = _inferPaymentNetworkFallback(
+      _smsTextController.text,
+    );
+    final paymentNetwork = _isCashChannel(paymentChannel)
+        ? null
+        : (derivedCardNetwork ??
+              _selectedPaymentNetwork ??
+              inferredNetworkFromRawText);
     final paymentMethod = _resolvePaymentMethodCompatibility(
-      _selectedPaymentNetwork!,
-      _selectedPaymentChannel!,
+      paymentNetwork,
+      paymentChannel,
     );
     final parsed = _parseResult;
     final parsedMoney = parsed?.toMoneyModel();
@@ -891,8 +932,9 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         category: _selectedCategory!,
         spentAt: _expenseDate!,
         paymentMethod: paymentMethod,
-        paymentNetwork: _selectedPaymentNetwork!,
-        paymentChannel: _selectedPaymentChannel!,
+        paymentNetwork: paymentNetwork,
+        paymentChannel: paymentChannel,
+        cardProfileId: _selectedCardProfileId,
         source: 'sms',
         note: _noteController.text,
         rawSmsText: _smsTextController.text.trim(),
@@ -942,14 +984,61 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     );
   }
 
-  String _resolvePaymentMethodCompatibility(String network, String channel) {
+  String _resolvePaymentMethodCompatibility(String? network, String channel) {
+    if (channel == 'Cash') {
+      return 'Cash';
+    }
+    if (channel == 'Mobile Wallet') {
+      return 'Mobile Wallet';
+    }
+    if (network == null || network.isEmpty) {
+      return 'Other';
+    }
     if (network == 'Mada') {
       return 'Debit Card';
     }
     if (network == 'Visa' || network == 'Mastercard') {
       return 'Credit Card';
     }
+    if (channel == 'POS Purchase' || channel == 'Online Purchase') {
+      return 'Other';
+    }
     return 'Other';
+  }
+
+  InputDecoration _premiumInputDecoration(
+    BuildContext context, {
+    required String labelText,
+    String? hintText,
+    String? helperText,
+    Widget? suffixIcon,
+  }) {
+    const fillColor = Color(0xFFF1F5F9);
+
+    return InputDecoration(
+      labelText: labelText,
+      hintText: hintText,
+      helperText: helperText,
+      suffixIcon: suffixIcon,
+      filled: true,
+      fillColor: fillColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(
+          color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+          width: 1.2,
+        ),
+      ),
+    );
   }
 
   void _syncDateAndTimeFields() {
@@ -967,6 +1056,49 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
 
   String _requiredLabel(String label) {
     return '$label *';
+  }
+
+  bool get _isCardPayment => _isCardPaymentChannel(_selectedPaymentChannel);
+
+  bool _isCardPaymentChannel(String? channel) =>
+      channel == 'POS Purchase' || channel == 'Online Purchase';
+
+  bool _isCashChannel(String? channel) => channel == 'Cash';
+
+  String? _deriveNetworkFromSelectedCard() {
+    final selectedCardId = _selectedCardProfileId;
+    if (selectedCardId == null || !_isCardPayment) {
+      return null;
+    }
+
+    final cards = ref.read(cardsProvider).valueOrNull;
+    if (cards == null || cards.isEmpty) {
+      return null;
+    }
+
+    dynamic matchedCard;
+    for (final card in cards) {
+      if (card.id == selectedCardId) {
+        matchedCard = card;
+        break;
+      }
+    }
+
+    if (matchedCard == null) {
+      return null;
+    }
+
+    final customNetwork = matchedCard.customCardNetwork?.trim();
+    if (customNetwork != null && customNetwork.isNotEmpty) {
+      return customNetwork;
+    }
+
+    final network = matchedCard.cardNetwork?.trim();
+    if (network == null || network.isEmpty) {
+      return null;
+    }
+
+    return network;
   }
 
   bool _hasFinancialBreakdown(SmsParseResult? result) {
@@ -1026,6 +1158,202 @@ class _BreakdownRow extends StatelessWidget {
           Text(value, style: style),
         ],
       ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: const Color(0xFF475569),
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.15,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+}
+
+class _SmsCardDropdown extends ConsumerStatefulWidget {
+  const _SmsCardDropdown({
+    required this.selectedCardProfileId,
+    required this.preferredCardProfileId,
+    required this.onChanged,
+    required this.isCardPayment,
+  });
+
+  final int? selectedCardProfileId;
+  final int? preferredCardProfileId;
+  final ValueChanged<int?> onChanged;
+  final bool isCardPayment;
+
+  @override
+  ConsumerState<_SmsCardDropdown> createState() => _SmsCardDropdownState();
+}
+
+class _SmsCardDropdownState extends ConsumerState<_SmsCardDropdown> {
+  bool _didAutoSelect = false;
+
+  @override
+  void didUpdateWidget(_SmsCardDropdown oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isCardPayment && widget.isCardPayment) {
+      _didAutoSelect = false;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.isCardPayment) return const SizedBox.shrink();
+
+    final cardsAsync = ref.watch(cardsProvider);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final label = isArabic ? 'البطاقة' : 'Card';
+    final noneLabel = isArabic ? 'بدون بطاقة' : 'No card';
+
+    return cardsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (error, _) => const SizedBox.shrink(),
+      data: (cards) {
+        if (cards.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 14),
+            child: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: TextButton.icon(
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  foregroundColor: const Color(0xFF64748B),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  textStyle: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => const AddCardScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
+                label: Text(
+                  isArabic ? '+ إضافة بطاقة (اختياري)' : '+ Add card (optional)',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          );
+        }
+
+        final hasExplicitSelection = widget.selectedCardProfileId != null;
+        final preferredCardId = widget.preferredCardProfileId;
+        final hasPreferredCard = preferredCardId != null &&
+            cards.any((card) => card.id == preferredCardId);
+
+        if (!_didAutoSelect &&
+            !hasExplicitSelection &&
+            (hasPreferredCard || cards.length == 1)) {
+          final autoSelectedCardId = hasPreferredCard
+              ? preferredCardId
+              : cards.first.id;
+          _didAutoSelect = true;
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onChanged(autoSelectedCardId);
+          });
+        }
+
+        return Column(
+          children: [
+            const SizedBox(height: 16),
+            DropdownButtonFormField<int?>(
+              isExpanded: true,
+              key: ValueKey(widget.selectedCardProfileId),
+              initialValue: widget.selectedCardProfileId,
+              selectedItemBuilder: (context) {
+                final selectedLabels = <String>[
+                  noneLabel,
+                  ...cards.map(
+                    (card) => CardDisplayHelper.getDisplayStringWithIcon(
+                      context,
+                      card,
+                    ),
+                  ),
+                ];
+                return selectedLabels
+                    .map(
+                      (labelText) => Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: Text(
+                          labelText,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList();
+              },
+              items: [
+                DropdownMenuItem<int?>(
+                  value: null,
+                  child: Text(
+                    noneLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                ...cards.map(
+                  (card) => DropdownMenuItem<int?>(
+                    value: card.id,
+                    child: Text(
+                      CardDisplayHelper.getDisplayStringWithIcon(context, card),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ),
+              ],
+              decoration: InputDecoration(
+                labelText: '$label (${isArabic ? 'اختياري' : 'optional'})',
+                filled: true,
+                fillColor: const Color(0xFFF1F5F9),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide(
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                    width: 1.2,
+                  ),
+                ),
+              ),
+              onChanged: widget.onChanged,
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -172,9 +172,12 @@ void main() {
 
     expect(find.text('Total expenses'), findsOneWidget);
     expect(find.text('Total billed'), findsOneWidget);
+    await tester.drag(find.byType(ListView), const Offset(0, -300));
+    await tester.pumpAndSettle();
+
     expect(find.text('By category'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView), const Offset(0, -600));
+    await tester.drag(find.byType(ListView), const Offset(0, -760));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('transaction currency'), findsOneWidget);

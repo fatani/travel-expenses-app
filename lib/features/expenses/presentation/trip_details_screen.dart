@@ -461,7 +461,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             icon: Icons.add_rounded,
             onTap: widget.onAddExpense,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          _OutlineActionButton(
+            label: l10n.tripDetailsAddViaSms,
+            icon: Icons.sms_outlined,
+            onTap: widget.onAddViaSms,
+          ),
+          const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(

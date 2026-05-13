@@ -68,7 +68,7 @@ class _GlobalReportBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const sectionGap = SizedBox(height: 20);
+    const sectionGap = SizedBox(height: 16);
 
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -78,7 +78,7 @@ class _GlobalReportBody extends StatelessWidget {
           sectionGap,
         ],
         if (summary.totalExpenseCount >= 3 && summary.smartInsights.isNotEmpty) ...[
-          _SmartInsightsCard(summary: summary),
+          _SmartSummaryHeroCard(summary: summary),
           sectionGap,
         ],
         if (summary.behavioralInsights.isNotEmpty) ...[
@@ -159,35 +159,110 @@ class _SingleTripNoteCard extends StatelessWidget {
   }
 }
 
-class _SmartInsightsCard extends StatelessWidget {
-  const _SmartInsightsCard({required this.summary});
+class _SmartSummaryHeroCard extends StatelessWidget {
+  const _SmartSummaryHeroCard({required this.summary});
 
   final GlobalReportSummary summary;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final primaryInsight = summary.smartInsights.first;
+    final supportingInsights = summary.smartInsights.skip(1).toList(growable: false);
 
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            // Soft lavender to ultra-light indigo
+            const Color(0xFFE6E0F8), // lavender
+            const Color(0xFFF3F0FA), // ultra-light indigo tint
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7C4DFF).withOpacity(0.08), // subtle purple shadow
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFB39DDB).withOpacity(0.18), // muted lavender accent
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    size: 20,
+                    color: const Color(0xFF7C4DFF), // deep indigo icon
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    context.l10n.globalReportsSmartSummary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF4B3B6B), // deep lavender text
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
             Text(
-              context.l10n.globalReportsSmartSummary,
+              _localizeInsight(context, primaryInsight),
               style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF4B3B6B), // deep lavender text
               ),
             ),
-            const SizedBox(height: 10),
-            for (final insight in summary.smartInsights) ...[
-              Text(
-                _localizeInsight(context, insight),
-                style: theme.textTheme.bodyMedium,
-              ),
-              if (insight != summary.smartInsights.last)
-                const SizedBox(height: 8),
+            if (supportingInsights.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final insight in supportingInsights) ...[
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Icon(
+                        Icons.circle,
+                        size: 7,
+                        color: const Color(0xFFB39DDB).withOpacity(0.75), // muted lavender dot
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _localizeInsight(context, insight),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          height: 1.34,
+                          color: const Color(0xFF4B3B6B), // deep lavender text
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (insight != supportingInsights.last)
+                  const SizedBox(height: 6),
+              ],
             ],
           ],
         ),
@@ -211,7 +286,7 @@ class _SummaryCards extends StatelessWidget {
             value: summary.totalTrips.toString(),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 10),
         Expanded(
           child: _SummaryCountCard(
             title: context.l10n.globalReportsActiveTrips,
@@ -236,12 +311,13 @@ class _BehavioralInsightsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.only(bottom: 14),
           child: Text(
             context.l10n.globalReportsBehavioralInsightsTitle,
             style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF7C4DFF), // indigo accent
+              letterSpacing: 0.3,
             ),
           ),
         ),
@@ -268,24 +344,31 @@ class _SummaryCountCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Card(
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(16),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               title,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             Text(
               value,
               style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
+                color: colorScheme.onSurface,
               ),
             ),
           ],
@@ -306,15 +389,17 @@ class _OverviewCard extends StatelessWidget {
 
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               context.l10n.globalReportsOverview,
-              style: theme.textTheme.titleMedium,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             if (summary.uniqueTransactionCurrencyCount > 1 &&
                 summary.dominantCurrency != null)
               _OverviewRow(
@@ -365,16 +450,24 @@ class _OverviewRow extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
-          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
           Text(
             value,
             style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
             ),
           ),
         ],
@@ -417,15 +510,35 @@ class _CurrencyBucketList extends StatelessWidget {
         children: [
           for (int index = 0; index < buckets.length; index++) ...[
             if (index > 0) const Divider(height: 1, indent: 16, endIndent: 16),
-            ListTile(
-              dense: true,
-              title: Text(buckets[index].currency),
-              subtitle: Text(
-                context.l10n.tripReportsExpenseCountLabel(buckets[index].count),
-              ),
-              trailing: _AmountText(
-                amount: buckets[index].totalAmount,
-                currency: buckets[index].currency,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          buckets[index].currency,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          context.l10n.tripReportsExpenseCountLabel(
+                            buckets[index].count,
+                          ),
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  _AmountText(
+                    amount: buckets[index].totalAmount,
+                    currency: buckets[index].currency,
+                  ),
+                ],
               ),
             ),
           ],
@@ -443,12 +556,15 @@ class _AmountText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Directionality(
       textDirection: TextDirection.ltr,
       child: Text(
         '${_formatAmount(amount)} $currency',
-        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.w700,
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.2,
         ),
       ),
     );

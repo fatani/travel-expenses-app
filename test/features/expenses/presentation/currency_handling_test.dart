@@ -304,19 +304,16 @@ void main() {
 
       await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Visa').last);
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(DropdownButtonFormField<String>).at(2));
-      await tester.pumpAndSettle();
       await tester.tap(find.text('POS Purchase').last);
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(find.byType(TextFormField).at(3));
       await tester.tap(find.byType(TextFormField).at(3));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
+      await tester.ensureVisible(find.byType(TextFormField).at(4));
       await tester.tap(find.byType(TextFormField).at(4));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
@@ -363,7 +360,6 @@ void main() {
       expect(find.text('Amount *'), findsOneWidget);
       expect(find.text('Currency *'), findsOneWidget);
       expect(find.text('Category *'), findsOneWidget);
-      expect(find.text('Card network *'), findsOneWidget);
       expect(find.text('Payment channel *'), findsOneWidget);
       expect(find.text('Expense date *'), findsOneWidget);
       expect(find.text('Expense time *'), findsOneWidget);
@@ -387,7 +383,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      await tester.enterText(find.byType(TextFormField).at(0), 'Bank sms text');
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        'Bank sms text visa online purchase',
+      );
       await tester.enterText(find.byType(TextFormField).at(1), 'Mobily');
       await tester.enterText(find.byType(TextFormField).at(2), '46.00');
       await tester.enterText(find.byType(TextFormField).at(3), 'SAR');
@@ -400,12 +399,6 @@ void main() {
 
       await tester.ensureVisible(find.byType(DropdownButtonFormField<String>).at(1));
       await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Visa').last);
-      await tester.pumpAndSettle();
-
-      await tester.ensureVisible(find.byType(DropdownButtonFormField<String>).at(2));
-      await tester.tap(find.byType(DropdownButtonFormField<String>).at(2));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Online Purchase').last);
       await tester.pumpAndSettle();
@@ -508,9 +501,9 @@ void main() {
       expect(find.text('Amount *'), findsOneWidget);
       expect(find.text('Currency *'), findsOneWidget);
       expect(find.text('Category *'), findsOneWidget);
-      expect(find.text('Card network *'), findsOneWidget);
       expect(find.text('Payment channel *'), findsOneWidget);
       expect(find.text('Expense date *'), findsOneWidget);
+      expect(find.text('Expense time *'), findsOneWidget);
       expect(find.text('This field is required.'), findsNothing);
     },
   );
@@ -603,7 +596,7 @@ Balance: SAR 2354.38
       await tester.pumpAndSettle();
 
       final channelState = tester.state<FormFieldState<String>>(
-        find.byType(DropdownButtonFormField<String>).at(2),
+        find.byType(DropdownButtonFormField<String>).at(1),
       );
       expect(channelState.value, 'POS Purchase');
 
