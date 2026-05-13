@@ -1309,191 +1309,192 @@ class CreateTripVisualScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final textDirection = isArabic ? TextDirection.rtl : TextDirection.ltr;
-    final keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
+    final keyboardOpen = viewInsetsBottom > 0;
 
     return Directionality(
       textDirection: textDirection,
       child: Scaffold(
-        resizeToAvoidBottomInset: false,
         backgroundColor: const Color(0xFFF8FAFF),
         body: SafeArea(
-          child: PrimaryScrollController.none(
-            child: Stack(
-              children: [
-                const Positioned.fill(child: _SoftBackground()),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          InkWell(
-                            borderRadius: BorderRadius.circular(8),
-                            onTap: onToggleLanguage,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 4,
+          child: Stack(
+            children: [
+              const Positioned.fill(child: _SoftBackground()),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  return AnimatedPadding(
+                    duration: const Duration(milliseconds: 180),
+                    curve: Curves.easeOutCubic,
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      12,
+                      24,
+                      28 + viewInsetsBottom,
+                    ),
+                    child: SingleChildScrollView(
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
+                      physics: const ClampingScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(minHeight: constraints.maxHeight - 40),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                InkWell(
+                                  borderRadius: BorderRadius.circular(8),
+                                  onTap: onToggleLanguage,
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 4,
+                                    ),
+                                    child: Text(
+                                      'AR | EN',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.blueGrey.shade400,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                _BackButton(onTap: onBack),
+                              ],
+                            ),
+                            const SizedBox(height: 30),
+                            Image.asset(
+                              'assets/travel.png',
+                              height: 150,
+                              errorBuilder: (context, error, stackTrace) =>
+                                  const Icon(
+                                Icons.flight_takeoff,
+                                size: 92,
+                                color: Color(0xFF7C3AED),
                               ),
-                              child: Text(
-                                'AR | EN',
+                            ),
+                            const SizedBox(height: 30),
+                            Text(
+                              l10n.createTripHeading,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 32,
+                                height: 1.15,
+                                fontWeight: FontWeight.w900,
+                                color: Color(0xFF0F172A),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              l10n.createTripSubheading,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: 17,
+                                height: 1.5,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.blueGrey.shade300,
+                              ),
+                            ),
+                            const SizedBox(height: 34),
+                            _DestinationCard(
+                              isArabic: isArabic,
+                              controller: destinationController,
+                              selectedDestination: selectedDestination,
+                              onCountrySelected: onDestinationSelected,
+                              onSelectionCleared: onDestinationCleared,
+                              onCustomDestinationSelected:
+                                  onCustomDestinationSelected,
+                            ),
+                            if (generatedTripTitle.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              Text(
+                                l10n.tripFormCreateWithoutCustomTitle(generatedTripTitle),
+                                textAlign: TextAlign.center,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 14,
                                   fontWeight: FontWeight.w600,
                                   color: Colors.blueGrey.shade400,
                                 ),
                               ),
+                            ],
+                            const SizedBox(height: 24),
+                            _GradientButton(
+                              label: l10n.tripFormSaveCreate,
+                              onTap: onCreateTrip,
                             ),
-                          ),
-                          _BackButton(onTap: onBack),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
-                      Expanded(
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: OverflowBox(
-                            alignment: Alignment.topCenter,
-                            minHeight: 0,
-                            maxHeight: double.infinity,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              children: [
-                                Image.asset(
-                                  'assets/travel.png',
-                                  height: 150,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(
-                                    Icons.flight_takeoff,
-                                    size: 92,
-                                    color: Color(0xFF7C3AED),
+                            if (!keyboardOpen) ...[
+                              const SizedBox(height: 30),
+                              Row(
+                                children: [
+                                  const Expanded(
+                                    child: Divider(
+                                      color: Color(0xFFE2E8F0),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 30),
-                                Text(
-                                  l10n.createTripHeading,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 32,
-                                    height: 1.15,
-                                    fontWeight: FontWeight.w900,
-                                    color: Color(0xFF0F172A),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                    ),
+                                    child: Text(
+                                      isArabic ? 'أو' : 'or',
+                                      style: TextStyle(
+                                        color: Colors.blueGrey.shade300,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  l10n.createTripSubheading,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    fontSize: 17,
-                                    height: 1.5,
-                                    fontWeight: FontWeight.w500,
-                                    color: Colors.blueGrey.shade300,
-                                  ),
-                                ),
-                                const SizedBox(height: 34),
-                                _DestinationCard(
-                                  isArabic: isArabic,
-                                  controller: destinationController,
-                                  selectedDestination: selectedDestination,
-                                  onCountrySelected: onDestinationSelected,
-                                  onSelectionCleared: onDestinationCleared,
-                                  onCustomDestinationSelected:
-                                      onCustomDestinationSelected,
-                                ),
-                                if (generatedTripTitle.isNotEmpty) ...[
-                                  const SizedBox(height: 12),
-                                  Text(
-                                    l10n.tripFormCreateWithoutCustomTitle(generatedTripTitle),
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: Colors.blueGrey.shade400,
+                                  const Expanded(
+                                    child: Divider(
+                                      color: Color(0xFFE2E8F0),
                                     ),
                                   ),
                                 ],
-                                const SizedBox(height: 24),
-                                _GradientButton(
-                                  label: l10n.tripFormSaveCreate,
-                                  onTap: onCreateTrip,
-                                ),
-                                if (!keyboardOpen) ...[
-                                  const SizedBox(height: 30),
-                                  Row(
+                              ),
+                              const SizedBox(height: 24),
+                              InkWell(
+                                borderRadius: BorderRadius.circular(18),
+                                onTap: onCustomizeTrip,
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 12,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Expanded(
-                                        child: Divider(
-                                          color: Color(0xFFE2E8F0),
-                                        ),
+                                      const Icon(
+                                        Icons.settings_outlined,
+                                        color: Color(0xFF7C3AED),
+                                        size: 26,
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                        ),
-                                        child: Text(
-                                          isArabic ? 'أو' : 'or',
-                                          style: TextStyle(
-                                            color: Colors.blueGrey.shade300,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                      const Expanded(
-                                        child: Divider(
-                                          color: Color(0xFFE2E8F0),
+                                      const SizedBox(width: 10),
+                                      Text(
+                                        isArabic
+                                            ? 'تخصيص الرحلة (اختياري)'
+                                            : 'Customize trip (optional)',
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF0F172A),
                                         ),
                                       ),
                                     ],
                                   ),
-                                  const SizedBox(height: 24),
-                                  InkWell(
-                                    borderRadius: BorderRadius.circular(18),
-                                    onTap: onCustomizeTrip,
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 12,
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.settings_outlined,
-                                            color: Color(0xFF7C3AED),
-                                            size: 26,
-                                          ),
-                                          const SizedBox(width: 10),
-                                          Text(
-                                            isArabic
-                                                ? 'تخصيص الرحلة (اختياري)'
-                                                : 'Customize trip (optional)',
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.w700,
-                                              color: Color(0xFF0F172A),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 70),
-                                ],
-                              ],
-                            ),
-                          ),
+                                ),
+                              ),
+                              const SizedBox(height: 70),
+                            ],
+                          ],
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       ),
@@ -1641,6 +1642,10 @@ class _DestinationCard extends StatelessWidget {
             optionsViewBuilder: (context, onSelected, options) {
               final visibleOptions = options.take(8).toList(growable: false);
               final query = controller.text.trim();
+              final mediaQuery = MediaQuery.of(context);
+              final availableHeight =
+                  (mediaQuery.size.height - mediaQuery.viewInsets.bottom) * 0.42;
+              final dropdownMaxHeight = availableHeight.clamp(140.0, 300.0);
               return Align(
                 alignment: isArabic ? Alignment.topRight : Alignment.topLeft,
                 child: Material(
@@ -1648,7 +1653,7 @@ class _DestinationCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
                     width: MediaQuery.of(context).size.width - 48,
-                    constraints: const BoxConstraints(maxHeight: 260),
+                    constraints: BoxConstraints(maxHeight: dropdownMaxHeight),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
@@ -1698,6 +1703,8 @@ class _DestinationCard extends StatelessWidget {
                           )
                         : ListView.builder(
                             padding: const EdgeInsets.symmetric(vertical: 6),
+                          physics: const ClampingScrollPhysics(),
+                          primary: false,
                             shrinkWrap: true,
                             itemCount: visibleOptions.length,
                             itemBuilder: (context, index) {
