@@ -1,4 +1,5 @@
 import 'report_bucket.dart';
+import 'reporting_money_preview.dart';
 
 enum TripReportInsightType {
   multipleCurrencies,
@@ -46,6 +47,7 @@ class TripReportSummary {
     required this.byPaymentNetwork,
     required this.byPaymentChannel,
     required this.smartInsights,
+    this.reportingMoneyPreviews = const [],
   });
 
   final String tripId;
@@ -90,6 +92,9 @@ class TripReportSummary {
 
     /// Lightweight insights that help the user scan the report quickly.
     final List<TripReportInsight> smartInsights;
+
+    /// Foundation data for later UI: original amount + optional home equivalent.
+    final List<ReportingMoneyPreview> reportingMoneyPreviews;
 
   /// Convenience: true when the trip has at least one international expense.
   bool get hasInternational => internationalExpenseCount > 0;

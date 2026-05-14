@@ -5,13 +5,16 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 13;
+  static const int databaseVersion = 14;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
   static const String settingsTable = 'settings';
   static const String cardsTable = 'cards';
   static const String userFinancialProfileTable = 'user_financial_profile';
+  static const String tripCashBalancesTable = 'trip_cash_balances';
+  static const String cashTransactionsTable = 'cash_transactions';
+  static const String manualExchangeRatesTable = 'manual_exchange_rates';
 
   Database? _database;
 
@@ -51,6 +54,9 @@ class AppDatabase {
         await _ensureExpensesCardProfileIdColumn(db);
         await _ensureCardsProfileColumns(db);
         await _ensureTripsCustomTitleColumns(db);
+        await _ensureTripCashBalancesTable(db);
+        await _ensureCashTransactionsTable(db);
+        await _ensureManualExchangeRatesTable(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -137,6 +143,41 @@ class AppDatabase {
             onboarding_completed INTEGER NOT NULL DEFAULT 0,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $tripCashBalancesTable (
+            trip_id TEXT NOT NULL,
+            currency_code TEXT NOT NULL,
+            balance_amount REAL NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (trip_id, currency_code),
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $cashTransactionsTable (
+            id TEXT PRIMARY KEY,
+            trip_id TEXT NOT NULL,
+            type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            currency_code TEXT NOT NULL,
+            note TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $manualExchangeRatesTable (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            from_currency TEXT NOT NULL,
+            to_currency TEXT NOT NULL,
+            rate REAL NOT NULL,
+            source_note TEXT,
+            created_at TEXT NOT NULL
           )
         ''');
       },
@@ -238,6 +279,12 @@ class AppDatabase {
           await _ensureUserFinancialProfileTable(db);
           await _ensureTripsFinancialSnapshotColumns(db);
           await _ensureExpensesConversionFoundationColumns(db);
+        }
+
+        if (oldVersion < 14) {
+          await _ensureTripCashBalancesTable(db);
+          await _ensureCashTransactionsTable(db);
+          await _ensureManualExchangeRatesTable(db);
         }
       },
     );
@@ -607,6 +654,71 @@ class AppDatabase {
         onboarding_completed INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _ensureTripCashBalancesTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [tripCashBalancesTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $tripCashBalancesTable (
+        trip_id TEXT NOT NULL,
+        currency_code TEXT NOT NULL,
+        balance_amount REAL NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (trip_id, currency_code),
+        FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  Future<void> _ensureCashTransactionsTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [cashTransactionsTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $cashTransactionsTable (
+        id TEXT PRIMARY KEY,
+        trip_id TEXT NOT NULL,
+        type TEXT NOT NULL,
+        amount REAL NOT NULL,
+        currency_code TEXT NOT NULL,
+        note TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  Future<void> _ensureManualExchangeRatesTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [manualExchangeRatesTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $manualExchangeRatesTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_currency TEXT NOT NULL,
+        to_currency TEXT NOT NULL,
+        rate REAL NOT NULL,
+        source_note TEXT,
+        created_at TEXT NOT NULL
       )
     ''');
   }

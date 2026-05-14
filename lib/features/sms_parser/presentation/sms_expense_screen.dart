@@ -908,7 +908,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     );
 
     try {
-      await controller.createExpense(
+      final outcome = await controller.createExpense(
         title: title,
         amount: transactionAmount,
         currencyCode: currencyCode,
@@ -938,13 +938,14 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         source: 'sms',
         note: _noteController.text,
         rawSmsText: _smsTextController.text.trim(),
+        tripHomeCurrency: widget.trip.homeCurrencySnapshot,
       );
 
       if (!mounted) {
         return;
       }
 
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(outcome);
     } catch (error) {
       if (!mounted) {
         return;

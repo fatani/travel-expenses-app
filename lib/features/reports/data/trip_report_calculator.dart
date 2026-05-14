@@ -2,6 +2,7 @@ import '../../expenses/domain/expense.dart';
 import '../../insights/data/insight_engine.dart';
 import '../../insights/domain/insight.dart';
 import '../domain/report_bucket.dart';
+import '../domain/reporting_money_preview.dart';
 import '../domain/trip_report_summary.dart';
 
 /// Computes a [TripReportSummary] from a list of [Expense] objects.
@@ -36,6 +37,7 @@ class TripReportCalculator {
         byPaymentNetwork: const [],
         byPaymentChannel: const [],
         smartInsights: const [],
+        reportingMoneyPreviews: const [],
       );
     }
 
@@ -145,6 +147,16 @@ class TripReportCalculator {
               ))
         .map(_toTripInsight)
         .toList(growable: false);
+    final reportingMoneyPreviews = expenses
+        .map(
+          (expense) => ReportingMoneyPreview(
+            originalAmount: expense.originalAmount ?? expense.transactionAmount,
+            originalCurrency: expense.originalCurrency ?? expense.transactionCurrency,
+            convertedHomeAmount: expense.convertedHomeAmount,
+            homeCurrency: expense.homeCurrency,
+          ),
+        )
+        .toList(growable: false);
 
     return TripReportSummary(
       tripId: tripId,
@@ -162,6 +174,7 @@ class TripReportCalculator {
       byPaymentNetwork: byPaymentNetworkBuckets,
       byPaymentChannel: byPaymentChannelBuckets,
       smartInsights: smartInsights,
+      reportingMoneyPreviews: reportingMoneyPreviews,
     );
   }
 

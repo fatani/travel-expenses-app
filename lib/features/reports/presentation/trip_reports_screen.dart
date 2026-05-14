@@ -270,7 +270,7 @@ class _ReportHeroSummaryCard extends StatelessWidget {
         summary.topBilledBucket ?? summary.topTransactionCurrencyBucket;
     final totalText = totalBucket == null
         ? '--'
-        : '${_formatAmount(totalBucket.totalAmount)} ${totalBucket.currency}';
+      : '${_formatAmount(totalBucket.totalAmount)} ${totalBucket.currency.trim().toUpperCase()}';
     final topCategoryLabel = summary.topCategory == null
         ? (isArabic ? 'غير متوفر' : 'N/A')
         : ExpenseOptionLabels.category(context.l10n, summary.topCategory!);
@@ -565,7 +565,7 @@ class _BucketList extends StatelessWidget {
                             buckets[i].key,
                             groupLabelType,
                           )
-                        : buckets[i].currency,
+                        : buckets[i].currency.trim().toUpperCase(),
                     style: theme.textTheme.bodyMedium,
                   ),
                   if (_isTopBucket(buckets[i])) ...[
@@ -822,7 +822,7 @@ class _AmountAndCountColumn extends StatelessWidget {
         Directionality(
           textDirection: TextDirection.ltr,
           child: Text(
-            '${_formatAmount(amount)} $currency',
+            '${_formatAmount(amount)} ${currency.trim().toUpperCase()}',
             textAlign: TextAlign.end,
             style: amountStyle,
           ),

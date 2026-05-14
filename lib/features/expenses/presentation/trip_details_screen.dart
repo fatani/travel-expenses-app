@@ -12,6 +12,8 @@ import 'package:travel_expenses/l10n/l10n_extension.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../../export/presentation/export_menu.dart';
+import '../../cash_wallet/domain/trip_cash_balance.dart';
+import '../../cash_wallet/presentation/trip_cash_wallet_screen.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../reports/presentation/trip_reports_screen.dart';
 import '../../trips/domain/trip.dart';
@@ -44,6 +46,7 @@ class TripDetailsScreen extends ConsumerStatefulWidget {
 
 class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   late Trip _trip;
+  int _cashWalletVersion = 0;
 
   @override
   void initState() {
@@ -103,7 +106,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         data: (expenses) => _TripDetailsContent(
           trip: _trip,
           expenses: expenses,
+          cashWalletVersion: _cashWalletVersion,
           onAddExpense: () => _openQuickAddSheet(expenses),
+          onOpenCashWallet: _openCashWallet,
           onAddViaSms: _openSmsExpenseScreen,
           onFixDates: _openTripEditor,
           onEditExpense: (expense) => _openExpenseForm(expense: expense),
@@ -164,8 +169,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     String? initialCurrency,
     DateTime? initialSpentAt,
   }) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
+    final outcome = await Navigator.of(context).push<ExpenseCreateOutcome?>(
+      MaterialPageRoute<ExpenseCreateOutcome?>(
         builder: (_) => ExpenseFormScreen(
           trip: _trip,
           expense: expense,
@@ -177,6 +182,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         ),
       ),
     );
+
+    _showCashGuidanceIfNeeded(outcome);
   }
 
   Future<void> _openQuickAddSheet(List<Expense> expenses) async {
@@ -236,7 +243,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     try {
-      await ref
+      final outcome = await ref
           .read(expenseControllerProvider(_trip.id).notifier)
           .createExpense(
             title: payload.title,
@@ -247,7 +254,14 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             paymentMethod: payload.payment.method,
             paymentNetwork: payload.payment.network,
             paymentChannel: payload.payment.channel,
+            tripHomeCurrency: _trip.homeCurrencySnapshot,
           );
+
+      if (!mounted) {
+        return;
+      }
+
+      _showCashGuidanceIfNeeded(outcome);
     } catch (error) {
       if (!mounted) {
         return;
@@ -260,8 +274,52 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _openSmsExpenseScreen() async {
+    final outcome = await Navigator.of(context).push<ExpenseCreateOutcome?>(
+      MaterialPageRoute<ExpenseCreateOutcome?>(
+        builder: (_) => SmsExpenseScreen(trip: _trip),
+      ),
+    );
+
+    _showCashGuidanceIfNeeded(outcome);
+  }
+
+  Future<void> _openCashWallet() async {
     await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => SmsExpenseScreen(trip: _trip)),
+      MaterialPageRoute<void>(
+        builder: (_) => TripCashWalletScreen(trip: _trip),
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _cashWalletVersion++;
+    });
+  }
+
+  void _showCashGuidanceIfNeeded(ExpenseCreateOutcome? outcome) {
+    if (!mounted || outcome == null || !outcome.cashBalanceInsufficient) {
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          outcome.noCashBalanceRecorded
+              ? l10n.cashBalanceNoRecordedWarning
+              : l10n.cashBalanceInsufficientWarning,
+        ),
+        action: outcome.noCashBalanceRecorded
+            ? SnackBarAction(
+                label: l10n.cashBalanceAddCashAction,
+                onPressed: _openCashWallet,
+              )
+            : null,
+      ),
     );
   }
 
@@ -311,7 +369,9 @@ class _TripDetailsContent extends StatefulWidget {
   const _TripDetailsContent({
     required this.trip,
     required this.expenses,
+    required this.cashWalletVersion,
     required this.onAddExpense,
+    required this.onOpenCashWallet,
     required this.onAddViaSms,
     this.onFixDates,
     required this.onEditExpense,
@@ -320,7 +380,9 @@ class _TripDetailsContent extends StatefulWidget {
 
   final Trip trip;
   final List<Expense> expenses;
+  final int cashWalletVersion;
   final VoidCallback onAddExpense;
+  final VoidCallback onOpenCashWallet;
   final VoidCallback onAddViaSms;
   final VoidCallback? onFixDates;
   final ValueChanged<Expense> onEditExpense;
@@ -332,6 +394,7 @@ class _TripDetailsContent extends StatefulWidget {
 
 class _TripDetailsContentState extends State<_TripDetailsContent> {
   late final TextEditingController _searchController;
+  late Future<List<TripCashBalance>> _cashBalancesFuture;
   String _searchQuery = '';
   String? _selectedCategory;
   String? _selectedPaymentMethod;
@@ -341,12 +404,56 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+    _cashBalancesFuture = _loadCashBalances();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TripDetailsContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.trip.id != widget.trip.id ||
+        oldWidget.cashWalletVersion != widget.cashWalletVersion) {
+      _cashBalancesFuture = _loadCashBalances();
+    }
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<List<TripCashBalance>> _loadCashBalances() async {
+    try {
+      final repository = ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(cashWalletRepositoryProvider);
+      return await repository.getBalancesByTrip(widget.trip.id);
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  _PrimaryCashBalance _resolvePrimaryCashBalance({
+    required List<TripCashBalance> balances,
+    required String preferredCurrency,
+  }) {
+    final normalizedPreferred = preferredCurrency.trim().toUpperCase();
+
+    for (final balance in balances) {
+      if (balance.currencyCode == normalizedPreferred) {
+        return _PrimaryCashBalance(balance.balanceAmount, balance.currencyCode);
+      }
+    }
+
+    if (balances.isNotEmpty) {
+      return _PrimaryCashBalance(
+        balances.first.balanceAmount,
+        balances.first.currencyCode,
+      );
+    }
+
+    return _PrimaryCashBalance(0, normalizedPreferred);
   }
 
   @override
@@ -389,6 +496,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
         datesMissing: datesMissing,
         dateRangeText: dateRangeText,
         onAddExpense: widget.onAddExpense,
+        onOpenCashWallet: widget.onOpenCashWallet,
         onAddViaSms: widget.onAddViaSms,
         onFixDates: widget.onFixDates,
         onDismissTip: null,
@@ -464,6 +572,27 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             label: l10n.tripDetailsAddExpense,
             icon: Icons.add_rounded,
             onTap: widget.onAddExpense,
+          ),
+          const SizedBox(height: 12),
+          FutureBuilder<List<TripCashBalance>>(
+            future: _cashBalancesFuture,
+            builder: (context, snapshot) {
+              final primaryBalance = _resolvePrimaryCashBalance(
+                balances: snapshot.data ?? const [],
+                preferredCurrency: widget.trip.destinationCurrency,
+              );
+              final amountText = _formatAmountCurrencyLtr(
+                primaryBalance.amount,
+                primaryBalance.currencyCode,
+              );
+
+              return _OutlineActionButton(
+                label: l10n.tripDetailsCashWalletRemainingCta(amountText),
+                subtitle: l10n.tripDetailsCashWalletAction,
+                icon: Icons.account_balance_wallet_outlined,
+                onTap: widget.onOpenCashWallet,
+              );
+            },
           ),
           const SizedBox(height: 12),
           _OutlineActionButton(
@@ -819,6 +948,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       },
     );
   }
+}
+
+class _PrimaryCashBalance {
+  const _PrimaryCashBalance(this.amount, this.currencyCode);
+
+  final double amount;
+  final String currencyCode;
 }
 
 enum _ExpenseSort { newestFirst, oldestFirst, highestAmount, lowestAmount }
@@ -1302,6 +1438,7 @@ class NoExpensesPremiumState extends StatelessWidget {
   final bool datesMissing;
   final String? dateRangeText;
   final VoidCallback onAddExpense;
+  final VoidCallback onOpenCashWallet;
   final VoidCallback onAddViaSms;
   final VoidCallback? onFixDates;
   final VoidCallback? onDismissTip;
@@ -1314,6 +1451,7 @@ class NoExpensesPremiumState extends StatelessWidget {
     required this.datesMissing,
     required this.dateRangeText,
     required this.onAddExpense,
+    required this.onOpenCashWallet,
     required this.onAddViaSms,
     this.onFixDates,
     this.onDismissTip,
@@ -1341,6 +1479,7 @@ class NoExpensesPremiumState extends StatelessWidget {
             _NoExpensesCard(
               isArabic: isArabic,
               onAddExpense: onAddExpense,
+              onOpenCashWallet: onOpenCashWallet,
               onAddViaSms: onAddViaSms,
               onDismissTip: onDismissTip,
             ),
@@ -1572,12 +1711,14 @@ class _NoExpensesInfoLine extends StatelessWidget {
 class _NoExpensesCard extends StatefulWidget {
   final bool isArabic;
   final VoidCallback onAddExpense;
+  final VoidCallback onOpenCashWallet;
   final VoidCallback onAddViaSms;
   final VoidCallback? onDismissTip;
 
   const _NoExpensesCard({
     required this.isArabic,
     required this.onAddExpense,
+    required this.onOpenCashWallet,
     required this.onAddViaSms,
     this.onDismissTip,
   });
@@ -1671,6 +1812,16 @@ class _NoExpensesCardState extends State<_NoExpensesCard>
               label: l.noExpensesAddFirst,
               icon: Icons.auto_awesome,
               onTap: widget.onAddExpense,
+            ),
+          ),
+          const SizedBox(height: 14),
+          _AnimatedCta(
+            animController: _animController,
+            child: _OutlineActionButton(
+              label: l.noExpensesCashWallet,
+              subtitle: l.noExpensesCashWalletSubtitle,
+              icon: Icons.account_balance_wallet_outlined,
+              onTap: widget.onOpenCashWallet,
             ),
           ),
           const SizedBox(height: 20),
@@ -1985,35 +2136,65 @@ class _GradientActionButton extends StatelessWidget {
 
 class _OutlineActionButton extends StatelessWidget {
   final String label;
+  final String? subtitle;
   final IconData icon;
   final VoidCallback onTap;
 
   const _OutlineActionButton({
     required this.label,
+    this.subtitle,
     required this.icon,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return OutlinedButton.icon(
+    return OutlinedButton(
       onPressed: onTap,
-      icon: Icon(icon, color: const Color(0xFF7C3AED)),
-      label: Text(
-        label,
-        style: const TextStyle(
-          color: Color(0xFF7C3AED),
-          fontSize: 16,
-          fontWeight: FontWeight.w800,
-        ),
-      ),
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(54),
+        minimumSize: const Size.fromHeight(56),
         side: const BorderSide(color: Color(0xFF7C3AED), width: 1.2),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
         backgroundColor: const Color(0xFFF7F2FF),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF7C3AED)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Color(0xFF7C3AED),
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF6D28D9),
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -152,6 +152,182 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsAddViaSms => 'إضافة من رسالة البنك';
 
   @override
+  String get tripDetailsCashWalletAction => 'إدارة الكاش';
+
+  @override
+  String tripDetailsCashWalletRemainingCta(Object amount) {
+    return '$amount متبقي';
+  }
+
+  @override
+  String get cashWalletHeroTitle => 'الكاش المتبقي';
+
+  @override
+  String get cashWalletHeroSubtitle => 'الرصيد المتاح لهذه الرحلة';
+
+  @override
+  String get cashWalletCurrentBalanceHelper => 'الرصيد الحالي المتاح بعد جميع العمليات';
+
+  @override
+  String get cashWalletEmptyTitle => 'لم تضف أي كاش لهذه الرحلة بعد';
+
+  @override
+  String get cashWalletEmptySubtitle => 'أضف الكاش الذي تحمله لتتبع المتبقي أثناء السفر';
+
+  @override
+  String get cashWalletTripDatesPending => 'التواريخ غير محددة';
+
+  @override
+  String get cashWalletHealthTitle => 'حالة الكاش';
+
+  @override
+  String get cashWalletHealthNotEnoughData => 'لم نحسب الحالة بعد';
+
+  @override
+  String get cashWalletHealthHealthy => 'جيد';
+
+  @override
+  String get cashWalletHealthMedium => 'متوسط';
+
+  @override
+  String get cashWalletHealthLow => 'منخفض';
+
+  @override
+  String get cashWalletHealthCritical => 'حرج';
+
+  @override
+  String get cashWalletDailyBurnTitle => 'متوسط الصرف اليومي';
+
+  @override
+  String get cashWalletBurnNoData => 'ابدأ بإضافة مصروفات كاش لحساب معدل الصرف';
+
+  @override
+  String cashWalletRemainingDaysMessage(Object days) {
+    return 'يكفي تقريبًا $days أيام';
+  }
+
+  @override
+  String get cashWalletRemainingDaysNoData => 'سنحسب المدة المتوقعة بعد أول مصروف كاش';
+
+  @override
+  String get cashWalletBalancesTitle => 'الأرصدة حسب العملة';
+
+  @override
+  String get cashWalletRecentTransactionsTitle => 'آخر حركات الكاش';
+
+  @override
+  String get cashWalletNoBalances => 'لا توجد أرصدة كاش بعد.';
+
+  @override
+  String get cashWalletNoTransactions => 'لا توجد حركات كاش بعد.';
+
+  @override
+  String get cashWalletAddCash => 'إضافة كاش';
+
+  @override
+  String get cashWalletQuickAtmWithdrawal => 'سحب ATM';
+
+  @override
+  String get cashWalletQuickAtmShort => 'ATM';
+
+  @override
+  String cashWalletTripStatusDaysLeft(int days) {
+    return 'متبقي $days أيام';
+  }
+
+  @override
+  String cashWalletTripStatusStartsIn(int days) {
+    return 'تبدأ بعد $days أيام';
+  }
+
+  @override
+  String get cashWalletTripStatusStartsToday => 'تبدأ اليوم';
+
+  @override
+  String get cashWalletTripStatusCompleted => 'انتهت';
+
+  @override
+  String get cashWalletTripStatusActive => 'جارية';
+
+  @override
+  String get cashWalletGroupToday => 'اليوم';
+
+  @override
+  String get cashWalletGroupYesterday => 'أمس';
+
+  @override
+  String get cashWalletGroupEarlier => 'أقدم';
+
+  @override
+  String get cashWalletTransactionType => 'نوع الحركة';
+
+  @override
+  String get cashWalletTransactionTypeHelper => 'اختر نوع العملية التي قمت بها';
+
+  @override
+  String get cashWalletTypeInitialCash => 'كاش بداية الرحلة';
+
+  @override
+  String get cashWalletTypeAtmWithdrawal => 'سحب من صراف';
+
+  @override
+  String get cashWalletTypeCurrencyExchangeIn => 'تحويل عملة داخل';
+
+  @override
+  String get cashWalletTypeCurrencyExchangeOut => 'تحويل عملة خارج';
+
+  @override
+  String get cashWalletTypeManualAdjustment => 'تصحيح الرصيد';
+
+  @override
+  String get cashWalletTypeCashExpenseDeduction => 'خصم مصروف كاش';
+
+  @override
+  String get cashWalletTypeCashExpense => 'مصروف كاش';
+
+  @override
+  String cashWalletBalanceAfterTransaction(Object amount) {
+    return 'الرصيد بعد العملية: $amount';
+  }
+
+  @override
+  String cashWalletLastCashAdded(Object amount) {
+    return 'آخر إضافة كاش: +$amount';
+  }
+
+  @override
+  String cashWalletLastAtmWithdrawal(Object amount) {
+    return 'آخر سحب ATM: +$amount';
+  }
+
+  @override
+  String get cashBalanceInsufficientWarning => 'رصيد الكاش غير كافٍ';
+
+  @override
+  String get cashBalanceNoRecordedWarning => 'لا يوجد رصيد كاش مسجل لهذه الرحلة';
+
+  @override
+  String get cashBalanceAddCashAction => 'إضافة كاش';
+
+  @override
+  String get manualExchangeAddRate => 'إضافة سعر صرف';
+
+  @override
+  String get manualExchangeFromCurrency => 'من عملة';
+
+  @override
+  String get manualExchangeToCurrency => 'إلى عملة';
+
+  @override
+  String get manualExchangeRate => 'سعر الصرف';
+
+  @override
+  String get manualExchangeSourceNote => 'ملاحظة المصدر';
+
+  @override
+  String get manualExchangeSaved => 'تم حفظ سعر الصرف';
+
+  @override
   String get tripDetailsSearchLabel => 'البحث في المصاريف';
 
   @override
@@ -239,6 +415,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get noExpensesAddFirst => 'أضف أول مصروف';
+
+  @override
+  String get noExpensesCashWallet => 'إدارة الكاش';
+
+  @override
+  String get noExpensesCashWalletSubtitle => 'أضف الكاش الذي معك لتعرف كم تبقّى';
 
   @override
   String get noExpensesAddViaSms => 'إضافة من رسالة البنك';

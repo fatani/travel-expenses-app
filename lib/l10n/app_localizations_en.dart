@@ -152,6 +152,182 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsAddViaSms => 'Add via Bank SMS';
 
   @override
+  String get tripDetailsCashWalletAction => 'Cash Wallet';
+
+  @override
+  String tripDetailsCashWalletRemainingCta(Object amount) {
+    return '$amount remaining';
+  }
+
+  @override
+  String get cashWalletHeroTitle => 'Cash remaining';
+
+  @override
+  String get cashWalletHeroSubtitle => 'Available cash for this trip';
+
+  @override
+  String get cashWalletCurrentBalanceHelper => 'Current available balance after all transactions';
+
+  @override
+  String get cashWalletEmptyTitle => 'You haven’t added travel cash yet';
+
+  @override
+  String get cashWalletEmptySubtitle => 'Add the cash you carry to track what remains during your trip';
+
+  @override
+  String get cashWalletTripDatesPending => 'Dates pending';
+
+  @override
+  String get cashWalletHealthTitle => 'Cash health';
+
+  @override
+  String get cashWalletHealthNotEnoughData => 'We need cash spending data first';
+
+  @override
+  String get cashWalletHealthHealthy => 'Healthy';
+
+  @override
+  String get cashWalletHealthMedium => 'Medium';
+
+  @override
+  String get cashWalletHealthLow => 'Low';
+
+  @override
+  String get cashWalletHealthCritical => 'Critical';
+
+  @override
+  String get cashWalletDailyBurnTitle => 'Daily cash burn';
+
+  @override
+  String get cashWalletBurnNoData => 'Add cash expenses to estimate your burn rate';
+
+  @override
+  String cashWalletRemainingDaysMessage(Object days) {
+    return 'Lasts about $days days';
+  }
+
+  @override
+  String get cashWalletRemainingDaysNoData => 'We\'ll estimate remaining days after your first cash expense';
+
+  @override
+  String get cashWalletBalancesTitle => 'Balances by currency';
+
+  @override
+  String get cashWalletRecentTransactionsTitle => 'Recent cash transactions';
+
+  @override
+  String get cashWalletNoBalances => 'No cash balances yet.';
+
+  @override
+  String get cashWalletNoTransactions => 'No cash transactions yet.';
+
+  @override
+  String get cashWalletAddCash => 'Add Cash';
+
+  @override
+  String get cashWalletQuickAtmWithdrawal => 'ATM Withdrawal';
+
+  @override
+  String get cashWalletQuickAtmShort => 'ATM';
+
+  @override
+  String cashWalletTripStatusDaysLeft(int days) {
+    return '$days days left';
+  }
+
+  @override
+  String cashWalletTripStatusStartsIn(int days) {
+    return 'Starts in $days days';
+  }
+
+  @override
+  String get cashWalletTripStatusStartsToday => 'Starts today';
+
+  @override
+  String get cashWalletTripStatusCompleted => 'Finished';
+
+  @override
+  String get cashWalletTripStatusActive => 'Active';
+
+  @override
+  String get cashWalletGroupToday => 'Today';
+
+  @override
+  String get cashWalletGroupYesterday => 'Yesterday';
+
+  @override
+  String get cashWalletGroupEarlier => 'Earlier';
+
+  @override
+  String get cashWalletTransactionType => 'Transaction type';
+
+  @override
+  String get cashWalletTransactionTypeHelper => 'Choose the cash action you performed';
+
+  @override
+  String get cashWalletTypeInitialCash => 'Trip starting cash';
+
+  @override
+  String get cashWalletTypeAtmWithdrawal => 'ATM withdrawal';
+
+  @override
+  String get cashWalletTypeCurrencyExchangeIn => 'Currency exchange in';
+
+  @override
+  String get cashWalletTypeCurrencyExchangeOut => 'Currency exchange out';
+
+  @override
+  String get cashWalletTypeManualAdjustment => 'Balance correction';
+
+  @override
+  String get cashWalletTypeCashExpenseDeduction => 'Cash expense deduction';
+
+  @override
+  String get cashWalletTypeCashExpense => 'Cash expense';
+
+  @override
+  String cashWalletBalanceAfterTransaction(Object amount) {
+    return 'Balance after transaction: $amount';
+  }
+
+  @override
+  String cashWalletLastCashAdded(Object amount) {
+    return 'Last cash added: +$amount';
+  }
+
+  @override
+  String cashWalletLastAtmWithdrawal(Object amount) {
+    return 'Last ATM withdrawal: +$amount';
+  }
+
+  @override
+  String get cashBalanceInsufficientWarning => 'Cash balance is insufficient';
+
+  @override
+  String get cashBalanceNoRecordedWarning => 'No cash balance recorded for this trip';
+
+  @override
+  String get cashBalanceAddCashAction => 'Add Cash';
+
+  @override
+  String get manualExchangeAddRate => 'Add exchange rate';
+
+  @override
+  String get manualExchangeFromCurrency => 'From currency';
+
+  @override
+  String get manualExchangeToCurrency => 'To currency';
+
+  @override
+  String get manualExchangeRate => 'Rate';
+
+  @override
+  String get manualExchangeSourceNote => 'Source note';
+
+  @override
+  String get manualExchangeSaved => 'Exchange rate saved';
+
+  @override
   String get tripDetailsSearchLabel => 'Search expenses';
 
   @override
@@ -239,6 +415,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noExpensesAddFirst => 'Add First Expense';
+
+  @override
+  String get noExpensesCashWallet => 'Cash Wallet';
+
+  @override
+  String get noExpensesCashWalletSubtitle => 'Track how much cash you still have';
 
   @override
   String get noExpensesAddViaSms => 'Add via Bank SMS';

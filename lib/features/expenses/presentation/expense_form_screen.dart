@@ -595,7 +595,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
 
     try {
       if (widget.expense == null) {
-        await controller.createExpense(
+        final outcome = await controller.createExpense(
           title: title,
           amount: amount,
           currencyCode: currencyCode,
@@ -606,7 +606,15 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           paymentChannel: paymentChannel,
           note: _noteController.text,
           cardProfileId: _selectedCardProfileId,
+          tripHomeCurrency: widget.trip.homeCurrencySnapshot,
         );
+
+        if (!mounted) {
+          return;
+        }
+
+        Navigator.of(context).pop(outcome);
+        return;
       } else {
         await controller.updateExpense(
           expense: widget.expense!,
@@ -627,7 +635,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         return;
       }
 
-      Navigator.of(context).pop();
+      Navigator.of(context).pop(null);
     } catch (error) {
       if (!mounted) {
         return;

@@ -365,6 +365,330 @@ abstract class AppLocalizations {
   /// **'Add via Bank SMS'**
   String get tripDetailsAddViaSms;
 
+  /// No description provided for @tripDetailsCashWalletAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Wallet'**
+  String get tripDetailsCashWalletAction;
+
+  /// No description provided for @tripDetailsCashWalletRemainingCta.
+  ///
+  /// In en, this message translates to:
+  /// **'{amount} remaining'**
+  String tripDetailsCashWalletRemainingCta(Object amount);
+
+  /// No description provided for @cashWalletHeroTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash remaining'**
+  String get cashWalletHeroTitle;
+
+  /// No description provided for @cashWalletHeroSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Available cash for this trip'**
+  String get cashWalletHeroSubtitle;
+
+  /// No description provided for @cashWalletCurrentBalanceHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Current available balance after all transactions'**
+  String get cashWalletCurrentBalanceHelper;
+
+  /// No description provided for @cashWalletEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven’t added travel cash yet'**
+  String get cashWalletEmptyTitle;
+
+  /// No description provided for @cashWalletEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add the cash you carry to track what remains during your trip'**
+  String get cashWalletEmptySubtitle;
+
+  /// No description provided for @cashWalletTripDatesPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates pending'**
+  String get cashWalletTripDatesPending;
+
+  /// No description provided for @cashWalletHealthTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash health'**
+  String get cashWalletHealthTitle;
+
+  /// No description provided for @cashWalletHealthNotEnoughData.
+  ///
+  /// In en, this message translates to:
+  /// **'We need cash spending data first'**
+  String get cashWalletHealthNotEnoughData;
+
+  /// No description provided for @cashWalletHealthHealthy.
+  ///
+  /// In en, this message translates to:
+  /// **'Healthy'**
+  String get cashWalletHealthHealthy;
+
+  /// No description provided for @cashWalletHealthMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get cashWalletHealthMedium;
+
+  /// No description provided for @cashWalletHealthLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get cashWalletHealthLow;
+
+  /// No description provided for @cashWalletHealthCritical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get cashWalletHealthCritical;
+
+  /// No description provided for @cashWalletDailyBurnTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily cash burn'**
+  String get cashWalletDailyBurnTitle;
+
+  /// No description provided for @cashWalletBurnNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'Add cash expenses to estimate your burn rate'**
+  String get cashWalletBurnNoData;
+
+  /// No description provided for @cashWalletRemainingDaysMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Lasts about {days} days'**
+  String cashWalletRemainingDaysMessage(Object days);
+
+  /// No description provided for @cashWalletRemainingDaysNoData.
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll estimate remaining days after your first cash expense'**
+  String get cashWalletRemainingDaysNoData;
+
+  /// No description provided for @cashWalletBalancesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Balances by currency'**
+  String get cashWalletBalancesTitle;
+
+  /// No description provided for @cashWalletRecentTransactionsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent cash transactions'**
+  String get cashWalletRecentTransactionsTitle;
+
+  /// No description provided for @cashWalletNoBalances.
+  ///
+  /// In en, this message translates to:
+  /// **'No cash balances yet.'**
+  String get cashWalletNoBalances;
+
+  /// No description provided for @cashWalletNoTransactions.
+  ///
+  /// In en, this message translates to:
+  /// **'No cash transactions yet.'**
+  String get cashWalletNoTransactions;
+
+  /// No description provided for @cashWalletAddCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Cash'**
+  String get cashWalletAddCash;
+
+  /// No description provided for @cashWalletQuickAtmWithdrawal.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM Withdrawal'**
+  String get cashWalletQuickAtmWithdrawal;
+
+  /// No description provided for @cashWalletQuickAtmShort.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM'**
+  String get cashWalletQuickAtmShort;
+
+  /// No description provided for @cashWalletTripStatusDaysLeft.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days left'**
+  String cashWalletTripStatusDaysLeft(int days);
+
+  /// No description provided for @cashWalletTripStatusStartsIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {days} days'**
+  String cashWalletTripStatusStartsIn(int days);
+
+  /// No description provided for @cashWalletTripStatusStartsToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts today'**
+  String get cashWalletTripStatusStartsToday;
+
+  /// No description provided for @cashWalletTripStatusCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Finished'**
+  String get cashWalletTripStatusCompleted;
+
+  /// No description provided for @cashWalletTripStatusActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get cashWalletTripStatusActive;
+
+  /// No description provided for @cashWalletGroupToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get cashWalletGroupToday;
+
+  /// No description provided for @cashWalletGroupYesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get cashWalletGroupYesterday;
+
+  /// No description provided for @cashWalletGroupEarlier.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier'**
+  String get cashWalletGroupEarlier;
+
+  /// No description provided for @cashWalletTransactionType.
+  ///
+  /// In en, this message translates to:
+  /// **'Transaction type'**
+  String get cashWalletTransactionType;
+
+  /// No description provided for @cashWalletTransactionTypeHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the cash action you performed'**
+  String get cashWalletTransactionTypeHelper;
+
+  /// No description provided for @cashWalletTypeInitialCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip starting cash'**
+  String get cashWalletTypeInitialCash;
+
+  /// No description provided for @cashWalletTypeAtmWithdrawal.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM withdrawal'**
+  String get cashWalletTypeAtmWithdrawal;
+
+  /// No description provided for @cashWalletTypeCurrencyExchangeIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency exchange in'**
+  String get cashWalletTypeCurrencyExchangeIn;
+
+  /// No description provided for @cashWalletTypeCurrencyExchangeOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency exchange out'**
+  String get cashWalletTypeCurrencyExchangeOut;
+
+  /// No description provided for @cashWalletTypeManualAdjustment.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance correction'**
+  String get cashWalletTypeManualAdjustment;
+
+  /// No description provided for @cashWalletTypeCashExpenseDeduction.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash expense deduction'**
+  String get cashWalletTypeCashExpenseDeduction;
+
+  /// No description provided for @cashWalletTypeCashExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash expense'**
+  String get cashWalletTypeCashExpense;
+
+  /// No description provided for @cashWalletBalanceAfterTransaction.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance after transaction: {amount}'**
+  String cashWalletBalanceAfterTransaction(Object amount);
+
+  /// No description provided for @cashWalletLastCashAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Last cash added: +{amount}'**
+  String cashWalletLastCashAdded(Object amount);
+
+  /// No description provided for @cashWalletLastAtmWithdrawal.
+  ///
+  /// In en, this message translates to:
+  /// **'Last ATM withdrawal: +{amount}'**
+  String cashWalletLastAtmWithdrawal(Object amount);
+
+  /// No description provided for @cashBalanceInsufficientWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash balance is insufficient'**
+  String get cashBalanceInsufficientWarning;
+
+  /// No description provided for @cashBalanceNoRecordedWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'No cash balance recorded for this trip'**
+  String get cashBalanceNoRecordedWarning;
+
+  /// No description provided for @cashBalanceAddCashAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Cash'**
+  String get cashBalanceAddCashAction;
+
+  /// No description provided for @manualExchangeAddRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add exchange rate'**
+  String get manualExchangeAddRate;
+
+  /// No description provided for @manualExchangeFromCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'From currency'**
+  String get manualExchangeFromCurrency;
+
+  /// No description provided for @manualExchangeToCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'To currency'**
+  String get manualExchangeToCurrency;
+
+  /// No description provided for @manualExchangeRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get manualExchangeRate;
+
+  /// No description provided for @manualExchangeSourceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Source note'**
+  String get manualExchangeSourceNote;
+
+  /// No description provided for @manualExchangeSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rate saved'**
+  String get manualExchangeSaved;
+
   /// No description provided for @tripDetailsSearchLabel.
   ///
   /// In en, this message translates to:
@@ -526,6 +850,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add First Expense'**
   String get noExpensesAddFirst;
+
+  /// No description provided for @noExpensesCashWallet.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash Wallet'**
+  String get noExpensesCashWallet;
+
+  /// No description provided for @noExpensesCashWalletSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Track how much cash you still have'**
+  String get noExpensesCashWalletSubtitle;
 
   /// No description provided for @noExpensesAddViaSms.
   ///

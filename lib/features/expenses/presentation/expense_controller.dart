@@ -6,6 +6,16 @@ import '../../reports/data/trip_report_provider.dart';
 import '../domain/expense.dart';
 import '../domain/money_model.dart';
 
+class ExpenseCreateOutcome {
+  const ExpenseCreateOutcome({
+    required this.cashBalanceInsufficient,
+    required this.noCashBalanceRecorded,
+  });
+
+  final bool cashBalanceInsufficient;
+  final bool noCashBalanceRecorded;
+}
+
 final expenseControllerProvider =
     AsyncNotifierProvider.family<ExpenseController, List<Expense>, String>(
       ExpenseController.new,
@@ -31,7 +41,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     }
   }
 
-  Future<void> createExpense({
+  Future<ExpenseCreateOutcome> createExpense({
     required String title,
     required double amount,
     required String currencyCode,
@@ -59,6 +69,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     String? note,
     String? rawSmsText,
     int? cardProfileId,
+    String? tripHomeCurrency,
   }) async {
     final normalizedMoney = moneyModel ??
         MoneyModel(
@@ -73,6 +84,48 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           isInternational: isInternational ?? false,
         );
 
+    final normalizedOriginalAmount =
+        originalAmount ?? normalizedMoney.transactionAmount ?? amount;
+    final normalizedOriginalCurrency =
+        (originalCurrency ?? normalizedMoney.transactionCurrency ?? currencyCode)
+            .trim()
+            .toUpperCase();
+    final normalizedHomeCurrency = tripHomeCurrency?.trim().toUpperCase();
+
+    double? computedConvertedHomeAmount = convertedHomeAmount;
+    double? computedConversionRate = conversionRate;
+    String? computedHomeCurrency = homeCurrency;
+
+    if (normalizedHomeCurrency != null &&
+        normalizedHomeCurrency.isNotEmpty &&
+        computedConvertedHomeAmount == null &&
+        normalizedOriginalCurrency != normalizedHomeCurrency) {
+      try {
+        final conversion = await ref
+            .read(manualCurrencyConversionServiceProvider)
+            .convert(
+              amount: normalizedOriginalAmount,
+              fromCurrency: normalizedOriginalCurrency,
+              toCurrency: normalizedHomeCurrency,
+            );
+
+        if (conversion != null) {
+          computedConvertedHomeAmount = conversion.convertedAmount;
+          computedConversionRate = conversion.rate;
+          computedHomeCurrency = normalizedHomeCurrency;
+        }
+      } catch (_) {
+        // Conversion must never block expense saving.
+      }
+    } else if (normalizedHomeCurrency != null &&
+        normalizedHomeCurrency.isNotEmpty &&
+        normalizedOriginalCurrency == normalizedHomeCurrency &&
+        computedConvertedHomeAmount == null) {
+      computedConvertedHomeAmount = normalizedOriginalAmount;
+      computedConversionRate = 1;
+      computedHomeCurrency = normalizedHomeCurrency;
+    }
+
     final expense = Expense.create(
       tripId: _tripId,
       title: title,
@@ -80,11 +133,11 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       currencyCode: currencyCode,
       transactionAmount: normalizedMoney.transactionAmount ?? amount,
       transactionCurrency: normalizedMoney.transactionCurrency ?? currencyCode,
-      originalAmount: originalAmount,
-      originalCurrency: originalCurrency,
-      convertedHomeAmount: convertedHomeAmount,
-      homeCurrency: homeCurrency,
-      conversionRate: conversionRate,
+      originalAmount: normalizedOriginalAmount,
+      originalCurrency: normalizedOriginalCurrency,
+      convertedHomeAmount: computedConvertedHomeAmount,
+      homeCurrency: computedHomeCurrency,
+      conversionRate: computedConversionRate,
       billedAmount: normalizedMoney.billedAmount,
       billedCurrency: normalizedMoney.billedCurrency,
       feesAmount: normalizedMoney.feesAmount,
@@ -103,9 +156,63 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       cardProfileId: cardProfileId,
     );
 
-    await _runMutation(
-      () => ref.read(expenseRepositoryProvider).createExpense(expense),
-    );
+    return _runMutation(() async {
+      final created = await ref.read(expenseRepositoryProvider).createExpense(expense);
+      if (!_isCashExpense(created)) {
+        return const ExpenseCreateOutcome(
+          cashBalanceInsufficient: false,
+          noCashBalanceRecorded: false,
+        );
+      }
+
+      try {
+        final deductionResult = await ref
+            .read(cashWalletRepositoryProvider)
+            .recordCashExpenseDeduction(
+              tripId: _tripId,
+              amount: created.transactionAmount,
+              currencyCode: created.transactionCurrency,
+              note: created.note,
+            );
+
+        return ExpenseCreateOutcome(
+          cashBalanceInsufficient:
+              deductionResult.wasInsufficientBeforeDeduction,
+          noCashBalanceRecorded:
+              deductionResult.wasInsufficientBeforeDeduction &&
+              (deductionResult.balanceAfterDeduction + created.transactionAmount)
+                      .abs() <
+                  0.0001,
+        );
+      } catch (_) {
+        // Wallet side-effects should not block core expense persistence.
+        return const ExpenseCreateOutcome(
+          cashBalanceInsufficient: false,
+          noCashBalanceRecorded: false,
+        );
+      }
+    });
+  }
+
+  bool _isCashExpense(Expense expense) {
+    final paymentMethod = expense.paymentMethod.trim().toLowerCase();
+    final paymentChannel = expense.paymentChannel?.trim().toLowerCase();
+    return paymentMethod == 'cash' || paymentChannel == 'cash';
+  }
+
+  Future<T> _runMutation<T>(Future<T> Function() mutation) async {
+    state = const AsyncLoading();
+
+    try {
+      final result = await mutation();
+      ref.invalidate(globalReportProvider);
+      ref.invalidate(tripReportProvider);
+      state = AsyncData(await _loadExpenses());
+      return result;
+    } catch (error, stackTrace) {
+      state = AsyncValue.error(error, stackTrace);
+      rethrow;
+    }
   }
 
   Future<void> updateExpense({
@@ -193,20 +300,6 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
 
   Future<List<Expense>> _loadExpenses() {
     return ref.read(expenseRepositoryProvider).getExpensesByTrip(_tripId);
-  }
-
-  Future<void> _runMutation(Future<void> Function() mutation) async {
-    state = const AsyncLoading();
-
-    try {
-      await mutation();
-      ref.invalidate(globalReportProvider);
-      ref.invalidate(tripReportProvider);
-      state = AsyncData(await _loadExpenses());
-    } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-      rethrow;
-    }
   }
 
   String? _normalizeText(String? value) {
