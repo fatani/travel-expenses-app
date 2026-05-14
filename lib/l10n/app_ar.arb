@@ -3,6 +3,7 @@
   "appName": "متتبع مصاريف السفر",
   "commonTryAgain": "إعادة المحاولة",
   "commonCancel": "إلغاء",
+  "commonEdit": "تعديل",
   "commonDelete": "حذف",
   "commonRequiredField": "هذا الحقل مطلوب.",
   "commonEnterValidNumber": "أدخل رقماً صالحاً.",
@@ -74,6 +75,7 @@
   "cashWalletNoBalances": "لا توجد أرصدة كاش بعد.",
   "cashWalletNoTransactions": "لا توجد حركات كاش بعد.",
   "cashWalletAddCash": "إضافة كاش",
+  "cashWalletEditCash": "تعديل حركة الكاش",
   "cashWalletQuickAtmWithdrawal": "سحب ATM",
   "cashWalletQuickAtmShort": "ATM",
   "cashWalletTripStatusDaysLeft": "متبقي {days} أيام",
@@ -95,6 +97,15 @@
   "cashWalletTypeManualAdjustment": "تصحيح الرصيد",
   "cashWalletTypeCashExpenseDeduction": "خصم مصروف كاش",
   "cashWalletTypeCashExpense": "مصروف كاش",
+  "cashWalletEditExpenseAction": "تعديل المصروف",
+  "cashWalletDeleteTransactionTitle": "حذف حركة الكاش؟",
+  "cashWalletDeleteTransactionTitleForType": "حذف {transactionType}؟",
+  "@cashWalletDeleteTransactionTitleForType": {
+    "placeholders": {
+      "transactionType": {}
+    }
+  },
+  "cashWalletDeleteTransactionMessage": "سيتم عكس أثر هذه الحركة على الرصيد.",
   "cashWalletBalanceAfterTransaction": "الرصيد بعد العملية: {amount}",
   "@cashWalletBalanceAfterTransaction": {"placeholders": {"amount": {}}},
   "cashWalletLastCashAdded": "آخر إضافة كاش: +{amount}",

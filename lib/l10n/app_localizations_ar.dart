@@ -18,6 +18,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonCancel => 'إلغاء';
 
   @override
+  String get commonEdit => 'تعديل';
+
+  @override
   String get commonDelete => 'حذف';
 
   @override
@@ -225,6 +228,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletAddCash => 'إضافة كاش';
 
   @override
+  String get cashWalletEditCash => 'تعديل حركة الكاش';
+
+  @override
   String get cashWalletQuickAtmWithdrawal => 'سحب ATM';
 
   @override
@@ -284,6 +290,20 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cashWalletTypeCashExpense => 'مصروف كاش';
+
+  @override
+  String get cashWalletEditExpenseAction => 'تعديل المصروف';
+
+  @override
+  String get cashWalletDeleteTransactionTitle => 'حذف حركة الكاش؟';
+
+  @override
+  String cashWalletDeleteTransactionTitleForType(Object transactionType) {
+    return 'حذف $transactionType؟';
+  }
+
+  @override
+  String get cashWalletDeleteTransactionMessage => 'سيتم عكس أثر هذه الحركة على الرصيد.';
 
   @override
   String cashWalletBalanceAfterTransaction(Object amount) {

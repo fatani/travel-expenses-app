@@ -3,9 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
+import '../../../core/design_system/app_buttons.dart';
+import '../../../core/design_system/app_confirmation_dialog.dart';
+import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/finance/manual_exchange_rate.dart';
 import '../../../core/providers/database_providers.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../expenses/presentation/expense_form_screen.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../domain/cash_transaction.dart';
@@ -297,6 +302,18 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                             child: _TransactionTile(
                               transaction: transaction,
                               balanceAfterTransaction: _balanceAfterByTransactionId[transaction.id],
+                              onEdit: _canEditManualTransaction(transaction)
+                                  ? () => _showAddCashSheet(
+                                        initialType: transaction.type,
+                                        editingTransaction: transaction,
+                                      )
+                                  : null,
+                              onDelete: _canDeleteManualTransaction(transaction)
+                                  ? () => _confirmDeleteManualTransaction(transaction)
+                                  : null,
+                              onEditExpense: _canEditLinkedExpense(transaction)
+                                  ? () => _openLinkedExpenseEditor(transaction)
+                                  : null,
                             ),
                           ),
                         const SizedBox(height: 4),
@@ -323,6 +340,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
 
   Future<void> _showAddCashSheet({
     required CashTransactionType initialType,
+    CashTransaction? editingTransaction,
   }) async {
     debugPrint('Opening Add Cash Sheet: $initialType');
     final result = await showModalBottomSheet<bool>(
@@ -339,6 +357,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
           child: _AddCashSheet(
             trip: widget.trip,
             initialType: initialType,
+            editingTransaction: editingTransaction,
           ),
         );
       },
@@ -347,6 +366,149 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     if (result == true) {
       await _load();
     }
+  }
+
+  bool _canEditManualTransaction(CashTransaction transaction) {
+    if (transaction.isReversed || transaction.expenseId != null) {
+      return false;
+    }
+    return transaction.type == CashTransactionType.initialCash ||
+        transaction.type == CashTransactionType.atmWithdrawal ||
+        transaction.type == CashTransactionType.manualAdjustment;
+  }
+
+  bool _canDeleteManualTransaction(CashTransaction transaction) {
+    return _canEditManualTransaction(transaction);
+  }
+
+  bool _canEditLinkedExpense(CashTransaction transaction) {
+    return transaction.type == CashTransactionType.cashExpenseDeduction &&
+        transaction.expenseId != null &&
+        transaction.expenseId!.isNotEmpty;
+  }
+
+  Future<void> _confirmDeleteManualTransaction(CashTransaction transaction) async {
+    final l10n = AppLocalizations.of(context)!;
+    final shouldDelete = await showModalBottomSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.34),
+      builder: (sheetContext) {
+        final typeLabel = _transactionTypeLabel(l10n, transaction.type);
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md + bottomInset,
+            ),
+            child: AppConfirmationDialog(
+              icon: _deleteIconForTransactionType(transaction.type),
+              title: l10n.cashWalletDeleteTransactionTitleForType(typeLabel),
+              message: l10n.cashWalletDeleteTransactionMessage,
+              cancelLabel: l10n.commonCancel,
+              confirmLabel: l10n.commonDelete,
+              onCancel: () => Navigator.of(sheetContext).pop(false),
+              onConfirm: () => Navigator.of(sheetContext).pop(true),
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || shouldDelete != true) {
+      return;
+    }
+
+    try {
+      await ref
+          .read(cashWalletRepositoryProvider)
+          .reverseManualCashTransaction(transaction: transaction);
+      if (!mounted) {
+        return;
+      }
+      await _load();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.expenseFormSaveError('$error'))),
+      );
+    }
+  }
+
+  String _transactionTypeLabel(AppLocalizations l10n, CashTransactionType type) {
+    switch (type) {
+      case CashTransactionType.initialCash:
+        return l10n.cashWalletTypeInitialCash;
+      case CashTransactionType.atmWithdrawal:
+        return l10n.cashWalletTypeAtmWithdrawal;
+      case CashTransactionType.currencyExchangeIn:
+        return l10n.cashWalletTypeCurrencyExchangeIn;
+      case CashTransactionType.currencyExchangeOut:
+        return l10n.cashWalletTypeCurrencyExchangeOut;
+      case CashTransactionType.manualAdjustment:
+        return l10n.cashWalletTypeManualAdjustment;
+      case CashTransactionType.cashExpenseDeduction:
+        return l10n.cashWalletTypeCashExpense;
+    }
+  }
+
+  IconData _deleteIconForTransactionType(CashTransactionType type) {
+    switch (type) {
+      case CashTransactionType.atmWithdrawal:
+        return Icons.local_atm_outlined;
+      case CashTransactionType.manualAdjustment:
+        return Icons.tune_rounded;
+      case CashTransactionType.initialCash:
+        return Icons.account_balance_wallet_outlined;
+      case CashTransactionType.currencyExchangeIn:
+      case CashTransactionType.currencyExchangeOut:
+        return Icons.currency_exchange_outlined;
+      case CashTransactionType.cashExpenseDeduction:
+        return Icons.receipt_long_outlined;
+    }
+  }
+
+  Future<void> _openLinkedExpenseEditor(CashTransaction transaction) async {
+    final expenseId = transaction.expenseId;
+    if (expenseId == null || expenseId.isEmpty) {
+      return;
+    }
+
+    final expense = await ref.read(expenseRepositoryProvider).getExpenseById(expenseId);
+    if (!mounted) {
+      return;
+    }
+
+    if (expense == null) {
+      final l10n = AppLocalizations.of(context)!;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripDetailsLoadError)),
+      );
+      return;
+    }
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => ExpenseFormScreen(
+          trip: widget.trip,
+          expense: expense,
+        ),
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+    await _load();
   }
 
   Future<void> _openAddManualRateSheet() async {
@@ -374,10 +536,12 @@ class _AddCashSheet extends ConsumerStatefulWidget {
   const _AddCashSheet({
     required this.trip,
     required this.initialType,
+    this.editingTransaction,
   });
 
   final Trip trip;
   final CashTransactionType initialType;
+  final CashTransaction? editingTransaction;
 
   @override
   ConsumerState<_AddCashSheet> createState() => _AddCashSheetState();
@@ -539,6 +703,15 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   @override
   void initState() {
     super.initState();
+    final editingTransaction = widget.editingTransaction;
+    if (editingTransaction != null) {
+      _selectedType = editingTransaction.type;
+      _amountController.text = editingTransaction.amount.toStringAsFixed(2);
+      _currencyController.text = editingTransaction.currencyCode;
+      _noteController.text = editingTransaction.note ?? '';
+      return;
+    }
+
     _selectedType = widget.initialType;
     _currencyController.text = widget.trip.destinationCurrency;
   }
@@ -555,6 +728,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    final isEditMode = widget.editingTransaction != null;
 
     return Material(
       color: Colors.white,
@@ -575,7 +749,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               children: [
                 _SheetHeader(
                   icon: Icons.account_balance_wallet_outlined,
-                  title: l10n.cashWalletAddCash,
+                  title: isEditMode ? l10n.cashWalletEditCash : l10n.cashWalletAddCash,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -663,7 +837,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : Text(l10n.tripDetailsQuickAddSave),
+                      : Text(isEditMode ? l10n.expenseFormSaveEdit : l10n.tripDetailsQuickAddSave),
                 ),
               ],
             ),
@@ -690,13 +864,24 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     });
 
     try {
-      await ref.read(cashWalletRepositoryProvider).addCashTransaction(
-            tripId: widget.trip.id,
-            type: _selectedType,
-            amount: amount,
-            currencyCode: currencyCode,
-            note: _noteController.text,
-          );
+      final editingTransaction = widget.editingTransaction;
+      if (editingTransaction != null) {
+        await ref.read(cashWalletRepositoryProvider).updateManualCashTransaction(
+              existingTransaction: editingTransaction,
+              nextType: _selectedType,
+              nextAmount: amount,
+              nextCurrencyCode: currencyCode,
+              nextNote: _noteController.text,
+            );
+      } else {
+        await ref.read(cashWalletRepositoryProvider).addCashTransaction(
+              tripId: widget.trip.id,
+              type: _selectedType,
+              amount: amount,
+              currencyCode: currencyCode,
+              note: _noteController.text,
+            );
+      }
 
       if (!mounted) {
         return;
@@ -1380,10 +1565,16 @@ class _TransactionTile extends StatelessWidget {
   const _TransactionTile({
     required this.transaction,
     required this.balanceAfterTransaction,
+    this.onEdit,
+    this.onDelete,
+    this.onEditExpense,
   });
 
   final CashTransaction transaction;
   final double? balanceAfterTransaction;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+  final VoidCallback? onEditExpense;
 
   @override
   Widget build(BuildContext context) {
@@ -1433,6 +1624,36 @@ class _TransactionTile extends StatelessWidget {
                         color: const Color(0xFF667085),
                         fontWeight: FontWeight.w500,
                       ),
+                ),
+              ),
+            if (onEdit != null || onDelete != null || onEditExpense != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (onEditExpense != null)
+                      _ExpenseLinkActionButton(
+                        onPressed: onEditExpense,
+                        icon: Icons.receipt_long_outlined,
+                        label: l10n.cashWalletEditExpenseAction,
+                      ),
+                    if (onEdit != null)
+                      _SoftLedgerIconButton(
+                        onPressed: onEdit,
+                        icon: Icons.edit_outlined,
+                        tooltip: l10n.commonEdit,
+                      ),
+                    if (onDelete != null)
+                      _SoftLedgerIconButton(
+                        onPressed: onDelete,
+                        icon: Icons.delete_outline_rounded,
+                        tooltip: l10n.commonDelete,
+                        foregroundColor: const Color(0xFFB42318),
+                        backgroundColor: const Color(0xFFFEE4E2),
+                      ),
+                  ],
                 ),
               ),
           ],
@@ -1494,6 +1715,73 @@ class _LastCashInEvent {
   final bool isAtm;
 }
 
+class _SoftLedgerIconButton extends StatelessWidget {
+  const _SoftLedgerIconButton({
+    required this.onPressed,
+    required this.icon,
+    required this.tooltip,
+    this.foregroundColor = const Color(0xFF6D28D9),
+    this.backgroundColor = const Color(0xFFF3E8FF),
+  });
+
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String tooltip;
+  final Color foregroundColor;
+  final Color backgroundColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(999),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Icon(icon, size: 18, color: foregroundColor),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ExpenseLinkActionButton extends StatelessWidget {
+  const _ExpenseLinkActionButton({
+    required this.onPressed,
+    required this.icon,
+    required this.label,
+  });
+
+  final VoidCallback? onPressed;
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon, size: 16, color: const Color(0xFF5B21B6)),
+      label: Text(
+        label,
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+              color: const Color(0xFF5B21B6),
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+      style: OutlinedButton.styleFrom(
+        side: const BorderSide(color: Color(0xFFD6BBFB)),
+        backgroundColor: const Color(0xFFF9F5FF),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+      ),
+    );
+  }
+}
+
 String? _formatTripStatus(BuildContext context, Trip trip) {
   final l10n = AppLocalizations.of(context)!;
   final now = DateTime.now();
@@ -1532,46 +1820,7 @@ class _SheetGradientButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: Opacity(
-        opacity: onPressed == null ? 0.7 : 1,
-        child: Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(16),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: onPressed,
-            child: Ink(
-              height: 52,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: DefaultTextStyle.merge(
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                  ),
-                  child: child,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    return AppPrimaryButton(onPressed: onPressed, child: child);
   }
 }
 
@@ -1586,33 +1835,11 @@ class _PremiumSheetContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final maxHeight = MediaQuery.of(context).size.height * 0.9;
     return AnimatedPadding(
-      duration: const Duration(milliseconds: 140),
+      duration: AppDurations.fast,
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: viewInsetsBottom),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: 360,
-            maxHeight: maxHeight,
-            minWidth: double.infinity,
-          ),
-          child: Material(
-            color: const Color(0xFFFCFAFF),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-            clipBehavior: Clip.antiAlias,
-            child: SafeArea(
-              top: false,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-                child: child,
-              ),
-            ),
-          ),
-        ),
-      ),
+      child: AppBottomSheetContainer(child: child),
     );
   }
 }

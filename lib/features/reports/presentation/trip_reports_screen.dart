@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design_system/app_surfaces.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../../../l10n/l10n_extension.dart';
 import '../../../shared/widgets/insight_card.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
@@ -83,7 +85,10 @@ class _ReportBody extends StatelessWidget {
     final paymentChannelCount = _uniqueBucketKeyCount(summary.byPaymentChannel);
 
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
       children: [
         _ReportHeroSummaryCard(
           summary: summary,
@@ -548,39 +553,46 @@ class _BucketList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return AppCard(
+      padding: EdgeInsets.zero,
+      borderColor: AppColors.borderSoft.withValues(alpha: 0.65),
+      shadows: AppShadows.soft,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (int i = 0; i < buckets.length; i++) ...[
-            if (i > 0) const Divider(height: 1, indent: 16, endIndent: 16),
-            ListTile(
-              dense: true,
-              title: Column(
+          for (var i = 0; i < buckets.length; i++) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    showKey
-                        ? _localizedBucketKey(
-                            context,
-                            buckets[i].key,
-                            groupLabelType,
-                          )
-                        : buckets[i].currency.trim().toUpperCase(),
-                    style: theme.textTheme.bodyMedium,
+                  if (showKey)
+                    Expanded(
+                      child: Text(
+                        _localizedBucketKey(
+                          context,
+                          buckets[i].key,
+                          groupLabelType,
+                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  _AmountAndCountColumn(
+                    amount: buckets[i].totalAmount,
+                    currency: buckets[i].currency,
+                    countLabel: context.l10n.tripReportsExpenseCountLabel(
+                      buckets[i].count,
+                    ),
+                    compact: true,
                   ),
-                  if (_isTopBucket(buckets[i])) ...[
-                    const SizedBox(height: 4),
-                    const _TopSpendingBadge(),
-                  ],
                 ],
               ),
-              trailing: _AmountAndCountColumn(
-                amount: buckets[i].totalAmount,
-                currency: buckets[i].currency,
-                countLabel:
-                    context.l10n.tripReportsExpenseCountLabel(buckets[i].count),
-              ),
             ),
+            if (i < buckets.length - 1) const Divider(height: 1),
           ],
         ],
       ),
@@ -875,12 +887,6 @@ String _formatAmount(double amount) {
     return amount.toStringAsFixed(0);
   }
   return amount.toStringAsFixed(2);
-}
-
-extension on _BucketList {
-  bool _isTopBucket(ReportBucket bucket) {
-    return bucket.key == topKey && bucket.currency == topCurrency;
-  }
 }
 
 enum _BucketGroupLabelType {

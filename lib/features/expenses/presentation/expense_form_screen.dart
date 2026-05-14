@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../../../core/design_system/app_surfaces.dart';
 import '../../trips/domain/trip.dart';
 import '../domain/expense.dart';
 import '../../../core/providers/database_providers.dart';
+import '../../../core/theme/design_tokens.dart';
 import 'expense_controller.dart';
 import 'expense_option_labels.dart';
 import '../../settings/presentation/cards_provider.dart';
@@ -161,7 +163,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         .isLoading;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
           widget.isEditMode
@@ -173,7 +175,12 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.sm,
+            AppSpacing.md,
+            AppSpacing.xl,
+          ),
           child: Form(
             key: _formKey,
             autovalidateMode: _showValidationErrors
@@ -182,24 +189,15 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.82),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                        blurRadius: 18,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                AppCard(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
+                  backgroundColor: Colors.white.withValues(alpha: 0.82),
+                  borderColor: AppColors.borderSoft.withValues(alpha: 0.45),
+                  radius: AppRadius.lg,
+                  shadows: AppShadows.card,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                         _SectionLabel(
                           title: isArabic ? 'البيانات الأساسية' : 'Basic expense',
                         ),
@@ -364,8 +362,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             hintText: l10n.expenseFormNoteHint,
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),

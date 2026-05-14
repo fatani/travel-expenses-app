@@ -87,6 +87,60 @@ class CashWalletRepository {
     });
   }
 
+  Future<void> reverseManualCashTransaction({
+    required CashTransaction transaction,
+  }) async {
+    if (!_isEditableManualTransaction(transaction)) {
+      throw ArgumentError('Only manual cash transactions can be reversed.');
+    }
+
+    final db = await _appDatabase.database;
+    await db.transaction((txn) async {
+      await _reverseManualCashTransactionInTxn(
+        txn,
+        transaction: transaction,
+      );
+    });
+  }
+
+  Future<void> updateManualCashTransaction({
+    required CashTransaction existingTransaction,
+    required CashTransactionType nextType,
+    required double nextAmount,
+    required String nextCurrencyCode,
+    String? nextNote,
+  }) async {
+    if (!_isEditableManualTransaction(existingTransaction)) {
+      throw ArgumentError('Only manual cash transactions can be updated.');
+    }
+
+    final normalizedCurrency = nextCurrencyCode.trim().toUpperCase();
+    final replacementTransaction = CashTransaction.create(
+      id: _uuid.v4(),
+      tripId: existingTransaction.tripId,
+      type: nextType,
+      amount: nextAmount,
+      currencyCode: normalizedCurrency,
+      note: nextNote,
+    );
+
+    final db = await _appDatabase.database;
+    await db.transaction((txn) async {
+      await _reverseManualCashTransactionInTxn(
+        txn,
+        transaction: existingTransaction,
+      );
+      await _insertTransaction(txn, replacementTransaction);
+      await _applyBalanceDelta(
+        txn,
+        tripId: replacementTransaction.tripId,
+        currencyCode: replacementTransaction.currencyCode,
+        delta: _signedDelta(nextType, nextAmount),
+        updatedAt: replacementTransaction.createdAt,
+      );
+    });
+  }
+
   Future<CashExpenseDeductionResult> recordCashExpenseDeduction({
     required String tripId,
     String? expenseId,
@@ -309,6 +363,35 @@ class CashWalletRepository {
     return rows.first;
   }
 
+  Future<void> _reverseManualCashTransactionInTxn(
+    Transaction txn, {
+    required CashTransaction transaction,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final affected = await txn.update(
+      AppDatabase.cashTransactionsTable,
+      {
+        'is_reversed': 1,
+        'reversed_at': now.toIso8601String(),
+      },
+      where: 'id = ? AND is_reversed = 0',
+      whereArgs: [transaction.id],
+    );
+
+    if (affected == 0) {
+      throw StateError('Transaction already reversed or not found.');
+    }
+
+    final reversalDelta = -_signedDelta(transaction.type, transaction.amount);
+    await _applyBalanceDelta(
+      txn,
+      tripId: transaction.tripId,
+      currencyCode: transaction.currencyCode,
+      delta: reversalDelta,
+      updatedAt: now,
+    );
+  }
+
   Future<void> _insertTransaction(
     Transaction txn,
     CashTransaction transaction,
@@ -410,5 +493,22 @@ class CashWalletRepository {
     final paymentMethod = expense.paymentMethod.trim().toLowerCase();
     final paymentChannel = expense.paymentChannel?.trim().toLowerCase();
     return paymentMethod == 'cash' || paymentChannel == 'cash';
+  }
+
+  bool _isEditableManualTransaction(CashTransaction transaction) {
+    if (transaction.isReversed || transaction.expenseId != null) {
+      return false;
+    }
+
+    switch (transaction.type) {
+      case CashTransactionType.initialCash:
+      case CashTransactionType.atmWithdrawal:
+      case CashTransactionType.manualAdjustment:
+        return true;
+      case CashTransactionType.currencyExchangeIn:
+      case CashTransactionType.currencyExchangeOut:
+      case CashTransactionType.cashExpenseDeduction:
+        return false;
+    }
   }
 }

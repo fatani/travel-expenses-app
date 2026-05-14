@@ -113,6 +113,12 @@ abstract class AppLocalizations {
   /// **'Cancel'**
   String get commonCancel;
 
+  /// No description provided for @commonEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get commonEdit;
+
   /// No description provided for @commonDelete.
   ///
   /// In en, this message translates to:
@@ -503,6 +509,12 @@ abstract class AppLocalizations {
   /// **'Add Cash'**
   String get cashWalletAddCash;
 
+  /// No description provided for @cashWalletEditCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Cash Movement'**
+  String get cashWalletEditCash;
+
   /// No description provided for @cashWalletQuickAtmWithdrawal.
   ///
   /// In en, this message translates to:
@@ -616,6 +628,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cash expense'**
   String get cashWalletTypeCashExpense;
+
+  /// No description provided for @cashWalletEditExpenseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit expense'**
+  String get cashWalletEditExpenseAction;
+
+  /// No description provided for @cashWalletDeleteTransactionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete cash transaction?'**
+  String get cashWalletDeleteTransactionTitle;
+
+  /// No description provided for @cashWalletDeleteTransactionTitleForType.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {transactionType}?'**
+  String cashWalletDeleteTransactionTitleForType(Object transactionType);
+
+  /// No description provided for @cashWalletDeleteTransactionMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will reverse its effect on the balance.'**
+  String get cashWalletDeleteTransactionMessage;
 
   /// No description provided for @cashWalletBalanceAfterTransaction.
   ///

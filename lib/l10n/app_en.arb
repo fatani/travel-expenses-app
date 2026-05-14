@@ -3,6 +3,7 @@
   "appName": "Travel Expense Tracker",
   "commonTryAgain": "Try Again",
   "commonCancel": "Cancel",
+  "commonEdit": "Edit",
   "commonDelete": "Delete",
   "commonRequiredField": "This field is required.",
   "commonEnterValidNumber": "Enter a valid number.",
@@ -74,6 +75,7 @@
   "cashWalletNoBalances": "No cash balances yet.",
   "cashWalletNoTransactions": "No cash transactions yet.",
   "cashWalletAddCash": "Add Cash",
+  "cashWalletEditCash": "Edit Cash Movement",
   "cashWalletQuickAtmWithdrawal": "ATM Withdrawal",
   "cashWalletQuickAtmShort": "ATM",
   "cashWalletTripStatusDaysLeft": "{days} days left",
@@ -95,6 +97,15 @@
   "cashWalletTypeManualAdjustment": "Balance correction",
   "cashWalletTypeCashExpenseDeduction": "Cash expense deduction",
   "cashWalletTypeCashExpense": "Cash expense",
+  "cashWalletEditExpenseAction": "Edit expense",
+  "cashWalletDeleteTransactionTitle": "Delete cash transaction?",
+  "cashWalletDeleteTransactionTitleForType": "Delete {transactionType}?",
+  "@cashWalletDeleteTransactionTitleForType": {
+    "placeholders": {
+      "transactionType": {}
+    }
+  },
+  "cashWalletDeleteTransactionMessage": "This will reverse its effect on the balance.",
   "cashWalletBalanceAfterTransaction": "Balance after transaction: {amount}",
   "@cashWalletBalanceAfterTransaction": {"placeholders": {"amount": {}}},
   "cashWalletLastCashAdded": "Last cash added: +{amount}",

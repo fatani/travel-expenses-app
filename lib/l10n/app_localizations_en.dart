@@ -18,6 +18,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCancel => 'Cancel';
 
   @override
+  String get commonEdit => 'Edit';
+
+  @override
   String get commonDelete => 'Delete';
 
   @override
@@ -225,6 +228,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletAddCash => 'Add Cash';
 
   @override
+  String get cashWalletEditCash => 'Edit Cash Movement';
+
+  @override
   String get cashWalletQuickAtmWithdrawal => 'ATM Withdrawal';
 
   @override
@@ -284,6 +290,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashWalletTypeCashExpense => 'Cash expense';
+
+  @override
+  String get cashWalletEditExpenseAction => 'Edit expense';
+
+  @override
+  String get cashWalletDeleteTransactionTitle => 'Delete cash transaction?';
+
+  @override
+  String cashWalletDeleteTransactionTitleForType(Object transactionType) {
+    return 'Delete $transactionType?';
+  }
+
+  @override
+  String get cashWalletDeleteTransactionMessage => 'This will reverse its effect on the balance.';
 
   @override
   String cashWalletBalanceAfterTransaction(Object amount) {

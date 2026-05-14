@@ -10,7 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 import 'package:travel_expenses/l10n/l10n_extension.dart';
 
+import '../../../core/design_system/app_confirmation_dialog.dart';
 import '../../../core/providers/database_providers.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../../export/presentation/export_menu.dart';
 import '../../cash_wallet/domain/trip_cash_balance.dart';
 import '../../cash_wallet/presentation/trip_cash_wallet_screen.dart';
@@ -117,19 +119,19 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(Icons.error_outline_rounded, size: 40),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   l10n.tripDetailsLoadError,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
                 Text('$error', textAlign: TextAlign.center),
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.md),
                 FilledButton(
                   onPressed: () => ref
                       .read(expenseControllerProvider(_trip.id).notifier)
@@ -325,22 +327,33 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
   Future<void> _confirmDelete(Expense expense) async {
     final l10n = AppLocalizations.of(context)!;
-    final shouldDelete = await showDialog<bool>(
+    final shouldDelete = await showModalBottomSheet<bool>(
       context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text(l10n.tripDetailsDeleteExpenseTitle),
-          content: Text(l10n.tripDetailsDeleteExpenseMessage(expense.title)),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text(l10n.commonCancel),
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.34),
+      builder: (sheetContext) {
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md + bottomInset,
             ),
-            FilledButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              child: Text(l10n.commonDelete),
+            child: AppConfirmationDialog(
+              icon: Icons.receipt_long_outlined,
+              title: l10n.tripDetailsDeleteExpenseTitle,
+              message: l10n.tripDetailsDeleteExpenseMessage(expense.title),
+              cancelLabel: l10n.commonCancel,
+              confirmLabel: l10n.commonDelete,
+              onCancel: () => Navigator.of(sheetContext).pop(false),
+              onConfirm: () => Navigator.of(sheetContext).pop(true),
             ),
-          ],
+          ),
         );
       },
     );
