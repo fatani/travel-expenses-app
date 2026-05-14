@@ -258,8 +258,8 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                     metrics: _cashMetrics,
                     hasCashSetup: _hasCashSetup,
                     lastCashInEvent: _lastCashInEvent,
-                    onAddCash: _openAddCashSheet,
-                    onAtmWithdrawal: () => _openAddCashSheet(initialType: CashTransactionType.atmWithdrawal),
+                    onAddCash: () => _showAddCashSheet(initialType: CashTransactionType.initialCash),
+                    onAtmWithdrawal: () => _showAddCashSheet(initialType: CashTransactionType.atmWithdrawal),
                   ),
                   const SizedBox(height: 22),
                   _SectionHeader(title: l10n.cashWalletBalancesTitle),
@@ -321,18 +321,27 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
 
 
 
-  Future<void> _openAddCashSheet({
-    CashTransactionType initialType = CashTransactionType.initialCash,
+  Future<void> _showAddCashSheet({
+    required CashTransactionType initialType,
   }) async {
+    debugPrint('Opening Add Cash Sheet: $initialType');
     final result = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _AddCashSheet(
-        trip: widget.trip,
-        initialType: initialType,
-      ),
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: _AddCashSheet(
+            trip: widget.trip,
+            initialType: initialType,
+          ),
+        );
+      },
     );
 
     if (result == true) {
@@ -343,6 +352,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   Future<void> _openAddManualRateSheet() async {
     final result = await showModalBottomSheet<bool>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
@@ -399,10 +409,9 @@ class _AddManualRateSheetState extends ConsumerState<_AddManualRateSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
 
     return _PremiumSheetContainer(
-      viewInsetsBottom: viewInsets,
+      viewInsetsBottom: 0,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -545,107 +554,121 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final viewInsets = MediaQuery.of(context).viewInsets.bottom;
+    final maxHeight = MediaQuery.of(context).size.height * 0.85;
 
-    return _PremiumSheetContainer(
-      viewInsetsBottom: viewInsets,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _SheetHeader(
-            icon: Icons.account_balance_wallet_outlined,
-            title: l10n.cashWalletAddCash,
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      clipBehavior: Clip.antiAlias,
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: 420,
+            maxHeight: maxHeight,
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _amountController,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
-            ],
-            decoration: InputDecoration(
-              labelText: l10n.expenseFormAmountLabel,
-              hintText: '0.00',
-              prefixIcon: const Icon(Icons.payments_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _currencyController,
-            textCapitalization: TextCapitalization.characters,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp('[a-zA-Z]')),
-              LengthLimitingTextInputFormatter(3),
-            ],
-            decoration: InputDecoration(
-              labelText: l10n.expenseFormCurrencyLabel,
-              hintText: 'THB',
-              prefixIcon: const Icon(Icons.currency_exchange_outlined),
-            ),
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<CashTransactionType>(
-            initialValue: _selectedType,
-            decoration: InputDecoration(
-              labelText: l10n.cashWalletTransactionType,
-              helperText: l10n.cashWalletTransactionTypeHelper,
-              prefixIcon: const Icon(Icons.tune_rounded),
-            ),
-            items: [
-              DropdownMenuItem(
-                value: CashTransactionType.initialCash,
-                child: _CashActionOptionRow(
-                  icon: Icons.luggage_outlined,
-                  label: l10n.cashWalletTypeInitialCash,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SheetHeader(
+                  icon: Icons.account_balance_wallet_outlined,
+                  title: l10n.cashWalletAddCash,
                 ),
-              ),
-              DropdownMenuItem(
-                value: CashTransactionType.atmWithdrawal,
-                child: _CashActionOptionRow(
-                  icon: Icons.local_atm_outlined,
-                  label: l10n.cashWalletTypeAtmWithdrawal,
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.expenseFormAmountLabel,
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                  ),
                 ),
-              ),
-              DropdownMenuItem(
-                value: CashTransactionType.manualAdjustment,
-                child: _CashActionOptionRow(
-                  icon: Icons.edit_note_rounded,
-                  label: l10n.cashWalletTypeManualAdjustment,
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _currencyController,
+                  textCapitalization: TextCapitalization.characters,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp('[a-zA-Z]')),
+                    LengthLimitingTextInputFormatter(3),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.expenseFormCurrencyLabel,
+                    hintText: 'THB',
+                    prefixIcon: const Icon(Icons.currency_exchange_outlined),
+                  ),
                 ),
-              ),
-            ],
-            onChanged: _isSaving
-                ? null
-                : (value) {
-                    if (value == null) {
-                      return;
-                    }
-                    setState(() {
-                      _selectedType = value;
-                    });
-                  },
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _noteController,
-            decoration: InputDecoration(
-              labelText: l10n.expenseFormNoteLabel,
-              prefixIcon: const Icon(Icons.notes_rounded),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<CashTransactionType>(
+                  initialValue: _selectedType,
+                  decoration: InputDecoration(
+                    labelText: l10n.cashWalletTransactionType,
+                    helperText: l10n.cashWalletTransactionTypeHelper,
+                    prefixIcon: const Icon(Icons.tune_rounded),
+                  ),
+                  items: [
+                    DropdownMenuItem(
+                      value: CashTransactionType.initialCash,
+                      child: _CashActionOptionRow(
+                        icon: Icons.luggage_outlined,
+                        label: l10n.cashWalletTypeInitialCash,
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: CashTransactionType.atmWithdrawal,
+                      child: _CashActionOptionRow(
+                        icon: Icons.local_atm_outlined,
+                        label: l10n.cashWalletTypeAtmWithdrawal,
+                      ),
+                    ),
+                    DropdownMenuItem(
+                      value: CashTransactionType.manualAdjustment,
+                      child: _CashActionOptionRow(
+                        icon: Icons.edit_note_rounded,
+                        label: l10n.cashWalletTypeManualAdjustment,
+                      ),
+                    ),
+                  ],
+                  onChanged: _isSaving
+                      ? null
+                      : (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _selectedType = value;
+                          });
+                        },
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _noteController,
+                  decoration: InputDecoration(
+                    labelText: l10n.expenseFormNoteLabel,
+                    prefixIcon: const Icon(Icons.notes_rounded),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _SheetGradientButton(
+                  onPressed: _isSaving ? null : _save,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(l10n.tripDetailsQuickAddSave),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 18),
-          _SheetGradientButton(
-            onPressed: _isSaving ? null : _save,
-            child: _isSaving
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : Text(l10n.tripDetailsQuickAddSave),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1057,12 +1080,13 @@ class _HeroPrimaryActionButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      icon: const Icon(Icons.add_circle_outline, size: 18),
+      icon: const Icon(Icons.add_circle_outline, size: 18, color: Colors.white),
       label: Text(
         label,
-        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          color: Colors.white,
+        ),
       ),
     );
   }
@@ -1562,20 +1586,30 @@ class _PremiumSheetContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxHeight = MediaQuery.of(context).size.height * 0.9;
     return AnimatedPadding(
       duration: const Duration(milliseconds: 140),
       curve: Curves.easeOut,
       padding: EdgeInsets.only(bottom: viewInsetsBottom),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFFCFAFF),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: SafeArea(
-          top: false,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-            child: child,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: 360,
+            maxHeight: maxHeight,
+            minWidth: double.infinity,
+          ),
+          child: Material(
+            color: const Color(0xFFFCFAFF),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            clipBehavior: Clip.antiAlias,
+            child: SafeArea(
+              top: false,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                child: child,
+              ),
+            ),
           ),
         ),
       ),
@@ -1642,10 +1676,12 @@ class _CashActionOptionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 18, color: const Color(0xFF6D28D9)),
         const SizedBox(width: 10),
-        Expanded(
+        Flexible(
+          fit: FlexFit.loose,
           child: Text(
             label,
             overflow: TextOverflow.ellipsis,

@@ -48,36 +48,48 @@ class CashTransaction {
   const CashTransaction({
     required this.id,
     required this.tripId,
+    this.expenseId,
     required this.type,
     required this.amount,
     required this.currencyCode,
+    required this.isReversed,
+    this.reversedAt,
     this.note,
     required this.createdAt,
   });
 
   final String id;
   final String tripId;
+  final String? expenseId;
   final CashTransactionType type;
   final double amount;
   final String currencyCode;
+  final bool isReversed;
+  final DateTime? reversedAt;
   final String? note;
   final DateTime createdAt;
 
   factory CashTransaction.create({
     String id = '',
     required String tripId,
+    String? expenseId,
     required CashTransactionType type,
     required double amount,
     required String currencyCode,
+    bool isReversed = false,
+    DateTime? reversedAt,
     String? note,
     DateTime? createdAt,
   }) {
     return CashTransaction(
       id: id,
       tripId: tripId,
+      expenseId: expenseId,
       type: type,
       amount: amount,
       currencyCode: currencyCode.trim().toUpperCase(),
+      isReversed: isReversed,
+      reversedAt: reversedAt,
       note: _normalizeText(note),
       createdAt: (createdAt ?? DateTime.now()).toUtc(),
     );
@@ -87,9 +99,14 @@ class CashTransaction {
     return CashTransaction(
       id: map['id']! as String,
       tripId: map['trip_id']! as String,
+      expenseId: map['expense_id'] as String?,
       type: CashTransactionTypeCodec.fromValue(map['type']! as String),
       amount: (map['amount'] as num).toDouble(),
       currencyCode: (map['currency_code']! as String).trim().toUpperCase(),
+      isReversed: ((map['is_reversed'] as num?)?.toInt() ?? 0) == 1,
+      reversedAt: (map['reversed_at'] as String?) != null
+          ? DateTime.parse(map['reversed_at']! as String)
+          : null,
       note: map['note'] as String?,
       createdAt: DateTime.parse(map['created_at']! as String),
     );
@@ -99,9 +116,12 @@ class CashTransaction {
     return {
       'id': id,
       'trip_id': tripId,
+      'expense_id': expenseId,
       'type': type.value,
       'amount': amount,
       'currency_code': currencyCode,
+      'is_reversed': isReversed ? 1 : 0,
+      'reversed_at': reversedAt?.toUtc().toIso8601String(),
       'note': note,
       'created_at': createdAt.toUtc().toIso8601String(),
     };

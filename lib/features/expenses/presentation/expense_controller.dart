@@ -170,6 +170,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
             .read(cashWalletRepositoryProvider)
             .recordCashExpenseDeduction(
               tripId: _tripId,
+              expenseId: created.id,
               amount: created.transactionAmount,
               currencyCode: created.transactionCurrency,
               note: created.note,
@@ -287,15 +288,23 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       cardProfileId: cardProfileId,
     );
 
-    await _runMutation(
-      () => ref.read(expenseRepositoryProvider).updateExpense(updatedExpense),
-    );
+    await _runMutation(() async {
+      final saved = await ref.read(expenseRepositoryProvider).updateExpense(updatedExpense);
+      await ref.read(cashWalletRepositoryProvider).syncExpenseCashImpact(
+            previousExpense: expense,
+            nextExpense: saved,
+          );
+    });
   }
 
   Future<void> deleteExpense(String expenseId) async {
-    await _runMutation(
-      () => ref.read(expenseRepositoryProvider).deleteExpense(expenseId),
-    );
+    await _runMutation(() async {
+      final existing = await ref.read(expenseRepositoryProvider).getExpenseById(expenseId);
+      if (existing != null) {
+        await ref.read(cashWalletRepositoryProvider).restoreCashForDeletedExpense(existing);
+      }
+      await ref.read(expenseRepositoryProvider).deleteExpense(expenseId);
+    });
   }
 
   Future<List<Expense>> _loadExpenses() {

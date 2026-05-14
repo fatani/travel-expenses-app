@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 14;
+  static const int databaseVersion = 15;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -161,9 +161,12 @@ class AppDatabase {
           CREATE TABLE $cashTransactionsTable (
             id TEXT PRIMARY KEY,
             trip_id TEXT NOT NULL,
+            expense_id TEXT,
             type TEXT NOT NULL,
             amount REAL NOT NULL,
             currency_code TEXT NOT NULL,
+            is_reversed INTEGER NOT NULL DEFAULT 0,
+            reversed_at TEXT,
             note TEXT,
             created_at TEXT NOT NULL,
             FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
@@ -285,6 +288,10 @@ class AppDatabase {
           await _ensureTripCashBalancesTable(db);
           await _ensureCashTransactionsTable(db);
           await _ensureManualExchangeRatesTable(db);
+        }
+
+        if (oldVersion < 15) {
+          await _ensureCashTransactionsTable(db);
         }
       },
     );
@@ -684,22 +691,45 @@ class AppDatabase {
       "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
       [cashTransactionsTable],
     );
-    if (tables.isNotEmpty) {
-      return;
+    if (tables.isEmpty) {
+      await db.execute('''
+        CREATE TABLE $cashTransactionsTable (
+          id TEXT PRIMARY KEY,
+          trip_id TEXT NOT NULL,
+          expense_id TEXT,
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          currency_code TEXT NOT NULL,
+          is_reversed INTEGER NOT NULL DEFAULT 0,
+          reversed_at TEXT,
+          note TEXT,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+        )
+      ''');
     }
 
-    await db.execute('''
-      CREATE TABLE $cashTransactionsTable (
-        id TEXT PRIMARY KEY,
-        trip_id TEXT NOT NULL,
-        type TEXT NOT NULL,
-        amount REAL NOT NULL,
-        currency_code TEXT NOT NULL,
-        note TEXT,
-        created_at TEXT NOT NULL,
-        FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
-      )
-    ''');
+    final hasExpenseId = await _hasColumn(db, cashTransactionsTable, 'expense_id');
+    if (!hasExpenseId) {
+      await db.execute('ALTER TABLE $cashTransactionsTable ADD COLUMN expense_id TEXT');
+    }
+
+    final hasIsReversed = await _hasColumn(db, cashTransactionsTable, 'is_reversed');
+    if (!hasIsReversed) {
+      await db.execute(
+        'ALTER TABLE $cashTransactionsTable ADD COLUMN is_reversed INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    final hasReversedAt = await _hasColumn(db, cashTransactionsTable, 'reversed_at');
+    if (!hasReversedAt) {
+      await db.execute('ALTER TABLE $cashTransactionsTable ADD COLUMN reversed_at TEXT');
+    }
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_transactions_trip_expense_active '
+      'ON $cashTransactionsTable (trip_id, expense_id, type, is_reversed, created_at)',
+    );
   }
 
   Future<void> _ensureManualExchangeRatesTable(Database db) async {
