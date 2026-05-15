@@ -380,7 +380,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manualExchangeSourceNote => 'Source note';
 
   @override
-  String get manualExchangeSaved => 'Local estimate saved';
+  String get manualExchangeSaved => 'Rate saved. Your expenses in this currency will show an estimate in your home currency.';
 
   @override
   String get tripExchangeRatesTitle => 'Local Currency Estimates';
@@ -410,16 +410,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripExchangeRatesSourceHint => 'ATM board, bank app, exchange office...';
 
   @override
-  String get tripExchangeRatesSaved => 'Estimate saved';
+  String get tripExchangeRatesSaved => 'Rate saved. This trip now has an estimate for your expenses.';
 
   @override
-  String get tripExchangeRatesUpdated => 'Estimate updated';
+  String get tripExchangeRatesUpdated => 'Rate updated. Your expense estimates will reflect the new rate.';
 
   @override
-  String get tripExchangeRatesEmptyTitle => 'No estimates yet';
+  String get tripExchangeRatesEmptyTitle => 'See your expenses in your local currency';
 
   @override
-  String get tripExchangeRatesEmptyBody => 'Add quick estimates for this trip. They help show expenses in your home currency without blocking expense saving.';
+  String get tripExchangeRatesEmptyBody => 'Add exchange rates for this trip to see what your expenses are worth in your home currency. Estimates are optional and won\'t block you from saving expenses.';
 
   @override
   String get tripExchangeRatesRateLabel => 'Approximate rate';

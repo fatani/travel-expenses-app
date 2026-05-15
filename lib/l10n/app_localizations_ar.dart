@@ -380,7 +380,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get manualExchangeSourceNote => 'ملاحظة المصدر';
 
   @override
-  String get manualExchangeSaved => 'تم حفظ التقدير';
+  String get manualExchangeSaved => 'تم حفظ السعر. المصاريف المدفوعة بهذه العملة ستُظهر تقديراً بعملة إقامتك.';
 
   @override
   String get tripExchangeRatesTitle => 'تقديرات العملة المحلية';
@@ -410,16 +410,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripExchangeRatesSourceHint => 'لوحة الصراف، تطبيق البنك، مكتب صرافة...';
 
   @override
-  String get tripExchangeRatesSaved => 'تم حفظ التقدير';
+  String get tripExchangeRatesSaved => 'تم حفظ السعر. هذه الرحلة الآن لديها تقدير لمصاريفك.';
 
   @override
-  String get tripExchangeRatesUpdated => 'تم تحديث التقدير';
+  String get tripExchangeRatesUpdated => 'تم تحديث السعر. تقديرات المصاريف ستعكس السعر الجديد.';
 
   @override
-  String get tripExchangeRatesEmptyTitle => 'لا توجد تقديرات بعد';
+  String get tripExchangeRatesEmptyTitle => 'شوف مصاريفك بعملة إقامتك';
 
   @override
-  String get tripExchangeRatesEmptyBody => 'أضف تقديرات سريعة لهذه الرحلة. تساعد على عرض المصاريف بعملة إقامتك بدون تعطيل حفظ المصروف.';
+  String get tripExchangeRatesEmptyBody => 'أضف أسعار تحويل لهذه الرحلة لترى قيمة مصاريفك بعملة إقامتك. التقديرات اختيارية ولن تمنعك من حفظ المصاريف.';
 
   @override
   String get tripExchangeRatesRateLabel => 'السعر التقريبي';

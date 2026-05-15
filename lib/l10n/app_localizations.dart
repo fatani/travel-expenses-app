@@ -788,7 +788,7 @@ abstract class AppLocalizations {
   /// No description provided for @manualExchangeSaved.
   ///
   /// In en, this message translates to:
-  /// **'Local estimate saved'**
+  /// **'Rate saved. Your expenses in this currency will show an estimate in your home currency.'**
   String get manualExchangeSaved;
 
   /// No description provided for @tripExchangeRatesTitle.
@@ -848,25 +848,25 @@ abstract class AppLocalizations {
   /// No description provided for @tripExchangeRatesSaved.
   ///
   /// In en, this message translates to:
-  /// **'Estimate saved'**
+  /// **'Rate saved. This trip now has an estimate for your expenses.'**
   String get tripExchangeRatesSaved;
 
   /// No description provided for @tripExchangeRatesUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Estimate updated'**
+  /// **'Rate updated. Your expense estimates will reflect the new rate.'**
   String get tripExchangeRatesUpdated;
 
   /// No description provided for @tripExchangeRatesEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'No estimates yet'**
+  /// **'See your expenses in your local currency'**
   String get tripExchangeRatesEmptyTitle;
 
   /// No description provided for @tripExchangeRatesEmptyBody.
   ///
   /// In en, this message translates to:
-  /// **'Add quick estimates for this trip. They help show expenses in your home currency without blocking expense saving.'**
+  /// **'Add exchange rates for this trip to see what your expenses are worth in your home currency. Estimates are optional and won\'t block you from saving expenses.'**
   String get tripExchangeRatesEmptyBody;
 
   /// No description provided for @tripExchangeRatesRateLabel.
