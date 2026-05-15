@@ -49,8 +49,6 @@ class TripFormScreen extends ConsumerStatefulWidget {
 
 class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _budgetFieldKey = GlobalKey();
-  final _notesFieldKey = GlobalKey();
   late final TextEditingController _nameController;
   late final TextEditingController _destinationController;
   late final TextEditingController _currencyController;
@@ -163,7 +161,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                   ? _submit
                   : null,
               onToggleLanguage: () => _toggleLanguage(isArabic: isArabic),
-              onCustomizeTrip: _openCustomizeTripSheet,
               onBack: () => Navigator.of(context).pop(),
             ),
     );
@@ -399,113 +396,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     );
   }
 
-  Widget _buildAdditionalDetails(
-    AppLocalizations l10n, {
-    required FocusNode budgetFocusNode,
-    required FocusNode notesFocusNode,
-    Future<void> Function(bool isStartDate)? onPickDate,
-  }) {
-    final dividerColor = Theme.of(
-      context,
-    ).colorScheme.outlineVariant.withValues(alpha: 0.35);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: const Color(0xFFE2E8F0),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          TextFormField(
-            controller: _nameController,
-            textInputAction: TextInputAction.next,
-            decoration: _secondaryDetailsDecoration(
-              labelText: l10n.tripFormCustomTripNameLabel,
-              hintText: l10n.tripFormCustomTripNameHint,
-            ),
-          ),
-          Divider(height: 20, color: dividerColor),
-          TextFormField(
-            controller: _currencyController,
-            readOnly: true,
-            textDirection: TextDirection.ltr,
-            decoration: _secondaryDetailsDecoration(
-              labelText: l10n.tripFormCurrencyLabel,
-              hintText: 'USD - US Dollar',
-              suffixIcon: const Icon(Icons.keyboard_arrow_down),
-            ),
-            onTap: () => _showCurrencyPicker(context),
-          ),
-          Divider(height: 20, color: dividerColor),
-          TextFormField(
-            controller: _startDateController,
-            readOnly: true,
-            decoration: _secondaryDetailsDecoration(
-              labelText: l10n.tripFormStartDateLabel,
-              suffixIcon: const Icon(Icons.calendar_today_rounded),
-            ),
-            onTap: () => onPickDate?.call(true) ?? _selectDate(isStartDate: true),
-            validator: _validateStartDate,
-          ),
-          Divider(height: 20, color: dividerColor),
-          TextFormField(
-            controller: _endDateController,
-            readOnly: true,
-            decoration: _secondaryDetailsDecoration(
-              labelText: l10n.tripFormEndDateLabel,
-              suffixIcon: const Icon(Icons.calendar_today_rounded),
-            ),
-            onTap:
-                () => onPickDate?.call(false) ?? _selectDate(isStartDate: false),
-            validator: _validateEndDate,
-          ),
-          Divider(height: 20, color: dividerColor),
-
-          /// Budget Field with GlobalKey
-          Container(
-            key: _budgetFieldKey,
-            child: TextFormField(
-              controller: _budgetController,
-              focusNode: budgetFocusNode,
-              textInputAction: TextInputAction.next,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              decoration: _secondaryDetailsDecoration(
-                labelText: l10n.tripFormBudgetLabel,
-                hintText: l10n.tripFormBudgetHint,
-              ),
-              validator: _validateBudget,
-            ),
-          ),
-          Divider(height: 20, color: dividerColor),
-
-          /// Notes Field with GlobalKey
-          Container(
-            key: _notesFieldKey,
-            child: TextFormField(
-              controller: _notesController,
-              focusNode: notesFocusNode,
-              textInputAction: TextInputAction.done,
-              minLines: 3,
-              maxLines: 4,
-              decoration: _secondaryDetailsDecoration(
-                labelText: _notesLabel(),
-                hintText: _notesHint(),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Future<void> _toggleLanguage({required bool isArabic}) async {
     final next = isArabic ? 'en' : 'ar';
 
@@ -519,207 +409,6 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         context,
       ).showSnackBar(SnackBar(content: Text('$error')));
     }
-  }
-
-  Future<void> _openCustomizeTripSheet() async {
-    final l10n = AppLocalizations.of(context)!;
-    final scrollController = ScrollController();
-    final budgetFocusNode = FocusNode();
-    final notesFocusNode = FocusNode();
-
-    /// Setup focus listeners for scroll-into-view
-    budgetFocusNode.addListener(() {
-      if (budgetFocusNode.hasFocus) {
-        Future.delayed(const Duration(milliseconds: 120), () {
-          final fieldContext = _budgetFieldKey.currentContext;
-          if (fieldContext != null) {
-            Scrollable.ensureVisible(
-              fieldContext,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOut,
-              alignment: 0.25,
-            );
-          }
-        });
-      }
-    });
-
-    notesFocusNode.addListener(() {
-      if (notesFocusNode.hasFocus) {
-        Future.delayed(const Duration(milliseconds: 120), () {
-          final fieldContext = _notesFieldKey.currentContext;
-          if (fieldContext != null) {
-            Scrollable.ensureVisible(
-              fieldContext,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOut,
-              alignment: 0.25,
-            );
-          }
-        });
-      }
-    });
-
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            final mediaQuery = MediaQuery.of(context);
-            final sheetHeight = mediaQuery.size.height * 0.72;
-
-            return Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                width: mediaQuery.size.width,
-                height: sheetHeight,
-                clipBehavior: Clip.antiAlias,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                child: Column(
-                  children: [
-                    /// Drag Handle
-                    const SizedBox(height: 10),
-                    Container(
-                      width: 44,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFE2E8F0),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-
-                    /// Scrollable Content
-                    Expanded(
-                      child: SingleChildScrollView(
-                        controller: scrollController,
-                        keyboardDismissBehavior:
-                            ScrollViewKeyboardDismissBehavior.onDrag,
-                        padding: EdgeInsets.only(
-                          bottom: mediaQuery.viewInsets.bottom + 120,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                          child: _buildAdditionalDetails(
-                            l10n,
-                            budgetFocusNode: budgetFocusNode,
-                            notesFocusNode: notesFocusNode,
-                            onPickDate: (isStartDate) async {
-                              await _selectDate(
-                                isStartDate: isStartDate,
-                                onUiRefresh: () {
-                                  setModalState(() {});
-                                },
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    if (_hasInvalidDateRange)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-                        child: Align(
-                          alignment: _isCurrentLocaleArabic
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: Text(
-                            _dateRangeErrorText,
-                            style: const TextStyle(
-                              color: Color(0xFFDC2626),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                    /// Save Button (Fixed at bottom)
-                    Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.fromLTRB(
-                        20,
-                        12,
-                        20,
-                        20 + mediaQuery.padding.bottom,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF0F172A)
-                                .withValues(alpha: 0.06),
-                            blurRadius: 14,
-                            offset: const Offset(0, -4),
-                          ),
-                        ],
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(20),
-                        child: Opacity(
-                          opacity:
-                              (_hasInvalidDateRange || _isDatePickerOpen)
-                              ? 0.55
-                              : 1,
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: (_hasInvalidDateRange || _isDatePickerOpen)
-                                ? null
-                                : () => Navigator.of(sheetContext).pop(),
-                            child: Container(
-                              width: double.infinity,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(20),
-                                gradient: (_hasInvalidDateRange ||
-                                        _isDatePickerOpen)
-                                    ? const LinearGradient(
-                                        colors: [
-                                          Color(0xFF94A3B8),
-                                          Color(0xFF64748B),
-                                        ],
-                                      )
-                                    : const LinearGradient(
-                                        colors: [
-                                          Color(0xFF2563EB),
-                                          Color(0xFF7C3AED),
-                                        ],
-                                      ),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                l10n.tripFormSaveDetails,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-    ).whenComplete(() {
-      budgetFocusNode.dispose();
-      notesFocusNode.dispose();
-      scrollController.dispose();
-    });
   }
 
   String _notesLabel() {
@@ -1135,6 +824,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   void _onDestinationSelected(CountryInfo country) {
+    FocusScope.of(context).unfocus();
     setState(() {
       _selectedDestination = country;
       _isCustomDestinationFallback = false;
@@ -1442,7 +1132,6 @@ class CreateTripVisualScreen extends StatelessWidget {
   final ValueChanged<String> onCustomDestinationSelected;
   final VoidCallback? onCreateTrip;
   final VoidCallback onToggleLanguage;
-  final VoidCallback onCustomizeTrip;
   final VoidCallback onBack;
 
   const CreateTripVisualScreen({
@@ -1456,7 +1145,6 @@ class CreateTripVisualScreen extends StatelessWidget {
     required this.onCustomDestinationSelected,
     required this.onCreateTrip,
     required this.onToggleLanguage,
-    required this.onCustomizeTrip,
     required this.onBack,
   });
 
@@ -1465,7 +1153,6 @@ class CreateTripVisualScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
     final textDirection = isArabic ? TextDirection.rtl : TextDirection.ltr;
     final viewInsetsBottom = MediaQuery.of(context).viewInsets.bottom;
-    final keyboardOpen = viewInsetsBottom > 0;
 
     return Directionality(
       textDirection: textDirection,
@@ -1580,68 +1267,7 @@ class CreateTripVisualScreen extends StatelessWidget {
                               label: l10n.tripFormSaveCreate,
                               onTap: onCreateTrip,
                             ),
-                            if (!keyboardOpen) ...[
-                              const SizedBox(height: 30),
-                              Row(
-                                children: [
-                                  const Expanded(
-                                    child: Divider(
-                                      color: Color(0xFFE2E8F0),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 14,
-                                    ),
-                                    child: Text(
-                                      isArabic ? 'أو' : 'or',
-                                      style: TextStyle(
-                                        color: Colors.blueGrey.shade300,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                    ),
-                                  ),
-                                  const Expanded(
-                                    child: Divider(
-                                      color: Color(0xFFE2E8F0),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 24),
-                              InkWell(
-                                borderRadius: BorderRadius.circular(18),
-                                onTap: onCustomizeTrip,
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(
-                                        Icons.settings_outlined,
-                                        color: Color(0xFF7C3AED),
-                                        size: 26,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        isArabic
-                                            ? 'تخصيص الرحلة (اختياري)'
-                                            : 'Customize trip (optional)',
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF0F172A),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 70),
-                            ],
+                            const SizedBox(height: 40),
                           ],
                         ),
                       ),
@@ -1712,15 +1338,17 @@ class _DestinationCard extends StatelessWidget {
                 );
               }
 
+              final isResolved = selectedDestination != null;
               return TextField(
                 controller: textController,
                 focusNode: focusNode,
                 textAlign: isArabic ? TextAlign.right : TextAlign.left,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
+                style: TextStyle(
+                  fontSize: isResolved ? 17 : 22,
+                  fontWeight: isResolved ? FontWeight.w600 : FontWeight.w800,
+                  color: isResolved ? const Color(0xFF64748B) : const Color(0xFF0F172A),
                 ),
+                readOnly: isResolved,
                 onChanged: (value) {
                   controller.text = value;
                   final selected = selectedDestination;
@@ -1739,7 +1367,7 @@ class _DestinationCard extends StatelessWidget {
                 },
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: const Color(0xFFF8FAFC),
+                  fillColor: isResolved ? const Color(0xFFF1F5F9) : const Color(0xFFF8FAFC),
                   hintText: l10n.tripFormDestinationSearchLabel,
                   hintStyle: TextStyle(
                     color: Colors.blueGrey.shade200,
@@ -1747,9 +1375,15 @@ class _DestinationCard extends StatelessWidget {
                   ),
                   prefixIcon: isArabic
                       ? null
-                      : const Icon(Icons.search_rounded, color: Color(0xFF7C3AED)),
+                      : Icon(
+                          isResolved ? Icons.check_circle_outline_rounded : Icons.search_rounded,
+                          color: isResolved ? const Color(0xFF94A3B8) : const Color(0xFF7C3AED),
+                        ),
                   suffixIcon: isArabic
-                      ? const Icon(Icons.search_rounded, color: Color(0xFF7C3AED))
+                      ? Icon(
+                          isResolved ? Icons.check_circle_outline_rounded : Icons.search_rounded,
+                          color: isResolved ? const Color(0xFF94A3B8) : const Color(0xFF7C3AED),
+                        )
                       : null,
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 18,
@@ -1757,11 +1391,13 @@ class _DestinationCard extends StatelessWidget {
                   ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    borderSide: BorderSide(color: isResolved ? const Color(0xFFE2E8F0) : const Color(0xFFE2E8F0)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
-                    borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+                    borderSide: BorderSide(
+                      color: isResolved ? const Color(0xFFE2E8F0) : const Color(0xFFE2E8F0),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(18),
