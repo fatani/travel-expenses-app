@@ -9,6 +9,7 @@ import '../../global_reports/presentation/global_reports_screen.dart';
 import '../../settings/presentation/settings_controller.dart';
 import '../../settings/presentation/settings_screen.dart';
 import '../domain/trip.dart';
+import '../domain/trip_timeline_status.dart';
 import '../domain/trip_title_resolver.dart';
 import 'trip_controller.dart';
 import 'trips_empty_state_screen.dart';
@@ -403,7 +404,8 @@ class _TripCard extends StatelessWidget {
     final isArabic =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     final localeName = Localizations.localeOf(context).toLanguageTag();
-    final hasDates = trip.startDate != null && trip.endDate != null;
+    final status = resolveTripTimelineStatus(trip);
+    final hasDates = status != TripTimelineStatus.datesPending;
     final hasCurrency = trip.baseCurrency.trim().isNotEmpty;
 
     return Material(
@@ -483,7 +485,7 @@ class _TripCard extends StatelessWidget {
                     ),
                     _StatusChip(
                       isArabic: isArabic,
-                      hasDates: hasDates,
+                      status: status,
                     ),
                   ],
                 ),
@@ -602,32 +604,48 @@ class _TripCard extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.isArabic, required this.hasDates});
+  const _StatusChip({required this.isArabic, required this.status});
 
   final bool isArabic;
-  final bool hasDates;
+  final TripTimelineStatus status;
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = hasDates
-        ? const Color(0xFFDCFCE7)
-        : const Color(0xFFFEF3C7);
-    final fgColor = hasDates
-        ? const Color(0xFF166534)
-        : const Color(0xFFB45309);
+    final statusUi = switch (status) {
+      TripTimelineStatus.datesPending => (
+        label: isArabic ? 'ناقص' : 'Needs Date',
+        background: const Color(0xFFFEF3C7),
+        foreground: const Color(0xFFB45309),
+      ),
+      TripTimelineStatus.upcoming => (
+        label: isArabic ? 'قادمة' : 'Upcoming',
+        background: const Color(0xFFDBEAFE),
+        foreground: const Color(0xFF1D4ED8),
+      ),
+      TripTimelineStatus.active => (
+        label: isArabic ? 'نشطة' : 'Active',
+        background: const Color(0xFFDCFCE7),
+        foreground: const Color(0xFF166534),
+      ),
+      TripTimelineStatus.completed => (
+        label: isArabic ? 'مكتملة' : 'Completed',
+        background: const Color(0xFFE2E8F0),
+        foreground: const Color(0xFF475569),
+      ),
+    };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: bgColor,
+        color: statusUi.background,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        hasDates ? (isArabic ? 'جاهزة' : 'Ready') : (isArabic ? 'ناقص' : 'Needs Date'),
+        statusUi.label,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,
-          color: fgColor,
+          color: statusUi.foreground,
         ),
       ),
     );

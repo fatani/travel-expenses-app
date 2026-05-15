@@ -20,6 +20,7 @@ import '../../exchange_rates/presentation/trip_exchange_rates_screen.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../reports/presentation/trip_reports_screen.dart';
 import '../../trips/domain/trip.dart';
+import '../../trips/domain/trip_timeline_status.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../../trips/presentation/trip_form_screen.dart';
 import '../domain/expense.dart';
@@ -533,6 +534,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
 
     if (!hasExpenses) {
       return NoExpensesPremiumState(
+        trip: widget.trip,
         isArabic: isArabic,
         tripName: TripTitleResolver.resolve(widget.trip, isArabic),
         baseCurrency: widget.trip.baseCurrency,
@@ -1200,35 +1202,28 @@ class _TripSummaryCard extends StatelessWidget {
   ({String label, Color background, Color foreground}) _resolveStatus(
     bool isArabic,
   ) {
-    if (trip.startDate == null || trip.endDate == null) {
-      return (
+    return switch (resolveTripTimelineStatus(trip)) {
+      TripTimelineStatus.datesPending => (
         label: isArabic ? 'التواريخ ناقصة' : 'Dates Pending',
         background: const Color(0xFFFFEDD5),
         foreground: const Color(0xFF9A3412),
-      );
-    }
-
-    final now = DateTime.now();
-    if (now.isBefore(trip.startDate!)) {
-      return (
+      ),
+      TripTimelineStatus.upcoming => (
         label: isArabic ? 'قادمة' : 'Upcoming',
         background: const Color(0xFFDBEAFE),
         foreground: const Color(0xFF1D4ED8),
-      );
-    }
-    if (now.isAfter(trip.endDate!)) {
-      return (
+      ),
+      TripTimelineStatus.active => (
+        label: isArabic ? 'نشطة' : 'Active',
+        background: const Color(0xFFDCFCE7),
+        foreground: const Color(0xFF166534),
+      ),
+      TripTimelineStatus.completed => (
         label: isArabic ? 'مكتملة' : 'Completed',
         background: const Color(0xFFE2E8F0),
         foreground: const Color(0xFF475569),
-      );
-    }
-
-    return (
-      label: isArabic ? 'نشطة' : 'Active',
-      background: const Color(0xFFDCFCE7),
-      foreground: const Color(0xFF166534),
-    );
+      ),
+    };
   }
 
   String _formatDateRange(BuildContext context, Trip trip) {
@@ -1504,6 +1499,7 @@ class _ExpenseCard extends StatelessWidget {
 }
 
 class NoExpensesPremiumState extends StatelessWidget {
+  final Trip trip;
   final bool isArabic;
   final String tripName;
   final String baseCurrency;
@@ -1517,6 +1513,7 @@ class NoExpensesPremiumState extends StatelessWidget {
 
   const NoExpensesPremiumState({
     super.key,
+    required this.trip,
     required this.isArabic,
     required this.tripName,
     required this.baseCurrency,
@@ -1540,6 +1537,7 @@ class NoExpensesPremiumState extends StatelessWidget {
         child: Column(
           children: [
             _NoExpensesTripSummaryCard(
+              trip: trip,
               isArabic: isArabic,
               tripName: tripName,
               baseCurrency: baseCurrency,
@@ -1563,6 +1561,7 @@ class NoExpensesPremiumState extends StatelessWidget {
 }
 
 class _NoExpensesTripSummaryCard extends StatelessWidget {
+  final Trip trip;
   final bool isArabic;
   final String tripName;
   final String baseCurrency;
@@ -1571,6 +1570,7 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
   final VoidCallback? onFixDates;
 
   const _NoExpensesTripSummaryCard({
+    required this.trip,
     required this.isArabic,
     required this.tripName,
     required this.baseCurrency,
@@ -1581,6 +1581,8 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final status = _resolveStatus(isArabic);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
@@ -1635,13 +1637,13 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
                         vertical: 5,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE0F2F1),
+                        color: status.background,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Text(
-                        isArabic ? 'نشطة' : 'Active',
-                        style: const TextStyle(
-                          color: Color(0xFF00897B),
+                        status.label,
+                        style: TextStyle(
+                          color: status.foreground,
                           fontWeight: FontWeight.w700,
                           fontSize: 12,
                         ),
@@ -1686,6 +1688,33 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  ({String label, Color background, Color foreground}) _resolveStatus(
+    bool isArabic,
+  ) {
+    return switch (resolveTripTimelineStatus(trip)) {
+      TripTimelineStatus.datesPending => (
+        label: isArabic ? 'التواريخ ناقصة' : 'Dates Pending',
+        background: const Color(0xFFFFEDD5),
+        foreground: const Color(0xFF9A3412),
+      ),
+      TripTimelineStatus.upcoming => (
+        label: isArabic ? 'قادمة' : 'Upcoming',
+        background: const Color(0xFFDBEAFE),
+        foreground: const Color(0xFF1D4ED8),
+      ),
+      TripTimelineStatus.active => (
+        label: isArabic ? 'نشطة' : 'Active',
+        background: const Color(0xFFDCFCE7),
+        foreground: const Color(0xFF166534),
+      ),
+      TripTimelineStatus.completed => (
+        label: isArabic ? 'مكتملة' : 'Completed',
+        background: const Color(0xFFE2E8F0),
+        foreground: const Color(0xFF475569),
+      ),
+    };
   }
 }
 
