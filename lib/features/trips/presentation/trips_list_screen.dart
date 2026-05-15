@@ -317,12 +317,12 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                     width: 56,
                     height: 56,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFFEE2E2),
+                      color: const Color(0xFFFFF1F2),
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: const Icon(
                       Icons.delete_outline_rounded,
-                      color: Color(0xFFDC2626),
+                      color: Color(0xFFBE5561),
                       size: 30,
                     ),
                   ),
@@ -347,20 +347,32 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                     ),
                   ),
                   const SizedBox(height: 14),
+                  Align(
+                    alignment:
+                        isArabic ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Text(
+                      isArabic ? 'الرحلة التي سيتم حذفها' : 'Trip to be deleted',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
+                      horizontal: 14,
+                      vertical: 12,
                     ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF8FAFC),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Text(
                       TripTitleResolver.resolve(trip, isArabic),
-                      textAlign: TextAlign.center,
+                      textAlign: isArabic ? TextAlign.right : TextAlign.left,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -383,15 +395,15 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(18),
                           gradient: const LinearGradient(
-                            colors: [Color(0xFFEF4444), Color(0xFFDC2626)],
+                            colors: [Color(0xFFD8868D), Color(0xFFC36D77)],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFDC2626).withValues(
-                                alpha: 0.26,
+                              color: const Color(0xFFC36D77).withValues(
+                                alpha: 0.18,
                               ),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
@@ -408,14 +420,19 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  TextButton(
+                  const SizedBox(height: 10),
+                  OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    style: TextButton.styleFrom(
-                      foregroundColor: const Color(0xFF64748B),
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 46),
+                      foregroundColor: const Color(0xFF475569),
+                      side: const BorderSide(color: Color(0xFFCBD5E1)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                       textStyle: const TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     child: Text(cancelLabel),
