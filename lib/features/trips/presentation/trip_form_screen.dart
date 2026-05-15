@@ -1,5 +1,7 @@
 // ignore_for_file: use_build_context_synchronously
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -65,6 +67,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   bool _didInitDependencies = false;
   String? _lastLocaleTag;
   bool _isDatePickerOpen = false;
+  bool _isTripCurrencyLocked = false;
 
   @override
   void initState() {
@@ -94,6 +97,10 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       ? null
       : (CountryDatabase.findByName(trip.destination) ??
         CountryDatabase.findByCode(trip.destination));
+
+    if (trip != null) {
+      unawaited(_loadTripCurrencyLockState());
+    }
   }
 
   @override
@@ -271,6 +278,50 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     );
   }
 
+  Future<void> _loadTripCurrencyLockState() async {
+    final trip = widget.trip;
+    if (trip == null) {
+      return;
+    }
+
+    final hasFinancialActivity = await _hasTripFinancialActivity(trip.id);
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _isTripCurrencyLocked = hasFinancialActivity;
+      if (_isTripCurrencyLocked) {
+        _currencyController.text = trip.baseCurrency;
+      }
+    });
+  }
+
+  Future<bool> _hasTripFinancialActivity(String tripId) async {
+    final expenses = await ref.read(expenseRepositoryProvider).getExpensesByTrip(
+      tripId,
+    );
+    if (expenses.isNotEmpty) {
+      return true;
+    }
+
+    final cashTransactions = await ref
+        .read(cashWalletRepositoryProvider)
+        .getRecentTransactionsByTrip(
+          tripId,
+          limit: 1,
+          includeReversed: true,
+        );
+    if (cashTransactions.isNotEmpty) {
+      return true;
+    }
+
+    final manualRates = await ref
+        .read(manualExchangeRateRepositoryProvider)
+        .listLatestTripRates(tripId);
+    return manualRates.isNotEmpty;
+  }
+
   Widget _buildEditDetailsCard(AppLocalizations l10n) {
     final isArabic =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
@@ -316,17 +367,28 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             decoration: _secondaryDetailsDecoration(
               labelText: l10n.tripFormCurrencyLabel,
               hintText: 'USD - US Dollar',
-              suffixIcon: const Icon(Icons.keyboard_arrow_down),
+              suffixIcon: Icon(
+                _isTripCurrencyLocked
+                    ? Icons.lock_outline_rounded
+                    : Icons.keyboard_arrow_down,
+                color: _isTripCurrencyLocked
+                    ? const Color(0xFF94A3B8)
+                    : null,
+              ),
             ),
-            onTap: () => _showCurrencyPicker(context),
+            onTap: _isTripCurrencyLocked ? null : () => _showCurrencyPicker(context),
           ),
           const SizedBox(height: 6),
           Align(
             alignment: isArabic ? Alignment.centerRight : Alignment.centerLeft,
             child: Text(
-              isArabic
-                  ? 'تغيير عملة الرحلة قد يؤثر على اتساق المصاريف.'
-                  : 'Changing trip currency may affect expense consistency.',
+              _isTripCurrencyLocked
+                  ? (isArabic
+                        ? 'تم قفل عملة الرحلة بعد إضافة بيانات مالية للحفاظ على اتساق التقارير.'
+                        : 'Trip currency is locked after expenses, cash, or exchange records are added to keep reports consistent.')
+                  : (isArabic
+                        ? 'تغيير عملة الرحلة قد يؤثر على اتساق المصاريف.'
+                        : 'Changing trip currency may affect expense consistency.'),
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF64748B),
@@ -639,9 +701,10 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           )
         : _nameController.text.trim();
     final isCustomTitle = _nameController.text.trim().isNotEmpty;
+    final existingTrip = widget.trip;
     final destinationCountryCode = isCreateMode
         ? selectedDestination?.countryCode
-        : widget.trip!.destinationCountryCode;
+      : existingTrip!.destinationCountryCode;
     final profile = ref.read(userFinancialProfileControllerProvider).valueOrNull;
     final typedCurrency = _extractCurrencyCode(_currencyController.text);
     final destinationCurrency = selectedDestination?.currencyCode ?? typedCurrency;
@@ -665,6 +728,23 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         ? null
         : (budgetCurrencyText.isEmpty ? baseCurrency : budgetCurrencyText);
     final controller = ref.read(tripsControllerProvider.notifier);
+
+    var isCurrencyLockedForSubmit = false;
+    if (!isCreateMode && existingTrip != null) {
+      isCurrencyLockedForSubmit = await _hasTripFinancialActivity(existingTrip.id);
+      if (!mounted) {
+        return;
+      }
+
+      if (isCurrencyLockedForSubmit != _isTripCurrencyLocked) {
+        setState(() {
+          _isTripCurrencyLocked = isCurrencyLockedForSubmit;
+          if (_isTripCurrencyLocked) {
+            _currencyController.text = existingTrip.baseCurrency;
+          }
+        });
+      }
+    }
 
     final overlaps = await _findDateOverlaps(
       startDate: _startDate,
@@ -704,14 +784,21 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
         Navigator.of(context).pop(createdTrip);
       } else {
+        final resolvedBaseCurrency = isCurrencyLockedForSubmit
+            ? existingTrip!.baseCurrency
+            : baseCurrency;
+        final resolvedDestinationCurrency = isCurrencyLockedForSubmit
+            ? existingTrip!.destinationCurrency
+            : selectedDestination?.currencyCode;
+
         await controller.updateTrip(
-          trip: widget.trip!,
+          trip: existingTrip!,
           name: resolvedName,
           destination: resolvedDestination,
           startDate: _startDate,
           endDate: _endDate,
-          baseCurrency: baseCurrency,
-          destinationCurrency: selectedDestination?.currencyCode,
+          baseCurrency: resolvedBaseCurrency,
+          destinationCurrency: resolvedDestinationCurrency,
           budget: budget,
           budgetCurrency: budgetCurrency,
           isCustomTitle: isCustomTitle,
