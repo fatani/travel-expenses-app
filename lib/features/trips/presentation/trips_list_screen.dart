@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../../core/extensions/rtl_extension.dart';
@@ -15,11 +18,51 @@ import 'trip_controller.dart';
 import 'trips_empty_state_screen.dart';
 import 'trip_form_screen.dart';
 
-class TripsListScreen extends ConsumerWidget {
+class TripsListScreen extends ConsumerStatefulWidget {
   const TripsListScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TripsListScreen> createState() => _TripsListScreenState();
+}
+
+class _TripsListScreenState extends ConsumerState<TripsListScreen> {
+  static const String _hasEverHadTripsPrefKey =
+      'trips_has_ever_had_at_least_one_trip';
+
+  bool? _hasEverHadTrips;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTripsHistoryFlag();
+  }
+
+  Future<void> _loadTripsHistoryFlag() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _hasEverHadTrips = prefs.getBool(_hasEverHadTripsPrefKey) ?? false;
+    });
+  }
+
+  Future<void> _markHasEverHadTrips() async {
+    if (_hasEverHadTrips == true) {
+      return;
+    }
+
+    setState(() {
+      _hasEverHadTrips = true;
+    });
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_hasEverHadTripsPrefKey, true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tripsState = ref.watch(tripsControllerProvider);
     final settingsState = ref.watch(settingsControllerProvider);
@@ -63,33 +106,51 @@ class TripsListScreen extends ConsumerWidget {
                 ),
               ),
               actions: [
-                IconButton(
-                  tooltip: l10n.globalReportsTooltip,
-                  onPressed: () => _openGlobalReports(context),
-                  icon: const Icon(Icons.analytics_outlined),
+                Tooltip(
+                  message: l10n.globalReportsTooltip,
+                  child: IconButton(
+                    tooltip: l10n.globalReportsTooltip,
+                    onPressed: () => _openGlobalReports(context),
+                    icon: const Icon(Icons.analytics_outlined),
+                  ),
                 ),
-                IconButton(
-                  tooltip: l10n.settingsLanguageTooltip,
-                  onPressed: () => _openSettings(context),
-                  icon: const Icon(Icons.settings_outlined),
+                Tooltip(
+                  message: l10n.settingsLanguageTooltip,
+                  child: IconButton(
+                    tooltip: l10n.settingsLanguageTooltip,
+                    onPressed: () => _openSettings(context),
+                    icon: const Icon(Icons.settings_outlined),
+                  ),
                 ),
                 const SizedBox(width: 4),
-                _SubtleLanguageToggle(
-                  isLoading: settingsState.isLoading,
-                  onTap: () => _toggleLanguage(context, ref, currentLocaleCode),
+                Tooltip(
+                  message: isArabic ? 'تبديل اللغة' : 'Toggle language',
+                  child: _SubtleLanguageToggle(
+                    isLoading: settingsState.isLoading,
+                    onTap: () => _toggleLanguage(context, ref, currentLocaleCode),
+                  ),
                 ),
                 const SizedBox(width: 12),
               ],
             ),
       body: tripsState.when(
         data: (trips) {
+          if (trips.isNotEmpty && _hasEverHadTrips != true) {
+            unawaited(_markHasEverHadTrips());
+          }
+
           if (trips.isEmpty) {
+            if (_hasEverHadTrips == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
             final isArabic =
                 Localizations.localeOf(context).languageCode.toLowerCase() ==
                 'ar';
 
             return TripsEmptyStateScreen(
               isArabic: isArabic,
+              isFirstTime: !_hasEverHadTrips!,
               onStartTrip: () => _openTripForm(context),
             );
           }
@@ -427,7 +488,7 @@ class _TripCard extends StatelessWidget {
             border: Border.all(color: const Color(0xFFE8ECF5)),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(14), // Slightly reduced for density
             child: Column(
               children: [
                 Row(
@@ -489,7 +550,7 @@ class _TripCard extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8), // Slightly reduced for density
                 Row(
                   children: [
                     const Icon(
@@ -549,7 +610,7 @@ class _TripCard extends StatelessWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 12),
+                const SizedBox(height: 8), // Slightly reduced for density
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
