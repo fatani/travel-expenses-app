@@ -1039,6 +1039,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsInsightInternationalDominant => 'أغلب إنفاقك كان دوليًا';
 
   @override
+  String get tripReportsEarlyNoExpenses => 'لم يتم تسجيل أي مصاريف بعد.';
+
+  @override
+  String get tripReportsEarlyAddFirstHint => 'أضف أول مصروف لبدء تتبع إنفاقك.';
+
+  @override
+  String tripReportsEarlyRecorded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'سجّلت $count مصروف حتى الآن.',
+      many: 'سجّلت $count مصروفًا حتى الآن.',
+      few: 'سجّلت $count مصاريف حتى الآن.',
+      two: 'سجّلت مصروفين حتى الآن.',
+      one: 'سجّلت مصروفًا واحدًا حتى الآن.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripReportsEarlyAddMoreHint => 'أضف المزيد من المصاريف لرؤية أنماط إنفاقك بشكل أوضح.';
+
+  @override
   String get globalReportsTitle => 'التقرير الشامل';
 
   @override

@@ -2003,6 +2003,30 @@ abstract class AppLocalizations {
   /// **'Most of your spending was international'**
   String get tripReportsInsightInternationalDominant;
 
+  /// No description provided for @tripReportsEarlyNoExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses recorded yet.'**
+  String get tripReportsEarlyNoExpenses;
+
+  /// No description provided for @tripReportsEarlyAddFirstHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first expense to start tracking your spending.'**
+  String get tripReportsEarlyAddFirstHint;
+
+  /// No description provided for @tripReportsEarlyRecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{You\'ve recorded 1 expense so far.} other{You\'ve recorded {count} expenses so far.}}'**
+  String tripReportsEarlyRecorded(int count);
+
+  /// No description provided for @tripReportsEarlyAddMoreHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more expenses to see clearer spending patterns.'**
+  String get tripReportsEarlyAddMoreHint;
+
   /// No description provided for @globalReportsTitle.
   ///
   /// In en, this message translates to:

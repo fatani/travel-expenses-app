@@ -1035,6 +1035,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsInsightInternationalDominant => 'Most of your spending was international';
 
   @override
+  String get tripReportsEarlyNoExpenses => 'No expenses recorded yet.';
+
+  @override
+  String get tripReportsEarlyAddFirstHint => 'Add your first expense to start tracking your spending.';
+
+  @override
+  String tripReportsEarlyRecorded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'You\'ve recorded $count expenses so far.',
+      one: 'You\'ve recorded 1 expense so far.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get tripReportsEarlyAddMoreHint => 'Add more expenses to see clearer spending patterns.';
+
+  @override
   String get globalReportsTitle => 'Global reports';
 
   @override

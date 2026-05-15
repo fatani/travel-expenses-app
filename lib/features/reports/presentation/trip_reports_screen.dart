@@ -66,6 +66,24 @@ class TripReportsScreen extends ConsumerWidget {
 // Body
 // ---------------------------------------------------------------------------
 
+/// Data-volume thresholds for progressive reporting.
+enum _ReportDataTier {
+  /// 0 expenses — show empty state.
+  empty,
+
+  /// 1–3 expenses — show lightweight summary only.
+  low,
+
+  /// 4+ expenses — show full report structure.
+  sufficient,
+}
+
+_ReportDataTier _dataTier(int count) {
+  if (count == 0) return _ReportDataTier.empty;
+  if (count <= 3) return _ReportDataTier.low;
+  return _ReportDataTier.sufficient;
+}
+
 class _ReportBody extends StatelessWidget {
   const _ReportBody({
     required this.summary,
@@ -78,17 +96,60 @@ class _ReportBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const sectionGap = SizedBox(height: 20);
+    const listPadding = EdgeInsets.symmetric(
+      horizontal: AppSpacing.md,
+      vertical: AppSpacing.sm,
+    );
+    final tier = _dataTier(summary.totalExpenseCount);
+
+    // === Empty state ===
+    if (tier == _ReportDataTier.empty) {
+      return _EarlyReportEmptyState();
+    }
+
     final categoryCount = _uniqueBucketKeyCount(summary.byCategory);
     final transactionCurrencyCount =
         _uniqueBucketKeyCount(summary.byTransactionCurrency);
     final paymentNetworkCount = _uniqueBucketKeyCount(summary.byPaymentNetwork);
     final paymentChannelCount = _uniqueBucketKeyCount(summary.byPaymentChannel);
 
+    // === Low data: 1–3 expenses — lightweight summary ===
+    if (tier == _ReportDataTier.low) {
+      return ListView(
+        padding: listPadding,
+        children: [
+          _LightweightSummaryCard(summary: summary),
+          sectionGap,
+          if (summary.totalBilledByCurrency.isNotEmpty) ...[
+            _SectionHeader(title: context.l10n.tripReportsTotalBilled),
+            _BucketList(
+              buckets: summary.totalBilledByCurrency,
+              showKey: false,
+              groupLabelType: _BucketGroupLabelType.none,
+              topKey: null,
+              topCurrency: null,
+            ),
+            sectionGap,
+          ],
+          if (summary.hasFees) ...[
+            _SectionHeader(title: context.l10n.tripReportsTotalFees),
+            _BucketList(
+              buckets: summary.totalFeesByCurrency,
+              showKey: false,
+              groupLabelType: _BucketGroupLabelType.none,
+              topKey: null,
+              topCurrency: null,
+            ),
+            sectionGap,
+          ],
+          const SizedBox(height: 24),
+        ],
+      );
+    }
+
+    // === Sufficient data: 4+ expenses — full report ===
     return ListView(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
+      padding: listPadding,
       children: [
         _ReportHeroSummaryCard(
           summary: summary,
@@ -226,16 +287,6 @@ class _OverviewCard extends StatelessWidget {
               label: context.l10n.tripReportsTotalExpenses,
               value: summary.totalExpenseCount.toString(),
             ),
-            _StatRow(
-              label: context.l10n.tripReportsDomestic,
-              value: summary.domesticExpenseCount.toString(),
-            ),
-            if (summary.hasInternational)
-              _StatRow(
-                label: context.l10n.tripReportsInternational,
-                value: summary.internationalExpenseCount.toString(),
-                valueColor: colorScheme.primary,
-              ),
             if (summary.topCategory != null) ...[
               const Divider(height: 20),
               _StatRow(
@@ -339,14 +390,16 @@ class _ReportHeroSummaryCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _HeroMetricChip(
-                      value: isArabic
-                          ? '$categoryCount فئات'
-                          : '$categoryCount categories',
+                  if (categoryCount > 1) ...[
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _HeroMetricChip(
+                        value: isArabic
+                            ? '$categoryCount فئات'
+                            : '$categoryCount categories',
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
               const SizedBox(height: 10),
@@ -379,8 +432,113 @@ class _ReportHeroSummaryCard extends StatelessWidget {
   }
 }
 
-class _HeroMetricChip extends StatelessWidget {
-  const _HeroMetricChip({required this.value});
+// ---------------------------------------------------------------------------
+// Early-state widgets (0 expenses and 1–3 expenses)
+// ---------------------------------------------------------------------------
+
+class _EarlyReportEmptyState extends StatelessWidget {
+  const _EarlyReportEmptyState();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              context.l10n.tripReportsEarlyNoExpenses,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              context.l10n.tripReportsEarlyAddFirstHint,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LightweightSummaryCard extends StatelessWidget {
+  const _LightweightSummaryCard({required this.summary});
+
+  final TripReportSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final totalBucket =
+        summary.topBilledBucket ?? summary.topTransactionCurrencyBucket;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F172A).withValues(alpha: 0.025),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            context.l10n.tripReportsEarlyRecorded(summary.totalExpenseCount),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          if (totalBucket != null) ...[
+            const SizedBox(height: 12),
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text(
+                '${_formatAmount(totalBucket.totalAmount)} ${totalBucket.currency.trim().toUpperCase()}',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.3,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Text(
+            context.l10n.tripReportsEarlyAddMoreHint,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroMetricChip extends StatelessWidget {  const _HeroMetricChip({required this.value});
 
   final String value;
 
@@ -480,13 +638,11 @@ class _StatRow extends StatelessWidget {
   const _StatRow({
     required this.label,
     required this.value,
-    this.valueColor,
     this.valueStyle,
   });
 
   final String label;
   final String value;
-  final Color? valueColor;
   final TextStyle? valueStyle;
 
   @override
@@ -495,7 +651,7 @@ class _StatRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final effectiveStyle = valueStyle ??
         theme.textTheme.bodyMedium?.copyWith(
-          color: valueColor ?? colorScheme.onSurface,
+          color: colorScheme.onSurface,
           fontWeight: FontWeight.w700,
         );
 
