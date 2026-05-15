@@ -657,7 +657,7 @@ class _AddManualRateSheetState extends ConsumerState<_AddManualRateSheet> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.expenseFormSaveError('$error'))),
+        SnackBar(content: Text(l10n.manualExchangeSaveError)),
       );
       setState(() {
         _isSaving = false;

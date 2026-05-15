@@ -365,28 +365,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashBalanceAddCashAction => 'إضافة كاش';
 
   @override
-  String get manualExchangeAddRate => 'إضافة تقدير للعملة المحلية';
+  String get manualExchangeAddRate => 'إضافة تقدير للمصاريف';
 
   @override
-  String get manualExchangeFromCurrency => 'دفعت بـ';
+  String get manualExchangeFromCurrency => 'عملة المصروف';
 
   @override
-  String get manualExchangeToCurrency => 'تقدير بالعملة المحلية';
+  String get manualExchangeToCurrency => 'اعرض المصاريف بـ';
 
   @override
-  String get manualExchangeRate => 'سعر صرف تقريبي';
+  String get manualExchangeRate => 'قيمة تقديرية';
 
   @override
-  String get manualExchangeSourceNote => 'ملاحظة المصدر';
+  String get manualExchangeSourceNote => 'مكان ظهور السعر (اختياري)';
 
   @override
-  String get manualExchangeSaved => 'تم حفظ السعر. المصاريف المدفوعة بهذه العملة ستُظهر تقديراً بعملة إقامتك.';
+  String get manualExchangeSaved => 'تم حفظ التقدير. سنستخدمه لعرض مصاريفك بعملة إقامتك.';
 
   @override
-  String get tripExchangeRatesTitle => 'تقديرات العملة المحلية';
+  String get manualExchangeSaveError => 'تعذر حفظ التقدير الآن. حاول مرة أخرى.';
 
   @override
-  String get tripExchangeRatesSubtitle => 'أضف تقديرات بسيطة لعرض المصاريف بعملة إقامتك';
+  String get tripExchangeRatesTitle => 'تقديرات المصاريف';
+
+  @override
+  String get tripExchangeRatesSubtitle => 'هذا يساعدك على تقدير مصاريف الرحلة بعملة إقامتك.';
 
   @override
   String get tripExchangeRatesAddRate => 'إضافة تقدير';
@@ -395,52 +398,55 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripExchangeRatesEditRate => 'تعديل التقدير';
 
   @override
-  String get tripExchangeRatesFromCurrency => 'دفعت بـ';
+  String get tripExchangeRatesFromCurrency => 'عملة المصروف';
 
   @override
-  String get tripExchangeRatesToCurrency => 'تقدير بالعملة المحلية';
+  String get tripExchangeRatesToCurrency => 'اعرض المصاريف بـ';
 
   @override
-  String get tripExchangeRatesRate => 'سعر صرف تقريبي';
+  String get tripExchangeRatesRate => 'قيمة تقديرية';
 
   @override
-  String get tripExchangeRatesSourceNote => 'ملاحظة المصدر';
+  String get tripExchangeRatesSourceNote => 'مكان ظهور السعر (اختياري)';
 
   @override
-  String get tripExchangeRatesSourceHint => 'لوحة الصراف، تطبيق البنك، مكتب صرافة...';
+  String get tripExchangeRatesSourceHint => 'شاشة الصراف، تطبيق البنك، مكتب الصرافة...';
 
   @override
-  String get tripExchangeRatesSaved => 'تم حفظ السعر. هذه الرحلة الآن لديها تقدير لمصاريفك.';
+  String get tripExchangeRatesSaved => 'تم حفظ التقدير. سنستخدمه لعرض مصاريف الرحلة بعملة إقامتك.';
 
   @override
-  String get tripExchangeRatesUpdated => 'تم تحديث السعر. تقديرات المصاريف ستعكس السعر الجديد.';
+  String get tripExchangeRatesUpdated => 'تم تحديث التقدير. تم تحديث عرض المصاريف بعملة إقامتك.';
 
   @override
   String get tripExchangeRatesEmptyTitle => 'شوف مصاريفك بعملة إقامتك';
 
   @override
-  String get tripExchangeRatesEmptyBody => 'أضف أسعار تحويل لهذه الرحلة لترى قيمة مصاريفك بعملة إقامتك. التقديرات اختيارية ولن تمنعك من حفظ المصاريف.';
+  String get tripExchangeRatesEmptyBody => 'أضف تقديراً سريعاً عند الحاجة. التقديرات اختيارية ولا تمنع حفظ المصاريف.';
 
   @override
-  String get tripExchangeRatesRateLabel => 'السعر التقريبي';
+  String get tripExchangeRatesRateLabel => 'التقدير';
 
   @override
   String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency) {
-    return '1 $fromCurrency ~ $rate $toCurrency';
+    return 'تقريباً 1 $fromCurrency = $rate $toCurrency';
   }
 
   @override
   String get tripExchangeRatesValidationCurrency => 'استخدم رمز عملة صحيح من 3 أحرف.';
 
   @override
-  String get tripExchangeRatesValidationRate => 'أدخل سعر صرف تقريبي صحيح أكبر من صفر.';
+  String get tripExchangeRatesValidationRate => 'أدخل قيمة تقديرية صحيحة أكبر من صفر.';
 
   @override
-  String get tripExchangeRatesLoadError => 'تعذر تحميل تقديرات العملة المحلية.';
+  String get tripExchangeRatesLoadError => 'تعذر تحميل تقديرات المصاريف.';
+
+  @override
+  String get tripExchangeRatesSaveError => 'تعذر حفظ التقدير الآن. حاول مرة أخرى.';
 
   @override
   String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency) {
-    return 'تم حفظ المصروف. أضف سعراً تقريبياً لتقدير $fromCurrency بعملة إقامتك ($toCurrency).';
+    return 'تم حفظ المصروف. أضف تقديراً سريعاً لرؤية مصاريف $fromCurrency بعملة إقامتك ($toCurrency).';
   }
 
   @override

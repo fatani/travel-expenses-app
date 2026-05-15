@@ -61,6 +61,7 @@ class _TripExchangeRatesScreenState
       backgroundColor: Colors.transparent,
       builder: (sheetContext) {
         String? validationError;
+        bool isSaving = false;
 
         return StatefulBuilder(
           builder: (context, setSheetState) {
@@ -82,6 +83,7 @@ class _TripExchangeRatesScreenState
                     const SizedBox(height: 12),
                     TextField(
                       controller: fromController,
+                      enabled: !isSaving,
                       textCapitalization: TextCapitalization.characters,
                       decoration: InputDecoration(
                         labelText: l10n.tripExchangeRatesFromCurrency,
@@ -91,6 +93,7 @@ class _TripExchangeRatesScreenState
                     const SizedBox(height: 12),
                     TextField(
                       controller: toController,
+                      enabled: !isSaving,
                       textCapitalization: TextCapitalization.characters,
                       decoration: InputDecoration(
                         labelText: l10n.tripExchangeRatesToCurrency,
@@ -100,6 +103,7 @@ class _TripExchangeRatesScreenState
                     const SizedBox(height: 12),
                     TextField(
                       controller: rateController,
+                      enabled: !isSaving,
                       keyboardType: const TextInputType.numberWithOptions(
                         decimal: true,
                       ),
@@ -111,6 +115,7 @@ class _TripExchangeRatesScreenState
                     const SizedBox(height: 12),
                     TextField(
                       controller: noteController,
+                      enabled: !isSaving,
                       maxLines: 2,
                       decoration: InputDecoration(
                         labelText: l10n.tripExchangeRatesSourceNote,
@@ -131,14 +136,18 @@ class _TripExchangeRatesScreenState
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(false),
+                            onPressed: isSaving
+                                ? null
+                                : () => Navigator.of(context).pop(false),
                             child: Text(l10n.commonCancel),
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: FilledButton(
-                            onPressed: () async {
+                            onPressed: isSaving
+                                ? null
+                                : () async {
                               final from = fromController.text.trim().toUpperCase();
                               final to = toController.text.trim().toUpperCase();
                               final parsedRate = double.tryParse(
@@ -160,17 +169,35 @@ class _TripExchangeRatesScreenState
                                 return;
                               }
 
-                              await ref
-                                  .read(manualExchangeRateRepositoryProvider)
-                                  .saveRate(
-                                    ManualExchangeRate.create(
-                                      tripId: widget.trip.id,
-                                      fromCurrency: from,
-                                      toCurrency: to,
-                                      rate: parsedRate,
-                                      sourceNote: noteController.text,
-                                    ),
-                                  );
+                              setSheetState(() {
+                                validationError = null;
+                                isSaving = true;
+                              });
+
+                              try {
+                                await ref
+                                    .read(manualExchangeRateRepositoryProvider)
+                                    .saveRate(
+                                      ManualExchangeRate.create(
+                                        tripId: widget.trip.id,
+                                        fromCurrency: from,
+                                        toCurrency: to,
+                                        rate: parsedRate,
+                                        sourceNote: noteController.text,
+                                      ),
+                                    );
+                              } catch (_) {
+                                if (!sheetContext.mounted) {
+                                  return;
+                                }
+
+                                setSheetState(() {
+                                  validationError =
+                                      l10n.tripExchangeRatesSaveError;
+                                  isSaving = false;
+                                });
+                                return;
+                              }
 
                               if (!sheetContext.mounted) {
                                 return;
@@ -198,7 +225,21 @@ class _TripExchangeRatesScreenState
     noteController.dispose();
 
     if (saved == true && mounted) {
-      await _refreshRates();
+      try {
+        await _refreshRates();
+      } catch (_) {
+        if (!mounted) {
+          return;
+        }
+        final refreshedL10n = AppLocalizations.of(context)!;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(refreshedL10n.tripExchangeRatesLoadError),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        return;
+      }
       if (!mounted) {
         return;
       }
@@ -260,67 +301,73 @@ class _TripExchangeRatesScreenState
 
           return RefreshIndicator(
             onRefresh: _refreshRates,
-            child: ListView.separated(
+            child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
-              itemCount: rates.length,
-              separatorBuilder: (_, index) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final rate = rates[index];
-                final pair = '${rate.fromCurrency} -> ${rate.toCurrency}';
-                return AppCard(
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(12),
-                    onTap: () => _openEditor(existing: rate),
-                    child: Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  pair,
-                                  style:
-                                      Theme.of(context).textTheme.titleMedium,
+              children: [
+                AppCard(
+                  child: Text(
+                    l10n.tripExchangeRatesSubtitle,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                for (final rate in rates) ...[
+                  AppCard(
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => _openEditor(existing: rate),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    l10n.tripExchangeRatesToCurrency,
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  ),
                                 ),
-                              ),
-                              Text(
-                                rate.rate.toStringAsFixed(6),
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            l10n.tripExchangeRatesRatePreview(
-                              rate.fromCurrency,
-                              rate.toCurrency,
-                              rate.rate.toStringAsFixed(6),
+                                Text(
+                                  rate.toCurrency,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                ),
+                              ],
                             ),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            formatter.format(rate.createdAt.toLocal()),
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if ((rate.sourceNote ?? '').isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Text(
-                              rate.sourceNote!,
+                              l10n.tripExchangeRatesRatePreview(
+                                rate.fromCurrency,
+                                rate.rate.toStringAsFixed(6),
+                                rate.toCurrency,
+                              ),
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
+                            const SizedBox(height: 4),
+                            Text(
+                              formatter.format(rate.createdAt.toLocal()),
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            if ((rate.sourceNote ?? '').isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                rate.sourceNote!,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ),
-                );
-              },
+                  const SizedBox(height: 10),
+                ],
+              ],
             ),
           );
         },

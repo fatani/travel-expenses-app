@@ -758,49 +758,55 @@ abstract class AppLocalizations {
   /// No description provided for @manualExchangeAddRate.
   ///
   /// In en, this message translates to:
-  /// **'Add local estimate'**
+  /// **'Add spending estimate'**
   String get manualExchangeAddRate;
 
   /// No description provided for @manualExchangeFromCurrency.
   ///
   /// In en, this message translates to:
-  /// **'Paid with'**
+  /// **'Expense currency'**
   String get manualExchangeFromCurrency;
 
   /// No description provided for @manualExchangeToCurrency.
   ///
   /// In en, this message translates to:
-  /// **'Local currency estimate'**
+  /// **'Show spending in'**
   String get manualExchangeToCurrency;
 
   /// No description provided for @manualExchangeRate.
   ///
   /// In en, this message translates to:
-  /// **'Approximate exchange rate'**
+  /// **'Estimated value'**
   String get manualExchangeRate;
 
   /// No description provided for @manualExchangeSourceNote.
   ///
   /// In en, this message translates to:
-  /// **'Source note'**
+  /// **'Where you saw this rate (optional)'**
   String get manualExchangeSourceNote;
 
   /// No description provided for @manualExchangeSaved.
   ///
   /// In en, this message translates to:
-  /// **'Rate saved. Your expenses in this currency will show an estimate in your home currency.'**
+  /// **'Estimate saved. We\'ll use it to show spending in your home currency.'**
   String get manualExchangeSaved;
+
+  /// No description provided for @manualExchangeSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save this estimate. Please try again.'**
+  String get manualExchangeSaveError;
 
   /// No description provided for @tripExchangeRatesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Local Currency Estimates'**
+  /// **'Spending Estimates'**
   String get tripExchangeRatesTitle;
 
   /// No description provided for @tripExchangeRatesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Add simple estimates to view expenses in your home currency'**
+  /// **'This helps estimate your trip spending in your home currency.'**
   String get tripExchangeRatesSubtitle;
 
   /// No description provided for @tripExchangeRatesAddRate.
@@ -818,67 +824,67 @@ abstract class AppLocalizations {
   /// No description provided for @tripExchangeRatesFromCurrency.
   ///
   /// In en, this message translates to:
-  /// **'Paid with'**
+  /// **'Expense currency'**
   String get tripExchangeRatesFromCurrency;
 
   /// No description provided for @tripExchangeRatesToCurrency.
   ///
   /// In en, this message translates to:
-  /// **'Local currency estimate'**
+  /// **'Show spending in'**
   String get tripExchangeRatesToCurrency;
 
   /// No description provided for @tripExchangeRatesRate.
   ///
   /// In en, this message translates to:
-  /// **'Approximate exchange rate'**
+  /// **'Estimated value'**
   String get tripExchangeRatesRate;
 
   /// No description provided for @tripExchangeRatesSourceNote.
   ///
   /// In en, this message translates to:
-  /// **'Source note'**
+  /// **'Where you saw this rate (optional)'**
   String get tripExchangeRatesSourceNote;
 
   /// No description provided for @tripExchangeRatesSourceHint.
   ///
   /// In en, this message translates to:
-  /// **'ATM board, bank app, exchange office...'**
+  /// **'ATM screen, bank app, exchange counter...'**
   String get tripExchangeRatesSourceHint;
 
   /// No description provided for @tripExchangeRatesSaved.
   ///
   /// In en, this message translates to:
-  /// **'Rate saved. This trip now has an estimate for your expenses.'**
+  /// **'Estimate saved. We\'ll use it for this trip\'s home-currency spending.'**
   String get tripExchangeRatesSaved;
 
   /// No description provided for @tripExchangeRatesUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Rate updated. Your expense estimates will reflect the new rate.'**
+  /// **'Estimate updated. Your home-currency spending view is refreshed.'**
   String get tripExchangeRatesUpdated;
 
   /// No description provided for @tripExchangeRatesEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'See your expenses in your local currency'**
+  /// **'See your spending in your home currency'**
   String get tripExchangeRatesEmptyTitle;
 
   /// No description provided for @tripExchangeRatesEmptyBody.
   ///
   /// In en, this message translates to:
-  /// **'Add exchange rates for this trip to see what your expenses are worth in your home currency. Estimates are optional and won\'t block you from saving expenses.'**
+  /// **'Add a quick estimate when you need it. It\'s optional and never blocks saving expenses.'**
   String get tripExchangeRatesEmptyBody;
 
   /// No description provided for @tripExchangeRatesRateLabel.
   ///
   /// In en, this message translates to:
-  /// **'Approximate rate'**
+  /// **'Estimate'**
   String get tripExchangeRatesRateLabel;
 
   /// No description provided for @tripExchangeRatesRatePreview.
   ///
   /// In en, this message translates to:
-  /// **'1 {fromCurrency} ~ {rate} {toCurrency}'**
+  /// **'About 1 {fromCurrency} = {rate} {toCurrency}'**
   String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency);
 
   /// No description provided for @tripExchangeRatesValidationCurrency.
@@ -890,19 +896,25 @@ abstract class AppLocalizations {
   /// No description provided for @tripExchangeRatesValidationRate.
   ///
   /// In en, this message translates to:
-  /// **'Enter a valid approximate rate greater than zero.'**
+  /// **'Enter a valid estimate greater than zero.'**
   String get tripExchangeRatesValidationRate;
 
   /// No description provided for @tripExchangeRatesLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Could not load local currency estimates.'**
+  /// **'Couldn\'t load spending estimates.'**
   String get tripExchangeRatesLoadError;
+
+  /// No description provided for @tripExchangeRatesSaveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save this estimate. Please try again.'**
+  String get tripExchangeRatesSaveError;
 
   /// No description provided for @tripExchangeRatesMissingRateWarning.
   ///
   /// In en, this message translates to:
-  /// **'Expense saved. Add an approximate rate to estimate {fromCurrency} in your home currency ({toCurrency}).'**
+  /// **'Expense saved. Add a quick estimate to see {fromCurrency} spending in your home currency ({toCurrency}).'**
   String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency);
 
   /// No description provided for @tripDetailsSearchLabel.
@@ -2300,7 +2312,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripFormCurrencyAutoSelected.
   ///
   /// In en, this message translates to:
-  /// **'Currency set to {currency}'**
+  /// **'{currency} will be used as the trip currency'**
   String tripFormCurrencyAutoSelected(Object currency);
 
   /// No description provided for @tripFormAutoGeneratedTitle.

@@ -365,28 +365,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashBalanceAddCashAction => 'Add Cash';
 
   @override
-  String get manualExchangeAddRate => 'Add local estimate';
+  String get manualExchangeAddRate => 'Add spending estimate';
 
   @override
-  String get manualExchangeFromCurrency => 'Paid with';
+  String get manualExchangeFromCurrency => 'Expense currency';
 
   @override
-  String get manualExchangeToCurrency => 'Local currency estimate';
+  String get manualExchangeToCurrency => 'Show spending in';
 
   @override
-  String get manualExchangeRate => 'Approximate exchange rate';
+  String get manualExchangeRate => 'Estimated value';
 
   @override
-  String get manualExchangeSourceNote => 'Source note';
+  String get manualExchangeSourceNote => 'Where you saw this rate (optional)';
 
   @override
-  String get manualExchangeSaved => 'Rate saved. Your expenses in this currency will show an estimate in your home currency.';
+  String get manualExchangeSaved => 'Estimate saved. We\'ll use it to show spending in your home currency.';
 
   @override
-  String get tripExchangeRatesTitle => 'Local Currency Estimates';
+  String get manualExchangeSaveError => 'Couldn\'t save this estimate. Please try again.';
 
   @override
-  String get tripExchangeRatesSubtitle => 'Add simple estimates to view expenses in your home currency';
+  String get tripExchangeRatesTitle => 'Spending Estimates';
+
+  @override
+  String get tripExchangeRatesSubtitle => 'This helps estimate your trip spending in your home currency.';
 
   @override
   String get tripExchangeRatesAddRate => 'Add Estimate';
@@ -395,52 +398,55 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripExchangeRatesEditRate => 'Edit Estimate';
 
   @override
-  String get tripExchangeRatesFromCurrency => 'Paid with';
+  String get tripExchangeRatesFromCurrency => 'Expense currency';
 
   @override
-  String get tripExchangeRatesToCurrency => 'Local currency estimate';
+  String get tripExchangeRatesToCurrency => 'Show spending in';
 
   @override
-  String get tripExchangeRatesRate => 'Approximate exchange rate';
+  String get tripExchangeRatesRate => 'Estimated value';
 
   @override
-  String get tripExchangeRatesSourceNote => 'Source note';
+  String get tripExchangeRatesSourceNote => 'Where you saw this rate (optional)';
 
   @override
-  String get tripExchangeRatesSourceHint => 'ATM board, bank app, exchange office...';
+  String get tripExchangeRatesSourceHint => 'ATM screen, bank app, exchange counter...';
 
   @override
-  String get tripExchangeRatesSaved => 'Rate saved. This trip now has an estimate for your expenses.';
+  String get tripExchangeRatesSaved => 'Estimate saved. We\'ll use it for this trip\'s home-currency spending.';
 
   @override
-  String get tripExchangeRatesUpdated => 'Rate updated. Your expense estimates will reflect the new rate.';
+  String get tripExchangeRatesUpdated => 'Estimate updated. Your home-currency spending view is refreshed.';
 
   @override
-  String get tripExchangeRatesEmptyTitle => 'See your expenses in your local currency';
+  String get tripExchangeRatesEmptyTitle => 'See your spending in your home currency';
 
   @override
-  String get tripExchangeRatesEmptyBody => 'Add exchange rates for this trip to see what your expenses are worth in your home currency. Estimates are optional and won\'t block you from saving expenses.';
+  String get tripExchangeRatesEmptyBody => 'Add a quick estimate when you need it. It\'s optional and never blocks saving expenses.';
 
   @override
-  String get tripExchangeRatesRateLabel => 'Approximate rate';
+  String get tripExchangeRatesRateLabel => 'Estimate';
 
   @override
   String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency) {
-    return '1 $fromCurrency ~ $rate $toCurrency';
+    return 'About 1 $fromCurrency = $rate $toCurrency';
   }
 
   @override
   String get tripExchangeRatesValidationCurrency => 'Use a valid 3-letter currency code.';
 
   @override
-  String get tripExchangeRatesValidationRate => 'Enter a valid approximate rate greater than zero.';
+  String get tripExchangeRatesValidationRate => 'Enter a valid estimate greater than zero.';
 
   @override
-  String get tripExchangeRatesLoadError => 'Could not load local currency estimates.';
+  String get tripExchangeRatesLoadError => 'Couldn\'t load spending estimates.';
+
+  @override
+  String get tripExchangeRatesSaveError => 'Couldn\'t save this estimate. Please try again.';
 
   @override
   String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency) {
-    return 'Expense saved. Add an approximate rate to estimate $fromCurrency in your home currency ($toCurrency).';
+    return 'Expense saved. Add a quick estimate to see $fromCurrency spending in your home currency ($toCurrency).';
   }
 
   @override
