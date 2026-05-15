@@ -252,7 +252,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
                                 ),
                               ),
                             const SizedBox(height: 22),
-                            _GradientButton(
+                            _CalmSaveButton(
                               label: l10n.tripFormSaveEdit,
                               onTap: canSave ? _submit : null,
                             ),
@@ -272,6 +272,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   Widget _buildEditDetailsCard(AppLocalizations l10n) {
+    final isArabic =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     final dividerColor = Theme.of(
       context,
     ).colorScheme.outlineVariant.withValues(alpha: 0.35);
@@ -297,7 +299,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               hintText: l10n.tripFormNameHint,
             ),
           ),
-          Divider(height: 20, color: dividerColor),
+          Divider(height: 18, color: dividerColor),
           TextFormField(
             controller: _destinationController,
             textInputAction: TextInputAction.next,
@@ -306,7 +308,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               hintText: l10n.tripFormDestinationHint,
             ),
           ),
-          Divider(height: 20, color: dividerColor),
+          Divider(height: 12, color: dividerColor),
           TextFormField(
             controller: _currencyController,
             readOnly: true,
@@ -318,7 +320,22 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             ),
             onTap: () => _showCurrencyPicker(context),
           ),
-          Divider(height: 20, color: dividerColor),
+          const SizedBox(height: 6),
+          Align(
+            alignment: isArabic ? Alignment.centerRight : Alignment.centerLeft,
+            child: Text(
+              isArabic
+                  ? 'تغيير عملة الرحلة قد يؤثر على اتساق المصاريف.'
+                  : 'Changing trip currency may affect expense consistency.',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF64748B),
+                fontWeight: FontWeight.w500,
+                height: 1.35,
+              ),
+            ),
+          ),
+          Divider(height: 18, color: dividerColor),
           TextFormField(
             controller: _startDateController,
             readOnly: true,
@@ -329,7 +346,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             onTap: () => _selectDate(isStartDate: true),
             validator: _validateStartDate,
           ),
-          Divider(height: 20, color: dividerColor),
+          Divider(height: 12, color: dividerColor),
           TextFormField(
             controller: _endDateController,
             readOnly: true,
@@ -340,7 +357,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             onTap: () => _selectDate(isStartDate: false),
             validator: _validateEndDate,
           ),
-          Divider(height: 20, color: dividerColor),
+          Divider(height: 18, color: dividerColor),
           TextFormField(
             controller: _budgetController,
             textInputAction: TextInputAction.next,
@@ -360,7 +377,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
 
               return Column(
                 children: [
-                  Divider(height: 20, color: dividerColor),
+                  Divider(height: 12, color: dividerColor),
                   TextFormField(
                     controller: _budgetCurrencyController,
                     textInputAction: TextInputAction.next,
@@ -380,12 +397,16 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               );
             },
           ),
-          Divider(height: 20, color: dividerColor),
+          Divider(height: 18, color: dividerColor),
           TextFormField(
             controller: _notesController,
             textInputAction: TextInputAction.done,
-            minLines: 3,
-            maxLines: 4,
+            minLines: 2,
+            maxLines: 3,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF334155),
+            ),
             decoration: _secondaryDetailsDecoration(
               labelText: _notesLabel(),
               hintText: _notesHint(),
@@ -1598,6 +1619,58 @@ class _GradientButton extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CalmSaveButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onTap;
+
+  const _CalmSaveButton({
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isEnabled = onTap != null;
+
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: onTap,
+        child: Ink(
+          height: 56,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: isEnabled
+                ? const Color(0xFF2563EB)
+                : const Color(0xFF94A3B8).withValues(alpha: 0.55),
+            boxShadow: [
+              if (isEnabled)
+                BoxShadow(
+                  color: const Color(0xFF2563EB).withValues(alpha: 0.16),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
