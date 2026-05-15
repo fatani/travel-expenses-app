@@ -63,6 +63,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final expensesState = ref.watch(expenseControllerProvider(_trip.id));
     final hasExpenses = expensesState.valueOrNull?.isNotEmpty == true;
+    final isArabic = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
 
     return Scaffold(
       appBar: AppBar(
@@ -81,7 +82,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             child: ExportMenu(
               trip: _trip,
               enabled: hasExpenses,
-              trigger: const _TopActionIcon(icon: Icons.file_download_outlined),
+              trigger: Tooltip(
+                message: isArabic ? 'تصدير' : 'Export',
+                child: const _TopActionIcon(icon: Icons.file_download_outlined),
+              ),
             ),
           ),
           _TopActionWrapper(
@@ -1662,7 +1666,7 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: onFixDates,
+                  onTap: null,
                   child: _NoExpensesInfoLine(
                     isArabic: isArabic,
                     icon: Icons.calendar_month_outlined,
@@ -1676,7 +1680,7 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
                             ? 'حدد تاريخ البداية والنهاية'
                             : 'Set start and end dates')
                         : null,
-                    trailingIcon: Icons.chevron_right,
+                    trailingIcon: null,
                     labelColor: datesMissing
                         ? const Color(0xFFF97316)
                         : const Color(0xFF0F172A),
@@ -1876,11 +1880,14 @@ class _NoExpensesCardState extends State<_NoExpensesCard>
           FadeTransition(
             opacity: _fadeScale,
             child: ScaleTransition(
-              scale: Tween<double>(begin: 0.88, end: 1.0).animate(_fadeScale),
-              child: Image.asset(
-                'assets/FirstExpense.png',
-                height: 170,
-                fit: BoxFit.contain,
+              scale: Tween<double>(begin: 0.94, end: 1.0).animate(_fadeScale),
+              child: Opacity(
+                opacity: 0.90,
+                child: Image.asset(
+                  'assets/FirstExpense.png',
+                  height: 136,
+                  fit: BoxFit.contain,
+                ),
               ),
             ),
           ),
@@ -1944,86 +1951,55 @@ class _NoExpensesCardState extends State<_NoExpensesCard>
               color: const Color(0xFF7C3AED).withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: isArabic
-                  ? [
-                      if (widget.onDismissTip != null)
-                        GestureDetector(
-                          onTap: widget.onDismissTip,
-                          child: Icon(Icons.close, color: Colors.grey.shade400, size: 16),
+            child: Directionality(
+              textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.lightbulb_outline,
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.7),
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          l.noExpensesTipLabel,
+                          textAlign: TextAlign.start,
+                          style: const TextStyle(
+                            color: Color(0xFF7C3AED),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 13,
+                          ),
                         ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              l.noExpensesTipLabel,
-                              style: const TextStyle(
-                                color: Color(0xFF7C3AED),
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              l.noExpensesTipBody,
-                              textAlign: TextAlign.right,
-                              style: TextStyle(
-                                color: Colors.blueGrey.shade500,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12.5,
-                                height: 1.35,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 3),
+                        Text(
+                          l.noExpensesTipBody,
+                          textAlign: TextAlign.start,
+                          style: TextStyle(
+                            color: Colors.blueGrey.shade500,
+                            fontWeight: FontWeight.w500,
+                            fontSize: 12.5,
+                            height: 1.35,
+                          ),
                         ),
+                      ],
+                    ),
+                  ),
+                  if (widget.onDismissTip != null)
+                    GestureDetector(
+                      onTap: widget.onDismissTip,
+                      child: Icon(
+                        Icons.close,
+                        color: Colors.grey.shade400,
+                        size: 16,
                       ),
-                      const SizedBox(width: 8),
-                      Icon(
-                        Icons.lightbulb_outline,
-                        color: const Color(0xFF7C3AED).withValues(alpha: 0.7),
-                        size: 18,
-                      ),
-                    ]
-                  : [
-                      Icon(
-                        Icons.lightbulb_outline,
-                        color: const Color(0xFF7C3AED).withValues(alpha: 0.7),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l.noExpensesTipLabel,
-                              style: const TextStyle(
-                                color: Color(0xFF7C3AED),
-                                fontWeight: FontWeight.w800,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              l.noExpensesTipBody,
-                              style: TextStyle(
-                                color: Colors.blueGrey.shade500,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12.5,
-                                height: 1.35,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (widget.onDismissTip != null)
-                        GestureDetector(
-                          onTap: widget.onDismissTip,
-                          child: Icon(Icons.close, color: Colors.grey.shade400, size: 16),
-                        ),
-                    ],
+                    ),
+                ],
+              ),
             ),
           ),
         ],
