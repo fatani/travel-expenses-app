@@ -1205,7 +1205,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String tripFormCurrencyAutoSelected(Object currency) {
-    return 'تم تعيين العملة إلى $currency';
+    return 'ستُستخدم $currency كعملة الرحلة';
   }
 
   @override

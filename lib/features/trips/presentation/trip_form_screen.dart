@@ -1696,28 +1696,7 @@ class _DestinationCard extends StatelessWidget {
         crossAxisAlignment:
             isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment:
-                isArabic ? MainAxisAlignment.end : MainAxisAlignment.start,
-            children: [
-              const Icon(
-                Icons.public_rounded,
-                color: Color(0xFF7C3AED),
-                size: 24,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l10n.createTripHeading,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 14),
+          const SizedBox(height: 0),
 
           Autocomplete<CountryInfo>(
             optionsBuilder: (textEditingValue) {
@@ -1900,18 +1879,26 @@ class _DestinationCard extends StatelessWidget {
             },
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
-          Text(
-            selectedDestination == null
-                ? l10n.tripFormDestinationRequired
-                : l10n.tripFormCurrencyAutoSelected(selectedDestination!.currencyCode),
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.blueGrey.shade300,
-              fontWeight: FontWeight.w500,
+          if (selectedDestination != null)
+            Text(
+              l10n.tripFormCurrencyAutoSelected(selectedDestination!.currencyCode),
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF334155),
+              ),
+            )
+          else
+            Text(
+              l10n.tripFormDestinationRequired,
+              style: TextStyle(
+                fontSize: 15,
+                color: Colors.blueGrey.shade300,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -1942,9 +1929,9 @@ class _GradientButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             gradient: LinearGradient(
               colors: onTap == null
-                  ? const [
-                      Color(0xFF94A3B8),
-                      Color(0xFF94A3B8),
+                  ? [
+                      const Color(0xFF94A3B8).withValues(alpha: 0.5),
+                      const Color(0xFF94A3B8).withValues(alpha: 0.5),
                     ]
                   : const [
                       Color(0xFF2563EB),
@@ -1952,14 +1939,12 @@ class _GradientButton extends StatelessWidget {
                     ],
             ),
             boxShadow: [
-              BoxShadow(
-                color: (onTap == null
-                        ? const Color(0xFF94A3B8)
-                        : const Color(0xFF7C3AED))
-                    .withValues(alpha: 0.22),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
-              ),
+              if (onTap != null)
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.22),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
+                ),
             ],
           ),
           child: Center(
