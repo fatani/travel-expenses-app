@@ -311,6 +311,42 @@ abstract class AppLocalizations {
   /// **'Save details'**
   String get tripFormSaveDetails;
 
+  /// No description provided for @tripFormOverlapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Date overlap detected'**
+  String get tripFormOverlapTitle;
+
+  /// No description provided for @tripFormOverlapIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'There is an overlap with another trip:'**
+  String get tripFormOverlapIntro;
+
+  /// No description provided for @tripFormOverlapHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You can continue if this is a sub-trip or transit.'**
+  String get tripFormOverlapHint;
+
+  /// No description provided for @tripFormOverlapEditDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit dates'**
+  String get tripFormOverlapEditDates;
+
+  /// No description provided for @tripFormOverlapContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get tripFormOverlapContinue;
+
+  /// No description provided for @tripFormOverlapMoreTrips.
+  ///
+  /// In en, this message translates to:
+  /// **'+ {count} more overlapping trip(s)'**
+  String tripFormOverlapMoreTrips(Object count);
+
   /// No description provided for @tripFormSaveError.
   ///
   /// In en, this message translates to:
@@ -431,6 +467,12 @@ abstract class AppLocalizations {
   /// **'We need cash spending data first'**
   String get cashWalletHealthNotEnoughData;
 
+  /// No description provided for @cashWalletHealthExcellent.
+  ///
+  /// In en, this message translates to:
+  /// **'Excellent'**
+  String get cashWalletHealthExcellent;
+
   /// No description provided for @cashWalletHealthHealthy.
   ///
   /// In en, this message translates to:
@@ -454,6 +496,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Critical'**
   String get cashWalletHealthCritical;
+
+  /// No description provided for @cashWalletLastAtmNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Last ATM: —'**
+  String get cashWalletLastAtmNotAvailable;
+
+  /// No description provided for @cashWalletOnboardingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'How much cash are you carrying?'**
+  String get cashWalletOnboardingTitle;
+
+  /// No description provided for @cashWalletOnboardingSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get cashWalletOnboardingSkip;
+
+  /// No description provided for @cashWalletOnboardingCardsOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'ll use cards only'**
+  String get cashWalletOnboardingCardsOnly;
 
   /// No description provided for @cashWalletDailyBurnTitle.
   ///
@@ -724,6 +790,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Exchange rate saved'**
   String get manualExchangeSaved;
+
+  /// No description provided for @tripExchangeRatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange Rates'**
+  String get tripExchangeRatesTitle;
+
+  /// No description provided for @tripExchangeRatesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage manual rates for this trip'**
+  String get tripExchangeRatesSubtitle;
+
+  /// No description provided for @tripExchangeRatesAddRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Rate'**
+  String get tripExchangeRatesAddRate;
+
+  /// No description provided for @tripExchangeRatesEditRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Rate'**
+  String get tripExchangeRatesEditRate;
+
+  /// No description provided for @tripExchangeRatesFromCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'From currency'**
+  String get tripExchangeRatesFromCurrency;
+
+  /// No description provided for @tripExchangeRatesToCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'To currency'**
+  String get tripExchangeRatesToCurrency;
+
+  /// No description provided for @tripExchangeRatesRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get tripExchangeRatesRate;
+
+  /// No description provided for @tripExchangeRatesSourceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Source note'**
+  String get tripExchangeRatesSourceNote;
+
+  /// No description provided for @tripExchangeRatesSourceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM board, bank app, exchange office...'**
+  String get tripExchangeRatesSourceHint;
+
+  /// No description provided for @tripExchangeRatesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rate saved'**
+  String get tripExchangeRatesSaved;
+
+  /// No description provided for @tripExchangeRatesUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rate updated'**
+  String get tripExchangeRatesUpdated;
+
+  /// No description provided for @tripExchangeRatesEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No exchange rates yet'**
+  String get tripExchangeRatesEmptyTitle;
+
+  /// No description provided for @tripExchangeRatesEmptyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your manual rates here. They are used to estimate home-currency values without blocking expense saving.'**
+  String get tripExchangeRatesEmptyBody;
+
+  /// No description provided for @tripExchangeRatesRateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get tripExchangeRatesRateLabel;
+
+  /// No description provided for @tripExchangeRatesRatePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'1 {fromCurrency} = {rate} {toCurrency}'**
+  String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency);
+
+  /// No description provided for @tripExchangeRatesValidationCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a valid 3-letter currency code.'**
+  String get tripExchangeRatesValidationCurrency;
+
+  /// No description provided for @tripExchangeRatesValidationRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid rate greater than zero.'**
+  String get tripExchangeRatesValidationRate;
+
+  /// No description provided for @tripExchangeRatesLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load exchange rates.'**
+  String get tripExchangeRatesLoadError;
+
+  /// No description provided for @tripExchangeRatesMissingRateWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense saved. Missing manual rate for {fromCurrency} -> {toCurrency}.'**
+  String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency);
 
   /// No description provided for @tripDetailsSearchLabel.
   ///

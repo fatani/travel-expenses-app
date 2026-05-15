@@ -19,6 +19,7 @@ class ManualCurrencyConversionService implements CurrencyConversionService {
   final ManualExchangeRateRepository _repository;
 
   Future<ManualConversionResult?> convert({
+    String? tripId,
     required double amount,
     required String fromCurrency,
     required String toCurrency,
@@ -31,6 +32,7 @@ class ManualCurrencyConversionService implements CurrencyConversionService {
     }
 
     final latestRate = await _repository.getLatestRate(
+      tripId: tripId,
       fromCurrency: normalizedFrom,
       toCurrency: normalizedTo,
     );

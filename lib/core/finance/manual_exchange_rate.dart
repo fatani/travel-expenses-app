@@ -1,5 +1,6 @@
 class ManualExchangeRate {
   const ManualExchangeRate({
+    required this.tripId,
     required this.fromCurrency,
     required this.toCurrency,
     required this.rate,
@@ -7,6 +8,7 @@ class ManualExchangeRate {
     required this.createdAt,
   });
 
+  final String? tripId;
   final String fromCurrency;
   final String toCurrency;
   final double rate;
@@ -14,6 +16,7 @@ class ManualExchangeRate {
   final DateTime createdAt;
 
   factory ManualExchangeRate.create({
+    String? tripId,
     required String fromCurrency,
     required String toCurrency,
     required double rate,
@@ -21,6 +24,7 @@ class ManualExchangeRate {
     DateTime? createdAt,
   }) {
     return ManualExchangeRate(
+      tripId: _normalizeText(tripId),
       fromCurrency: fromCurrency.trim().toUpperCase(),
       toCurrency: toCurrency.trim().toUpperCase(),
       rate: rate,
@@ -31,6 +35,7 @@ class ManualExchangeRate {
 
   factory ManualExchangeRate.fromMap(Map<String, Object?> map) {
     return ManualExchangeRate(
+      tripId: _normalizeText(map['trip_id'] as String?),
       fromCurrency: (map['from_currency']! as String).trim().toUpperCase(),
       toCurrency: (map['to_currency']! as String).trim().toUpperCase(),
       rate: (map['rate'] as num).toDouble(),
@@ -41,6 +46,7 @@ class ManualExchangeRate {
 
   Map<String, Object?> toMap() {
     return {
+      'trip_id': tripId,
       'from_currency': fromCurrency,
       'to_currency': toCurrency,
       'rate': rate,

@@ -39,6 +39,17 @@
   "tripFormStartDateBeforeEnd": "Start date must be on or before the end date.",
   "tripFormEndDateAfterStart": "End date must be on or after the start date.",
   "tripFormSaveDetails": "Save details",
+  "tripFormOverlapTitle": "Date overlap detected",
+  "tripFormOverlapIntro": "There is an overlap with another trip:",
+  "tripFormOverlapHint": "You can continue if this is a sub-trip or transit.",
+  "tripFormOverlapEditDates": "Edit dates",
+  "tripFormOverlapContinue": "Continue",
+  "tripFormOverlapMoreTrips": "+ {count} more overlapping trip(s)",
+  "@tripFormOverlapMoreTrips": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "tripFormSaveError": "Failed to save trip: {error}",
   "@tripFormSaveError": {"placeholders": {"error": {}}},
   "tripDetailsLoadError": "Could not load expenses.",
@@ -61,10 +72,15 @@
   "cashWalletTripDatesPending": "Dates pending",
   "cashWalletHealthTitle": "Cash health",
   "cashWalletHealthNotEnoughData": "We need cash spending data first",
+  "cashWalletHealthExcellent": "Excellent",
   "cashWalletHealthHealthy": "Healthy",
   "cashWalletHealthMedium": "Medium",
   "cashWalletHealthLow": "Low",
   "cashWalletHealthCritical": "Critical",
+  "cashWalletLastAtmNotAvailable": "Last ATM: —",
+  "cashWalletOnboardingTitle": "How much cash are you carrying?",
+  "cashWalletOnboardingSkip": "Skip",
+  "cashWalletOnboardingCardsOnly": "I'll use cards only",
   "cashWalletDailyBurnTitle": "Daily cash burn",
   "cashWalletBurnNoData": "Add cash expenses to estimate your burn rate",
   "cashWalletRemainingDaysMessage": "Lasts about {days} days",
@@ -121,6 +137,38 @@
   "manualExchangeRate": "Rate",
   "manualExchangeSourceNote": "Source note",
   "manualExchangeSaved": "Exchange rate saved",
+  "tripExchangeRatesTitle": "Exchange Rates",
+  "tripExchangeRatesSubtitle": "Manage manual rates for this trip",
+  "tripExchangeRatesAddRate": "Add Rate",
+  "tripExchangeRatesEditRate": "Edit Rate",
+  "tripExchangeRatesFromCurrency": "From currency",
+  "tripExchangeRatesToCurrency": "To currency",
+  "tripExchangeRatesRate": "Rate",
+  "tripExchangeRatesSourceNote": "Source note",
+  "tripExchangeRatesSourceHint": "ATM board, bank app, exchange office...",
+  "tripExchangeRatesSaved": "Exchange rate saved",
+  "tripExchangeRatesUpdated": "Exchange rate updated",
+  "tripExchangeRatesEmptyTitle": "No exchange rates yet",
+  "tripExchangeRatesEmptyBody": "Add your manual rates here. They are used to estimate home-currency values without blocking expense saving.",
+  "tripExchangeRatesRateLabel": "Rate",
+  "tripExchangeRatesRatePreview": "1 {fromCurrency} = {rate} {toCurrency}",
+  "@tripExchangeRatesRatePreview": {
+    "placeholders": {
+      "fromCurrency": {},
+      "rate": {},
+      "toCurrency": {}
+    }
+  },
+  "tripExchangeRatesValidationCurrency": "Use a valid 3-letter currency code.",
+  "tripExchangeRatesValidationRate": "Enter a valid rate greater than zero.",
+  "tripExchangeRatesLoadError": "Could not load exchange rates.",
+  "tripExchangeRatesMissingRateWarning": "Expense saved. Missing manual rate for {fromCurrency} -> {toCurrency}.",
+  "@tripExchangeRatesMissingRateWarning": {
+    "placeholders": {
+      "fromCurrency": {},
+      "toCurrency": {}
+    }
+  },
   "tripDetailsSearchLabel": "Search expenses",
   "tripDetailsSearchHint": "Search by title, description, or merchant",
   "tripDetailsFilterCategory": "Filter by category",

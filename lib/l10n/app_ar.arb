@@ -39,6 +39,17 @@
   "tripFormStartDateBeforeEnd": "يجب ألا يكون تاريخ البداية بعد تاريخ النهاية.",
   "tripFormEndDateAfterStart": "يجب أن يكون تاريخ النهاية في نفس يوم البداية أو بعده.",
   "tripFormSaveDetails": "حفظ التخصيصات",
+  "tripFormOverlapTitle": "يوجد تداخل في التواريخ",
+  "tripFormOverlapIntro": "يوجد تداخل مع رحلة أخرى:",
+  "tripFormOverlapHint": "يمكنك المتابعة إذا كانت هذه رحلة فرعية أو ترانزيت.",
+  "tripFormOverlapEditDates": "تعديل التواريخ",
+  "tripFormOverlapContinue": "متابعة",
+  "tripFormOverlapMoreTrips": "+ {count} رحلة متداخلة إضافية",
+  "@tripFormOverlapMoreTrips": {
+    "placeholders": {
+      "count": {}
+    }
+  },
   "tripFormSaveError": "فشل حفظ الرحلة: {error}",
   "@tripFormSaveError": {"placeholders": {"error": {}}},
   "tripDetailsLoadError": "تعذر تحميل المصاريف.",
@@ -61,10 +72,15 @@
   "cashWalletTripDatesPending": "التواريخ غير محددة",
   "cashWalletHealthTitle": "حالة الكاش",
   "cashWalletHealthNotEnoughData": "لم نحسب الحالة بعد",
+  "cashWalletHealthExcellent": "ممتاز",
   "cashWalletHealthHealthy": "جيد",
   "cashWalletHealthMedium": "متوسط",
   "cashWalletHealthLow": "منخفض",
   "cashWalletHealthCritical": "حرج",
+  "cashWalletLastAtmNotAvailable": "آخر ATM: —",
+  "cashWalletOnboardingTitle": "كم كاش تحمل معك؟",
+  "cashWalletOnboardingSkip": "تخطي",
+  "cashWalletOnboardingCardsOnly": "سأستخدم البطاقة فقط",
   "cashWalletDailyBurnTitle": "متوسط الصرف اليومي",
   "cashWalletBurnNoData": "ابدأ بإضافة مصروفات كاش لحساب معدل الصرف",
   "cashWalletRemainingDaysMessage": "يكفي تقريبًا {days} أيام",
@@ -121,6 +137,38 @@
   "manualExchangeRate": "سعر الصرف",
   "manualExchangeSourceNote": "ملاحظة المصدر",
   "manualExchangeSaved": "تم حفظ سعر الصرف",
+  "tripExchangeRatesTitle": "أسعار التحويل",
+  "tripExchangeRatesSubtitle": "إدارة أسعار التحويل اليدوية لهذه الرحلة",
+  "tripExchangeRatesAddRate": "إضافة سعر",
+  "tripExchangeRatesEditRate": "تعديل السعر",
+  "tripExchangeRatesFromCurrency": "من عملة",
+  "tripExchangeRatesToCurrency": "إلى عملة",
+  "tripExchangeRatesRate": "السعر",
+  "tripExchangeRatesSourceNote": "ملاحظة المصدر",
+  "tripExchangeRatesSourceHint": "لوحة الصراف، تطبيق البنك، مكتب صرافة...",
+  "tripExchangeRatesSaved": "تم حفظ سعر التحويل",
+  "tripExchangeRatesUpdated": "تم تحديث سعر التحويل",
+  "tripExchangeRatesEmptyTitle": "لا توجد أسعار تحويل بعد",
+  "tripExchangeRatesEmptyBody": "أضف أسعارك اليدوية هنا. تُستخدم لتقدير قيمة المصروف بعملة الوطن بدون منع حفظ المصروف.",
+  "tripExchangeRatesRateLabel": "السعر",
+  "tripExchangeRatesRatePreview": "1 {fromCurrency} = {rate} {toCurrency}",
+  "@tripExchangeRatesRatePreview": {
+    "placeholders": {
+      "fromCurrency": {},
+      "rate": {},
+      "toCurrency": {}
+    }
+  },
+  "tripExchangeRatesValidationCurrency": "استخدم رمز عملة صحيح من 3 أحرف.",
+  "tripExchangeRatesValidationRate": "أدخل سعر تحويل صحيح أكبر من صفر.",
+  "tripExchangeRatesLoadError": "تعذر تحميل أسعار التحويل.",
+  "tripExchangeRatesMissingRateWarning": "تم حفظ المصروف. لا يوجد سعر تحويل يدوي لـ {fromCurrency} -> {toCurrency}.",
+  "@tripExchangeRatesMissingRateWarning": {
+    "placeholders": {
+      "fromCurrency": {},
+      "toCurrency": {}
+    }
+  },
   "tripDetailsSearchLabel": "البحث في المصاريف",
   "tripDetailsSearchHint": "ابحث بالعنوان أو الوصف أو اسم التاجر",
   "tripDetailsFilterCategory": "تصفية حسب الفئة",

@@ -123,6 +123,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripFormSaveDetails => 'حفظ التخصيصات';
 
   @override
+  String get tripFormOverlapTitle => 'يوجد تداخل في التواريخ';
+
+  @override
+  String get tripFormOverlapIntro => 'يوجد تداخل مع رحلة أخرى:';
+
+  @override
+  String get tripFormOverlapHint => 'يمكنك المتابعة إذا كانت هذه رحلة فرعية أو ترانزيت.';
+
+  @override
+  String get tripFormOverlapEditDates => 'تعديل التواريخ';
+
+  @override
+  String get tripFormOverlapContinue => 'متابعة';
+
+  @override
+  String tripFormOverlapMoreTrips(Object count) {
+    return '+ $count رحلة متداخلة إضافية';
+  }
+
+  @override
   String tripFormSaveError(Object error) {
     return 'فشل حفظ الرحلة: $error';
   }
@@ -187,6 +207,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletHealthNotEnoughData => 'لم نحسب الحالة بعد';
 
   @override
+  String get cashWalletHealthExcellent => 'ممتاز';
+
+  @override
   String get cashWalletHealthHealthy => 'جيد';
 
   @override
@@ -197,6 +220,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cashWalletHealthCritical => 'حرج';
+
+  @override
+  String get cashWalletLastAtmNotAvailable => 'آخر ATM: —';
+
+  @override
+  String get cashWalletOnboardingTitle => 'كم كاش تحمل معك؟';
+
+  @override
+  String get cashWalletOnboardingSkip => 'تخطي';
+
+  @override
+  String get cashWalletOnboardingCardsOnly => 'سأستخدم البطاقة فقط';
 
   @override
   String get cashWalletDailyBurnTitle => 'متوسط الصرف اليومي';
@@ -346,6 +381,67 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get manualExchangeSaved => 'تم حفظ سعر الصرف';
+
+  @override
+  String get tripExchangeRatesTitle => 'أسعار التحويل';
+
+  @override
+  String get tripExchangeRatesSubtitle => 'إدارة أسعار التحويل اليدوية لهذه الرحلة';
+
+  @override
+  String get tripExchangeRatesAddRate => 'إضافة سعر';
+
+  @override
+  String get tripExchangeRatesEditRate => 'تعديل السعر';
+
+  @override
+  String get tripExchangeRatesFromCurrency => 'من عملة';
+
+  @override
+  String get tripExchangeRatesToCurrency => 'إلى عملة';
+
+  @override
+  String get tripExchangeRatesRate => 'السعر';
+
+  @override
+  String get tripExchangeRatesSourceNote => 'ملاحظة المصدر';
+
+  @override
+  String get tripExchangeRatesSourceHint => 'لوحة الصراف، تطبيق البنك، مكتب صرافة...';
+
+  @override
+  String get tripExchangeRatesSaved => 'تم حفظ سعر التحويل';
+
+  @override
+  String get tripExchangeRatesUpdated => 'تم تحديث سعر التحويل';
+
+  @override
+  String get tripExchangeRatesEmptyTitle => 'لا توجد أسعار تحويل بعد';
+
+  @override
+  String get tripExchangeRatesEmptyBody => 'أضف أسعارك اليدوية هنا. تُستخدم لتقدير قيمة المصروف بعملة الوطن بدون منع حفظ المصروف.';
+
+  @override
+  String get tripExchangeRatesRateLabel => 'السعر';
+
+  @override
+  String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency) {
+    return '1 $fromCurrency = $rate $toCurrency';
+  }
+
+  @override
+  String get tripExchangeRatesValidationCurrency => 'استخدم رمز عملة صحيح من 3 أحرف.';
+
+  @override
+  String get tripExchangeRatesValidationRate => 'أدخل سعر تحويل صحيح أكبر من صفر.';
+
+  @override
+  String get tripExchangeRatesLoadError => 'تعذر تحميل أسعار التحويل.';
+
+  @override
+  String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency) {
+    return 'تم حفظ المصروف. لا يوجد سعر تحويل يدوي لـ $fromCurrency -> $toCurrency.';
+  }
 
   @override
   String get tripDetailsSearchLabel => 'البحث في المصاريف';

@@ -176,6 +176,7 @@ class AppDatabase {
         await db.execute('''
           CREATE TABLE $manualExchangeRatesTable (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trip_id TEXT,
             from_currency TEXT NOT NULL,
             to_currency TEXT NOT NULL,
             rate REAL NOT NULL,
@@ -183,6 +184,11 @@ class AppDatabase {
             created_at TEXT NOT NULL
           )
         ''');
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_manual_exchange_rates_trip_pair_created '
+          'ON $manualExchangeRatesTable (trip_id, from_currency, to_currency, created_at)',
+        );
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -732,18 +738,34 @@ class AppDatabase {
     );
   }
 
+  Future<void> _ensureManualExchangeRatesTripColumn(Database db) async {
+    final hasTripId = await _hasColumn(db, manualExchangeRatesTable, 'trip_id');
+    if (!hasTripId) {
+      await db.execute(
+        'ALTER TABLE $manualExchangeRatesTable ADD COLUMN trip_id TEXT',
+      );
+    }
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_manual_exchange_rates_trip_pair_created '
+      'ON $manualExchangeRatesTable (trip_id, from_currency, to_currency, created_at)',
+    );
+  }
+
   Future<void> _ensureManualExchangeRatesTable(Database db) async {
     final tables = await db.rawQuery(
       "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
       [manualExchangeRatesTable],
     );
     if (tables.isNotEmpty) {
+      await _ensureManualExchangeRatesTripColumn(db);
       return;
     }
 
     await db.execute('''
       CREATE TABLE $manualExchangeRatesTable (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trip_id TEXT,
         from_currency TEXT NOT NULL,
         to_currency TEXT NOT NULL,
         rate REAL NOT NULL,
@@ -751,6 +773,11 @@ class AppDatabase {
         created_at TEXT NOT NULL
       )
     ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_manual_exchange_rates_trip_pair_created '
+      'ON $manualExchangeRatesTable (trip_id, from_currency, to_currency, created_at)',
+    );
   }
 
   Future<void> _recomputeExpensesInternationalFlag(Database db) async {

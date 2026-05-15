@@ -6,6 +6,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../../../core/design_system/app_confirmation_dialog.dart';
+import '../../../core/providers/database_providers.dart';
+import '../../../core/theme/design_tokens.dart';
 import '../domain/country_database.dart';
 import '../domain/country_info.dart';
 import '../domain/trip.dart';
@@ -952,6 +955,22 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         : (budgetCurrencyText.isEmpty ? baseCurrency : budgetCurrencyText);
     final controller = ref.read(tripsControllerProvider.notifier);
 
+    final overlaps = await _findDateOverlaps(
+      startDate: _startDate,
+      endDate: _endDate,
+      excludeTripId: widget.trip?.id,
+    );
+    if (!mounted) {
+      return;
+    }
+
+    if (overlaps.isNotEmpty) {
+      final shouldContinue = await _showOverlapWarning(overlaps);
+      if (!mounted || !shouldContinue) {
+        return;
+      }
+    }
+
     try {
       if (isCreateMode) {
         final createdTrip = await controller.createTrip(
@@ -1009,6 +1028,109 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         ),
       );
     }
+  }
+
+  Future<List<_TripDateOverlap>> _findDateOverlaps({
+    required DateTime? startDate,
+    required DateTime? endDate,
+    required String? excludeTripId,
+  }) async {
+    if (startDate == null || endDate == null) {
+      return const [];
+    }
+
+    final candidateStart = DateUtils.dateOnly(startDate);
+    final candidateEnd = DateUtils.dateOnly(endDate);
+    final trips = await ref.read(tripRepositoryProvider).getTrips();
+    final overlaps = <_TripDateOverlap>[];
+
+    for (final trip in trips) {
+      if (excludeTripId != null && trip.id == excludeTripId) {
+        continue;
+      }
+
+      final tripStart = trip.startDate;
+      final tripEnd = trip.endDate;
+      if (tripStart == null || tripEnd == null) {
+        continue;
+      }
+
+      final normalizedTripStart = DateUtils.dateOnly(tripStart);
+      final normalizedTripEnd = DateUtils.dateOnly(tripEnd);
+
+      if (_hasDateOverlap(
+        startA: candidateStart,
+        endA: candidateEnd,
+        startB: normalizedTripStart,
+        endB: normalizedTripEnd,
+      )) {
+        overlaps.add(
+          _TripDateOverlap(
+            trip: trip,
+            startDate: normalizedTripStart,
+            endDate: normalizedTripEnd,
+          ),
+        );
+      }
+    }
+
+    overlaps.sort((a, b) => a.startDate.compareTo(b.startDate));
+    return overlaps;
+  }
+
+  bool _hasDateOverlap({
+    required DateTime startA,
+    required DateTime endA,
+    required DateTime startB,
+    required DateTime endB,
+  }) {
+    return !startA.isAfter(endB) && !endA.isBefore(startB);
+  }
+
+  Future<bool> _showOverlapWarning(List<_TripDateOverlap> overlaps) async {
+    final l10n = AppLocalizations.of(context)!;
+    final first = overlaps.first;
+    final formattedRange =
+        '${_formatDate(first.startDate)} → ${_formatDate(first.endDate)}';
+    final extraTripsText = overlaps.length > 1
+        ? '\n${l10n.tripFormOverlapMoreTrips((overlaps.length - 1).toString())}'
+        : '';
+    final message =
+        '${l10n.tripFormOverlapIntro}\n\n${first.trip.name}\n$formattedRange$extraTripsText\n\n${l10n.tripFormOverlapHint}';
+
+    final shouldContinue = await showModalBottomSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.34),
+      builder: (sheetContext) {
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md + bottomInset,
+            ),
+            child: AppConfirmationDialog(
+              icon: Icons.flight_takeoff_rounded,
+              title: l10n.tripFormOverlapTitle,
+              message: message,
+              cancelLabel: l10n.tripFormOverlapEditDates,
+              confirmLabel: l10n.tripFormOverlapContinue,
+              onCancel: () => Navigator.of(sheetContext).pop(false),
+              onConfirm: () => Navigator.of(sheetContext).pop(true),
+            ),
+          ),
+        );
+      },
+    );
+
+    return shouldContinue == true;
   }
 
   void _onDestinationSelected(CountryInfo country) {
@@ -1295,6 +1417,18 @@ class _UpperCaseTextFormatter extends TextInputFormatter {
   ) {
     return newValue.copyWith(text: newValue.text.toUpperCase());
   }
+}
+
+class _TripDateOverlap {
+  const _TripDateOverlap({
+    required this.trip,
+    required this.startDate,
+    required this.endDate,
+  });
+
+  final Trip trip;
+  final DateTime startDate;
+  final DateTime endDate;
 }
 
 class CreateTripVisualScreen extends StatelessWidget {

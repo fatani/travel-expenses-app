@@ -28,10 +28,8 @@ class TripCashWalletScreen extends ConsumerStatefulWidget {
 }
 
 class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
-  static const double _minBurnForEstimate = 0.01;
-  static const double _maxReasonableRemainingDays = 60;
-
   bool _isLoading = true;
+  bool _didShowFirstTimeOnboarding = false;
   List<TripCashBalance> _balances = const [];
   List<CashTransaction> _transactions = const [];
 
@@ -52,6 +50,19 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       _transactions = transactions;
       _isLoading = false;
     });
+
+    if (!_didShowFirstTimeOnboarding && balances.isEmpty && transactions.isEmpty) {
+      _didShowFirstTimeOnboarding = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) {
+          return;
+        }
+        _showAddCashSheet(
+          initialType: CashTransactionType.initialCash,
+          isOnboarding: true,
+        );
+      });
+    }
   }
 
   _PrimaryCashBalance get _primaryCashBalance {
@@ -81,52 +92,41 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         _transactions.any((transaction) => transaction.type != CashTransactionType.cashExpenseDeduction);
   }
 
-  _CashSituationMetrics get _cashMetrics {
-    final currency = _primaryCashBalance.currencyCode;
-    final cashExpenses = _transactions
-        .where((transaction) =>
-            transaction.currencyCode == currency &&
-            transaction.type == CashTransactionType.cashExpenseDeduction)
-        .toList();
+  _CashHealth get _cashHealth {
+    final primaryCurrency = _primaryCashBalance.currencyCode;
+    final currentBalance = _primaryCashBalance.amount;
 
-    if (cashExpenses.isEmpty) {
-      return const _CashSituationMetrics(
-        hasBurnRateData: false,
-        dailyBurn: 0,
-        remainingDays: null,
-        health: _CashHealth.medium,
-      );
+    if (currentBalance <= 0) {
+      return _CashHealth.critical;
     }
 
-    final totalCashExpenses = cashExpenses.fold<double>(
-      0,
-      (sum, transaction) => sum + transaction.amount,
-    );
-    final activeTravelDays = _calculateActiveTravelDays(cashExpenses);
-    final dailyBurn = totalCashExpenses / activeTravelDays;
+    final totalCashIn = _transactions.where((transaction) {
+      if (transaction.currencyCode != primaryCurrency) {
+        return false;
+      }
 
-    if (dailyBurn < _minBurnForEstimate) {
-      return const _CashSituationMetrics(
-        hasBurnRateData: false,
-        dailyBurn: 0,
-        remainingDays: null,
-        health: _CashHealth.medium,
-      );
+      return transaction.type == CashTransactionType.initialCash ||
+          transaction.type == CashTransactionType.atmWithdrawal ||
+          transaction.type == CashTransactionType.manualAdjustment ||
+          transaction.type == CashTransactionType.currencyExchangeIn;
+    }).fold<double>(0, (sum, transaction) => sum + transaction.amount);
+
+    if (totalCashIn <= 0) {
+      return _CashHealth.good;
     }
 
-    final rawRemainingDays = _primaryCashBalance.amount / dailyBurn;
-    final remainingDays = rawRemainingDays.clamp(0, _maxReasonableRemainingDays).toDouble();
+    final remainingRatio = currentBalance / totalCashIn;
 
-    final health = remainingDays >= 3
-        ? _CashHealth.healthy
-        : (remainingDays >= 1 ? _CashHealth.medium : _CashHealth.critical);
-
-    return _CashSituationMetrics(
-      hasBurnRateData: true,
-      dailyBurn: dailyBurn,
-      remainingDays: remainingDays,
-      health: health,
-    );
+    if (remainingRatio >= 0.65) {
+      return _CashHealth.excellent;
+    }
+    if (remainingRatio >= 0.35) {
+      return _CashHealth.good;
+    }
+    if (remainingRatio >= 0.15) {
+      return _CashHealth.low;
+    }
+    return _CashHealth.critical;
   }
 
   Map<String, double> get _balanceAfterByTransactionId {
@@ -175,21 +175,12 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     return grouped;
   }
 
-  _LastCashInEvent? get _lastCashInEvent {
+  _LastAtmWithdrawalEvent? get _lastAtmWithdrawalEvent {
     for (final transaction in _transactions) {
       if (transaction.type == CashTransactionType.atmWithdrawal) {
-        return _LastCashInEvent(
+        return _LastAtmWithdrawalEvent(
           amount: transaction.amount,
           currencyCode: transaction.currencyCode,
-          isAtm: true,
-        );
-      }
-      if (transaction.type == CashTransactionType.initialCash ||
-          transaction.type == CashTransactionType.manualAdjustment) {
-        return _LastCashInEvent(
-          amount: transaction.amount,
-          currencyCode: transaction.currencyCode,
-          isAtm: false,
         );
       }
     }
@@ -207,31 +198,6 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       case CashTransactionType.cashExpenseDeduction:
         return -amount;
     }
-  }
-
-  double _calculateActiveTravelDays(List<CashTransaction> cashExpenses) {
-    final now = DateTime.now();
-    final tripStart = widget.trip.startDate?.toLocal();
-    final tripEnd = widget.trip.endDate?.toLocal();
-
-    DateTime activeStart;
-    if (tripStart != null) {
-      activeStart = DateTime(tripStart.year, tripStart.month, tripStart.day);
-    } else {
-      final firstExpense = cashExpenses
-          .map((transaction) => transaction.createdAt.toLocal())
-          .reduce((a, b) => a.isBefore(b) ? a : b);
-      activeStart = DateTime(firstExpense.year, firstExpense.month, firstExpense.day);
-    }
-
-    final boundedEnd = (tripEnd != null && tripEnd.isBefore(now)) ? tripEnd : now;
-    final activeEnd = DateTime(boundedEnd.year, boundedEnd.month, boundedEnd.day);
-
-    if (activeEnd.isBefore(activeStart)) {
-      return 1;
-    }
-
-    return activeEnd.difference(activeStart).inDays + 1;
   }
 
   @override
@@ -260,9 +226,9 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                   _CashHeroCard(
                     trip: widget.trip,
                     balance: _primaryCashBalance,
-                    metrics: _cashMetrics,
+                    health: _cashHealth,
                     hasCashSetup: _hasCashSetup,
-                    lastCashInEvent: _lastCashInEvent,
+                    lastAtmWithdrawalEvent: _lastAtmWithdrawalEvent,
                     onAddCash: () => _showAddCashSheet(initialType: CashTransactionType.initialCash),
                     onAtmWithdrawal: () => _showAddCashSheet(initialType: CashTransactionType.atmWithdrawal),
                   ),
@@ -341,6 +307,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   Future<void> _showAddCashSheet({
     required CashTransactionType initialType,
     CashTransaction? editingTransaction,
+    bool isOnboarding = false,
   }) async {
     debugPrint('Opening Add Cash Sheet: $initialType');
     final result = await showModalBottomSheet<bool>(
@@ -358,6 +325,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
             trip: widget.trip,
             initialType: initialType,
             editingTransaction: editingTransaction,
+            isOnboarding: isOnboarding,
           ),
         );
       },
@@ -518,7 +486,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => const _AddManualRateSheet(),
+      builder: (context) => _AddManualRateSheet(tripId: widget.trip.id),
     );
 
     if (!mounted || result != true) {
@@ -537,18 +505,22 @@ class _AddCashSheet extends ConsumerStatefulWidget {
     required this.trip,
     required this.initialType,
     this.editingTransaction,
+    this.isOnboarding = false,
   });
 
   final Trip trip;
   final CashTransactionType initialType;
   final CashTransaction? editingTransaction;
+  final bool isOnboarding;
 
   @override
   ConsumerState<_AddCashSheet> createState() => _AddCashSheetState();
 }
 
 class _AddManualRateSheet extends ConsumerStatefulWidget {
-  const _AddManualRateSheet();
+  const _AddManualRateSheet({required this.tripId});
+
+  final String tripId;
 
   @override
   ConsumerState<_AddManualRateSheet> createState() => _AddManualRateSheetState();
@@ -666,6 +638,7 @@ class _AddManualRateSheetState extends ConsumerState<_AddManualRateSheet> {
     try {
       await ref.read(manualExchangeRateRepositoryProvider).saveRate(
             ManualExchangeRate.create(
+              tripId: widget.tripId,
               fromCurrency: fromCurrency,
               toCurrency: toCurrency,
               rate: rate,
@@ -729,6 +702,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     final l10n = AppLocalizations.of(context)!;
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
     final isEditMode = widget.editingTransaction != null;
+    final isOnboardingMode = widget.isOnboarding && !isEditMode;
 
     return Material(
       color: Colors.white,
@@ -749,7 +723,11 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               children: [
                 _SheetHeader(
                   icon: Icons.account_balance_wallet_outlined,
-                  title: isEditMode ? l10n.cashWalletEditCash : l10n.cashWalletAddCash,
+                  title: isEditMode
+                      ? l10n.cashWalletEditCash
+                      : (isOnboardingMode
+                          ? l10n.cashWalletOnboardingTitle
+                          : l10n.cashWalletAddCash),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -779,55 +757,57 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                DropdownButtonFormField<CashTransactionType>(
-                  initialValue: _selectedType,
-                  decoration: InputDecoration(
-                    labelText: l10n.cashWalletTransactionType,
-                    helperText: l10n.cashWalletTransactionTypeHelper,
-                    prefixIcon: const Icon(Icons.tune_rounded),
+                if (!isOnboardingMode) ...[
+                  DropdownButtonFormField<CashTransactionType>(
+                    initialValue: _selectedType,
+                    decoration: InputDecoration(
+                      labelText: l10n.cashWalletTransactionType,
+                      helperText: l10n.cashWalletTransactionTypeHelper,
+                      prefixIcon: const Icon(Icons.tune_rounded),
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: CashTransactionType.initialCash,
+                        child: _CashActionOptionRow(
+                          icon: Icons.luggage_outlined,
+                          label: l10n.cashWalletTypeInitialCash,
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: CashTransactionType.atmWithdrawal,
+                        child: _CashActionOptionRow(
+                          icon: Icons.local_atm_outlined,
+                          label: l10n.cashWalletTypeAtmWithdrawal,
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: CashTransactionType.manualAdjustment,
+                        child: _CashActionOptionRow(
+                          icon: Icons.edit_note_rounded,
+                          label: l10n.cashWalletTypeManualAdjustment,
+                        ),
+                      ),
+                    ],
+                    onChanged: _isSaving
+                        ? null
+                        : (value) {
+                            if (value == null) {
+                              return;
+                            }
+                            setState(() {
+                              _selectedType = value;
+                            });
+                          },
                   ),
-                  items: [
-                    DropdownMenuItem(
-                      value: CashTransactionType.initialCash,
-                      child: _CashActionOptionRow(
-                        icon: Icons.luggage_outlined,
-                        label: l10n.cashWalletTypeInitialCash,
-                      ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _noteController,
+                    decoration: InputDecoration(
+                      labelText: l10n.expenseFormNoteLabel,
+                      prefixIcon: const Icon(Icons.notes_rounded),
                     ),
-                    DropdownMenuItem(
-                      value: CashTransactionType.atmWithdrawal,
-                      child: _CashActionOptionRow(
-                        icon: Icons.local_atm_outlined,
-                        label: l10n.cashWalletTypeAtmWithdrawal,
-                      ),
-                    ),
-                    DropdownMenuItem(
-                      value: CashTransactionType.manualAdjustment,
-                      child: _CashActionOptionRow(
-                        icon: Icons.edit_note_rounded,
-                        label: l10n.cashWalletTypeManualAdjustment,
-                      ),
-                    ),
-                  ],
-                  onChanged: _isSaving
-                      ? null
-                      : (value) {
-                          if (value == null) {
-                            return;
-                          }
-                          setState(() {
-                            _selectedType = value;
-                          });
-                        },
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _noteController,
-                  decoration: InputDecoration(
-                    labelText: l10n.expenseFormNoteLabel,
-                    prefixIcon: const Icon(Icons.notes_rounded),
                   ),
-                ),
+                ],
                 const SizedBox(height: 18),
                 _SheetGradientButton(
                   onPressed: _isSaving ? null : _save,
@@ -837,8 +817,34 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                         )
-                      : Text(isEditMode ? l10n.expenseFormSaveEdit : l10n.tripDetailsQuickAddSave),
+                      : Text(
+                          isEditMode
+                              ? l10n.expenseFormSaveEdit
+                              : (isOnboardingMode
+                                  ? l10n.cashWalletAddCash
+                                  : l10n.tripDetailsQuickAddSave),
+                        ),
                 ),
+                if (isOnboardingMode) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      TextButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () => Navigator.of(context).pop(false),
+                        child: Text(l10n.cashWalletOnboardingSkip),
+                      ),
+                      const Spacer(),
+                      OutlinedButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () => Navigator.of(context).pop(false),
+                        child: Text(l10n.cashWalletOnboardingCardsOnly),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -947,21 +953,7 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-enum _CashHealth { healthy, medium, critical }
-
-class _CashSituationMetrics {
-  const _CashSituationMetrics({
-    required this.hasBurnRateData,
-    required this.dailyBurn,
-    required this.remainingDays,
-    required this.health,
-  });
-
-  final bool hasBurnRateData;
-  final double dailyBurn;
-  final double? remainingDays;
-  final _CashHealth health;
-}
+enum _CashHealth { excellent, good, low, critical }
 
 class _PrimaryCashBalance {
   const _PrimaryCashBalance({
@@ -977,18 +969,18 @@ class _CashHeroCard extends StatelessWidget {
   const _CashHeroCard({
     required this.trip,
     required this.balance,
-    required this.metrics,
+    required this.health,
     required this.hasCashSetup,
-    required this.lastCashInEvent,
+    required this.lastAtmWithdrawalEvent,
     required this.onAddCash,
     required this.onAtmWithdrawal,
   });
 
   final Trip trip;
   final _PrimaryCashBalance balance;
-  final _CashSituationMetrics metrics;
+  final _CashHealth health;
   final bool hasCashSetup;
-  final _LastCashInEvent? lastCashInEvent;
+  final _LastAtmWithdrawalEvent? lastAtmWithdrawalEvent;
   final VoidCallback onAddCash;
   final VoidCallback onAtmWithdrawal;
 
@@ -1016,50 +1008,71 @@ class _CashHeroCard extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Image.asset(
-                      'assets/travel.png',
-                      fit: BoxFit.contain,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.account_balance_wallet_outlined,
-                        color: Color(0xFF7C3AED),
-                        size: 28,
+                Row(
+                  children: [
+                    Container(
+                      width: 64,
+                      height: 64,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Image.asset(
+                          'assets/travel.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const Icon(
+                            Icons.account_balance_wallet_outlined,
+                            color: Color(0xFF7C3AED),
+                            size: 28,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.cashWalletEmptyTitle,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF1E1B4B),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            l10n.cashWalletEmptySubtitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF475569),
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        l10n.cashWalletEmptyTitle,
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: const Color(0xFF1E1B4B),
-                        ),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _HeroPrimaryActionButton(
+                        label: l10n.cashWalletAddCash,
+                        onPressed: onAddCash,
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        l10n.cashWalletEmptySubtitle,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF475569),
-                          height: 1.4,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 10),
+                    _HeroSecondaryActionButton(
+                      label: l10n.cashWalletQuickAtmShort,
+                      onPressed: onAtmWithdrawal,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -1068,37 +1081,28 @@ class _CashHeroCard extends StatelessWidget {
       );
     }
 
-    final healthText = switch (metrics.health) {
-      _CashHealth.healthy => l10n.cashWalletHealthHealthy,
-      _CashHealth.medium => l10n.cashWalletHealthMedium,
+    final healthText = switch (health) {
+      _CashHealth.excellent => l10n.cashWalletHealthExcellent,
+      _CashHealth.good => l10n.cashWalletHealthHealthy,
+      _CashHealth.low => l10n.cashWalletHealthLow,
       _CashHealth.critical => l10n.cashWalletHealthCritical,
     };
 
-    final healthColor = switch (metrics.health) {
-      _CashHealth.healthy => const Color(0xFF4F46E5),
-      _CashHealth.medium => const Color(0xFFD97706),
+    final healthColor = switch (health) {
+      _CashHealth.excellent => const Color(0xFF4F46E5),
+      _CashHealth.good => const Color(0xFF6D28D9),
+      _CashHealth.low => const Color(0xFFD97706),
       _CashHealth.critical => const Color(0xFFDC2626),
     };
 
-    final burnValue = metrics.hasBurnRateData
-        ? _formatAmount(metrics.dailyBurn, balance.currencyCode)
-        : l10n.cashWalletBurnNoData;
-
-    final remainingDaysText = metrics.hasBurnRateData && metrics.remainingDays != null
-        ? l10n.cashWalletRemainingDaysMessage(
-            NumberFormat('#,##0.#', 'en').format(metrics.remainingDays),
-          )
-        : l10n.cashWalletRemainingDaysNoData;
-
-    final lastCashInText = switch (lastCashInEvent) {
-      null => null,
-      final event when event.isAtm => l10n.cashWalletLastAtmWithdrawal(
-          _formatAmount(event.amount, event.currencyCode),
-        ),
-      final event => l10n.cashWalletLastCashAdded(
-          _formatAmount(event.amount, event.currencyCode),
-        ),
-    };
+    final lastAtmText = lastAtmWithdrawalEvent == null
+        ? l10n.cashWalletLastAtmNotAvailable
+        : l10n.cashWalletLastAtmWithdrawal(
+            _formatAmount(
+              lastAtmWithdrawalEvent!.amount,
+              lastAtmWithdrawalEvent!.currencyCode,
+            ),
+          );
 
     return Card(
       elevation: 0,
@@ -1150,41 +1154,15 @@ class _CashHeroCard extends StatelessWidget {
               const SizedBox(height: 14),
               _HeroPill(
                 label: l10n.cashWalletHealthTitle,
-                value: metrics.hasBurnRateData ? healthText : l10n.cashWalletHealthNotEnoughData,
-                valueColor: metrics.hasBurnRateData ? healthColor : const Color(0xFF64748B),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                remainingDaysText,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF1E1B4B),
-                ),
+                value: healthText,
+                valueColor: healthColor,
               ),
               const SizedBox(height: 10),
               Text(
-                '${l10n.cashWalletDailyBurnTitle}: $burnValue',
+                lastAtmText,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: const Color(0xFF64748B),
                   fontWeight: FontWeight.w600,
-                ),
-              ),
-              if (lastCashInText != null) ...[
-                const SizedBox(height: 6),
-                Text(
-                  lastCashInText,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF64748B),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 10),
-              Text(
-                l10n.cashWalletCurrentBalanceHelper,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF64748B),
-                  height: 1.35,
                 ),
               ),
               const SizedBox(height: 14),
@@ -1703,16 +1681,14 @@ class _TransactionTile extends StatelessWidget {
   }
 }
 
-class _LastCashInEvent {
-  const _LastCashInEvent({
+class _LastAtmWithdrawalEvent {
+  const _LastAtmWithdrawalEvent({
     required this.amount,
     required this.currencyCode,
-    required this.isAtm,
   });
 
   final double amount;
   final String currencyCode;
-  final bool isAtm;
 }
 
 class _SoftLedgerIconButton extends StatelessWidget {

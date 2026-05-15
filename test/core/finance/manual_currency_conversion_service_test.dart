@@ -10,6 +10,7 @@ class _FakeManualExchangeRateRepository implements ManualExchangeRateRepository 
 
   @override
   Future<ManualExchangeRate?> getLatestRate({
+    String? tripId,
     required String fromCurrency,
     required String toCurrency,
   }) async {
@@ -28,6 +29,19 @@ class _FakeManualExchangeRateRepository implements ManualExchangeRateRepository 
   @override
   Future<void> saveRate(ManualExchangeRate rate) async {
     _latestRate = rate;
+  }
+
+  @override
+  Future<List<ManualExchangeRate>> listLatestTripRates(String tripId) async {
+    if (_latestRate == null) {
+      return const [];
+    }
+
+    if (_latestRate!.tripId == tripId) {
+      return [_latestRate!];
+    }
+
+    return const [];
   }
 }
 

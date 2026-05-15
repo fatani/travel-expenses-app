@@ -10,10 +10,16 @@ class ExpenseCreateOutcome {
   const ExpenseCreateOutcome({
     required this.cashBalanceInsufficient,
     required this.noCashBalanceRecorded,
+    required this.missingManualRate,
+    this.missingFromCurrency,
+    this.missingToCurrency,
   });
 
   final bool cashBalanceInsufficient;
   final bool noCashBalanceRecorded;
+  final bool missingManualRate;
+  final String? missingFromCurrency;
+  final String? missingToCurrency;
 }
 
 final expenseControllerProvider =
@@ -95,6 +101,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     double? computedConvertedHomeAmount = convertedHomeAmount;
     double? computedConversionRate = conversionRate;
     String? computedHomeCurrency = homeCurrency;
+    var missingManualRate = false;
 
     if (normalizedHomeCurrency != null &&
         normalizedHomeCurrency.isNotEmpty &&
@@ -104,6 +111,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
         final conversion = await ref
             .read(manualCurrencyConversionServiceProvider)
             .convert(
+              tripId: _tripId,
               amount: normalizedOriginalAmount,
               fromCurrency: normalizedOriginalCurrency,
               toCurrency: normalizedHomeCurrency,
@@ -113,9 +121,12 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           computedConvertedHomeAmount = conversion.convertedAmount;
           computedConversionRate = conversion.rate;
           computedHomeCurrency = normalizedHomeCurrency;
+        } else {
+          missingManualRate = true;
         }
       } catch (_) {
         // Conversion must never block expense saving.
+        missingManualRate = true;
       }
     } else if (normalizedHomeCurrency != null &&
         normalizedHomeCurrency.isNotEmpty &&
@@ -159,9 +170,14 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     return _runMutation(() async {
       final created = await ref.read(expenseRepositoryProvider).createExpense(expense);
       if (!_isCashExpense(created)) {
-        return const ExpenseCreateOutcome(
+        return ExpenseCreateOutcome(
           cashBalanceInsufficient: false,
           noCashBalanceRecorded: false,
+          missingManualRate: missingManualRate,
+          missingFromCurrency:
+              missingManualRate ? normalizedOriginalCurrency : null,
+          missingToCurrency:
+              missingManualRate ? normalizedHomeCurrency : null,
         );
       }
 
@@ -184,12 +200,22 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
               (deductionResult.balanceAfterDeduction + created.transactionAmount)
                       .abs() <
                   0.0001,
+          missingManualRate: missingManualRate,
+          missingFromCurrency:
+              missingManualRate ? normalizedOriginalCurrency : null,
+          missingToCurrency:
+              missingManualRate ? normalizedHomeCurrency : null,
         );
       } catch (_) {
         // Wallet side-effects should not block core expense persistence.
-        return const ExpenseCreateOutcome(
+        return ExpenseCreateOutcome(
           cashBalanceInsufficient: false,
           noCashBalanceRecorded: false,
+          missingManualRate: missingManualRate,
+          missingFromCurrency:
+              missingManualRate ? normalizedOriginalCurrency : null,
+          missingToCurrency:
+              missingManualRate ? normalizedHomeCurrency : null,
         );
       }
     });

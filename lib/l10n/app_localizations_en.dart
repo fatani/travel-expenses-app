@@ -123,6 +123,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormSaveDetails => 'Save details';
 
   @override
+  String get tripFormOverlapTitle => 'Date overlap detected';
+
+  @override
+  String get tripFormOverlapIntro => 'There is an overlap with another trip:';
+
+  @override
+  String get tripFormOverlapHint => 'You can continue if this is a sub-trip or transit.';
+
+  @override
+  String get tripFormOverlapEditDates => 'Edit dates';
+
+  @override
+  String get tripFormOverlapContinue => 'Continue';
+
+  @override
+  String tripFormOverlapMoreTrips(Object count) {
+    return '+ $count more overlapping trip(s)';
+  }
+
+  @override
   String tripFormSaveError(Object error) {
     return 'Failed to save trip: $error';
   }
@@ -187,6 +207,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletHealthNotEnoughData => 'We need cash spending data first';
 
   @override
+  String get cashWalletHealthExcellent => 'Excellent';
+
+  @override
   String get cashWalletHealthHealthy => 'Healthy';
 
   @override
@@ -197,6 +220,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashWalletHealthCritical => 'Critical';
+
+  @override
+  String get cashWalletLastAtmNotAvailable => 'Last ATM: —';
+
+  @override
+  String get cashWalletOnboardingTitle => 'How much cash are you carrying?';
+
+  @override
+  String get cashWalletOnboardingSkip => 'Skip';
+
+  @override
+  String get cashWalletOnboardingCardsOnly => 'I\'ll use cards only';
 
   @override
   String get cashWalletDailyBurnTitle => 'Daily cash burn';
@@ -346,6 +381,67 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get manualExchangeSaved => 'Exchange rate saved';
+
+  @override
+  String get tripExchangeRatesTitle => 'Exchange Rates';
+
+  @override
+  String get tripExchangeRatesSubtitle => 'Manage manual rates for this trip';
+
+  @override
+  String get tripExchangeRatesAddRate => 'Add Rate';
+
+  @override
+  String get tripExchangeRatesEditRate => 'Edit Rate';
+
+  @override
+  String get tripExchangeRatesFromCurrency => 'From currency';
+
+  @override
+  String get tripExchangeRatesToCurrency => 'To currency';
+
+  @override
+  String get tripExchangeRatesRate => 'Rate';
+
+  @override
+  String get tripExchangeRatesSourceNote => 'Source note';
+
+  @override
+  String get tripExchangeRatesSourceHint => 'ATM board, bank app, exchange office...';
+
+  @override
+  String get tripExchangeRatesSaved => 'Exchange rate saved';
+
+  @override
+  String get tripExchangeRatesUpdated => 'Exchange rate updated';
+
+  @override
+  String get tripExchangeRatesEmptyTitle => 'No exchange rates yet';
+
+  @override
+  String get tripExchangeRatesEmptyBody => 'Add your manual rates here. They are used to estimate home-currency values without blocking expense saving.';
+
+  @override
+  String get tripExchangeRatesRateLabel => 'Rate';
+
+  @override
+  String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency) {
+    return '1 $fromCurrency = $rate $toCurrency';
+  }
+
+  @override
+  String get tripExchangeRatesValidationCurrency => 'Use a valid 3-letter currency code.';
+
+  @override
+  String get tripExchangeRatesValidationRate => 'Enter a valid rate greater than zero.';
+
+  @override
+  String get tripExchangeRatesLoadError => 'Could not load exchange rates.';
+
+  @override
+  String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency) {
+    return 'Expense saved. Missing manual rate for $fromCurrency -> $toCurrency.';
+  }
 
   @override
   String get tripDetailsSearchLabel => 'Search expenses';

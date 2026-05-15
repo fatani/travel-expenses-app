@@ -16,6 +16,7 @@ import '../../../core/theme/design_tokens.dart';
 import '../../export/presentation/export_menu.dart';
 import '../../cash_wallet/domain/trip_cash_balance.dart';
 import '../../cash_wallet/presentation/trip_cash_wallet_screen.dart';
+import '../../exchange_rates/presentation/trip_exchange_rates_screen.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../reports/presentation/trip_reports_screen.dart';
 import '../../trips/domain/trip.dart';
@@ -111,6 +112,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           cashWalletVersion: _cashWalletVersion,
           onAddExpense: () => _openQuickAddSheet(expenses),
           onOpenCashWallet: _openCashWallet,
+          onOpenExchangeRates: _openExchangeRates,
           onAddViaSms: _openSmsExpenseScreen,
           onFixDates: _openTripEditor,
           onEditExpense: (expense) => _openExpenseForm(expense: expense),
@@ -301,28 +303,54 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     });
   }
 
+  Future<void> _openExchangeRates() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => TripExchangeRatesScreen(trip: _trip),
+      ),
+    );
+  }
+
   void _showCashGuidanceIfNeeded(ExpenseCreateOutcome? outcome) {
-    if (!mounted || outcome == null || !outcome.cashBalanceInsufficient) {
+    if (!mounted || outcome == null) {
       return;
     }
 
     final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          outcome.noCashBalanceRecorded
-              ? l10n.cashBalanceNoRecordedWarning
-              : l10n.cashBalanceInsufficientWarning,
+
+    if (outcome.cashBalanceInsufficient) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            outcome.noCashBalanceRecorded
+                ? l10n.cashBalanceNoRecordedWarning
+                : l10n.cashBalanceInsufficientWarning,
+          ),
+          action: outcome.noCashBalanceRecorded
+              ? SnackBarAction(
+                  label: l10n.cashBalanceAddCashAction,
+                  onPressed: _openCashWallet,
+                )
+              : null,
         ),
-        action: outcome.noCashBalanceRecorded
-            ? SnackBarAction(
-                label: l10n.cashBalanceAddCashAction,
-                onPressed: _openCashWallet,
-              )
-            : null,
-      ),
-    );
+      );
+    }
+
+    if (outcome.missingManualRate) {
+      final from = outcome.missingFromCurrency ?? '';
+      final to = outcome.missingToCurrency ?? '';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          behavior: SnackBarBehavior.floating,
+          content: Text(l10n.tripExchangeRatesMissingRateWarning(from, to)),
+          action: SnackBarAction(
+            label: l10n.tripExchangeRatesAddRate,
+            onPressed: _openExchangeRates,
+          ),
+        ),
+      );
+    }
   }
 
   Future<void> _confirmDelete(Expense expense) async {
@@ -385,6 +413,7 @@ class _TripDetailsContent extends StatefulWidget {
     required this.cashWalletVersion,
     required this.onAddExpense,
     required this.onOpenCashWallet,
+    required this.onOpenExchangeRates,
     required this.onAddViaSms,
     this.onFixDates,
     required this.onEditExpense,
@@ -396,6 +425,7 @@ class _TripDetailsContent extends StatefulWidget {
   final int cashWalletVersion;
   final VoidCallback onAddExpense;
   final VoidCallback onOpenCashWallet;
+  final VoidCallback onOpenExchangeRates;
   final VoidCallback onAddViaSms;
   final VoidCallback? onFixDates;
   final ValueChanged<Expense> onEditExpense;
@@ -612,6 +642,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             label: l10n.tripDetailsAddViaSms,
             icon: Icons.sms_outlined,
             onTap: widget.onAddViaSms,
+          ),
+          const SizedBox(height: 12),
+          _OutlineActionButton(
+            label: l10n.tripExchangeRatesTitle,
+            subtitle: l10n.tripExchangeRatesSubtitle,
+            icon: Icons.currency_exchange,
+            onTap: widget.onOpenExchangeRates,
           ),
           const SizedBox(height: 20),
           Container(
@@ -1297,6 +1334,10 @@ class _ExpenseCard extends StatelessWidget {
         (useCharged || useBilled) &&
         expense.transactionCurrency.toUpperCase() !=
             primaryCurrency.toUpperCase();
+    final hasHomeConversion =
+      expense.convertedHomeAmount != null &&
+      (expense.homeCurrency ?? '').isNotEmpty &&
+      (expense.originalCurrency ?? '').isNotEmpty;
 
     final dateFormatter = DateFormat(
       expense.spentAt.hour != 0 || expense.spentAt.minute != 0
@@ -1401,6 +1442,24 @@ class _ExpenseCard extends StatelessWidget {
                           textDirection: ui.TextDirection.ltr,
                           style: mutedStyle,
                         ),
+                      ],
+                      if (hasHomeConversion) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          '${_formatAmountCurrencyLtr(expense.originalAmount ?? expense.transactionAmount, expense.originalCurrency ?? expense.transactionCurrency)} -> ${_formatAmountCurrencyLtr(expense.convertedHomeAmount!, expense.homeCurrency!)}',
+                          textAlign: TextAlign.end,
+                          textDirection: ui.TextDirection.ltr,
+                          style: mutedStyle,
+                        ),
+                        if (expense.conversionRate != null) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            '${l10n.tripExchangeRatesRateLabel}: 1 ${expense.originalCurrency ?? expense.transactionCurrency} = ${expense.conversionRate!.toStringAsFixed(6)} ${expense.homeCurrency!}',
+                            textAlign: TextAlign.end,
+                            textDirection: ui.TextDirection.ltr,
+                            style: mutedStyle,
+                          ),
+                        ],
                       ],
                       if (expense.feesAmount != null &&
                           (expense.feesCurrency ?? '').isNotEmpty) ...[
