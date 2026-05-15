@@ -561,7 +561,7 @@ class _TripCard extends StatelessWidget {
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
-                        _formatDateRange(trip, localeName, l10n, isArabic),
+                        _formatDateRange(trip, localeName, l10n, isArabic, status),
                         style: TextStyle(
                           color: hasDates
                               ? const Color(0xFF334155)
@@ -641,16 +641,49 @@ class _TripCard extends StatelessWidget {
     String localeName,
     AppLocalizations l10n,
     bool isArabic,
+    TripTimelineStatus status,
   ) {
     final start = trip.startDate;
     final end = trip.endDate;
 
     if (start == null || end == null) {
-      return isArabic ? 'التواريخ تحتاج تحديد' : 'Dates need attention';
+      return isArabic ? 'التواريخ غير محددة' : 'Dates not set';
     }
 
-    final formatter = DateFormat('dd MMM yyyy', localeName);
-    return '${formatter.format(start)} - ${formatter.format(end)}';
+    final shortFmt = DateFormat('d MMM', localeName);
+    final fullFmt = DateFormat('d MMM yyyy', localeName);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final startDay = DateTime(start.year, start.month, start.day);
+    final endDay = DateTime(end.year, end.month, end.day);
+
+    switch (status) {
+      case TripTimelineStatus.active:
+        final dayOfTrip = today.difference(startDay).inDays + 1;
+        final totalDays = endDay.difference(startDay).inDays + 1;
+        final daysLeft = endDay.difference(today).inDays;
+        if (isArabic) {
+          final suffix = daysLeft == 0 ? 'ينتهي اليوم' : 'ينتهي ${shortFmt.format(end)}';
+          return 'يوم $dayOfTrip من $totalDays · $suffix';
+        }
+        final suffix = daysLeft == 0 ? 'ends today' : 'ends ${shortFmt.format(end)}';
+        return 'Day $dayOfTrip of $totalDays · $suffix';
+
+      case TripTimelineStatus.upcoming:
+        final daysUntil = startDay.difference(today).inDays;
+        if (isArabic) {
+          if (daysUntil == 0) return 'يبدأ اليوم · ${shortFmt.format(start)}';
+          if (daysUntil == 1) return 'يبدأ غدًا · ${shortFmt.format(start)}';
+          return 'يبدأ خلال $daysUntil أيام · ${shortFmt.format(start)}';
+        }
+        if (daysUntil == 0) return 'Starts today · ${shortFmt.format(start)}';
+        if (daysUntil == 1) return 'Starts tomorrow · ${shortFmt.format(start)}';
+        return 'Starts in $daysUntil days · ${shortFmt.format(start)}';
+
+      case TripTimelineStatus.completed:
+      case TripTimelineStatus.datesPending:
+        return '${fullFmt.format(start)} – ${fullFmt.format(end)}';
+    }
   }
 
   String _formatBudget(Trip trip) {
@@ -674,7 +707,7 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final statusUi = switch (status) {
       TripTimelineStatus.datesPending => (
-        label: isArabic ? 'ناقص' : 'Needs Date',
+        label: isArabic ? 'بلا تواريخ' : 'No dates',
         background: const Color(0xFFFEF3C7),
         foreground: const Color(0xFFB45309),
       ),
@@ -684,7 +717,7 @@ class _StatusChip extends StatelessWidget {
         foreground: const Color(0xFF1D4ED8),
       ),
       TripTimelineStatus.active => (
-        label: isArabic ? 'نشطة' : 'Active',
+        label: isArabic ? 'في سفر' : 'Traveling',
         background: const Color(0xFFDCFCE7),
         foreground: const Color(0xFF166534),
       ),
