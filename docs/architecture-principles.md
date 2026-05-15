@@ -77,6 +77,8 @@ state.when(
 - **Notifier extends StateNotifier** – sync operations (settings, local state)
 - **Provider naming** – `[feature][name]Provider` or `[name]ControllerProvider`
 
+> **Migration Note:** We are transitioning from `*Controller` naming to `*Notifier` naming for consistency with Riverpod conventions. During Phase 1B, both patterns will coexist. New code should use `*Notifier`.
+
 ### Why Riverpod
 
 - **Compile-time safe** (no runtime key issues like Provider package)
@@ -216,7 +218,8 @@ import '../data/repositories/...';
 ### Feature Bloat
 - ❌ No database connection pooling (single connection per app)
 - ❌ No caching layer (SQLite IS the cache)
-- ❌ No analytics SDK integration
+- ❌ No behavioral tracking or event analytics (Sentry, Firebase Analytics, Mixpanel, etc.)
+  - Crash reporting may be acceptable in future if privacy-safe and opt-in; see Product Principles
 - ❌ No third-party API clients (offline-first, not cloud-dependent)
 
 ### Common Anti-Patterns

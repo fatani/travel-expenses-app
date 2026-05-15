@@ -244,7 +244,7 @@ Users should feel confident and in control when tracking expenses. The app remov
 - **Reports**: Export options, past exports
 
 ### Navigation Flow
-- **No deep nesting** – most views 1-2 taps from home
+- **Minimize nesting** – avoid >3 levels deep; most common workflows are ≤2 taps from home
 - **Back button** always returns to previous context
 - **No modal stacking** – close current dialog before opening another
 - **Consistent back gesture** (swipe on iOS, system back on Android)

@@ -89,6 +89,34 @@ If a feature doesn't pass all five, it's deferred or rejected.
 
 ---
 
+## When Principles Conflict
+
+Occasionally, product, architecture, and UX principles may pull in different directions. Priority order:
+
+1. **User clarity wins** – If it confuses travelers, reject or redesign the feature
+2. **Offline-first is non-negotiable** – If it requires cloud dependency, defer it
+3. **Pragmatic implementation second** – If implementation is too complex, trade scope for simplicity
+4. **Privacy always** – If it requires data sharing, explicitly deny unless user explicitly consents
+
+When in doubt, ask: *Does this make the traveler's life simpler or more complex?*
+
+---
+
+## Feature Evaluation Checklist
+
+Before proposing a feature, verify:
+
+- [ ] Solves a **real traveler problem** (not "would be nice to have")
+- [ ] **Reduces cognitive load** or keeps it neutral (never adds it)
+- [ ] Works **100% offline** (no cloud, no required API)
+- [ ] Implementation is **pragmatic** (no over-engineering or gold-plating)
+- [ ] **Respects privacy** (no data sharing, no tracking, no analytics collection)
+- [ ] Can a **new user understand it** in <2 minutes (no hidden workflows)
+
+If all boxes check → proceed. If any fail → reconsider or redesign.
+
+---
+
 ## Roadmap Philosophy
 
 Phases are **stability first, then depth**:
