@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../../../core/extensions/rtl_extension.dart';
 import '../../expenses/presentation/trip_details_screen.dart';
 import '../../global_reports/presentation/global_reports_screen.dart';
 import '../../settings/presentation/settings_controller.dart';
@@ -22,8 +23,7 @@ class TripsListScreen extends ConsumerWidget {
     final tripsState = ref.watch(tripsControllerProvider);
     final settingsState = ref.watch(settingsControllerProvider);
     final currentLocaleCode = settingsState.valueOrNull?.localeCode ?? 'ar';
-    final isArabic =
-      Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+    final isArabic = context.isRTL;
     final showOnlyLanguageToggle = tripsState.maybeWhen(
       data: (trips) => trips.isEmpty,
       orElse: () => false,

@@ -6,6 +6,7 @@ import 'package:travel_expenses/l10n/app_localizations.dart';
 import '../core/theme/app_theme.dart';
 import '../features/settings/presentation/settings_controller.dart';
 import 'app_router.dart';
+import '../l10n/supported_locales.dart';
 
 class TravelExpensesApp extends ConsumerWidget {
   const TravelExpensesApp({super.key});
@@ -13,7 +14,7 @@ class TravelExpensesApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settingsState = ref.watch(settingsControllerProvider);
-    final localeCode = settingsState.valueOrNull?.localeCode ?? 'ar';
+    final localeCode = settingsState.valueOrNull?.localeCode ?? SupportedLocales.arabic;
 
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context)!.appName,
