@@ -365,43 +365,43 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashBalanceAddCashAction => 'إضافة كاش';
 
   @override
-  String get manualExchangeAddRate => 'إضافة سعر صرف';
+  String get manualExchangeAddRate => 'إضافة تقدير للعملة المحلية';
 
   @override
-  String get manualExchangeFromCurrency => 'من عملة';
+  String get manualExchangeFromCurrency => 'دفعت بـ';
 
   @override
-  String get manualExchangeToCurrency => 'إلى عملة';
+  String get manualExchangeToCurrency => 'تقدير بالعملة المحلية';
 
   @override
-  String get manualExchangeRate => 'سعر الصرف';
+  String get manualExchangeRate => 'سعر صرف تقريبي';
 
   @override
   String get manualExchangeSourceNote => 'ملاحظة المصدر';
 
   @override
-  String get manualExchangeSaved => 'تم حفظ سعر الصرف';
+  String get manualExchangeSaved => 'تم حفظ التقدير';
 
   @override
-  String get tripExchangeRatesTitle => 'أسعار التحويل';
+  String get tripExchangeRatesTitle => 'تقديرات العملة المحلية';
 
   @override
-  String get tripExchangeRatesSubtitle => 'إدارة أسعار التحويل اليدوية لهذه الرحلة';
+  String get tripExchangeRatesSubtitle => 'أضف تقديرات بسيطة لعرض المصاريف بعملة إقامتك';
 
   @override
-  String get tripExchangeRatesAddRate => 'إضافة سعر';
+  String get tripExchangeRatesAddRate => 'إضافة تقدير';
 
   @override
-  String get tripExchangeRatesEditRate => 'تعديل السعر';
+  String get tripExchangeRatesEditRate => 'تعديل التقدير';
 
   @override
-  String get tripExchangeRatesFromCurrency => 'من عملة';
+  String get tripExchangeRatesFromCurrency => 'دفعت بـ';
 
   @override
-  String get tripExchangeRatesToCurrency => 'إلى عملة';
+  String get tripExchangeRatesToCurrency => 'تقدير بالعملة المحلية';
 
   @override
-  String get tripExchangeRatesRate => 'السعر';
+  String get tripExchangeRatesRate => 'سعر صرف تقريبي';
 
   @override
   String get tripExchangeRatesSourceNote => 'ملاحظة المصدر';
@@ -410,37 +410,37 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripExchangeRatesSourceHint => 'لوحة الصراف، تطبيق البنك، مكتب صرافة...';
 
   @override
-  String get tripExchangeRatesSaved => 'تم حفظ سعر التحويل';
+  String get tripExchangeRatesSaved => 'تم حفظ التقدير';
 
   @override
-  String get tripExchangeRatesUpdated => 'تم تحديث سعر التحويل';
+  String get tripExchangeRatesUpdated => 'تم تحديث التقدير';
 
   @override
-  String get tripExchangeRatesEmptyTitle => 'لا توجد أسعار تحويل بعد';
+  String get tripExchangeRatesEmptyTitle => 'لا توجد تقديرات بعد';
 
   @override
-  String get tripExchangeRatesEmptyBody => 'أضف أسعارك اليدوية هنا. تُستخدم لتقدير قيمة المصروف بعملة الوطن بدون منع حفظ المصروف.';
+  String get tripExchangeRatesEmptyBody => 'أضف تقديرات سريعة لهذه الرحلة. تساعد على عرض المصاريف بعملة إقامتك بدون تعطيل حفظ المصروف.';
 
   @override
-  String get tripExchangeRatesRateLabel => 'السعر';
+  String get tripExchangeRatesRateLabel => 'السعر التقريبي';
 
   @override
   String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency) {
-    return '1 $fromCurrency = $rate $toCurrency';
+    return '1 $fromCurrency ~ $rate $toCurrency';
   }
 
   @override
   String get tripExchangeRatesValidationCurrency => 'استخدم رمز عملة صحيح من 3 أحرف.';
 
   @override
-  String get tripExchangeRatesValidationRate => 'أدخل سعر تحويل صحيح أكبر من صفر.';
+  String get tripExchangeRatesValidationRate => 'أدخل سعر صرف تقريبي صحيح أكبر من صفر.';
 
   @override
-  String get tripExchangeRatesLoadError => 'تعذر تحميل أسعار التحويل.';
+  String get tripExchangeRatesLoadError => 'تعذر تحميل تقديرات العملة المحلية.';
 
   @override
   String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency) {
-    return 'تم حفظ المصروف. لا يوجد سعر تحويل يدوي لـ $fromCurrency -> $toCurrency.';
+    return 'تم حفظ المصروف. أضف سعراً تقريبياً لتقدير $fromCurrency بعملة إقامتك ($toCurrency).';
   }
 
   @override
@@ -686,7 +686,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormPaymentNetworkLabel => 'شبكة البطاقة';
 
   @override
-  String get expenseFormPaymentChannelLabel => 'قناة الدفع';
+  String get expenseFormPaymentChannelLabel => 'كيف دفعت';
 
   @override
   String get expenseFormDateLabel => 'تاريخ المصروف';
@@ -944,7 +944,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsByPaymentNetwork => 'حسب شبكة البطاقة';
 
   @override
-  String get tripReportsByPaymentChannel => 'حسب قناة الدفع';
+  String get tripReportsByPaymentChannel => 'حسب طريقة الدفع';
 
   @override
   String get tripReportsOverview => 'نظرة عامة';

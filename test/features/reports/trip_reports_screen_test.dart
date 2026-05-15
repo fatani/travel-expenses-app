@@ -182,7 +182,7 @@ void main() {
 
     expect(find.textContaining('transaction currency'), findsOneWidget);
     expect(find.text('By payment network'), findsOneWidget);
-    expect(find.text('By payment channel'), findsOneWidget);
+    expect(find.text('By payment method'), findsOneWidget);
   });
 
   testWidgets('Trip report never shows behavioral smart summary', (

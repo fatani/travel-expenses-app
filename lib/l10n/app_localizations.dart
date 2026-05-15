@@ -758,25 +758,25 @@ abstract class AppLocalizations {
   /// No description provided for @manualExchangeAddRate.
   ///
   /// In en, this message translates to:
-  /// **'Add exchange rate'**
+  /// **'Add local estimate'**
   String get manualExchangeAddRate;
 
   /// No description provided for @manualExchangeFromCurrency.
   ///
   /// In en, this message translates to:
-  /// **'From currency'**
+  /// **'Paid with'**
   String get manualExchangeFromCurrency;
 
   /// No description provided for @manualExchangeToCurrency.
   ///
   /// In en, this message translates to:
-  /// **'To currency'**
+  /// **'Local currency estimate'**
   String get manualExchangeToCurrency;
 
   /// No description provided for @manualExchangeRate.
   ///
   /// In en, this message translates to:
-  /// **'Rate'**
+  /// **'Approximate exchange rate'**
   String get manualExchangeRate;
 
   /// No description provided for @manualExchangeSourceNote.
@@ -788,49 +788,49 @@ abstract class AppLocalizations {
   /// No description provided for @manualExchangeSaved.
   ///
   /// In en, this message translates to:
-  /// **'Exchange rate saved'**
+  /// **'Local estimate saved'**
   String get manualExchangeSaved;
 
   /// No description provided for @tripExchangeRatesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Exchange Rates'**
+  /// **'Local Currency Estimates'**
   String get tripExchangeRatesTitle;
 
   /// No description provided for @tripExchangeRatesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Manage manual rates for this trip'**
+  /// **'Add simple estimates to view expenses in your home currency'**
   String get tripExchangeRatesSubtitle;
 
   /// No description provided for @tripExchangeRatesAddRate.
   ///
   /// In en, this message translates to:
-  /// **'Add Rate'**
+  /// **'Add Estimate'**
   String get tripExchangeRatesAddRate;
 
   /// No description provided for @tripExchangeRatesEditRate.
   ///
   /// In en, this message translates to:
-  /// **'Edit Rate'**
+  /// **'Edit Estimate'**
   String get tripExchangeRatesEditRate;
 
   /// No description provided for @tripExchangeRatesFromCurrency.
   ///
   /// In en, this message translates to:
-  /// **'From currency'**
+  /// **'Paid with'**
   String get tripExchangeRatesFromCurrency;
 
   /// No description provided for @tripExchangeRatesToCurrency.
   ///
   /// In en, this message translates to:
-  /// **'To currency'**
+  /// **'Local currency estimate'**
   String get tripExchangeRatesToCurrency;
 
   /// No description provided for @tripExchangeRatesRate.
   ///
   /// In en, this message translates to:
-  /// **'Rate'**
+  /// **'Approximate exchange rate'**
   String get tripExchangeRatesRate;
 
   /// No description provided for @tripExchangeRatesSourceNote.
@@ -848,37 +848,37 @@ abstract class AppLocalizations {
   /// No description provided for @tripExchangeRatesSaved.
   ///
   /// In en, this message translates to:
-  /// **'Exchange rate saved'**
+  /// **'Estimate saved'**
   String get tripExchangeRatesSaved;
 
   /// No description provided for @tripExchangeRatesUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Exchange rate updated'**
+  /// **'Estimate updated'**
   String get tripExchangeRatesUpdated;
 
   /// No description provided for @tripExchangeRatesEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'No exchange rates yet'**
+  /// **'No estimates yet'**
   String get tripExchangeRatesEmptyTitle;
 
   /// No description provided for @tripExchangeRatesEmptyBody.
   ///
   /// In en, this message translates to:
-  /// **'Add your manual rates here. They are used to estimate home-currency values without blocking expense saving.'**
+  /// **'Add quick estimates for this trip. They help show expenses in your home currency without blocking expense saving.'**
   String get tripExchangeRatesEmptyBody;
 
   /// No description provided for @tripExchangeRatesRateLabel.
   ///
   /// In en, this message translates to:
-  /// **'Rate'**
+  /// **'Approximate rate'**
   String get tripExchangeRatesRateLabel;
 
   /// No description provided for @tripExchangeRatesRatePreview.
   ///
   /// In en, this message translates to:
-  /// **'1 {fromCurrency} = {rate} {toCurrency}'**
+  /// **'1 {fromCurrency} ~ {rate} {toCurrency}'**
   String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency);
 
   /// No description provided for @tripExchangeRatesValidationCurrency.
@@ -890,19 +890,19 @@ abstract class AppLocalizations {
   /// No description provided for @tripExchangeRatesValidationRate.
   ///
   /// In en, this message translates to:
-  /// **'Enter a valid rate greater than zero.'**
+  /// **'Enter a valid approximate rate greater than zero.'**
   String get tripExchangeRatesValidationRate;
 
   /// No description provided for @tripExchangeRatesLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Could not load exchange rates.'**
+  /// **'Could not load local currency estimates.'**
   String get tripExchangeRatesLoadError;
 
   /// No description provided for @tripExchangeRatesMissingRateWarning.
   ///
   /// In en, this message translates to:
-  /// **'Expense saved. Missing manual rate for {fromCurrency} -> {toCurrency}.'**
+  /// **'Expense saved. Add an approximate rate to estimate {fromCurrency} in your home currency ({toCurrency}).'**
   String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency);
 
   /// No description provided for @tripDetailsSearchLabel.
@@ -1376,7 +1376,7 @@ abstract class AppLocalizations {
   /// No description provided for @expenseFormPaymentChannelLabel.
   ///
   /// In en, this message translates to:
-  /// **'Payment channel'**
+  /// **'How you paid'**
   String get expenseFormPaymentChannelLabel;
 
   /// No description provided for @expenseFormDateLabel.
@@ -1868,7 +1868,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripReportsByPaymentChannel.
   ///
   /// In en, this message translates to:
-  /// **'By payment channel'**
+  /// **'By payment method'**
   String get tripReportsByPaymentChannel;
 
   /// No description provided for @tripReportsOverview.

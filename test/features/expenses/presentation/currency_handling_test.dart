@@ -360,7 +360,7 @@ void main() {
       expect(find.text('Amount *'), findsOneWidget);
       expect(find.text('Currency *'), findsOneWidget);
       expect(find.text('Category *'), findsOneWidget);
-      expect(find.text('Payment channel *'), findsOneWidget);
+      expect(find.text('How you paid *'), findsOneWidget);
       expect(find.text('Expense date *'), findsOneWidget);
       expect(find.text('Expense time *'), findsOneWidget);
       expect(find.text('This field is required.'), findsNothing);
@@ -501,7 +501,7 @@ void main() {
       expect(find.text('Amount *'), findsOneWidget);
       expect(find.text('Currency *'), findsOneWidget);
       expect(find.text('Category *'), findsOneWidget);
-      expect(find.text('Payment channel *'), findsOneWidget);
+      expect(find.text('How you paid *'), findsOneWidget);
       expect(find.text('Expense date *'), findsOneWidget);
       expect(find.text('Expense time *'), findsOneWidget);
       expect(find.text('This field is required.'), findsNothing);

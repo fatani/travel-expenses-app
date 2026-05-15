@@ -365,43 +365,43 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashBalanceAddCashAction => 'Add Cash';
 
   @override
-  String get manualExchangeAddRate => 'Add exchange rate';
+  String get manualExchangeAddRate => 'Add local estimate';
 
   @override
-  String get manualExchangeFromCurrency => 'From currency';
+  String get manualExchangeFromCurrency => 'Paid with';
 
   @override
-  String get manualExchangeToCurrency => 'To currency';
+  String get manualExchangeToCurrency => 'Local currency estimate';
 
   @override
-  String get manualExchangeRate => 'Rate';
+  String get manualExchangeRate => 'Approximate exchange rate';
 
   @override
   String get manualExchangeSourceNote => 'Source note';
 
   @override
-  String get manualExchangeSaved => 'Exchange rate saved';
+  String get manualExchangeSaved => 'Local estimate saved';
 
   @override
-  String get tripExchangeRatesTitle => 'Exchange Rates';
+  String get tripExchangeRatesTitle => 'Local Currency Estimates';
 
   @override
-  String get tripExchangeRatesSubtitle => 'Manage manual rates for this trip';
+  String get tripExchangeRatesSubtitle => 'Add simple estimates to view expenses in your home currency';
 
   @override
-  String get tripExchangeRatesAddRate => 'Add Rate';
+  String get tripExchangeRatesAddRate => 'Add Estimate';
 
   @override
-  String get tripExchangeRatesEditRate => 'Edit Rate';
+  String get tripExchangeRatesEditRate => 'Edit Estimate';
 
   @override
-  String get tripExchangeRatesFromCurrency => 'From currency';
+  String get tripExchangeRatesFromCurrency => 'Paid with';
 
   @override
-  String get tripExchangeRatesToCurrency => 'To currency';
+  String get tripExchangeRatesToCurrency => 'Local currency estimate';
 
   @override
-  String get tripExchangeRatesRate => 'Rate';
+  String get tripExchangeRatesRate => 'Approximate exchange rate';
 
   @override
   String get tripExchangeRatesSourceNote => 'Source note';
@@ -410,37 +410,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripExchangeRatesSourceHint => 'ATM board, bank app, exchange office...';
 
   @override
-  String get tripExchangeRatesSaved => 'Exchange rate saved';
+  String get tripExchangeRatesSaved => 'Estimate saved';
 
   @override
-  String get tripExchangeRatesUpdated => 'Exchange rate updated';
+  String get tripExchangeRatesUpdated => 'Estimate updated';
 
   @override
-  String get tripExchangeRatesEmptyTitle => 'No exchange rates yet';
+  String get tripExchangeRatesEmptyTitle => 'No estimates yet';
 
   @override
-  String get tripExchangeRatesEmptyBody => 'Add your manual rates here. They are used to estimate home-currency values without blocking expense saving.';
+  String get tripExchangeRatesEmptyBody => 'Add quick estimates for this trip. They help show expenses in your home currency without blocking expense saving.';
 
   @override
-  String get tripExchangeRatesRateLabel => 'Rate';
+  String get tripExchangeRatesRateLabel => 'Approximate rate';
 
   @override
   String tripExchangeRatesRatePreview(Object fromCurrency, Object rate, Object toCurrency) {
-    return '1 $fromCurrency = $rate $toCurrency';
+    return '1 $fromCurrency ~ $rate $toCurrency';
   }
 
   @override
   String get tripExchangeRatesValidationCurrency => 'Use a valid 3-letter currency code.';
 
   @override
-  String get tripExchangeRatesValidationRate => 'Enter a valid rate greater than zero.';
+  String get tripExchangeRatesValidationRate => 'Enter a valid approximate rate greater than zero.';
 
   @override
-  String get tripExchangeRatesLoadError => 'Could not load exchange rates.';
+  String get tripExchangeRatesLoadError => 'Could not load local currency estimates.';
 
   @override
   String tripExchangeRatesMissingRateWarning(Object fromCurrency, Object toCurrency) {
-    return 'Expense saved. Missing manual rate for $fromCurrency -> $toCurrency.';
+    return 'Expense saved. Add an approximate rate to estimate $fromCurrency in your home currency ($toCurrency).';
   }
 
   @override
@@ -686,7 +686,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormPaymentNetworkLabel => 'Card network';
 
   @override
-  String get expenseFormPaymentChannelLabel => 'Payment channel';
+  String get expenseFormPaymentChannelLabel => 'How you paid';
 
   @override
   String get expenseFormDateLabel => 'Expense date';
@@ -944,7 +944,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsByPaymentNetwork => 'By payment network';
 
   @override
-  String get tripReportsByPaymentChannel => 'By payment channel';
+  String get tripReportsByPaymentChannel => 'By payment method';
 
   @override
   String get tripReportsOverview => 'Overview';
