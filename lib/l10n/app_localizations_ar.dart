@@ -356,13 +356,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get cashBalanceInsufficientWarning => 'رصيد الكاش غير كافٍ';
+  String get cashBalanceInsufficientWarning => 'قد يحتاج رصيد الكاش إلى تعديل';
 
   @override
-  String get cashBalanceNoRecordedWarning => 'لا يوجد رصيد كاش مسجل لهذه الرحلة';
+  String get cashBalanceNoRecordedWarning => 'لم يبدأ تتبع الكاش بعد';
 
   @override
-  String get cashBalanceAddCashAction => 'إضافة كاش';
+  String get cashBalanceAddCashAction => 'إضافة رصيد كاش';
+
+  @override
+  String get cashTrackingNotStarted => 'لم يبدأ تتبع الكاش بعد';
 
   @override
   String get manualExchangeAddRate => 'إضافة تقدير للمصاريف';

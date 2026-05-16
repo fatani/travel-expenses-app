@@ -356,13 +356,16 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cashBalanceInsufficientWarning => 'Cash balance is insufficient';
+  String get cashBalanceInsufficientWarning => 'Cash balance may need adjustment';
 
   @override
-  String get cashBalanceNoRecordedWarning => 'No cash balance recorded for this trip';
+  String get cashBalanceNoRecordedWarning => 'Cash tracking hasn’t started';
 
   @override
-  String get cashBalanceAddCashAction => 'Add Cash';
+  String get cashBalanceAddCashAction => 'Add cash balance';
+
+  @override
+  String get cashTrackingNotStarted => 'Cash tracking hasn’t started';
 
   @override
   String get manualExchangeAddRate => 'Add spending estimate';

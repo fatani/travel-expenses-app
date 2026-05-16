@@ -88,8 +88,11 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   }
 
   bool get _hasCashSetup {
-    return _balances.isNotEmpty ||
-        _transactions.any((transaction) => transaction.type != CashTransactionType.cashExpenseDeduction);
+      return _transactions.any(
+        (transaction) =>
+        transaction.type != CashTransactionType.cashExpenseDeduction,
+      ) ||
+      _balances.any((balance) => balance.balanceAmount > 0);
   }
 
   _CashHealth get _cashHealth {
@@ -1039,7 +1042,7 @@ class _CashHeroCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            l10n.cashWalletEmptyTitle,
+                            l10n.cashTrackingNotStarted,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: const Color(0xFF1E1B4B),
@@ -1047,7 +1050,7 @@ class _CashHeroCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            l10n.cashWalletEmptySubtitle,
+                            l10n.cashBalanceInsufficientWarning,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: const Color(0xFF475569),
                               height: 1.4,
@@ -1170,7 +1173,7 @@ class _CashHeroCard extends StatelessWidget {
                 children: [
                   Expanded(
                     child: _HeroPrimaryActionButton(
-                      label: l10n.cashWalletAddCash,
+                      label: l10n.cashBalanceAddCashAction,
                       onPressed: onAddCash,
                     ),
                   ),

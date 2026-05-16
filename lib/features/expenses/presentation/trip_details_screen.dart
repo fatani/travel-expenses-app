@@ -15,6 +15,7 @@ import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../export/presentation/export_menu.dart';
 import '../../cash_wallet/domain/trip_cash_balance.dart';
+import '../../cash_wallet/domain/cash_transaction.dart';
 import '../../cash_wallet/presentation/trip_cash_wallet_screen.dart';
 import '../../exchange_rates/presentation/trip_exchange_rates_screen.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
@@ -442,7 +443,7 @@ class _TripDetailsContent extends StatefulWidget {
 
 class _TripDetailsContentState extends State<_TripDetailsContent> {
   late final TextEditingController _searchController;
-  late Future<List<TripCashBalance>> _cashBalancesFuture;
+  late Future<_CashWalletCtaState> _cashWalletCtaFuture;
   String _searchQuery = '';
   String? _selectedCategory;
   String? _selectedPaymentMethod;
@@ -452,7 +453,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _cashBalancesFuture = _loadCashBalances();
+    _cashWalletCtaFuture = _loadCashWalletCtaState();
   }
 
   @override
@@ -460,7 +461,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.trip.id != widget.trip.id ||
         oldWidget.cashWalletVersion != widget.cashWalletVersion) {
-      _cashBalancesFuture = _loadCashBalances();
+      _cashWalletCtaFuture = _loadCashWalletCtaState();
     }
   }
 
@@ -470,16 +471,42 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     super.dispose();
   }
 
-  Future<List<TripCashBalance>> _loadCashBalances() async {
+  Future<_CashWalletCtaState> _loadCashWalletCtaState() async {
     try {
       final repository = ProviderScope.containerOf(
         context,
         listen: false,
       ).read(cashWalletRepositoryProvider);
-      return await repository.getBalancesByTrip(widget.trip.id);
+      final balances = await repository.getBalancesByTrip(widget.trip.id);
+      final transactions = await repository.getRecentTransactionsByTrip(
+        widget.trip.id,
+      );
+
+      return _CashWalletCtaState(
+        balances: balances,
+        hasTrackingStarted: _hasCashTrackingStarted(
+          balances: balances,
+          transactions: transactions,
+        ),
+      );
     } catch (_) {
-      return const [];
+      return const _CashWalletCtaState(
+        balances: [],
+        hasTrackingStarted: false,
+      );
     }
+  }
+
+  bool _hasCashTrackingStarted({
+    required List<TripCashBalance> balances,
+    required List<CashTransaction> transactions,
+  }) {
+    final hasIntentionalCashTx = transactions.any(
+      (transaction) =>
+          transaction.type != CashTransactionType.cashExpenseDeduction,
+    );
+    final hasPositiveBalance = balances.any((balance) => balance.balanceAmount > 0);
+    return hasIntentionalCashTx || hasPositiveBalance;
   }
 
   _PrimaryCashBalance _resolvePrimaryCashBalance({
@@ -623,11 +650,16 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             onTap: widget.onAddExpense,
           ),
           const SizedBox(height: 12),
-          FutureBuilder<List<TripCashBalance>>(
-            future: _cashBalancesFuture,
+          FutureBuilder<_CashWalletCtaState>(
+            future: _cashWalletCtaFuture,
             builder: (context, snapshot) {
+              final cashCtaState = snapshot.data ??
+                  const _CashWalletCtaState(
+                    balances: [],
+                    hasTrackingStarted: false,
+                  );
               final primaryBalance = _resolvePrimaryCashBalance(
-                balances: snapshot.data ?? const [],
+                balances: cashCtaState.balances,
                 preferredCurrency: widget.trip.destinationCurrency,
               );
               final amountText = _formatAmountCurrencyLtr(
@@ -636,8 +668,12 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               );
 
               return _OutlineActionButton(
-                label: l10n.tripDetailsCashWalletRemainingCta(amountText),
-                subtitle: l10n.tripDetailsCashWalletAction,
+                label: cashCtaState.hasTrackingStarted
+                    ? l10n.tripDetailsCashWalletRemainingCta(amountText)
+                    : l10n.cashTrackingNotStarted,
+                subtitle: cashCtaState.hasTrackingStarted
+                    ? l10n.tripDetailsCashWalletAction
+                    : l10n.cashBalanceAddCashAction,
                 icon: Icons.account_balance_wallet_outlined,
                 onTap: widget.onOpenCashWallet,
               );
@@ -1011,6 +1047,16 @@ class _PrimaryCashBalance {
 
   final double amount;
   final String currencyCode;
+}
+
+class _CashWalletCtaState {
+  const _CashWalletCtaState({
+    required this.balances,
+    required this.hasTrackingStarted,
+  });
+
+  final List<TripCashBalance> balances;
+  final bool hasTrackingStarted;
 }
 
 enum _ExpenseSort { newestFirst, oldestFirst, highestAmount, lowestAmount }

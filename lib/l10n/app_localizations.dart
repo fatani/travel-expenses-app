@@ -740,20 +740,26 @@ abstract class AppLocalizations {
   /// No description provided for @cashBalanceInsufficientWarning.
   ///
   /// In en, this message translates to:
-  /// **'Cash balance is insufficient'**
+  /// **'Cash balance may need adjustment'**
   String get cashBalanceInsufficientWarning;
 
   /// No description provided for @cashBalanceNoRecordedWarning.
   ///
   /// In en, this message translates to:
-  /// **'No cash balance recorded for this trip'**
+  /// **'Cash tracking hasn’t started'**
   String get cashBalanceNoRecordedWarning;
 
   /// No description provided for @cashBalanceAddCashAction.
   ///
   /// In en, this message translates to:
-  /// **'Add Cash'**
+  /// **'Add cash balance'**
   String get cashBalanceAddCashAction;
+
+  /// No description provided for @cashTrackingNotStarted.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash tracking hasn’t started'**
+  String get cashTrackingNotStarted;
 
   /// No description provided for @manualExchangeAddRate.
   ///
