@@ -625,6 +625,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           paymentChannel: paymentChannel,
           note: _noteController.text,
           cardProfileId: _selectedCardProfileId,
+          tripHomeCurrency: widget.trip.homeCurrencySnapshot,
         );
       }
 

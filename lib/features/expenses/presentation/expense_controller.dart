@@ -22,6 +22,24 @@ class ExpenseCreateOutcome {
   final String? missingToCurrency;
 }
 
+class _ResolvedConversionSnapshot {
+  const _ResolvedConversionSnapshot({
+    required this.originalAmount,
+    required this.originalCurrency,
+    required this.convertedHomeAmount,
+    required this.homeCurrency,
+    required this.conversionRate,
+    required this.missingManualRate,
+  });
+
+  final double originalAmount;
+  final String originalCurrency;
+  final double? convertedHomeAmount;
+  final String? homeCurrency;
+  final double? conversionRate;
+  final bool missingManualRate;
+}
+
 final expenseControllerProvider =
     AsyncNotifierProvider.family<ExpenseController, List<Expense>, String>(
       ExpenseController.new,
@@ -90,52 +108,19 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           isInternational: isInternational ?? false,
         );
 
-    final normalizedOriginalAmount =
-        originalAmount ?? normalizedMoney.transactionAmount ?? amount;
-    final normalizedOriginalCurrency =
-        (originalCurrency ?? normalizedMoney.transactionCurrency ?? currencyCode)
-            .trim()
-            .toUpperCase();
-    final normalizedHomeCurrency = tripHomeCurrency?.trim().toUpperCase();
-
-    double? computedConvertedHomeAmount = convertedHomeAmount;
-    double? computedConversionRate = conversionRate;
-    String? computedHomeCurrency = homeCurrency;
-    var missingManualRate = false;
-
-    if (normalizedHomeCurrency != null &&
-        normalizedHomeCurrency.isNotEmpty &&
-        computedConvertedHomeAmount == null &&
-        normalizedOriginalCurrency != normalizedHomeCurrency) {
-      try {
-        final conversion = await ref
-            .read(manualCurrencyConversionServiceProvider)
-            .convert(
-              tripId: _tripId,
-              amount: normalizedOriginalAmount,
-              fromCurrency: normalizedOriginalCurrency,
-              toCurrency: normalizedHomeCurrency,
-            );
-
-        if (conversion != null) {
-          computedConvertedHomeAmount = conversion.convertedAmount;
-          computedConversionRate = conversion.rate;
-          computedHomeCurrency = normalizedHomeCurrency;
-        } else {
-          missingManualRate = true;
-        }
-      } catch (_) {
-        // Conversion must never block expense saving.
-        missingManualRate = true;
-      }
-    } else if (normalizedHomeCurrency != null &&
-        normalizedHomeCurrency.isNotEmpty &&
-        normalizedOriginalCurrency == normalizedHomeCurrency &&
-        computedConvertedHomeAmount == null) {
-      computedConvertedHomeAmount = normalizedOriginalAmount;
-      computedConversionRate = 1;
-      computedHomeCurrency = normalizedHomeCurrency;
-    }
+    final conversionSnapshot = await _resolveConversionSnapshot(
+      fallbackAmount: amount,
+      fallbackCurrencyCode: currencyCode,
+      normalizedMoney: normalizedMoney,
+      originalAmount: originalAmount,
+      originalCurrency: originalCurrency,
+      convertedHomeAmount: convertedHomeAmount,
+      homeCurrency: homeCurrency,
+      conversionRate: conversionRate,
+      tripHomeCurrency: tripHomeCurrency,
+      paymentMethod: paymentMethod,
+      paymentChannel: paymentChannel,
+    );
 
     final expense = Expense.create(
       tripId: _tripId,
@@ -144,11 +129,11 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       currencyCode: currencyCode,
       transactionAmount: normalizedMoney.transactionAmount ?? amount,
       transactionCurrency: normalizedMoney.transactionCurrency ?? currencyCode,
-      originalAmount: normalizedOriginalAmount,
-      originalCurrency: normalizedOriginalCurrency,
-      convertedHomeAmount: computedConvertedHomeAmount,
-      homeCurrency: computedHomeCurrency,
-      conversionRate: computedConversionRate,
+      originalAmount: conversionSnapshot.originalAmount,
+      originalCurrency: conversionSnapshot.originalCurrency,
+      convertedHomeAmount: conversionSnapshot.convertedHomeAmount,
+      homeCurrency: conversionSnapshot.homeCurrency,
+      conversionRate: conversionSnapshot.conversionRate,
       billedAmount: normalizedMoney.billedAmount,
       billedCurrency: normalizedMoney.billedCurrency,
       feesAmount: normalizedMoney.feesAmount,
@@ -173,11 +158,15 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
         return ExpenseCreateOutcome(
           cashBalanceInsufficient: false,
           noCashBalanceRecorded: false,
-          missingManualRate: missingManualRate,
+          missingManualRate: conversionSnapshot.missingManualRate,
           missingFromCurrency:
-              missingManualRate ? normalizedOriginalCurrency : null,
+            conversionSnapshot.missingManualRate
+              ? conversionSnapshot.originalCurrency
+              : null,
           missingToCurrency:
-              missingManualRate ? normalizedHomeCurrency : null,
+            conversionSnapshot.missingManualRate
+              ? conversionSnapshot.homeCurrency
+              : null,
         );
       }
 
@@ -200,31 +189,40 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
               (deductionResult.balanceAfterDeduction + created.transactionAmount)
                       .abs() <
                   0.0001,
-          missingManualRate: missingManualRate,
+          missingManualRate: conversionSnapshot.missingManualRate,
           missingFromCurrency:
-              missingManualRate ? normalizedOriginalCurrency : null,
+              conversionSnapshot.missingManualRate
+                  ? conversionSnapshot.originalCurrency
+                  : null,
           missingToCurrency:
-              missingManualRate ? normalizedHomeCurrency : null,
+              conversionSnapshot.missingManualRate
+                  ? conversionSnapshot.homeCurrency
+                  : null,
         );
       } catch (_) {
         // Wallet side-effects should not block core expense persistence.
         return ExpenseCreateOutcome(
           cashBalanceInsufficient: false,
           noCashBalanceRecorded: false,
-          missingManualRate: missingManualRate,
+          missingManualRate: conversionSnapshot.missingManualRate,
           missingFromCurrency:
-              missingManualRate ? normalizedOriginalCurrency : null,
+              conversionSnapshot.missingManualRate
+                  ? conversionSnapshot.originalCurrency
+                  : null,
           missingToCurrency:
-              missingManualRate ? normalizedHomeCurrency : null,
+              conversionSnapshot.missingManualRate
+                  ? conversionSnapshot.homeCurrency
+                  : null,
         );
       }
     });
   }
 
   bool _isCashExpense(Expense expense) {
-    final paymentMethod = expense.paymentMethod.trim().toLowerCase();
-    final paymentChannel = expense.paymentChannel?.trim().toLowerCase();
-    return paymentMethod == 'cash' || paymentChannel == 'cash';
+    return _isCashPayment(
+      paymentMethod: expense.paymentMethod,
+      paymentChannel: expense.paymentChannel,
+    );
   }
 
   Future<T> _runMutation<T>(Future<T> Function() mutation) async {
@@ -271,6 +269,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     String? note,
     String? rawSmsText,
     int? cardProfileId,
+    String? tripHomeCurrency,
   }) async {
     final normalizedMoney = moneyModel ??
         MoneyModel(
@@ -285,17 +284,32 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           isInternational: isInternational ?? expense.isInternational,
         );
 
+    final conversionSnapshot = await _resolveConversionSnapshot(
+      fallbackAmount: amount,
+      fallbackCurrencyCode: currencyCode,
+      normalizedMoney: normalizedMoney,
+      originalAmount: originalAmount,
+      originalCurrency: originalCurrency,
+      convertedHomeAmount: convertedHomeAmount,
+      homeCurrency: homeCurrency,
+      conversionRate: conversionRate,
+      tripHomeCurrency: tripHomeCurrency,
+      previousExpense: expense,
+      paymentMethod: paymentMethod,
+      paymentChannel: paymentChannel,
+    );
+
     final updatedExpense = expense.copyWith(
       title: title,
       amount: amount,
       currencyCode: currencyCode,
       transactionAmount: normalizedMoney.transactionAmount ?? amount,
       transactionCurrency: normalizedMoney.transactionCurrency ?? currencyCode,
-      originalAmount: originalAmount,
-      originalCurrency: originalCurrency,
-      convertedHomeAmount: convertedHomeAmount,
-      homeCurrency: homeCurrency,
-      conversionRate: conversionRate,
+      originalAmount: conversionSnapshot.originalAmount,
+      originalCurrency: conversionSnapshot.originalCurrency,
+      convertedHomeAmount: conversionSnapshot.convertedHomeAmount,
+      homeCurrency: conversionSnapshot.homeCurrency,
+      conversionRate: conversionSnapshot.conversionRate,
       billedAmount: normalizedMoney.billedAmount,
       billedCurrency: normalizedMoney.billedCurrency,
       feesAmount: normalizedMoney.feesAmount,
@@ -335,6 +349,143 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
 
   Future<List<Expense>> _loadExpenses() {
     return ref.read(expenseRepositoryProvider).getExpensesByTrip(_tripId);
+  }
+
+  Future<_ResolvedConversionSnapshot> _resolveConversionSnapshot({
+    required double fallbackAmount,
+    required String fallbackCurrencyCode,
+    required MoneyModel normalizedMoney,
+    double? originalAmount,
+    String? originalCurrency,
+    double? convertedHomeAmount,
+    String? homeCurrency,
+    double? conversionRate,
+    String? tripHomeCurrency,
+    Expense? previousExpense,
+    required String paymentMethod,
+    String? paymentChannel,
+  }) async {
+    final normalizedOriginalAmount =
+        originalAmount ?? normalizedMoney.transactionAmount ?? fallbackAmount;
+    final normalizedOriginalCurrency =
+        _normalizeCurrency(
+          originalCurrency ??
+              normalizedMoney.transactionCurrency ??
+              fallbackCurrencyCode,
+        ) ??
+        fallbackCurrencyCode.trim().toUpperCase();
+    final normalizedHomeCurrency = _normalizeCurrency(
+      homeCurrency ?? tripHomeCurrency ?? previousExpense?.homeCurrency,
+    );
+
+    var computedConvertedHomeAmount = convertedHomeAmount;
+    var computedConversionRate = conversionRate;
+    var computedHomeCurrency = normalizedHomeCurrency;
+    var missingManualRate = false;
+
+    if (normalizedHomeCurrency == null || normalizedHomeCurrency.isEmpty) {
+      return _ResolvedConversionSnapshot(
+        originalAmount: normalizedOriginalAmount,
+        originalCurrency: normalizedOriginalCurrency,
+        convertedHomeAmount: computedConvertedHomeAmount,
+        homeCurrency: computedHomeCurrency,
+        conversionRate: computedConversionRate,
+        missingManualRate: false,
+      );
+    }
+
+    if (normalizedOriginalCurrency == normalizedHomeCurrency) {
+      return _ResolvedConversionSnapshot(
+        originalAmount: normalizedOriginalAmount,
+        originalCurrency: normalizedOriginalCurrency,
+        convertedHomeAmount: normalizedOriginalAmount,
+        homeCurrency: normalizedHomeCurrency,
+        conversionRate: 1,
+        missingManualRate: false,
+      );
+    }
+
+    if (computedConversionRate != null) {
+      return _ResolvedConversionSnapshot(
+        originalAmount: normalizedOriginalAmount,
+        originalCurrency: normalizedOriginalCurrency,
+        convertedHomeAmount: normalizedOriginalAmount * computedConversionRate,
+        homeCurrency: normalizedHomeCurrency,
+        conversionRate: computedConversionRate,
+        missingManualRate: false,
+      );
+    }
+
+    final shouldKeepCardRate =
+        previousExpense != null &&
+        !_isCashPayment(
+          paymentMethod: paymentMethod,
+          paymentChannel: paymentChannel,
+        ) &&
+        previousExpense.conversionRate != null;
+
+    if (shouldKeepCardRate) {
+      computedConversionRate = previousExpense.conversionRate;
+      return _ResolvedConversionSnapshot(
+        originalAmount: normalizedOriginalAmount,
+        originalCurrency: normalizedOriginalCurrency,
+        convertedHomeAmount: normalizedOriginalAmount * computedConversionRate!,
+        homeCurrency: normalizedHomeCurrency,
+        conversionRate: computedConversionRate,
+        missingManualRate: false,
+      );
+    }
+
+    try {
+      final conversion = await ref
+          .read(manualCurrencyConversionServiceProvider)
+          .convert(
+            tripId: _tripId,
+            amount: normalizedOriginalAmount,
+            fromCurrency: normalizedOriginalCurrency,
+            toCurrency: normalizedHomeCurrency,
+          );
+
+      if (conversion != null) {
+        computedConvertedHomeAmount = conversion.convertedAmount;
+        computedConversionRate = conversion.rate;
+        computedHomeCurrency = normalizedHomeCurrency;
+      } else {
+        computedConvertedHomeAmount = null;
+        computedConversionRate = null;
+        computedHomeCurrency = normalizedHomeCurrency;
+        missingManualRate = true;
+      }
+    } catch (_) {
+      computedConvertedHomeAmount = null;
+      computedConversionRate = null;
+      computedHomeCurrency = normalizedHomeCurrency;
+      missingManualRate = true;
+    }
+
+    return _ResolvedConversionSnapshot(
+      originalAmount: normalizedOriginalAmount,
+      originalCurrency: normalizedOriginalCurrency,
+      convertedHomeAmount: computedConvertedHomeAmount,
+      homeCurrency: computedHomeCurrency,
+      conversionRate: computedConversionRate,
+      missingManualRate: missingManualRate,
+    );
+  }
+
+  bool _isCashPayment({required String paymentMethod, String? paymentChannel}) {
+    final normalizedPaymentMethod = paymentMethod.trim().toLowerCase();
+    final normalizedPaymentChannel = paymentChannel?.trim().toLowerCase();
+    return normalizedPaymentMethod == 'cash' || normalizedPaymentChannel == 'cash';
+  }
+
+  String? _normalizeCurrency(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+
+    return trimmed.toUpperCase();
   }
 
   String? _normalizeText(String? value) {
