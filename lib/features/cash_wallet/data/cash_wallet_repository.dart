@@ -60,6 +60,8 @@ class CashWalletRepository {
     required CashTransactionType type,
     required double amount,
     required String currencyCode,
+    double? homeCurrencyAmount,
+    String? homeCurrencyCode,
     String? note,
   }) async {
     final normalizedCurrency = currencyCode.trim().toUpperCase();
@@ -69,6 +71,8 @@ class CashWalletRepository {
       type: type,
       amount: amount,
       currencyCode: normalizedCurrency,
+      homeCurrencyAmount: homeCurrencyAmount,
+      homeCurrencyCode: homeCurrencyCode,
       note: note,
     );
 
@@ -108,6 +112,8 @@ class CashWalletRepository {
     required CashTransactionType nextType,
     required double nextAmount,
     required String nextCurrencyCode,
+    double? nextHomeCurrencyAmount,
+    String? nextHomeCurrencyCode,
     String? nextNote,
   }) async {
     if (!_isEditableManualTransaction(existingTransaction)) {
@@ -121,6 +127,8 @@ class CashWalletRepository {
       type: nextType,
       amount: nextAmount,
       currencyCode: normalizedCurrency,
+      homeCurrencyAmount: nextHomeCurrencyAmount,
+      homeCurrencyCode: nextHomeCurrencyCode,
       note: nextNote,
     );
 
@@ -503,9 +511,9 @@ class CashWalletRepository {
     switch (transaction.type) {
       case CashTransactionType.initialCash:
       case CashTransactionType.atmWithdrawal:
+      case CashTransactionType.currencyExchangeIn:
       case CashTransactionType.manualAdjustment:
         return true;
-      case CashTransactionType.currencyExchangeIn:
       case CashTransactionType.currencyExchangeOut:
       case CashTransactionType.cashExpenseDeduction:
         return false;

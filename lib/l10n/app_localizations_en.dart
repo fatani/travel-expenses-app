@@ -263,7 +263,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletAddCash => 'Add Cash';
 
   @override
-  String get cashWalletEditCash => 'Edit Cash Movement';
+  String get cashWalletEditCash => 'Edit cash entry';
 
   @override
   String get cashWalletQuickAtmWithdrawal => 'ATM Withdrawal';
@@ -300,25 +300,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletGroupEarlier => 'Earlier';
 
   @override
-  String get cashWalletTransactionType => 'Transaction type';
+  String get cashWalletTransactionType => 'Cash source';
 
   @override
-  String get cashWalletTransactionTypeHelper => 'Choose the cash action you performed';
+  String get cashWalletTransactionTypeHelper => 'Where did this cash come from?';
 
   @override
-  String get cashWalletTypeInitialCash => 'Trip starting cash';
+  String get cashWalletTypeInitialCash => 'Initial cash';
 
   @override
   String get cashWalletTypeAtmWithdrawal => 'ATM withdrawal';
 
   @override
-  String get cashWalletTypeCurrencyExchangeIn => 'Currency exchange in';
+  String get cashWalletTypeCurrencyExchangeIn => 'Exchange office';
 
   @override
   String get cashWalletTypeCurrencyExchangeOut => 'Currency exchange out';
 
   @override
-  String get cashWalletTypeManualAdjustment => 'Balance correction';
+  String get cashWalletTypeManualAdjustment => 'Other cash added';
+
+  @override
+  String get cashWalletCashAmountLabel => 'Cash amount';
+
+  @override
+  String get cashWalletCashCurrencyLabel => 'Cash currency';
+
+  @override
+  String cashWalletHomeValueLabel(Object currencyCode) {
+    return 'Approximate value in $currencyCode';
+  }
+
+  @override
+  String get cashWalletHomeValueHelper => 'About how much did this cash cost?';
+
+  @override
+  String get cashWalletHomeValueCaption => 'Used to estimate your travel spending value';
 
   @override
   String get cashWalletTypeCashExpenseDeduction => 'Cash expense deduction';

@@ -263,7 +263,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletAddCash => 'إضافة كاش';
 
   @override
-  String get cashWalletEditCash => 'تعديل حركة الكاش';
+  String get cashWalletEditCash => 'تعديل إضافة الكاش';
 
   @override
   String get cashWalletQuickAtmWithdrawal => 'سحب ATM';
@@ -300,25 +300,42 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletGroupEarlier => 'أقدم';
 
   @override
-  String get cashWalletTransactionType => 'نوع الحركة';
+  String get cashWalletTransactionType => 'مصدر الكاش';
 
   @override
-  String get cashWalletTransactionTypeHelper => 'اختر نوع العملية التي قمت بها';
+  String get cashWalletTransactionTypeHelper => 'من أين أضفت هذا الكاش؟';
 
   @override
-  String get cashWalletTypeInitialCash => 'كاش بداية الرحلة';
+  String get cashWalletTypeInitialCash => 'كاش البداية';
 
   @override
   String get cashWalletTypeAtmWithdrawal => 'سحب من صراف';
 
   @override
-  String get cashWalletTypeCurrencyExchangeIn => 'تحويل عملة داخل';
+  String get cashWalletTypeCurrencyExchangeIn => 'مكتب صرافة';
 
   @override
   String get cashWalletTypeCurrencyExchangeOut => 'تحويل عملة خارج';
 
   @override
-  String get cashWalletTypeManualAdjustment => 'تصحيح الرصيد';
+  String get cashWalletTypeManualAdjustment => 'إضافة كاش أخرى';
+
+  @override
+  String get cashWalletCashAmountLabel => 'مبلغ الكاش';
+
+  @override
+  String get cashWalletCashCurrencyLabel => 'عملة الكاش';
+
+  @override
+  String cashWalletHomeValueLabel(Object currencyCode) {
+    return 'القيمة التقريبية بـ $currencyCode';
+  }
+
+  @override
+  String get cashWalletHomeValueHelper => 'تقريبًا كم كلفك هذا الكاش؟';
+
+  @override
+  String get cashWalletHomeValueCaption => 'نستخدمها لتقدير قيمة صرفك أثناء الرحلة';
 
   @override
   String get cashWalletTypeCashExpenseDeduction => 'خصم مصروف كاش';

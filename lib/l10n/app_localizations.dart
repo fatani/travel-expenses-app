@@ -578,7 +578,7 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletEditCash.
   ///
   /// In en, this message translates to:
-  /// **'Edit Cash Movement'**
+  /// **'Edit cash entry'**
   String get cashWalletEditCash;
 
   /// No description provided for @cashWalletQuickAtmWithdrawal.
@@ -644,19 +644,19 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletTransactionType.
   ///
   /// In en, this message translates to:
-  /// **'Transaction type'**
+  /// **'Cash source'**
   String get cashWalletTransactionType;
 
   /// No description provided for @cashWalletTransactionTypeHelper.
   ///
   /// In en, this message translates to:
-  /// **'Choose the cash action you performed'**
+  /// **'Where did this cash come from?'**
   String get cashWalletTransactionTypeHelper;
 
   /// No description provided for @cashWalletTypeInitialCash.
   ///
   /// In en, this message translates to:
-  /// **'Trip starting cash'**
+  /// **'Initial cash'**
   String get cashWalletTypeInitialCash;
 
   /// No description provided for @cashWalletTypeAtmWithdrawal.
@@ -668,7 +668,7 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletTypeCurrencyExchangeIn.
   ///
   /// In en, this message translates to:
-  /// **'Currency exchange in'**
+  /// **'Exchange office'**
   String get cashWalletTypeCurrencyExchangeIn;
 
   /// No description provided for @cashWalletTypeCurrencyExchangeOut.
@@ -680,8 +680,38 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletTypeManualAdjustment.
   ///
   /// In en, this message translates to:
-  /// **'Balance correction'**
+  /// **'Other cash added'**
   String get cashWalletTypeManualAdjustment;
+
+  /// No description provided for @cashWalletCashAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash amount'**
+  String get cashWalletCashAmountLabel;
+
+  /// No description provided for @cashWalletCashCurrencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash currency'**
+  String get cashWalletCashCurrencyLabel;
+
+  /// No description provided for @cashWalletHomeValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate value in {currencyCode}'**
+  String cashWalletHomeValueLabel(Object currencyCode);
+
+  /// No description provided for @cashWalletHomeValueHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'About how much did this cash cost?'**
+  String get cashWalletHomeValueHelper;
+
+  /// No description provided for @cashWalletHomeValueCaption.
+  ///
+  /// In en, this message translates to:
+  /// **'Used to estimate your travel spending value'**
+  String get cashWalletHomeValueCaption;
 
   /// No description provided for @cashWalletTypeCashExpenseDeduction.
   ///

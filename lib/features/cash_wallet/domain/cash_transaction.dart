@@ -52,6 +52,8 @@ class CashTransaction {
     required this.type,
     required this.amount,
     required this.currencyCode,
+    this.homeCurrencyAmount,
+    this.homeCurrencyCode,
     required this.isReversed,
     this.reversedAt,
     this.note,
@@ -67,6 +69,8 @@ class CashTransaction {
   final bool isReversed;
   final DateTime? reversedAt;
   final String? note;
+  final double? homeCurrencyAmount;
+  final String? homeCurrencyCode;
   final DateTime createdAt;
 
   factory CashTransaction.create({
@@ -76,6 +80,8 @@ class CashTransaction {
     required CashTransactionType type,
     required double amount,
     required String currencyCode,
+    double? homeCurrencyAmount,
+    String? homeCurrencyCode,
     bool isReversed = false,
     DateTime? reversedAt,
     String? note,
@@ -88,6 +94,8 @@ class CashTransaction {
       type: type,
       amount: amount,
       currencyCode: currencyCode.trim().toUpperCase(),
+      homeCurrencyAmount: homeCurrencyAmount,
+      homeCurrencyCode: homeCurrencyCode?.trim().toUpperCase(),
       isReversed: isReversed,
       reversedAt: reversedAt,
       note: _normalizeText(note),
@@ -103,6 +111,8 @@ class CashTransaction {
       type: CashTransactionTypeCodec.fromValue(map['type']! as String),
       amount: (map['amount'] as num).toDouble(),
       currencyCode: (map['currency_code']! as String).trim().toUpperCase(),
+      homeCurrencyAmount: map['home_currency_amount'] != null ? (map['home_currency_amount'] as num?)?.toDouble() : null,
+      homeCurrencyCode: map['home_currency_code'] as String?,
       isReversed: ((map['is_reversed'] as num?)?.toInt() ?? 0) == 1,
       reversedAt: (map['reversed_at'] as String?) != null
           ? DateTime.parse(map['reversed_at']! as String)
@@ -120,6 +130,8 @@ class CashTransaction {
       'type': type.value,
       'amount': amount,
       'currency_code': currencyCode,
+      'home_currency_amount': homeCurrencyAmount,
+      'home_currency_code': homeCurrencyCode,
       'is_reversed': isReversed ? 1 : 0,
       'reversed_at': reversedAt?.toUtc().toIso8601String(),
       'note': note,

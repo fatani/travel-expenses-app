@@ -345,6 +345,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     }
     return transaction.type == CashTransactionType.initialCash ||
         transaction.type == CashTransactionType.atmWithdrawal ||
+        transaction.type == CashTransactionType.currencyExchangeIn ||
         transaction.type == CashTransactionType.manualAdjustment;
   }
 
@@ -672,6 +673,7 @@ class _AddManualRateSheetState extends ConsumerState<_AddManualRateSheet> {
 class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   final _amountController = TextEditingController();
   final _currencyController = TextEditingController();
+  final _homeValueController = TextEditingController();
   final _noteController = TextEditingController();
   CashTransactionType _selectedType = CashTransactionType.initialCash;
   bool _isSaving = false;
@@ -684,6 +686,9 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
       _selectedType = editingTransaction.type;
       _amountController.text = editingTransaction.amount.toStringAsFixed(2);
       _currencyController.text = editingTransaction.currencyCode;
+      if (editingTransaction.homeCurrencyAmount != null) {
+        _homeValueController.text = editingTransaction.homeCurrencyAmount!.toStringAsFixed(2);
+      }
       _noteController.text = editingTransaction.note ?? '';
       return;
     }
@@ -696,6 +701,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   void dispose() {
     _amountController.dispose();
     _currencyController.dispose();
+    _homeValueController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -706,6 +712,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
     final isEditMode = widget.editingTransaction != null;
     final isOnboardingMode = widget.isOnboarding && !isEditMode;
+    final homeCurrencyCode = widget.trip.homeCurrencySnapshot;
 
     return Material(
       color: Colors.white,
@@ -740,7 +747,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
                   decoration: InputDecoration(
-                    labelText: l10n.expenseFormAmountLabel,
+                    labelText: l10n.cashWalletCashAmountLabel,
                     hintText: '0.00',
                     prefixIcon: const Icon(Icons.payments_outlined),
                   ),
@@ -754,10 +761,31 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                     LengthLimitingTextInputFormatter(3),
                   ],
                   decoration: InputDecoration(
-                    labelText: l10n.expenseFormCurrencyLabel,
+                    labelText: l10n.cashWalletCashCurrencyLabel,
                     hintText: 'THB',
                     prefixIcon: const Icon(Icons.currency_exchange_outlined),
                   ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _homeValueController,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.cashWalletHomeValueLabel(homeCurrencyCode),
+                    helperText: l10n.cashWalletHomeValueHelper,
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.home_outlined),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  l10n.cashWalletHomeValueCaption,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF64748B),
+                      ),
                 ),
                 const SizedBox(height: 12),
                 if (!isOnboardingMode) ...[
@@ -781,6 +809,13 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                         child: _CashActionOptionRow(
                           icon: Icons.local_atm_outlined,
                           label: l10n.cashWalletTypeAtmWithdrawal,
+                        ),
+                      ),
+                      DropdownMenuItem(
+                        value: CashTransactionType.currencyExchangeIn,
+                        child: _CashActionOptionRow(
+                          icon: Icons.currency_exchange_outlined,
+                          label: l10n.cashWalletTypeCurrencyExchangeIn,
                         ),
                       ),
                       DropdownMenuItem(
@@ -859,9 +894,11 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
     final amount = double.tryParse(_amountController.text.trim());
+    final homeValue = double.tryParse(_homeValueController.text.trim());
     final currencyCode = _currencyController.text.trim().toUpperCase();
+    final homeCurrencyCode = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
 
-    if (amount == null || amount <= 0 || currencyCode.length != 3) {
+    if (amount == null || amount <= 0 || currencyCode.length != 3 || homeValue == null || homeValue <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.commonEnterValidNumber)),
       );
@@ -880,6 +917,8 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               nextType: _selectedType,
               nextAmount: amount,
               nextCurrencyCode: currencyCode,
+              nextHomeCurrencyAmount: homeValue,
+              nextHomeCurrencyCode: homeCurrencyCode,
               nextNote: _noteController.text,
             );
       } else {
@@ -888,6 +927,8 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               type: _selectedType,
               amount: amount,
               currencyCode: currencyCode,
+              homeCurrencyAmount: homeValue,
+              homeCurrencyCode: homeCurrencyCode,
               note: _noteController.text,
             );
       }

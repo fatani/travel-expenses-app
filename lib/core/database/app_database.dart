@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 15;
+  static const int databaseVersion = 16;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -56,6 +56,7 @@ class AppDatabase {
         await _ensureTripsCustomTitleColumns(db);
         await _ensureTripCashBalancesTable(db);
         await _ensureCashTransactionsTable(db);
+        await _ensureCashTransactionsHomeValueColumns(db);
         await _ensureManualExchangeRatesTable(db);
       },
       onCreate: (db, version) async {
@@ -165,6 +166,8 @@ class AppDatabase {
             type TEXT NOT NULL,
             amount REAL NOT NULL,
             currency_code TEXT NOT NULL,
+            home_currency_amount REAL,
+            home_currency_code TEXT,
             is_reversed INTEGER NOT NULL DEFAULT 0,
             reversed_at TEXT,
             note TEXT,
@@ -298,6 +301,10 @@ class AppDatabase {
 
         if (oldVersion < 15) {
           await _ensureCashTransactionsTable(db);
+        }
+
+        if (oldVersion < 16) {
+          await _ensureCashTransactionsHomeValueColumns(db);
         }
       },
     );
@@ -706,6 +713,8 @@ class AppDatabase {
           type TEXT NOT NULL,
           amount REAL NOT NULL,
           currency_code TEXT NOT NULL,
+          home_currency_amount REAL,
+          home_currency_code TEXT,
           is_reversed INTEGER NOT NULL DEFAULT 0,
           reversed_at TEXT,
           note TEXT,
@@ -736,6 +745,30 @@ class AppDatabase {
       'CREATE INDEX IF NOT EXISTS idx_cash_transactions_trip_expense_active '
       'ON $cashTransactionsTable (trip_id, expense_id, type, is_reversed, created_at)',
     );
+  }
+
+  Future<void> _ensureCashTransactionsHomeValueColumns(Database db) async {
+    final hasHomeCurrencyAmount = await _hasColumn(
+      db,
+      cashTransactionsTable,
+      'home_currency_amount',
+    );
+    if (!hasHomeCurrencyAmount) {
+      await db.execute(
+        'ALTER TABLE $cashTransactionsTable ADD COLUMN home_currency_amount REAL',
+      );
+    }
+
+    final hasHomeCurrencyCode = await _hasColumn(
+      db,
+      cashTransactionsTable,
+      'home_currency_code',
+    );
+    if (!hasHomeCurrencyCode) {
+      await db.execute(
+        'ALTER TABLE $cashTransactionsTable ADD COLUMN home_currency_code TEXT',
+      );
+    }
   }
 
   Future<void> _ensureManualExchangeRatesTripColumn(Database db) async {

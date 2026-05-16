@@ -347,21 +347,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         ),
       );
     }
-
-    if (outcome.missingManualRate) {
-      final from = outcome.missingFromCurrency ?? '';
-      final to = outcome.missingToCurrency ?? '';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          behavior: SnackBarBehavior.floating,
-          content: Text(l10n.tripExchangeRatesMissingRateWarning(from, to)),
-          action: SnackBarAction(
-            label: l10n.tripExchangeRatesAddRate,
-            onPressed: _openExchangeRates,
-          ),
-        ),
-      );
-    }
   }
 
   Future<void> _confirmDelete(Expense expense) async {
