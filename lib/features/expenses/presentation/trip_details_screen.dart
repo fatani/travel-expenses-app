@@ -686,12 +686,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             onTap: widget.onAddViaSms,
           ),
           const SizedBox(height: 12),
-          _OutlineActionButton(
-            label: l10n.tripExchangeRatesTitle,
-            subtitle: l10n.tripExchangeRatesSubtitle,
-            icon: Icons.currency_exchange,
-            onTap: widget.onOpenExchangeRates,
-          ),
+          // TODO: Temporarily hiding Expense Estimates CTA for UX evaluation
+          // _OutlineActionButton(
+          //   label: l10n.tripExchangeRatesTitle,
+          //   subtitle: l10n.tripExchangeRatesSubtitle,
+          //   icon: Icons.currency_exchange,
+          //   onTap: widget.onOpenExchangeRates,
+          // ),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
