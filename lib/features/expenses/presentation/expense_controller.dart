@@ -4,6 +4,7 @@ import '../../../core/providers/database_providers.dart';
 import '../../global_reports/data/global_report_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
 import '../domain/expense.dart';
+import '../domain/expense_payment.dart';
 import '../domain/money_model.dart';
 
 class ExpenseCreateOutcome {
@@ -219,7 +220,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
   }
 
   bool _isCashExpense(Expense expense) {
-    return _isCashPayment(
+    return isCashExpensePayment(
       paymentMethod: expense.paymentMethod,
       paymentChannel: expense.paymentChannel,
     );
@@ -416,12 +417,33 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       );
     }
 
+    final isCashPayment = _isCashPayment(
+      paymentMethod: paymentMethod,
+      paymentChannel: paymentChannel,
+    );
+
+    // On cash expense EDIT: preserve the stored per-expense rate so old expenses
+    // are never retroactively changed by new inflows.
+    final shouldKeepCashRate =
+        previousExpense != null &&
+        isCashPayment &&
+        previousExpense.conversionRate != null;
+
+    if (shouldKeepCashRate) {
+      final storedRate = previousExpense.conversionRate!;
+      return _ResolvedConversionSnapshot(
+        originalAmount: normalizedOriginalAmount,
+        originalCurrency: normalizedOriginalCurrency,
+        convertedHomeAmount: normalizedOriginalAmount * storedRate,
+        homeCurrency: normalizedHomeCurrency,
+        conversionRate: storedRate,
+        missingManualRate: false,
+      );
+    }
+
     final shouldKeepCardRate =
         previousExpense != null &&
-        !_isCashPayment(
-          paymentMethod: paymentMethod,
-          paymentChannel: paymentChannel,
-        ) &&
+        !isCashPayment &&
         previousExpense.conversionRate != null;
 
     if (shouldKeepCardRate) {
@@ -434,6 +456,36 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
         conversionRate: computedConversionRate,
         missingManualRate: false,
       );
+    }
+
+    // On cash expense CREATE: derive rate from the current cash pool so the
+    // snapshot is captured at creation time and immutable going forward.
+    if (isCashPayment && previousExpense == null) {
+      try {
+        final cashRate = await ref
+            .read(cashWalletRepositoryProvider)
+            .getEffectiveCashRate(
+              tripId: _tripId,
+              transactionCurrencyCode: normalizedOriginalCurrency,
+              homeCurrencyCode: normalizedHomeCurrency,
+            );
+        if (cashRate != null) {
+          final cashOriginalAmount = fallbackAmount;
+          final cashOriginalCurrency =
+              _normalizeCurrency(fallbackCurrencyCode) ??
+              fallbackCurrencyCode.trim().toUpperCase();
+          return _ResolvedConversionSnapshot(
+            originalAmount: cashOriginalAmount,
+            originalCurrency: cashOriginalCurrency,
+            convertedHomeAmount: cashOriginalAmount * cashRate,
+            homeCurrency: normalizedHomeCurrency,
+            conversionRate: cashRate,
+            missingManualRate: false,
+          );
+        }
+      } catch (_) {
+        // Non-blocking: fall through to manual-rate lookup.
+      }
     }
 
     try {
@@ -474,9 +526,10 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
   }
 
   bool _isCashPayment({required String paymentMethod, String? paymentChannel}) {
-    final normalizedPaymentMethod = paymentMethod.trim().toLowerCase();
-    final normalizedPaymentChannel = paymentChannel?.trim().toLowerCase();
-    return normalizedPaymentMethod == 'cash' || normalizedPaymentChannel == 'cash';
+    return isCashExpensePayment(
+      paymentMethod: paymentMethod,
+      paymentChannel: paymentChannel,
+    );
   }
 
   String? _normalizeCurrency(String? value) {

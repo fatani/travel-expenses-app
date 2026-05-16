@@ -25,6 +25,7 @@ import '../../trips/domain/trip_timeline_status.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../../trips/presentation/trip_form_screen.dart';
 import '../domain/expense.dart';
+import '../domain/expense_payment.dart';
 import 'expense_controller.dart';
 import 'expense_form_screen.dart';
 import 'expense_option_labels.dart';
@@ -258,6 +259,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     try {
+      final isCashQuickExpense = isCashExpensePayment(
+        paymentMethod: payload.payment.method,
+        paymentChannel: payload.payment.channel,
+      );
       final outcome = await ref
           .read(expenseControllerProvider(_trip.id).notifier)
           .createExpense(
@@ -267,7 +272,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             category: payload.category,
             spentAt: payload.spentAt,
             paymentMethod: payload.payment.method,
-            paymentNetwork: payload.payment.network,
+            paymentNetwork: isCashQuickExpense ? null : payload.payment.network,
             paymentChannel: payload.payment.channel,
             tripHomeCurrency: _trip.homeCurrencySnapshot,
           );
@@ -433,7 +438,11 @@ class _TripDetailsContent extends StatefulWidget {
 
 class _TripDetailsContentState extends State<_TripDetailsContent> {
   late final TextEditingController _searchController;
-  late Future<_CashWalletCtaState> _cashWalletCtaFuture;
+  _CashWalletCtaState _cashWalletCtaState = const _CashWalletCtaState(
+    balances: [],
+    hasTrackingStarted: false,
+    cashConversionContext: _CashConversionContext.empty(),
+  );
   String _searchQuery = '';
   String? _selectedCategory;
   String? _selectedPaymentMethod;
@@ -443,7 +452,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
-    _cashWalletCtaFuture = _loadCashWalletCtaState();
+    unawaited(_refreshCashWalletCtaState());
   }
 
   @override
@@ -451,7 +460,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.trip.id != widget.trip.id ||
         oldWidget.cashWalletVersion != widget.cashWalletVersion) {
-      _cashWalletCtaFuture = _loadCashWalletCtaState();
+      unawaited(_refreshCashWalletCtaState());
     }
   }
 
@@ -459,6 +468,16 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _refreshCashWalletCtaState() async {
+    final next = await _loadCashWalletCtaState();
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _cashWalletCtaState = next;
+    });
   }
 
   Future<_CashWalletCtaState> _loadCashWalletCtaState() async {
@@ -478,13 +497,76 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
           balances: balances,
           transactions: transactions,
         ),
+        cashConversionContext: _buildCashConversionContext(transactions),
       );
     } catch (_) {
       return const _CashWalletCtaState(
         balances: [],
         hasTrackingStarted: false,
+        cashConversionContext: _CashConversionContext.empty(),
       );
     }
+  }
+
+  _CashConversionContext _buildCashConversionContext(
+    List<CashTransaction> transactions,
+  ) {
+    final tripHomeCurrency = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+    if (tripHomeCurrency.isEmpty) {
+      return const _CashConversionContext.empty();
+    }
+
+    final cashTotalsByCurrency = <String, double>{};
+    final homeTotalsByCurrency = <String, double>{};
+
+    for (final transaction in transactions) {
+      final isInflow = transaction.type == CashTransactionType.initialCash ||
+          transaction.type == CashTransactionType.atmWithdrawal ||
+          transaction.type == CashTransactionType.currencyExchangeIn ||
+          transaction.type == CashTransactionType.manualAdjustment;
+      if (!isInflow) {
+        continue;
+      }
+
+      final homeAmount = transaction.homeCurrencyAmount;
+      if (homeAmount == null || homeAmount <= 0 || transaction.amount <= 0) {
+        continue;
+      }
+
+      final homeCurrency =
+          (transaction.homeCurrencyCode ?? tripHomeCurrency).trim().toUpperCase();
+      if (homeCurrency != tripHomeCurrency) {
+        continue;
+      }
+
+      final currency = transaction.currencyCode.trim().toUpperCase();
+      cashTotalsByCurrency.update(
+        currency,
+        (value) => value + transaction.amount,
+        ifAbsent: () => transaction.amount,
+      );
+      homeTotalsByCurrency.update(
+        currency,
+        (value) => value + homeAmount,
+        ifAbsent: () => homeAmount,
+      );
+    }
+
+    final rates = <String, _CashEffectiveRate>{};
+    for (final entry in cashTotalsByCurrency.entries) {
+      final cashTotal = entry.value;
+      final homeTotal = homeTotalsByCurrency[entry.key] ?? 0;
+      if (cashTotal <= 0 || homeTotal <= 0) {
+        continue;
+      }
+      rates[entry.key] = _CashEffectiveRate(
+        transactionCurrencyCode: entry.key,
+        homeCurrencyCode: tripHomeCurrency,
+        rate: homeTotal / cashTotal,
+      );
+    }
+
+    return _CashConversionContext(ratesByTransactionCurrency: rates);
   }
 
   bool _hasCashTrackingStarted({
@@ -640,16 +722,10 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             onTap: widget.onAddExpense,
           ),
           const SizedBox(height: 12),
-          FutureBuilder<_CashWalletCtaState>(
-            future: _cashWalletCtaFuture,
-            builder: (context, snapshot) {
-              final cashCtaState = snapshot.data ??
-                  const _CashWalletCtaState(
-                    balances: [],
-                    hasTrackingStarted: false,
-                  );
+          Builder(
+            builder: (context) {
               final primaryBalance = _resolvePrimaryCashBalance(
-                balances: cashCtaState.balances,
+                balances: _cashWalletCtaState.balances,
                 preferredCurrency: widget.trip.destinationCurrency,
               );
               final amountText = _formatAmountCurrencyLtr(
@@ -658,10 +734,10 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               );
 
               return _OutlineActionButton(
-                label: cashCtaState.hasTrackingStarted
+                label: _cashWalletCtaState.hasTrackingStarted
                     ? l10n.tripDetailsCashWalletRemainingCta(amountText)
                     : l10n.cashTrackingNotStarted,
-                subtitle: cashCtaState.hasTrackingStarted
+                subtitle: _cashWalletCtaState.hasTrackingStarted
                     ? l10n.tripDetailsCashWalletAction
                     : l10n.cashBalanceAddCashAction,
                 icon: Icons.account_balance_wallet_outlined,
@@ -755,6 +831,8 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _ExpenseCard(
                   expense: expense,
+                  tripHomeCurrency: widget.trip.homeCurrencySnapshot,
+                  cashConversionContext: _cashWalletCtaState.cashConversionContext,
                   onEdit: () => widget.onEditExpense(expense),
                   onDelete: () => widget.onDeleteExpense(expense),
                 ),
@@ -1044,10 +1122,39 @@ class _CashWalletCtaState {
   const _CashWalletCtaState({
     required this.balances,
     required this.hasTrackingStarted,
+    required this.cashConversionContext,
   });
 
   final List<TripCashBalance> balances;
   final bool hasTrackingStarted;
+  final _CashConversionContext cashConversionContext;
+}
+
+class _CashConversionContext {
+  const _CashConversionContext({
+    required this.ratesByTransactionCurrency,
+  });
+
+  const _CashConversionContext.empty()
+      : ratesByTransactionCurrency = const <String, _CashEffectiveRate>{};
+
+  final Map<String, _CashEffectiveRate> ratesByTransactionCurrency;
+
+  _CashEffectiveRate? findRate(String transactionCurrencyCode) {
+    return ratesByTransactionCurrency[transactionCurrencyCode.trim().toUpperCase()];
+  }
+}
+
+class _CashEffectiveRate {
+  const _CashEffectiveRate({
+    required this.transactionCurrencyCode,
+    required this.homeCurrencyCode,
+    required this.rate,
+  });
+
+  final String transactionCurrencyCode;
+  final String homeCurrencyCode;
+  final double rate;
 }
 
 enum _ExpenseSort { newestFirst, oldestFirst, highestAmount, lowestAmount }
@@ -1340,11 +1447,15 @@ class _StatCard extends StatelessWidget {
 class _ExpenseCard extends StatelessWidget {
   const _ExpenseCard({
     required this.expense,
+    required this.tripHomeCurrency,
+    required this.cashConversionContext,
     required this.onEdit,
     required this.onDelete,
   });
 
   final Expense expense;
+  final String tripHomeCurrency;
+  final _CashConversionContext cashConversionContext;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -1370,10 +1481,52 @@ class _ExpenseCard extends StatelessWidget {
         (useCharged || useBilled) &&
         expense.transactionCurrency.toUpperCase() !=
             primaryCurrency.toUpperCase();
+    final originalAmount = expense.originalAmount ?? expense.transactionAmount;
+    final originalCurrency = expense.originalCurrency ?? expense.transactionCurrency;
+    final normalizedTripHomeCurrency = tripHomeCurrency.trim().toUpperCase();
+    final normalizedStoredHomeCurrency = _normalizeCurrency(expense.homeCurrency);
+    final storedRate = expense.conversionRate;
+    final storedOriginalAmount = expense.originalAmount;
+
+    final double? displayedConvertedHomeAmount;
+    final String? displayedHomeCurrency;
+    final double? displayedConversionRate;
+
+    if (expense.convertedHomeAmount != null) {
+      displayedConvertedHomeAmount = expense.convertedHomeAmount;
+      displayedHomeCurrency =
+          normalizedStoredHomeCurrency ??
+          (storedRate != null ? normalizedTripHomeCurrency : null);
+      displayedConversionRate = storedRate;
+    } else if (storedRate != null && storedOriginalAmount != null) {
+      displayedConvertedHomeAmount = storedOriginalAmount * storedRate;
+      displayedHomeCurrency =
+          normalizedStoredHomeCurrency ?? normalizedTripHomeCurrency;
+      displayedConversionRate = storedRate;
+    } else if (storedRate != null) {
+      displayedConvertedHomeAmount = expense.transactionAmount * storedRate;
+      displayedHomeCurrency =
+          normalizedStoredHomeCurrency ?? normalizedTripHomeCurrency;
+      displayedConversionRate = storedRate;
+    } else {
+      final cashRate = _isCashExpense(expense)
+          ? cashConversionContext.findRate(originalCurrency)
+          : null;
+      if (cashRate != null) {
+        displayedConvertedHomeAmount = originalAmount * cashRate.rate;
+        displayedHomeCurrency = cashRate.homeCurrencyCode;
+        displayedConversionRate = cashRate.rate;
+      } else {
+        displayedConvertedHomeAmount = null;
+        displayedHomeCurrency = null;
+        displayedConversionRate = null;
+      }
+    }
+
     final hasHomeConversion =
-      expense.convertedHomeAmount != null &&
-      (expense.homeCurrency ?? '').isNotEmpty &&
-      (expense.originalCurrency ?? '').isNotEmpty;
+      displayedConvertedHomeAmount != null &&
+      (displayedHomeCurrency ?? '').isNotEmpty &&
+      originalCurrency.isNotEmpty;
 
     final dateFormatter = DateFormat(
       expense.spentAt.hour != 0 || expense.spentAt.minute != 0
@@ -1510,15 +1663,15 @@ class _ExpenseCard extends StatelessWidget {
                       if (hasHomeConversion) ...[
                         const SizedBox(height: 3),
                         Text(
-                          '${_formatAmountCurrencyLtr(expense.originalAmount ?? expense.transactionAmount, expense.originalCurrency ?? expense.transactionCurrency)} → ${_formatAmountCurrencyLtr(expense.convertedHomeAmount!, expense.homeCurrency!)}',
+                          '${_formatAmountCurrencyLtr(originalAmount, originalCurrency)} → ${_formatAmountCurrencyLtr(displayedConvertedHomeAmount, displayedHomeCurrency as String)}',
                           textAlign: TextAlign.end,
                           textDirection: ui.TextDirection.ltr,
                           style: mutedStyle,
                         ),
-                        if (expense.conversionRate != null) ...[
+                        if (displayedConversionRate != null) ...[
                           const SizedBox(height: 1),
                           Text(
-                            '1 ${expense.originalCurrency ?? expense.transactionCurrency} = ${_formatRate(expense.conversionRate!)} ${expense.homeCurrency!}',
+                            '1 $originalCurrency = ${_formatRate(displayedConversionRate)} $displayedHomeCurrency',
                             textAlign: TextAlign.end,
                             textDirection: ui.TextDirection.ltr,
                             style: mutedStyle,
@@ -1583,6 +1736,21 @@ class _ExpenseCard extends StatelessWidget {
     // For small rates strip trailing zeros (e.g. 0.103000 → 0.103)
     final s = rate.toStringAsFixed(6);
     return s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
+  }
+
+  bool _isCashExpense(Expense value) {
+    return isCashExpensePayment(
+      paymentMethod: value.paymentMethod,
+      paymentChannel: value.paymentChannel,
+    );
+  }
+
+  String? _normalizeCurrency(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed.toUpperCase();
   }
 }
 
@@ -2826,9 +2994,9 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     }
   }
   static const _QuickAddPaymentData _defaultQuickPayment = _QuickAddPaymentData(
-    method: 'Credit Card',
-    network: 'Visa',
-    channel: 'POS Purchase',
+    method: 'Cash',
+    network: '',
+    channel: 'Cash',
   );
 }
 

@@ -3,6 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
+import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
+import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
+import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_form_screen.dart';
@@ -17,6 +20,108 @@ void main() {
     name: 'Shanghai',
     destination: 'Shanghai',
     baseCurrency: 'CNY',
+  );
+
+  testWidgets(
+    'trip details prefers stored cash conversionRate when converted amount is missing',
+    (tester) async {
+      final thaiTrip = Trip.create(
+        id: 'trip-thb-snapshot',
+        name: 'Bangkok',
+        destination: 'Bangkok',
+        baseCurrency: 'THB',
+        destinationCurrency: 'THB',
+        homeCurrencySnapshot: 'SAR',
+      );
+
+      final repository = _FakeExpenseRepository(
+        initialExpenses: [
+          Expense.create(
+            id: 'legacy-cash-rate-only',
+            tripId: thaiTrip.id,
+            title: 'Street food',
+            amount: 500,
+            currencyCode: 'THB',
+            transactionAmount: 500,
+            transactionCurrency: 'THB',
+            originalAmount: 500,
+            originalCurrency: 'THB',
+            convertedHomeAmount: null,
+            homeCurrency: 'SAR',
+            conversionRate: 0.105,
+            spentAt: DateTime(2026, 5, 16),
+            paymentMethod: 'Cash',
+            paymentChannel: 'Cash',
+            category: 'Food',
+          ),
+        ],
+      );
+
+      final cashWalletRepository = _FakeCashWalletRepository(
+        balances: [
+          TripCashBalance(
+            tripId: 'trip-thb-snapshot',
+            currencyCode: 'THB',
+            balanceAmount: 10000,
+            updatedAt: DateTime.utc(2026, 5, 16),
+          ),
+        ],
+        transactions: [
+          CashTransaction.create(
+            id: 'atm-new-rate',
+            tripId: 'trip-thb-snapshot',
+            type: CashTransactionType.atmWithdrawal,
+            amount: 30000,
+            currencyCode: 'THB',
+            homeCurrencyAmount: 3300,
+            homeCurrencyCode: 'SAR',
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: TripDetailsScreen(trip: thaiTrip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+            cashWalletRepositoryProvider.overrideWithValue(cashWalletRepository),
+          ],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final textWidgets = tester.widgetList<Text>(
+        find.byType(Text, skipOffstage: false),
+      );
+      final richTextWidgets = tester.widgetList<RichText>(
+        find.byType(RichText, skipOffstage: false),
+      );
+
+      final hasStoredRate =
+          textWidgets.any((widget) {
+            final text = widget.data ?? widget.textSpan?.toPlainText() ?? '';
+            return text.contains('0.105') &&
+                text.contains('THB') &&
+                text.contains('SAR');
+          }) ||
+          richTextWidgets.any((widget) {
+            final text = widget.text.toPlainText();
+            return text.contains('0.105') &&
+                text.contains('THB') &&
+                text.contains('SAR');
+          });
+
+      final hasFallbackRate =
+          textWidgets.any((widget) {
+            final text = widget.data ?? widget.textSpan?.toPlainText() ?? '';
+            return text.contains('0.11');
+          }) ||
+          richTextWidgets.any((widget) => widget.text.toPlainText().contains('0.11'));
+
+      expect(hasStoredRate, isTrue);
+      expect(hasFallbackRate, isFalse);
+    },
   );
 
   testWidgets(
@@ -709,4 +814,54 @@ class _FakeExpenseRepository extends ExpenseRepository {
   Future<void> deleteExpense(String id) async {
     _expenses.removeWhere((expense) => expense.id == id);
   }
+}
+
+class _FakeCashWalletRepository extends CashWalletRepository {
+  _FakeCashWalletRepository({
+    List<TripCashBalance>? balances,
+    List<CashTransaction>? transactions,
+  }) : _balances = balances ?? const <TripCashBalance>[],
+       _transactions = transactions ?? const <CashTransaction>[],
+       super(AppDatabase());
+
+  final List<TripCashBalance> _balances;
+  final List<CashTransaction> _transactions;
+
+  @override
+  Future<List<TripCashBalance>> getBalancesByTrip(String tripId) async {
+    return _balances.where((b) => b.tripId == tripId).toList();
+  }
+
+  @override
+  Future<List<CashTransaction>> getRecentTransactionsByTrip(
+    String tripId, {
+    int limit = 20,
+    bool includeReversed = false,
+  }) async {
+    final filtered = _transactions.where((t) => t.tripId == tripId).toList();
+    if (filtered.length <= limit) {
+      return filtered;
+    }
+    return filtered.take(limit).toList();
+  }
+
+  @override
+  Future<CashExpenseDeductionResult> recordCashExpenseDeduction({
+    required String tripId,
+    String? expenseId,
+    required double amount,
+    required String currencyCode,
+    String? note,
+  }) async {
+    return const CashExpenseDeductionResult(
+      wasInsufficientBeforeDeduction: false,
+      balanceAfterDeduction: 0,
+    );
+  }
+
+  @override
+  Future<void> syncExpenseCashImpact({
+    required Expense? previousExpense,
+    required Expense nextExpense,
+  }) async {}
 }

@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
 import '../../expenses/domain/expense.dart';
+import '../../expenses/domain/expense_payment.dart';
 import '../domain/cash_transaction.dart';
 import '../domain/trip_cash_balance.dart';
 
@@ -498,9 +499,69 @@ class CashWalletRepository {
   }
 
   bool _isCashExpense(Expense expense) {
-    final paymentMethod = expense.paymentMethod.trim().toLowerCase();
-    final paymentChannel = expense.paymentChannel?.trim().toLowerCase();
-    return paymentMethod == 'cash' || paymentChannel == 'cash';
+    return isCashExpensePayment(
+      paymentMethod: expense.paymentMethod,
+      paymentChannel: expense.paymentChannel,
+    );
+  }
+
+  /// Returns the weighted-average effective cash rate for [transactionCurrencyCode]
+  /// → [homeCurrencyCode], derived from all non-reversed inflow transactions that
+  /// have a [CashTransaction.homeCurrencyAmount] recorded.
+  ///
+  /// Returns `null` when no usable inflow data exists yet.
+  Future<double?> getEffectiveCashRate({
+    required String tripId,
+    required String transactionCurrencyCode,
+    required String homeCurrencyCode,
+  }) async {
+    final db = await _appDatabase.database;
+    final normalizedTxCurrency = transactionCurrencyCode.trim().toUpperCase();
+    final normalizedHomeCurrency = homeCurrencyCode.trim().toUpperCase();
+
+    final inflowTypeValues = [
+      CashTransactionType.initialCash.value,
+      CashTransactionType.atmWithdrawal.value,
+      CashTransactionType.currencyExchangeIn.value,
+      CashTransactionType.manualAdjustment.value,
+    ];
+    final placeholders = inflowTypeValues.map((_) => '?').join(', ');
+
+    final rows = await db.rawQuery(
+      '''
+      SELECT amount, home_currency_amount
+      FROM ${AppDatabase.cashTransactionsTable}
+      WHERE trip_id = ?
+        AND currency_code = ?
+        AND home_currency_code = ?
+        AND is_reversed = 0
+        AND home_currency_amount IS NOT NULL
+        AND home_currency_amount > 0
+        AND type IN ($placeholders)
+      ''',
+      [tripId, normalizedTxCurrency, normalizedHomeCurrency, ...inflowTypeValues],
+    );
+
+    if (rows.isEmpty) {
+      return null;
+    }
+
+    double totalCash = 0;
+    double totalHome = 0;
+    for (final row in rows) {
+      final cash = (row['amount'] as num?)?.toDouble() ?? 0;
+      final home = (row['home_currency_amount'] as num?)?.toDouble() ?? 0;
+      if (cash > 0 && home > 0) {
+        totalCash += cash;
+        totalHome += home;
+      }
+    }
+
+    if (totalCash <= 0 || totalHome <= 0) {
+      return null;
+    }
+
+    return totalHome / totalCash;
   }
 
   bool _isEditableManualTransaction(CashTransaction transaction) {

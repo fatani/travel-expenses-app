@@ -91,7 +91,7 @@ void main() {
     expect(saved.homeCurrency, 'SAR');
   });
 
-  test('updateExpense refreshes cash conversion using the current trip rate', () async {
+  test('updateExpense preserves stored cash conversion rate when editing', () async {
       final repository = _FakeExpenseRepository(
         initialExpenses: [
           Expense.create(
@@ -156,8 +156,9 @@ void main() {
       expect(saved.transactionAmount, 2700);
       expect(saved.originalAmount, 2700);
       expect(saved.originalCurrency, 'THB');
-      expect(saved.conversionRate, closeTo(0.11, 0.0000001));
-      expect(saved.convertedHomeAmount, closeTo(297, 0.0000001));
+      // Cash edits preserve the stored per-expense rate; 2700 × 0.103 = 278.1
+      expect(saved.conversionRate, closeTo(0.103, 0.0000001));
+      expect(saved.convertedHomeAmount, closeTo(278.1, 0.0000001));
       expect(saved.homeCurrency, 'SAR');
   });
 }
