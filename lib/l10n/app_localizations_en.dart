@@ -738,6 +738,15 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get expenseConversionContextCash => 'Estimated using trip cash value';
+
+  @override
+  String get expenseConversionContextCard => 'Based on card exchange rate';
+
+  @override
+  String get expenseConversionContextManual => 'Approximate value';
+
+  @override
   String get expenseCategoryTransport => 'Transport';
 
   @override

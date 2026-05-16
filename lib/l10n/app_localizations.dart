@@ -1469,6 +1469,24 @@ abstract class AppLocalizations {
   /// **'Failed to save expense: {error}'**
   String expenseFormSaveError(Object error);
 
+  /// No description provided for @expenseConversionContextCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated using trip cash value'**
+  String get expenseConversionContextCash;
+
+  /// No description provided for @expenseConversionContextCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Based on card exchange rate'**
+  String get expenseConversionContextCard;
+
+  /// No description provided for @expenseConversionContextManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate value'**
+  String get expenseConversionContextManual;
+
   /// No description provided for @expenseCategoryTransport.
   ///
   /// In en, this message translates to:

@@ -738,6 +738,15 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get expenseConversionContextCash => 'مقدّر باستخدام قيمة الكاش في الرحلة';
+
+  @override
+  String get expenseConversionContextCard => 'بناءً على سعر الصرف للبطاقة';
+
+  @override
+  String get expenseConversionContextManual => 'القيمة التقريبية';
+
+  @override
   String get expenseCategoryTransport => 'مواصلات';
 
   @override

@@ -35,6 +35,11 @@ String _formatAmountCurrency(double amount, String currencyCode) {
   return '${formatter.format(amount)} $normalizedCurrency';
 }
 
+String _formatAmountNumber(double amount) {
+  final formatter = NumberFormat('#,##0.##', 'en');
+  return formatter.format(amount);
+}
+
 String _formatAmountCurrencyLtr(double amount, String currencyCode) {
   // LTR isolate keeps number+currency order stable in RTL locales.
   return '\u2066${_formatAmountCurrency(amount, currencyCode)}\u2069';
@@ -1393,8 +1398,10 @@ class _ExpenseCard extends StatelessWidget {
     );
 
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: Theme.of(context).colorScheme.onSurfaceVariant,
+      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.74),
       fontWeight: FontWeight.w500,
+      fontSize: 10.5,
+      height: 1.15,
     );
 
     return Card(
@@ -1413,7 +1420,7 @@ class _ExpenseCard extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1466,22 +1473,48 @@ class _ExpenseCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        _formatAmountCurrencyLtr(primaryAmount, primaryCurrency),
-                        textAlign: TextAlign.end,
-                        textDirection: ui.TextDirection.ltr,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          color: const Color(0xFF020617),
-                          letterSpacing: -0.3,
+                  const SizedBox(width: 12),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 136, maxWidth: 184),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: Directionality(
+                            textDirection: ui.TextDirection.ltr,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  _formatAmountNumber(primaryAmount),
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontSize: 21,
+                                    fontWeight: FontWeight.w800,
+                                    color: const Color(0xFF020617),
+                                    letterSpacing: -0.2,
+                                    height: 1.1,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  primaryCurrency.trim().toUpperCase(),
+                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                    letterSpacing: 0.1,
+                                  ),
+                                ),
+                              ],
                             ),
+                          ),
+                        ),
                       ),
                       if (showSecondary) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
                           '≈ ${_formatAmountCurrencyLtr(expense.transactionAmount, expense.transactionCurrency)}',
                           textAlign: TextAlign.end,
@@ -1490,17 +1523,17 @@ class _ExpenseCard extends StatelessWidget {
                         ),
                       ],
                       if (hasHomeConversion) ...[
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 3),
                         Text(
-                          '${_formatAmountCurrencyLtr(expense.originalAmount ?? expense.transactionAmount, expense.originalCurrency ?? expense.transactionCurrency)} -> ${_formatAmountCurrencyLtr(expense.convertedHomeAmount!, expense.homeCurrency!)}',
+                          '${_formatAmountCurrencyLtr(expense.originalAmount ?? expense.transactionAmount, expense.originalCurrency ?? expense.transactionCurrency)} → ${_formatAmountCurrencyLtr(expense.convertedHomeAmount!, expense.homeCurrency!)}',
                           textAlign: TextAlign.end,
                           textDirection: ui.TextDirection.ltr,
                           style: mutedStyle,
                         ),
                         if (expense.conversionRate != null) ...[
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 1),
                           Text(
-                            '${l10n.tripExchangeRatesRateLabel}: 1 ${expense.originalCurrency ?? expense.transactionCurrency} = ${expense.conversionRate!.toStringAsFixed(6)} ${expense.homeCurrency!}',
+                            '1 ${expense.originalCurrency ?? expense.transactionCurrency} = ${_formatRate(expense.conversionRate!)} ${expense.homeCurrency!}',
                             textAlign: TextAlign.end,
                             textDirection: ui.TextDirection.ltr,
                             style: mutedStyle,
@@ -1517,27 +1550,38 @@ class _ExpenseCard extends StatelessWidget {
                           style: mutedStyle,
                         ),
                       ],
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: l10n.tripsEditTooltip,
+                            onPressed: onEdit,
+                            icon: Icon(
+                              Icons.edit_outlined,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.82),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                          IconButton(
+                            tooltip: l10n.commonDelete,
+                            onPressed: onDelete,
+                            icon: Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: Theme.of(context).colorScheme.error.withValues(alpha: 0.75),
+                            ),
+                            padding: const EdgeInsets.all(4),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            visualDensity: VisualDensity.compact,
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  IconButton(
-                    tooltip: l10n.tripsEditTooltip,
-                    onPressed: onEdit,
-                    icon: const Icon(Icons.edit_outlined, size: 20),
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(),
-                  ),
-                  IconButton(
-                    tooltip: l10n.commonDelete,
-                    onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                    padding: const EdgeInsets.all(8),
-                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
@@ -1546,6 +1590,14 @@ class _ExpenseCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatRate(double rate) {
+    if (rate >= 100) return rate.toStringAsFixed(2);
+    if (rate >= 1) return rate.toStringAsFixed(3);
+    // For small rates strip trailing zeros (e.g. 0.103000 → 0.103)
+    final s = rate.toStringAsFixed(6);
+    return s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
   }
 }
 
