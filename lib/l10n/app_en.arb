@@ -92,6 +92,8 @@
   "cashWalletNoTransactions": "No cash transactions yet.",
   "cashWalletAddCash": "Add Cash",
   "cashWalletEditCash": "Edit cash entry",
+  "cashWalletDateLabel": "Date",
+  "cashWalletTimeLabel": "Time",
   "cashWalletQuickAtmWithdrawal": "ATM Withdrawal",
   "cashWalletQuickAtmShort": "ATM",
   "cashWalletTripStatusDaysLeft": "{days} days left",

@@ -266,6 +266,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletEditCash => 'Edit cash entry';
 
   @override
+  String get cashWalletDateLabel => 'Date';
+
+  @override
+  String get cashWalletTimeLabel => 'Time';
+
+  @override
   String get cashWalletQuickAtmWithdrawal => 'ATM Withdrawal';
 
   @override

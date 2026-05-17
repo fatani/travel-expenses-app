@@ -266,6 +266,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletEditCash => 'تعديل إضافة الكاش';
 
   @override
+  String get cashWalletDateLabel => 'التاريخ';
+
+  @override
+  String get cashWalletTimeLabel => 'الوقت';
+
+  @override
   String get cashWalletQuickAtmWithdrawal => 'سحب ATM';
 
   @override

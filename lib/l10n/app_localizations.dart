@@ -581,6 +581,18 @@ abstract class AppLocalizations {
   /// **'Edit cash entry'**
   String get cashWalletEditCash;
 
+  /// No description provided for @cashWalletDateLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get cashWalletDateLabel;
+
+  /// No description provided for @cashWalletTimeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get cashWalletTimeLabel;
+
   /// No description provided for @cashWalletQuickAtmWithdrawal.
   ///
   /// In en, this message translates to:

@@ -92,6 +92,8 @@
   "cashWalletNoTransactions": "لا توجد حركات كاش بعد.",
   "cashWalletAddCash": "إضافة كاش",
   "cashWalletEditCash": "تعديل إضافة الكاش",
+  "cashWalletDateLabel": "التاريخ",
+  "cashWalletTimeLabel": "الوقت",
   "cashWalletQuickAtmWithdrawal": "سحب ATM",
   "cashWalletQuickAtmShort": "ATM",
   "cashWalletTripStatusDaysLeft": "متبقي {days} أيام",

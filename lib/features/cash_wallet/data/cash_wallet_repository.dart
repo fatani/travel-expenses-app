@@ -64,6 +64,7 @@ class CashWalletRepository {
     double? homeCurrencyAmount,
     String? homeCurrencyCode,
     String? note,
+    DateTime? createdAt,
   }) async {
     final normalizedCurrency = currencyCode.trim().toUpperCase();
     final transaction = CashTransaction.create(
@@ -75,6 +76,7 @@ class CashWalletRepository {
       homeCurrencyAmount: homeCurrencyAmount,
       homeCurrencyCode: homeCurrencyCode,
       note: note,
+      createdAt: createdAt,
     );
 
     final signedAmount = _signedDelta(type, amount);
@@ -116,6 +118,7 @@ class CashWalletRepository {
     double? nextHomeCurrencyAmount,
     String? nextHomeCurrencyCode,
     String? nextNote,
+    DateTime? nextCreatedAt,
   }) async {
     if (!_isEditableManualTransaction(existingTransaction)) {
       throw ArgumentError('Only manual cash transactions can be updated.');
@@ -131,6 +134,7 @@ class CashWalletRepository {
       homeCurrencyAmount: nextHomeCurrencyAmount,
       homeCurrencyCode: nextHomeCurrencyCode,
       note: nextNote,
+      createdAt: nextCreatedAt,
     );
 
     final db = await _appDatabase.database;

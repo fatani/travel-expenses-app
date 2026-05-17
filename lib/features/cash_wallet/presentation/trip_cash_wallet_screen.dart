@@ -675,12 +675,17 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   final _currencyController = TextEditingController();
   final _homeValueController = TextEditingController();
   final _noteController = TextEditingController();
+  late final TextEditingController _dateController;
+  late final TextEditingController _timeController;
   CashTransactionType _selectedType = CashTransactionType.initialCash;
+  DateTime? _selectedDateTime;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    _dateController = TextEditingController();
+    _timeController = TextEditingController();
     final editingTransaction = widget.editingTransaction;
     if (editingTransaction != null) {
       _selectedType = editingTransaction.type;
@@ -690,11 +695,19 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
         _homeValueController.text = editingTransaction.homeCurrencyAmount!.toStringAsFixed(2);
       }
       _noteController.text = editingTransaction.note ?? '';
+      _selectedDateTime = editingTransaction.createdAt.toLocal();
       return;
     }
 
     _selectedType = widget.initialType;
     _currencyController.text = widget.trip.destinationCurrency;
+    _selectedDateTime = DateTime.now();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncDateTimeFields();
   }
 
   @override
@@ -703,6 +716,8 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     _currencyController.dispose();
     _homeValueController.dispose();
     _noteController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
     super.dispose();
   }
 
@@ -845,6 +860,34 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                       prefixIcon: const Icon(Icons.notes_rounded),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _dateController,
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: l10n.cashWalletDateLabel,
+                            prefixIcon: const Icon(Icons.calendar_today_rounded),
+                          ),
+                          onTap: _selectDate,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _timeController,
+                          readOnly: true,
+                          decoration: InputDecoration(
+                            labelText: l10n.cashWalletTimeLabel,
+                            prefixIcon: const Icon(Icons.access_time_rounded),
+                          ),
+                          onTap: _selectTime,
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
                 const SizedBox(height: 18),
                 _SheetGradientButton(
@@ -891,6 +934,58 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     );
   }
 
+  void _syncDateTimeFields() {
+    final dt = _selectedDateTime;
+    if (dt == null) {
+      _dateController.text = '';
+      _timeController.text = '';
+      return;
+    }
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    _dateController.text = DateFormat('dd MMM yyyy', localeTag).format(dt);
+    _timeController.text = DateFormat('HH:mm', localeTag).format(dt);
+  }
+
+  Future<void> _selectDate() async {
+    final base = _selectedDateTime ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateUtils.dateOnly(base),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedDateTime = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        base.hour,
+        base.minute,
+      );
+      _syncDateTimeFields();
+    });
+  }
+
+  Future<void> _selectTime() async {
+    final base = _selectedDateTime ?? DateTime.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(base),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedDateTime = DateTime(
+        base.year,
+        base.month,
+        base.day,
+        picked.hour,
+        picked.minute,
+      );
+      _syncDateTimeFields();
+    });
+  }
+
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
     final amount = double.tryParse(_amountController.text.trim());
@@ -920,6 +1015,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               nextHomeCurrencyAmount: homeValue,
               nextHomeCurrencyCode: homeCurrencyCode,
               nextNote: _noteController.text,
+              nextCreatedAt: _selectedDateTime,
             );
       } else {
         await ref.read(cashWalletRepositoryProvider).addCashTransaction(
@@ -930,6 +1026,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               homeCurrencyAmount: homeValue,
               homeCurrencyCode: homeCurrencyCode,
               note: _noteController.text,
+              createdAt: _selectedDateTime,
             );
       }
 
