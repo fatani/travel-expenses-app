@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../global_reports/data/global_report_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
+import '../domain/expense_fx_snapshot_service.dart';
 import '../domain/expense.dart';
 import '../domain/expense_payment.dart';
+import '../domain/expense_payment_service.dart';
 import '../domain/money_model.dart';
 
 class ExpenseCreateOutcome {
@@ -21,24 +23,6 @@ class ExpenseCreateOutcome {
   final bool missingManualRate;
   final String? missingFromCurrency;
   final String? missingToCurrency;
-}
-
-class _ResolvedConversionSnapshot {
-  const _ResolvedConversionSnapshot({
-    required this.originalAmount,
-    required this.originalCurrency,
-    required this.convertedHomeAmount,
-    required this.homeCurrency,
-    required this.conversionRate,
-    required this.missingManualRate,
-  });
-
-  final double? originalAmount;
-  final String? originalCurrency;
-  final double? convertedHomeAmount;
-  final String? homeCurrency;
-  final double? conversionRate;
-  final bool missingManualRate;
 }
 
 final expenseControllerProvider =
@@ -109,14 +93,19 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           isInternational: isInternational ?? false,
         );
 
-    final normalizedPayment = normalizeExpensePaymentMetadata(
+    final normalizedPayment = expensePaymentService.normalizeExpensePaymentMetadata(
       paymentMethod: paymentMethod,
       paymentNetwork: paymentNetwork,
       paymentChannel: paymentChannel,
       cardProfileId: cardProfileId,
     );
 
-    final conversionSnapshot = await _resolveConversionSnapshot(
+    final fxSnapshotService = ExpenseFxSnapshotService(
+      cashWalletRepository: ref.read(cashWalletRepositoryProvider),
+    );
+
+    final conversionSnapshot = await fxSnapshotService.resolveCreateSnapshot(
+      tripId: _tripId,
       fallbackAmount: amount,
       fallbackCurrencyCode: currencyCode,
       normalizedMoney: normalizedMoney,
@@ -292,11 +281,15 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           isInternational: isInternational ?? expense.isInternational,
         );
 
-    final normalizedPayment = normalizeExpensePaymentMetadata(
+    final normalizedPayment = expensePaymentService.normalizeExpensePaymentMetadata(
       paymentMethod: paymentMethod,
       paymentNetwork: paymentNetwork,
       paymentChannel: paymentChannel,
       cardProfileId: cardProfileId,
+    );
+
+    final fxSnapshotService = ExpenseFxSnapshotService(
+      cashWalletRepository: ref.read(cashWalletRepositoryProvider),
     );
 
     final previousWasCash = _isCashPayment(
@@ -315,7 +308,8 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     final shouldForceClearSnapshot =
         (previousWasCash && !nextIsCash) || removedCardChargedAmount;
 
-    final conversionSnapshot = await _resolveConversionSnapshot(
+    final conversionSnapshot = await fxSnapshotService.resolveUpdateSnapshot(
+      tripId: _tripId,
       fallbackAmount: amount,
       fallbackCurrencyCode: currencyCode,
       normalizedMoney: normalizedMoney,
@@ -369,6 +363,17 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     });
   }
 
+  bool _isCashPayment({required String paymentMethod, String? paymentChannel}) {
+    return isCashExpensePayment(
+      paymentMethod: paymentMethod,
+      paymentChannel: paymentChannel,
+    );
+  }
+
+  Future<List<Expense>> _loadExpenses() {
+    return ref.read(expenseRepositoryProvider).getExpensesByTrip(_tripId);
+  }
+
   Future<void> deleteExpense(String expenseId) async {
     await _runMutation(() async {
       final existing = await ref.read(expenseRepositoryProvider).getExpenseById(expenseId);
@@ -377,235 +382,6 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       }
       await ref.read(expenseRepositoryProvider).deleteExpense(expenseId);
     });
-  }
-
-  Future<List<Expense>> _loadExpenses() {
-    return ref.read(expenseRepositoryProvider).getExpensesByTrip(_tripId);
-  }
-
-  Future<_ResolvedConversionSnapshot> _resolveConversionSnapshot({
-    required double fallbackAmount,
-    required String fallbackCurrencyCode,
-    required MoneyModel normalizedMoney,
-    double? originalAmount,
-    String? originalCurrency,
-    double? convertedHomeAmount,
-    String? homeCurrency,
-    double? conversionRate,
-    String? tripHomeCurrency,
-    Expense? previousExpense,
-    required String paymentMethod,
-    String? paymentChannel,
-    bool forceClearSnapshot = false,
-  }) async {
-    final normalizedTransactionAmount =
-        normalizedMoney.transactionAmount ?? fallbackAmount;
-    final normalizedTransactionCurrency =
-        _normalizeCurrency(
-          normalizedMoney.transactionCurrency ?? fallbackCurrencyCode,
-        ) ??
-        fallbackCurrencyCode.trim().toUpperCase();
-    final normalizedOriginalAmount = originalAmount ?? normalizedTransactionAmount;
-    final normalizedOriginalCurrency =
-        _normalizeCurrency(originalCurrency) ?? normalizedTransactionCurrency;
-    final normalizedHomeCurrency = _normalizeCurrency(
-      homeCurrency ?? tripHomeCurrency ?? previousExpense?.homeCurrency,
-    );
-
-    final isCashPayment = _isCashPayment(
-      paymentMethod: paymentMethod,
-      paymentChannel: paymentChannel,
-    );
-    final wasCashPayment = previousExpense != null &&
-        _isCashPayment(
-          paymentMethod: previousExpense.paymentMethod,
-          paymentChannel: previousExpense.paymentChannel,
-        );
-
-    if (normalizedHomeCurrency == null || normalizedHomeCurrency.isEmpty) {
-      return _ResolvedConversionSnapshot(
-        originalAmount: null,
-        originalCurrency: null,
-        convertedHomeAmount: null,
-        homeCurrency: null,
-        conversionRate: null,
-        missingManualRate: false,
-      );
-    }
-
-    if (conversionRate != null) {
-      return _ResolvedConversionSnapshot(
-        originalAmount: normalizedOriginalAmount,
-        originalCurrency: normalizedOriginalCurrency,
-        convertedHomeAmount: normalizedOriginalAmount * conversionRate,
-        homeCurrency: normalizedHomeCurrency,
-        conversionRate: conversionRate,
-        missingManualRate: false,
-      );
-    }
-
-    if (!isCashPayment) {
-      final cardFx = _resolveCardProvidedFxSnapshot(
-        normalizedMoney: normalizedMoney,
-        normalizedHomeCurrency: normalizedHomeCurrency,
-        normalizedTransactionAmount: normalizedTransactionAmount,
-        normalizedTransactionCurrency: normalizedTransactionCurrency,
-      );
-      if (cardFx != null) {
-        return cardFx;
-      }
-
-      if (forceClearSnapshot) {
-        return _ResolvedConversionSnapshot(
-          originalAmount: null,
-          originalCurrency: null,
-          convertedHomeAmount: null,
-          homeCurrency: null,
-          conversionRate: null,
-          missingManualRate: false,
-        );
-      }
-
-      if (previousExpense != null && !wasCashPayment && previousExpense.conversionRate != null) {
-        final storedRate = previousExpense.conversionRate!;
-        return _ResolvedConversionSnapshot(
-          originalAmount: normalizedTransactionAmount,
-          originalCurrency: normalizedTransactionCurrency,
-          convertedHomeAmount: normalizedTransactionAmount * storedRate,
-          homeCurrency: normalizedHomeCurrency,
-          conversionRate: storedRate,
-          missingManualRate: false,
-        );
-      }
-
-      // Cash -> Card: explicitly clear stale cash snapshot fields.
-      return _ResolvedConversionSnapshot(
-        originalAmount: null,
-        originalCurrency: null,
-        convertedHomeAmount: null,
-        homeCurrency: null,
-        conversionRate: null,
-        missingManualRate: false,
-      );
-    }
-
-    // Cash -> Cash edit: preserve stored cash rate snapshot.
-    final shouldKeepCashRate =
-        previousExpense != null &&
-        wasCashPayment &&
-        isCashPayment &&
-        previousExpense.conversionRate != null;
-
-    if (shouldKeepCashRate) {
-      final storedRate = previousExpense.conversionRate!;
-      return _ResolvedConversionSnapshot(
-        originalAmount: normalizedOriginalAmount,
-        originalCurrency: normalizedOriginalCurrency,
-        convertedHomeAmount: normalizedOriginalAmount * storedRate,
-        homeCurrency: normalizedHomeCurrency,
-        conversionRate: storedRate,
-        missingManualRate: false,
-      );
-    }
-
-    if (normalizedTransactionCurrency == normalizedHomeCurrency) {
-      return _ResolvedConversionSnapshot(
-        originalAmount: normalizedTransactionAmount,
-        originalCurrency: normalizedTransactionCurrency,
-        convertedHomeAmount: normalizedTransactionAmount,
-        homeCurrency: normalizedHomeCurrency,
-        conversionRate: 1,
-        missingManualRate: false,
-      );
-    }
-
-    try {
-      final cashRate = await ref
-          .read(cashWalletRepositoryProvider)
-          .getEffectiveCashRate(
-            tripId: _tripId,
-            transactionCurrencyCode: normalizedTransactionCurrency,
-            homeCurrencyCode: normalizedHomeCurrency,
-          );
-
-      if (cashRate != null) {
-        return _ResolvedConversionSnapshot(
-          originalAmount: normalizedTransactionAmount,
-          originalCurrency: normalizedTransactionCurrency,
-          convertedHomeAmount: normalizedTransactionAmount * cashRate,
-          homeCurrency: normalizedHomeCurrency,
-          conversionRate: cashRate,
-          missingManualRate: false,
-        );
-      }
-    } catch (_) {
-      // Ignore and return empty conversion snapshot below.
-    }
-
-    return _ResolvedConversionSnapshot(
-      originalAmount: null,
-      originalCurrency: null,
-      convertedHomeAmount: null,
-      homeCurrency: null,
-      conversionRate: null,
-      missingManualRate: false,
-    );
-  }
-
-  _ResolvedConversionSnapshot? _resolveCardProvidedFxSnapshot({
-    required MoneyModel normalizedMoney,
-    required String normalizedHomeCurrency,
-    required double normalizedTransactionAmount,
-    required String normalizedTransactionCurrency,
-  }) {
-    if (normalizedTransactionAmount <= 0 ||
-        normalizedTransactionCurrency == normalizedHomeCurrency) {
-      return null;
-    }
-
-    final normalizedTotalChargedCurrency =
-        _normalizeCurrency(normalizedMoney.totalChargedCurrency);
-    final normalizedBilledCurrency =
-        _normalizeCurrency(normalizedMoney.billedCurrency);
-
-    double? chargedHomeAmount;
-    if (normalizedMoney.totalChargedAmount != null &&
-        normalizedTotalChargedCurrency == normalizedHomeCurrency) {
-      chargedHomeAmount = normalizedMoney.totalChargedAmount;
-    } else if (normalizedMoney.billedAmount != null &&
-        normalizedBilledCurrency == normalizedHomeCurrency) {
-      chargedHomeAmount = normalizedMoney.billedAmount;
-    }
-
-    if (chargedHomeAmount == null || chargedHomeAmount <= 0) {
-      return null;
-    }
-
-    final rate = chargedHomeAmount / normalizedTransactionAmount;
-    return _ResolvedConversionSnapshot(
-      originalAmount: normalizedTransactionAmount,
-      originalCurrency: normalizedTransactionCurrency,
-      convertedHomeAmount: chargedHomeAmount,
-      homeCurrency: normalizedHomeCurrency,
-      conversionRate: rate,
-      missingManualRate: false,
-    );
-  }
-
-  bool _isCashPayment({required String paymentMethod, String? paymentChannel}) {
-    return isCashExpensePayment(
-      paymentMethod: paymentMethod,
-      paymentChannel: paymentChannel,
-    );
-  }
-
-  String? _normalizeCurrency(String? value) {
-    final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
-
-    return trimmed.toUpperCase();
   }
 
   String? _normalizeText(String? value) {

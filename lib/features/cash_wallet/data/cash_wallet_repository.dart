@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../expenses/domain/expense.dart';
 import '../../expenses/domain/expense_payment.dart';
 import '../domain/cash_transaction.dart';
+import '../domain/cash_effective_rate_calculator.dart';
 import '../domain/trip_cash_balance.dart';
 
 class CashExpenseDeductionResult {
@@ -546,26 +547,7 @@ class CashWalletRepository {
       [tripId, normalizedTxCurrency, normalizedHomeCurrency, ...inflowTypeValues],
     );
 
-    if (rows.isEmpty) {
-      return null;
-    }
-
-    double totalCash = 0;
-    double totalHome = 0;
-    for (final row in rows) {
-      final cash = (row['amount'] as num?)?.toDouble() ?? 0;
-      final home = (row['home_currency_amount'] as num?)?.toDouble() ?? 0;
-      if (cash > 0 && home > 0) {
-        totalCash += cash;
-        totalHome += home;
-      }
-    }
-
-    if (totalCash <= 0 || totalHome <= 0) {
-      return null;
-    }
-
-    return totalHome / totalCash;
+    return CashEffectiveRateCalculator.calculate(rows);
   }
 
   bool _isEditableManualTransaction(CashTransaction transaction) {
