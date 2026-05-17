@@ -240,8 +240,8 @@ class Expense {
     bool? isInternational,
     DateTime? spentAt,
     String? paymentMethod,
-    String? paymentNetwork,
-    String? paymentChannel,
+    Object? paymentNetwork = sentinel,
+    Object? paymentChannel = sentinel,
     String? source,
     String? category,
     String? note,
@@ -282,8 +282,12 @@ class Expense {
       isInternational: isInternational ?? this.isInternational,
       spentAt: spentAt ?? this.spentAt,
       paymentMethod: paymentMethod ?? this.paymentMethod,
-      paymentNetwork: paymentNetwork ?? this.paymentNetwork,
-      paymentChannel: paymentChannel ?? this.paymentChannel,
+        paymentNetwork: identical(paymentNetwork, sentinel)
+          ? this.paymentNetwork
+          : paymentNetwork as String?,
+        paymentChannel: identical(paymentChannel, sentinel)
+          ? this.paymentChannel
+          : paymentChannel as String?,
       source: source ?? this.source,
       category: category ?? this.category,
       note: note ?? this.note,

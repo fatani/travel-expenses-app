@@ -7,6 +7,7 @@ import 'package:travel_expenses/l10n/app_localizations.dart';
 import '../../../core/design_system/app_surfaces.dart';
 import '../../trips/domain/trip.dart';
 import '../domain/expense.dart';
+import '../domain/expense_payment.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import 'expense_controller.dart';
@@ -88,18 +89,25 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       text: seededChargedHomeAmount,
     );
     _selectedCategory = expense?.category ?? widget.initialCategory;
-    _selectedPaymentNetwork = expense?.paymentNetwork?.isNotEmpty == true
-      ? expense!.paymentNetwork
-      : expense != null
-        ? 'Other'
-        : initialPayment?.network;
-    _selectedPaymentChannel = expense?.paymentChannel?.isNotEmpty == true
-      ? expense!.paymentChannel
-      : expense != null
-        ? 'Other'
-        : initialPayment?.channel;
+
+    if (expense != null) {
+      final normalizedExistingPayment = normalizeExpensePaymentMetadata(
+        paymentMethod: expense.paymentMethod,
+        paymentNetwork: expense.paymentNetwork,
+        paymentChannel: expense.paymentChannel,
+        cardProfileId: expense.cardProfileId,
+      );
+      _selectedPaymentNetwork = normalizedExistingPayment.paymentNetwork;
+      _selectedPaymentChannel =
+          normalizedExistingPayment.paymentChannel ?? 'Other';
+      _selectedCardProfileId = normalizedExistingPayment.cardProfileId;
+    } else {
+      _selectedPaymentNetwork = initialPayment?.network;
+      _selectedPaymentChannel = initialPayment?.channel;
+      _selectedCardProfileId = null;
+    }
+
     _spentAt = expense?.spentAt ?? widget.initialSpentAt ?? DateTime.now();
-    _selectedCardProfileId = expense?.cardProfileId;
     _syncDateAndTimeFields(useLocale: false);
 
     if (!widget.isEditMode) {
@@ -612,10 +620,18 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     final paymentNetwork = _isCashChannel(paymentChannel)
       ? null
       : (derivedCardNetwork ?? _selectedPaymentNetwork);
-    final paymentMethod = _resolvePaymentMethodCompatibility(
+    final paymentMethodHint = _resolvePaymentMethodCompatibility(
       paymentNetwork,
       paymentChannel,
     );
+    final normalizedPayment = normalizeExpensePaymentMetadata(
+      paymentMethod: paymentMethodHint,
+      paymentNetwork: paymentNetwork,
+      paymentChannel: paymentChannel,
+      cardProfileId: _selectedCardProfileId,
+    );
+    final shouldAttachCardChargedAmount =
+        isCardExpenseChannel(normalizedPayment.paymentChannel);
 
     if (_isCardPayment && chargedHomeAmountRaw.isNotEmpty) {
       if (chargedHomeAmount == null || chargedHomeAmount <= 0) {
@@ -643,16 +659,17 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           currencyCode: currencyCode,
           category: _selectedCategory!,
           spentAt: _spentAt!,
-          paymentMethod: paymentMethod,
-          paymentNetwork: paymentNetwork,
-          paymentChannel: paymentChannel,
-            totalChargedAmount: _isCardPayment ? chargedHomeAmount : null,
+          paymentMethod: normalizedPayment.paymentMethod,
+          paymentNetwork: normalizedPayment.paymentNetwork,
+          paymentChannel: normalizedPayment.paymentChannel,
+            totalChargedAmount:
+                shouldAttachCardChargedAmount ? chargedHomeAmount : null,
             totalChargedCurrency:
-              _isCardPayment && chargedHomeAmount != null
+              shouldAttachCardChargedAmount && chargedHomeAmount != null
               ? normalizedHomeCurrency
               : null,
           note: _noteController.text,
-          cardProfileId: _selectedCardProfileId,
+          cardProfileId: normalizedPayment.cardProfileId,
           tripHomeCurrency: widget.trip.homeCurrencySnapshot,
         );
 
@@ -670,16 +687,17 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           currencyCode: currencyCode,
           category: _selectedCategory!,
           spentAt: _spentAt!,
-          paymentMethod: paymentMethod,
-          paymentNetwork: paymentNetwork,
-          paymentChannel: paymentChannel,
-            totalChargedAmount: _isCardPayment ? chargedHomeAmount : null,
+          paymentMethod: normalizedPayment.paymentMethod,
+          paymentNetwork: normalizedPayment.paymentNetwork,
+          paymentChannel: normalizedPayment.paymentChannel,
+            totalChargedAmount:
+                shouldAttachCardChargedAmount ? chargedHomeAmount : null,
             totalChargedCurrency:
-              _isCardPayment && chargedHomeAmount != null
+              shouldAttachCardChargedAmount && chargedHomeAmount != null
               ? normalizedHomeCurrency
               : null,
           note: _noteController.text,
-          cardProfileId: _selectedCardProfileId,
+          cardProfileId: normalizedPayment.cardProfileId,
           tripHomeCurrency: widget.trip.homeCurrencySnapshot,
         );
       }

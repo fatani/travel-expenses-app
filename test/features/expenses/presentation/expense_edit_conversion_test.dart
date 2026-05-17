@@ -496,6 +496,123 @@ void main() {
     expect(saved.homeCurrency, isNull);
     expect(saved.conversionRate, isNull);
   });
+
+  test('updateExpense coerces cash edits and clears stale card metadata', () async {
+    final repository = _FakeExpenseRepository(
+      initialExpenses: [
+        Expense.create(
+          id: 'stale-card-meta',
+          tripId: trip.id,
+          title: 'Groceries',
+          amount: 120,
+          currencyCode: 'THB',
+          transactionAmount: 120,
+          transactionCurrency: 'THB',
+          spentAt: DateTime(2026, 5, 10),
+          paymentMethod: 'Credit Card',
+          paymentNetwork: 'Visa',
+          paymentChannel: 'Online Purchase',
+          cardProfileId: 42,
+          category: 'Food',
+        ),
+      ],
+    );
+
+    final container = ProviderContainer(
+      overrides: [
+        expenseRepositoryProvider.overrideWithValue(repository),
+        cashWalletRepositoryProvider.overrideWithValue(
+          _FakeCashWalletRepository(effectiveRate: 0.1),
+        ),
+        manualCurrencyConversionServiceProvider.overrideWithValue(
+          ManualCurrencyConversionService(_FakeManualExchangeRateRepository()),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final controller = container.read(
+      expenseControllerProvider(trip.id).notifier,
+    );
+    final existing = (await repository.getExpenseById('stale-card-meta'))!;
+
+    await controller.updateExpense(
+      expense: existing,
+      title: existing.title,
+      amount: existing.amount,
+      currencyCode: existing.currencyCode,
+      category: existing.category ?? 'Food',
+      spentAt: existing.spentAt,
+      // Inconsistent payload should still normalize to canonical cash metadata.
+      paymentMethod: 'Cash',
+      paymentNetwork: 'Visa',
+      paymentChannel: 'Online Purchase',
+      cardProfileId: 42,
+      tripHomeCurrency: 'SAR',
+    );
+
+    final saved = (await repository.getExpenseById('stale-card-meta'))!;
+    expect(saved.paymentMethod, 'Cash');
+    expect(saved.paymentChannel, 'Cash');
+    expect(saved.paymentNetwork, isNull);
+    expect(saved.cardProfileId, isNull);
+  });
+
+  test('updateExpense defaults missing card channel to POS Purchase', () async {
+    final repository = _FakeExpenseRepository(
+      initialExpenses: [
+        Expense.create(
+          id: 'card-default-channel',
+          tripId: trip.id,
+          title: 'Hotel',
+          amount: 600,
+          currencyCode: 'THB',
+          transactionAmount: 600,
+          transactionCurrency: 'THB',
+          spentAt: DateTime(2026, 5, 10),
+          paymentMethod: 'Credit Card',
+          paymentNetwork: 'Visa',
+          paymentChannel: 'POS Purchase',
+          category: 'Accommodation',
+        ),
+      ],
+    );
+
+    final container = ProviderContainer(
+      overrides: [
+        expenseRepositoryProvider.overrideWithValue(repository),
+        cashWalletRepositoryProvider.overrideWithValue(
+          _FakeCashWalletRepository(),
+        ),
+        manualCurrencyConversionServiceProvider.overrideWithValue(
+          ManualCurrencyConversionService(_FakeManualExchangeRateRepository()),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final controller = container.read(
+      expenseControllerProvider(trip.id).notifier,
+    );
+    final existing = (await repository.getExpenseById('card-default-channel'))!;
+
+    await controller.updateExpense(
+      expense: existing,
+      title: existing.title,
+      amount: existing.amount,
+      currencyCode: existing.currencyCode,
+      category: existing.category ?? 'Accommodation',
+      spentAt: existing.spentAt,
+      paymentMethod: 'Credit Card',
+      paymentNetwork: 'Visa',
+      paymentChannel: null,
+      tripHomeCurrency: 'SAR',
+    );
+
+    final saved = (await repository.getExpenseById('card-default-channel'))!;
+    expect(saved.paymentMethod, 'Credit Card');
+    expect(saved.paymentChannel, 'POS Purchase');
+  });
 }
 
 class _FakeExpenseRepository extends ExpenseRepository {

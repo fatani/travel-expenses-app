@@ -1,5 +1,7 @@
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../domain/expense_payment.dart';
+
 class ExpenseOptionLabels {
   const ExpenseOptionLabels._();
 
@@ -112,6 +114,13 @@ class ExpenseOptionLabels {
     String? paymentNetworkValue,
     String? paymentChannelValue,
   }) {
+    if (isCashExpensePayment(
+      paymentMethod: paymentMethodValue ?? '',
+      paymentChannel: paymentChannelValue,
+    )) {
+      return l10n.paymentMethodCash;
+    }
+
     final parts = <String>[];
     if (paymentNetworkValue != null && paymentNetworkValue.isNotEmpty) {
       parts.add(paymentNetwork(l10n, paymentNetworkValue));

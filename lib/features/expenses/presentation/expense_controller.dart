@@ -109,6 +109,13 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           isInternational: isInternational ?? false,
         );
 
+    final normalizedPayment = normalizeExpensePaymentMetadata(
+      paymentMethod: paymentMethod,
+      paymentNetwork: paymentNetwork,
+      paymentChannel: paymentChannel,
+      cardProfileId: cardProfileId,
+    );
+
     final conversionSnapshot = await _resolveConversionSnapshot(
       fallbackAmount: amount,
       fallbackCurrencyCode: currencyCode,
@@ -119,8 +126,8 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       homeCurrency: homeCurrency,
       conversionRate: conversionRate,
       tripHomeCurrency: tripHomeCurrency,
-      paymentMethod: paymentMethod,
-      paymentChannel: paymentChannel,
+      paymentMethod: normalizedPayment.paymentMethod,
+      paymentChannel: normalizedPayment.paymentChannel,
     );
 
     final expense = Expense.create(
@@ -143,14 +150,14 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       totalChargedCurrency: normalizedMoney.totalChargedCurrency,
       isInternational: moneyModel?.isInternational ?? isInternational,
       spentAt: spentAt,
-      paymentMethod: paymentMethod,
-      paymentNetwork: paymentNetwork,
-      paymentChannel: paymentChannel,
+      paymentMethod: normalizedPayment.paymentMethod,
+      paymentNetwork: normalizedPayment.paymentNetwork,
+      paymentChannel: normalizedPayment.paymentChannel,
       source: source,
       category: category,
       note: _normalizeText(note),
       rawSmsText: _normalizeText(rawSmsText),
-      cardProfileId: cardProfileId,
+      cardProfileId: normalizedPayment.cardProfileId,
     );
 
     return _runMutation(() async {
@@ -285,13 +292,20 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           isInternational: isInternational ?? expense.isInternational,
         );
 
+    final normalizedPayment = normalizeExpensePaymentMetadata(
+      paymentMethod: paymentMethod,
+      paymentNetwork: paymentNetwork,
+      paymentChannel: paymentChannel,
+      cardProfileId: cardProfileId,
+    );
+
     final previousWasCash = _isCashPayment(
       paymentMethod: expense.paymentMethod,
       paymentChannel: expense.paymentChannel,
     );
     final nextIsCash = _isCashPayment(
-      paymentMethod: paymentMethod,
-      paymentChannel: paymentChannel,
+      paymentMethod: normalizedPayment.paymentMethod,
+      paymentChannel: normalizedPayment.paymentChannel,
     );
     final removedCardChargedAmount =
         !previousWasCash &&
@@ -312,8 +326,8 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       conversionRate: conversionRate,
       tripHomeCurrency: tripHomeCurrency,
       previousExpense: expense,
-      paymentMethod: paymentMethod,
-      paymentChannel: paymentChannel,
+      paymentMethod: normalizedPayment.paymentMethod,
+      paymentChannel: normalizedPayment.paymentChannel,
       forceClearSnapshot: shouldForceClearSnapshot,
     );
 
@@ -336,14 +350,14 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       totalChargedCurrency: normalizedMoney.totalChargedCurrency,
       isInternational: moneyModel?.isInternational ?? isInternational,
       spentAt: spentAt,
-      paymentMethod: paymentMethod,
-      paymentNetwork: paymentNetwork,
-      paymentChannel: paymentChannel,
+      paymentMethod: normalizedPayment.paymentMethod,
+      paymentNetwork: normalizedPayment.paymentNetwork,
+      paymentChannel: normalizedPayment.paymentChannel,
       source: source,
       category: category,
       note: _normalizeText(note),
       rawSmsText: _normalizeText(rawSmsText),
-      cardProfileId: cardProfileId,
+      cardProfileId: normalizedPayment.cardProfileId,
     );
 
     await _runMutation(() async {
