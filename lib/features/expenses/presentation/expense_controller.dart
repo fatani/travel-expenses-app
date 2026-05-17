@@ -33,8 +33,8 @@ class _ResolvedConversionSnapshot {
     required this.missingManualRate,
   });
 
-  final double originalAmount;
-  final String originalCurrency;
+  final double? originalAmount;
+  final String? originalCurrency;
   final double? convertedHomeAmount;
   final String? homeCurrency;
   final double? conversionRate;
@@ -285,6 +285,22 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           isInternational: isInternational ?? expense.isInternational,
         );
 
+    final previousWasCash = _isCashPayment(
+      paymentMethod: expense.paymentMethod,
+      paymentChannel: expense.paymentChannel,
+    );
+    final nextIsCash = _isCashPayment(
+      paymentMethod: paymentMethod,
+      paymentChannel: paymentChannel,
+    );
+    final removedCardChargedAmount =
+        !previousWasCash &&
+        !nextIsCash &&
+        expense.totalChargedAmount != null &&
+        normalizedMoney.totalChargedAmount == null;
+    final shouldForceClearSnapshot =
+        (previousWasCash && !nextIsCash) || removedCardChargedAmount;
+
     final conversionSnapshot = await _resolveConversionSnapshot(
       fallbackAmount: amount,
       fallbackCurrencyCode: currencyCode,
@@ -298,6 +314,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       previousExpense: expense,
       paymentMethod: paymentMethod,
       paymentChannel: paymentChannel,
+      forceClearSnapshot: shouldForceClearSnapshot,
     );
 
     final updatedExpense = expense.copyWith(
@@ -365,67 +382,103 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     Expense? previousExpense,
     required String paymentMethod,
     String? paymentChannel,
+    bool forceClearSnapshot = false,
   }) async {
-    final normalizedOriginalAmount =
-        originalAmount ?? normalizedMoney.transactionAmount ?? fallbackAmount;
-    final normalizedOriginalCurrency =
+    final normalizedTransactionAmount =
+        normalizedMoney.transactionAmount ?? fallbackAmount;
+    final normalizedTransactionCurrency =
         _normalizeCurrency(
-          originalCurrency ??
-              normalizedMoney.transactionCurrency ??
-              fallbackCurrencyCode,
+          normalizedMoney.transactionCurrency ?? fallbackCurrencyCode,
         ) ??
         fallbackCurrencyCode.trim().toUpperCase();
+    final normalizedOriginalAmount = originalAmount ?? normalizedTransactionAmount;
+    final normalizedOriginalCurrency =
+        _normalizeCurrency(originalCurrency) ?? normalizedTransactionCurrency;
     final normalizedHomeCurrency = _normalizeCurrency(
       homeCurrency ?? tripHomeCurrency ?? previousExpense?.homeCurrency,
     );
-
-    var computedConvertedHomeAmount = convertedHomeAmount;
-    var computedConversionRate = conversionRate;
-    var computedHomeCurrency = normalizedHomeCurrency;
-    var missingManualRate = false;
-
-    if (normalizedHomeCurrency == null || normalizedHomeCurrency.isEmpty) {
-      return _ResolvedConversionSnapshot(
-        originalAmount: normalizedOriginalAmount,
-        originalCurrency: normalizedOriginalCurrency,
-        convertedHomeAmount: computedConvertedHomeAmount,
-        homeCurrency: computedHomeCurrency,
-        conversionRate: computedConversionRate,
-        missingManualRate: false,
-      );
-    }
-
-    if (normalizedOriginalCurrency == normalizedHomeCurrency) {
-      return _ResolvedConversionSnapshot(
-        originalAmount: normalizedOriginalAmount,
-        originalCurrency: normalizedOriginalCurrency,
-        convertedHomeAmount: normalizedOriginalAmount,
-        homeCurrency: normalizedHomeCurrency,
-        conversionRate: 1,
-        missingManualRate: false,
-      );
-    }
-
-    if (computedConversionRate != null) {
-      return _ResolvedConversionSnapshot(
-        originalAmount: normalizedOriginalAmount,
-        originalCurrency: normalizedOriginalCurrency,
-        convertedHomeAmount: normalizedOriginalAmount * computedConversionRate,
-        homeCurrency: normalizedHomeCurrency,
-        conversionRate: computedConversionRate,
-        missingManualRate: false,
-      );
-    }
 
     final isCashPayment = _isCashPayment(
       paymentMethod: paymentMethod,
       paymentChannel: paymentChannel,
     );
+    final wasCashPayment = previousExpense != null &&
+        _isCashPayment(
+          paymentMethod: previousExpense.paymentMethod,
+          paymentChannel: previousExpense.paymentChannel,
+        );
 
-    // On cash expense EDIT: preserve the stored per-expense rate so old expenses
-    // are never retroactively changed by new inflows.
+    if (normalizedHomeCurrency == null || normalizedHomeCurrency.isEmpty) {
+      return _ResolvedConversionSnapshot(
+        originalAmount: null,
+        originalCurrency: null,
+        convertedHomeAmount: null,
+        homeCurrency: null,
+        conversionRate: null,
+        missingManualRate: false,
+      );
+    }
+
+    if (conversionRate != null) {
+      return _ResolvedConversionSnapshot(
+        originalAmount: normalizedOriginalAmount,
+        originalCurrency: normalizedOriginalCurrency,
+        convertedHomeAmount: normalizedOriginalAmount * conversionRate,
+        homeCurrency: normalizedHomeCurrency,
+        conversionRate: conversionRate,
+        missingManualRate: false,
+      );
+    }
+
+    if (!isCashPayment) {
+      final cardFx = _resolveCardProvidedFxSnapshot(
+        normalizedMoney: normalizedMoney,
+        normalizedHomeCurrency: normalizedHomeCurrency,
+        normalizedTransactionAmount: normalizedTransactionAmount,
+        normalizedTransactionCurrency: normalizedTransactionCurrency,
+      );
+      if (cardFx != null) {
+        return cardFx;
+      }
+
+      if (forceClearSnapshot) {
+        return _ResolvedConversionSnapshot(
+          originalAmount: null,
+          originalCurrency: null,
+          convertedHomeAmount: null,
+          homeCurrency: null,
+          conversionRate: null,
+          missingManualRate: false,
+        );
+      }
+
+      if (previousExpense != null && !wasCashPayment && previousExpense.conversionRate != null) {
+        final storedRate = previousExpense.conversionRate!;
+        return _ResolvedConversionSnapshot(
+          originalAmount: normalizedTransactionAmount,
+          originalCurrency: normalizedTransactionCurrency,
+          convertedHomeAmount: normalizedTransactionAmount * storedRate,
+          homeCurrency: normalizedHomeCurrency,
+          conversionRate: storedRate,
+          missingManualRate: false,
+        );
+      }
+
+      // Cash -> Card: explicitly clear stale cash snapshot fields.
+      return _ResolvedConversionSnapshot(
+        originalAmount: null,
+        originalCurrency: null,
+        convertedHomeAmount: null,
+        homeCurrency: null,
+        conversionRate: null,
+        missingManualRate: false,
+      );
+    }
+
+    // Cash -> Cash edit: preserve stored cash rate snapshot.
     final shouldKeepCashRate =
         previousExpense != null &&
+        wasCashPayment &&
         isCashPayment &&
         previousExpense.conversionRate != null;
 
@@ -441,87 +494,87 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       );
     }
 
-    final shouldKeepCardRate =
-        previousExpense != null &&
-        !isCashPayment &&
-        previousExpense.conversionRate != null;
-
-    if (shouldKeepCardRate) {
-      computedConversionRate = previousExpense.conversionRate;
+    if (normalizedTransactionCurrency == normalizedHomeCurrency) {
       return _ResolvedConversionSnapshot(
-        originalAmount: normalizedOriginalAmount,
-        originalCurrency: normalizedOriginalCurrency,
-        convertedHomeAmount: normalizedOriginalAmount * computedConversionRate!,
+        originalAmount: normalizedTransactionAmount,
+        originalCurrency: normalizedTransactionCurrency,
+        convertedHomeAmount: normalizedTransactionAmount,
         homeCurrency: normalizedHomeCurrency,
-        conversionRate: computedConversionRate,
+        conversionRate: 1,
         missingManualRate: false,
       );
     }
 
-    // On cash expense CREATE: derive rate from the current cash pool so the
-    // snapshot is captured at creation time and immutable going forward.
-    if (isCashPayment && previousExpense == null) {
-      try {
-        final cashRate = await ref
-            .read(cashWalletRepositoryProvider)
-            .getEffectiveCashRate(
-              tripId: _tripId,
-              transactionCurrencyCode: normalizedOriginalCurrency,
-              homeCurrencyCode: normalizedHomeCurrency,
-            );
-        if (cashRate != null) {
-          final cashOriginalAmount = fallbackAmount;
-          final cashOriginalCurrency =
-              _normalizeCurrency(fallbackCurrencyCode) ??
-              fallbackCurrencyCode.trim().toUpperCase();
-          return _ResolvedConversionSnapshot(
-            originalAmount: cashOriginalAmount,
-            originalCurrency: cashOriginalCurrency,
-            convertedHomeAmount: cashOriginalAmount * cashRate,
-            homeCurrency: normalizedHomeCurrency,
-            conversionRate: cashRate,
-            missingManualRate: false,
-          );
-        }
-      } catch (_) {
-        // Non-blocking: fall through to manual-rate lookup.
-      }
-    }
-
     try {
-      final conversion = await ref
-          .read(manualCurrencyConversionServiceProvider)
-          .convert(
+      final cashRate = await ref
+          .read(cashWalletRepositoryProvider)
+          .getEffectiveCashRate(
             tripId: _tripId,
-            amount: normalizedOriginalAmount,
-            fromCurrency: normalizedOriginalCurrency,
-            toCurrency: normalizedHomeCurrency,
+            transactionCurrencyCode: normalizedTransactionCurrency,
+            homeCurrencyCode: normalizedHomeCurrency,
           );
 
-      if (conversion != null) {
-        computedConvertedHomeAmount = conversion.convertedAmount;
-        computedConversionRate = conversion.rate;
-        computedHomeCurrency = normalizedHomeCurrency;
-      } else {
-        computedConvertedHomeAmount = null;
-        computedConversionRate = null;
-        computedHomeCurrency = normalizedHomeCurrency;
-        missingManualRate = true;
+      if (cashRate != null) {
+        return _ResolvedConversionSnapshot(
+          originalAmount: normalizedTransactionAmount,
+          originalCurrency: normalizedTransactionCurrency,
+          convertedHomeAmount: normalizedTransactionAmount * cashRate,
+          homeCurrency: normalizedHomeCurrency,
+          conversionRate: cashRate,
+          missingManualRate: false,
+        );
       }
     } catch (_) {
-      computedConvertedHomeAmount = null;
-      computedConversionRate = null;
-      computedHomeCurrency = normalizedHomeCurrency;
-      missingManualRate = true;
+      // Ignore and return empty conversion snapshot below.
     }
 
     return _ResolvedConversionSnapshot(
-      originalAmount: normalizedOriginalAmount,
-      originalCurrency: normalizedOriginalCurrency,
-      convertedHomeAmount: computedConvertedHomeAmount,
-      homeCurrency: computedHomeCurrency,
-      conversionRate: computedConversionRate,
-      missingManualRate: missingManualRate,
+      originalAmount: null,
+      originalCurrency: null,
+      convertedHomeAmount: null,
+      homeCurrency: null,
+      conversionRate: null,
+      missingManualRate: false,
+    );
+  }
+
+  _ResolvedConversionSnapshot? _resolveCardProvidedFxSnapshot({
+    required MoneyModel normalizedMoney,
+    required String normalizedHomeCurrency,
+    required double normalizedTransactionAmount,
+    required String normalizedTransactionCurrency,
+  }) {
+    if (normalizedTransactionAmount <= 0 ||
+        normalizedTransactionCurrency == normalizedHomeCurrency) {
+      return null;
+    }
+
+    final normalizedTotalChargedCurrency =
+        _normalizeCurrency(normalizedMoney.totalChargedCurrency);
+    final normalizedBilledCurrency =
+        _normalizeCurrency(normalizedMoney.billedCurrency);
+
+    double? chargedHomeAmount;
+    if (normalizedMoney.totalChargedAmount != null &&
+        normalizedTotalChargedCurrency == normalizedHomeCurrency) {
+      chargedHomeAmount = normalizedMoney.totalChargedAmount;
+    } else if (normalizedMoney.billedAmount != null &&
+        normalizedBilledCurrency == normalizedHomeCurrency) {
+      chargedHomeAmount = normalizedMoney.billedAmount;
+    }
+
+    if (chargedHomeAmount == null || chargedHomeAmount <= 0) {
+      return null;
+    }
+
+    final rate = chargedHomeAmount / normalizedTransactionAmount;
+    return _ResolvedConversionSnapshot(
+      originalAmount: normalizedTransactionAmount,
+      originalCurrency: normalizedTransactionCurrency,
+      convertedHomeAmount: chargedHomeAmount,
+      homeCurrency: normalizedHomeCurrency,
+      conversionRate: rate,
+      missingManualRate: false,
     );
   }
 

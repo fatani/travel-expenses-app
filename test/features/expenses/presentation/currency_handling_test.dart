@@ -412,14 +412,14 @@ void main() {
       await tester.tap(find.text('POS Purchase').last);
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.byType(TextFormField).at(3));
-      await tester.tap(find.byType(TextFormField).at(3));
+      await tester.ensureVisible(find.byType(TextFormField).at(4));
+      await tester.tap(find.byType(TextFormField).at(4));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.byType(TextFormField).at(4));
-      await tester.tap(find.byType(TextFormField).at(4));
+      await tester.ensureVisible(find.byType(TextFormField).at(5));
+      await tester.tap(find.byType(TextFormField).at(5));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
@@ -447,6 +447,36 @@ void main() {
 
       expect(repository.createdExpenses, hasLength(1));
       expect(repository.createdExpenses.single.currencyCode, 'SAR');
+    },
+  );
+
+  testWidgets(
+    'charged home amount field appears only for card payment channel',
+    (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          child: ExpenseFormScreen(trip: trip),
+          overrides: const [],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Charged amount in CNY'), findsNothing);
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('POS Purchase').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Charged amount in CNY'), findsOneWidget);
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cash').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Charged amount in CNY'), findsNothing);
     },
   );
 

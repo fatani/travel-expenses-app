@@ -15,9 +15,9 @@ void main() {
   sqfliteFfiInit();
   databaseFactory = databaseFactoryFfi;
 
-  testWidgets(
+  test(
     'cash snapshots are fully saved at creation and remain immutable after later inflows',
-    (tester) async {
+    () async {
 
       final appDatabase = AppDatabase();
       addTearDown(() async {

@@ -1463,24 +1463,11 @@ class _ExpenseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    // Determine primary display amount: totalCharged > billed > transaction
-    final bool useCharged = expense.totalChargedAmount != null;
-    final bool useBilled =
-        !useCharged && expense.billedAmount != null;
-    final double primaryAmount = useCharged
-        ? expense.totalChargedAmount!
-        : useBilled
-        ? expense.billedAmount!
-        : expense.transactionAmount;
-    final String primaryCurrency = useCharged
-        ? (expense.totalChargedCurrency ?? expense.transactionCurrency)
-        : useBilled
-        ? (expense.billedCurrency ?? expense.transactionCurrency)
-        : expense.transactionCurrency;
-    final bool showSecondary =
-        (useCharged || useBilled) &&
-        expense.transactionCurrency.toUpperCase() !=
-            primaryCurrency.toUpperCase();
+    // Primary display is always the real travel-country transaction amount.
+    // Charged/billed home amounts are secondary FX metadata shown in the
+    // conversion block only — never promoted to primary.
+    final double primaryAmount = expense.transactionAmount;
+    final String primaryCurrency = expense.transactionCurrency;
     final originalAmount = expense.originalAmount ?? expense.transactionAmount;
     final originalCurrency = expense.originalCurrency ?? expense.transactionCurrency;
     final normalizedTripHomeCurrency = tripHomeCurrency.trim().toUpperCase();
@@ -1651,15 +1638,7 @@ class _ExpenseCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (showSecondary) ...[
-                        const SizedBox(height: 3),
-                        Text(
-                          '≈ ${_formatAmountCurrencyLtr(expense.transactionAmount, expense.transactionCurrency)}',
-                          textAlign: TextAlign.end,
-                          textDirection: ui.TextDirection.ltr,
-                          style: mutedStyle,
-                        ),
-                      ],
+
                       if (hasHomeConversion) ...[
                         const SizedBox(height: 3),
                         Text(

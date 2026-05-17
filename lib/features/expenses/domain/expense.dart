@@ -226,11 +226,11 @@ class Expense {
     String? currencyCode,
     double? transactionAmount,
     String? transactionCurrency,
-    double? originalAmount,
-    String? originalCurrency,
-    double? convertedHomeAmount,
-    String? homeCurrency,
-    double? conversionRate,
+    Object? originalAmount = sentinel,
+    Object? originalCurrency = sentinel,
+    Object? convertedHomeAmount = sentinel,
+    Object? homeCurrency = sentinel,
+    Object? conversionRate = sentinel,
     double? billedAmount,
     String? billedCurrency,
     double? feesAmount,
@@ -258,11 +258,21 @@ class Expense {
       currencyCode: currencyCode ?? this.currencyCode,
       transactionAmount: transactionAmount ?? this.transactionAmount,
       transactionCurrency: transactionCurrency ?? this.transactionCurrency,
-      originalAmount: originalAmount ?? this.originalAmount,
-      originalCurrency: originalCurrency ?? this.originalCurrency,
-      convertedHomeAmount: convertedHomeAmount ?? this.convertedHomeAmount,
-      homeCurrency: homeCurrency ?? this.homeCurrency,
-      conversionRate: conversionRate ?? this.conversionRate,
+        originalAmount: identical(originalAmount, sentinel)
+          ? this.originalAmount
+          : originalAmount as double?,
+        originalCurrency: identical(originalCurrency, sentinel)
+          ? this.originalCurrency
+          : originalCurrency as String?,
+        convertedHomeAmount: identical(convertedHomeAmount, sentinel)
+          ? this.convertedHomeAmount
+          : convertedHomeAmount as double?,
+        homeCurrency: identical(homeCurrency, sentinel)
+          ? this.homeCurrency
+          : homeCurrency as String?,
+        conversionRate: identical(conversionRate, sentinel)
+          ? this.conversionRate
+          : conversionRate as double?,
       billedAmount: billedAmount ?? this.billedAmount,
       billedCurrency: billedCurrency ?? this.billedCurrency,
       feesAmount: feesAmount ?? this.feesAmount,

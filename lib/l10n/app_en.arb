@@ -265,6 +265,13 @@
   "expenseFormPaymentMethodLabel": "Payment method",
   "expenseFormPaymentNetworkLabel": "Card network",
   "expenseFormPaymentChannelLabel": "How you paid",
+  "expenseFormChargedAmountLabel": "Charged amount in {currencyCode}",
+  "@expenseFormChargedAmountLabel": {
+    "placeholders": {
+      "currencyCode": {}
+    }
+  },
+  "expenseFormChargedAmountHelper": "As shown in your bank/card statement",
   "expenseFormDateLabel": "Expense date",
   "expenseFormTimeLabel": "Expense time",
   "expenseFormNoteLabel": "Note",

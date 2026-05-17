@@ -715,6 +715,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormPaymentChannelLabel => 'كيف دفعت';
 
   @override
+  String expenseFormChargedAmountLabel(Object currencyCode) {
+    return 'المبلغ المخصوم بـ $currencyCode';
+  }
+
+  @override
+  String get expenseFormChargedAmountHelper => 'كما ظهر في رسالة البنك أو كشف البطاقة';
+
+  @override
   String get expenseFormDateLabel => 'تاريخ المصروف';
 
   @override

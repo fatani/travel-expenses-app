@@ -1427,6 +1427,18 @@ abstract class AppLocalizations {
   /// **'How you paid'**
   String get expenseFormPaymentChannelLabel;
 
+  /// No description provided for @expenseFormChargedAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Charged amount in {currencyCode}'**
+  String expenseFormChargedAmountLabel(Object currencyCode);
+
+  /// No description provided for @expenseFormChargedAmountHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'As shown in your bank/card statement'**
+  String get expenseFormChargedAmountHelper;
+
   /// No description provided for @expenseFormDateLabel.
   ///
   /// In en, this message translates to:

@@ -49,6 +49,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   late final TextEditingController _dateController;
   late final TextEditingController _timeController;
   late final TextEditingController _noteController;
+  late final TextEditingController _chargedHomeAmountController;
 
   String? _selectedCategory;
   String? _selectedPaymentNetwork;
@@ -76,6 +77,16 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     _dateController = TextEditingController();
     _timeController = TextEditingController();
     _noteController = TextEditingController(text: expense?.note ?? '');
+    final homeCurrency = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+    final seededChargedHomeAmount =
+      (expense?.totalChargedAmount != null &&
+        (expense?.totalChargedCurrency ?? '').trim().toUpperCase() ==
+          homeCurrency)
+      ? expense!.totalChargedAmount!.toStringAsFixed(2)
+      : '';
+    _chargedHomeAmountController = TextEditingController(
+      text: seededChargedHomeAmount,
+    );
     _selectedCategory = expense?.category ?? widget.initialCategory;
     _selectedPaymentNetwork = expense?.paymentNetwork?.isNotEmpty == true
       ? expense!.paymentNetwork
@@ -151,6 +162,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     _dateController.dispose();
     _timeController.dispose();
     _noteController.dispose();
+    _chargedHomeAmountController.dispose();
     super.dispose();
   }
 
@@ -316,6 +328,27 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             });
                           },
                         ),
+                        if (_isCardPayment) ...[
+                          const SizedBox(height: 12),
+                          TextFormField(
+                            controller: _chargedHomeAmountController,
+                            textInputAction: TextInputAction.next,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: _premiumInputDecoration(
+                              context,
+                              labelText: l10n.expenseFormChargedAmountLabel(
+                                widget.trip.homeCurrencySnapshot
+                                    .trim()
+                                    .toUpperCase(),
+                              ),
+                              hintText: l10n.expenseFormAmountHint,
+                              helperText: l10n.expenseFormChargedAmountHelper,
+                            ),
+                            validator: _validateOptionalAmount,
+                          ),
+                        ],
                         const SizedBox(height: 18),
                         _SectionLabel(
                           title: isArabic ? 'التاريخ والملاحظات' : 'Date & Notes',
@@ -568,6 +601,12 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         : _titleController.text.trim();
     final amount = double.parse(_amountController.text.trim());
     final currencyCode = _currencyController.text.trim().toUpperCase();
+    final chargedHomeAmountRaw = _chargedHomeAmountController.text.trim();
+    final chargedHomeAmount = chargedHomeAmountRaw.isEmpty
+      ? null
+      : double.tryParse(chargedHomeAmountRaw);
+    final normalizedHomeCurrency =
+      widget.trip.homeCurrencySnapshot.trim().toUpperCase();
     final paymentChannel = _selectedPaymentChannel!;
     final derivedCardNetwork = _deriveNetworkFromSelectedCard();
     final paymentNetwork = _isCashChannel(paymentChannel)
@@ -577,6 +616,12 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       paymentNetwork,
       paymentChannel,
     );
+
+    if (_isCardPayment && chargedHomeAmountRaw.isNotEmpty) {
+      if (chargedHomeAmount == null || chargedHomeAmount <= 0) {
+        return;
+      }
+    }
 
     if (widget.expense == null &&
         currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
@@ -601,6 +646,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           paymentMethod: paymentMethod,
           paymentNetwork: paymentNetwork,
           paymentChannel: paymentChannel,
+            totalChargedAmount: _isCardPayment ? chargedHomeAmount : null,
+            totalChargedCurrency:
+              _isCardPayment && chargedHomeAmount != null
+              ? normalizedHomeCurrency
+              : null,
           note: _noteController.text,
           cardProfileId: _selectedCardProfileId,
           tripHomeCurrency: widget.trip.homeCurrencySnapshot,
@@ -623,6 +673,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           paymentMethod: paymentMethod,
           paymentNetwork: paymentNetwork,
           paymentChannel: paymentChannel,
+            totalChargedAmount: _isCardPayment ? chargedHomeAmount : null,
+            totalChargedCurrency:
+              _isCardPayment && chargedHomeAmount != null
+              ? normalizedHomeCurrency
+              : null,
           note: _noteController.text,
           cardProfileId: _selectedCardProfileId,
           tripHomeCurrency: widget.trip.homeCurrencySnapshot,
@@ -723,6 +778,21 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       channel == 'POS Purchase' || channel == 'Online Purchase';
 
   bool _isCashChannel(String? channel) => channel == 'Cash';
+
+  String? _validateOptionalAmount(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) {
+      return null;
+    }
+    final parsed = double.tryParse(trimmed);
+    if (parsed == null) {
+      return AppLocalizations.of(context)!.commonEnterValidNumber;
+    }
+    if (parsed <= 0) {
+      return AppLocalizations.of(context)!.expenseFormAmountPositive;
+    }
+    return null;
+  }
 
   String? _deriveNetworkFromSelectedCard() {
     final selectedCardId = _selectedCardProfileId;

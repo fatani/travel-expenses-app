@@ -265,6 +265,13 @@
   "expenseFormPaymentMethodLabel": "طريقة الدفع",
   "expenseFormPaymentNetworkLabel": "شبكة البطاقة",
   "expenseFormPaymentChannelLabel": "كيف دفعت",
+  "expenseFormChargedAmountLabel": "المبلغ المخصوم بـ {currencyCode}",
+  "@expenseFormChargedAmountLabel": {
+    "placeholders": {
+      "currencyCode": {}
+    }
+  },
+  "expenseFormChargedAmountHelper": "كما ظهر في رسالة البنك أو كشف البطاقة",
   "expenseFormDateLabel": "تاريخ المصروف",
   "expenseFormTimeLabel": "وقت المصروف",
   "expenseFormNoteLabel": "ملاحظة",

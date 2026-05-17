@@ -365,7 +365,7 @@ class AppDatabase {
 
     await db.execute(
       'UPDATE $tripsTable SET destination_currency = base_currency '
-      'WHERE destination_currency IS NULL OR TRIM(destination_currency) = ""',
+      "WHERE destination_currency IS NULL OR TRIM(destination_currency) = ''",
     );
   }
 
@@ -492,7 +492,7 @@ class AppDatabase {
       'UPDATE $expensesTable SET transaction_amount = amount WHERE transaction_amount IS NULL',
     );
     await db.execute(
-      'UPDATE $expensesTable SET transaction_currency = currency_code WHERE transaction_currency IS NULL OR transaction_currency = ""',
+      "UPDATE $expensesTable SET transaction_currency = currency_code WHERE transaction_currency IS NULL OR transaction_currency = ''",
     );
     await _recomputeExpensesInternationalFlag(db);
   }
@@ -555,12 +555,12 @@ class AppDatabase {
     );
     await db.execute(
       'UPDATE $expensesTable SET original_currency = transaction_currency '
-      'WHERE (original_currency IS NULL OR TRIM(original_currency) = "") '
-      'AND transaction_currency IS NOT NULL AND TRIM(transaction_currency) != ""',
+      "WHERE (original_currency IS NULL OR TRIM(original_currency) = '') "
+      "AND transaction_currency IS NOT NULL AND TRIM(transaction_currency) != ''",
     );
     await db.execute(
       'UPDATE $expensesTable SET original_currency = currency_code '
-      'WHERE original_currency IS NULL OR TRIM(original_currency) = ""',
+      "WHERE original_currency IS NULL OR TRIM(original_currency) = ''",
     );
   }
 
@@ -817,20 +817,20 @@ class AppDatabase {
     await db.execute(
       'UPDATE $expensesTable '
       'SET is_international = CASE '
-      'WHEN UPPER(COALESCE(transaction_currency, currency_code, "")) != "SAR" '
+      "WHEN UPPER(COALESCE(transaction_currency, currency_code, '')) != 'SAR' "
       'OR fees_amount IS NOT NULL '
       'OR ('
       '  billed_amount IS NOT NULL OR '
-      '  (billed_currency IS NOT NULL AND TRIM(billed_currency) != "")'
+      "  (billed_currency IS NOT NULL AND TRIM(billed_currency) != '')"
       ') AND ('
-      '  UPPER(COALESCE(billed_currency, transaction_currency, currency_code, "")) != UPPER(COALESCE(transaction_currency, currency_code, "")) '
+      "  UPPER(COALESCE(billed_currency, transaction_currency, currency_code, '')) != UPPER(COALESCE(transaction_currency, currency_code, '')) "
       '  OR ABS(COALESCE(billed_amount, transaction_amount, amount) - COALESCE(transaction_amount, amount)) > 0.000001'
       ') '
       'OR ('
       '  total_charged_amount IS NOT NULL OR '
-      '  (total_charged_currency IS NOT NULL AND TRIM(total_charged_currency) != "")'
+      "  (total_charged_currency IS NOT NULL AND TRIM(total_charged_currency) != '')"
       ') AND ('
-      '  UPPER(COALESCE(total_charged_currency, transaction_currency, currency_code, "")) != UPPER(COALESCE(transaction_currency, currency_code, "")) '
+      "  UPPER(COALESCE(total_charged_currency, transaction_currency, currency_code, '')) != UPPER(COALESCE(transaction_currency, currency_code, '')) "
       '  OR ABS(COALESCE(total_charged_amount, transaction_amount, amount) - COALESCE(transaction_amount, amount)) > 0.000001'
       ') '
       'THEN 1 ELSE 0 END',

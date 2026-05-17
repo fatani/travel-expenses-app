@@ -715,6 +715,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormPaymentChannelLabel => 'How you paid';
 
   @override
+  String expenseFormChargedAmountLabel(Object currencyCode) {
+    return 'Charged amount in $currencyCode';
+  }
+
+  @override
+  String get expenseFormChargedAmountHelper => 'As shown in your bank/card statement';
+
+  @override
   String get expenseFormDateLabel => 'Expense date';
 
   @override
