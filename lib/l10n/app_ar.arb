@@ -96,6 +96,8 @@
   "cashWalletTimeLabel": "الوقت",
   "cashWalletQuickAtmWithdrawal": "سحب ATM",
   "cashWalletQuickAtmShort": "ATM",
+  "quickAddQuickSave": "حفظ سريع",
+  "quickAddAddDetails": "إضافة تفاصيل",
   "cashWalletTripStatusDaysLeft": "متبقي {days} أيام",
   "@cashWalletTripStatusDaysLeft": {"placeholders": {"days": {"type": "int"}}},
   "cashWalletTripStatusStartsIn": "تبدأ بعد {days} أيام",

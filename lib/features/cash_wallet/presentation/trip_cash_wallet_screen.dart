@@ -209,13 +209,6 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.tripDetailsCashWalletAction),
-        actions: [
-          IconButton(
-            tooltip: l10n.manualExchangeAddRate,
-            onPressed: _openAddManualRateSheet,
-            icon: const Icon(Icons.currency_exchange),
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -481,26 +474,6 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       return;
     }
     await _load();
-  }
-
-  Future<void> _openAddManualRateSheet() async {
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _AddManualRateSheet(tripId: widget.trip.id),
-    );
-
-    if (!mounted || result != true) {
-      return;
-    }
-
-    final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.manualExchangeSaved)),
-    );
   }
 }
 

@@ -2873,7 +2873,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                             const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
                             const SizedBox(width: 9),
                             Text(
-                              l10n.tripDetailsQuickAddSave,
+                              AppLocalizations.of(context)!.quickAddQuickSave,
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w800,
@@ -2892,9 +2892,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () {
-                // Save category memory for next time
                 _savePreferences();
-
                 Navigator.of(context).pop(
                   _QuickAddSheetResult.moreDetails(
                     _QuickAddDraftPayload(
@@ -2907,7 +2905,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                   ),
                 );
               },
-              child: Text(l10n.tripDetailsQuickAddMoreDetails),
+              child: Text(AppLocalizations.of(context)!.quickAddAddDetails),
             ),
           ],
         ),

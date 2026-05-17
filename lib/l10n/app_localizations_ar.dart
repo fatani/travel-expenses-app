@@ -278,6 +278,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletQuickAtmShort => 'ATM';
 
   @override
+  String get quickAddQuickSave => 'حفظ سريع';
+
+  @override
+  String get quickAddAddDetails => 'إضافة تفاصيل';
+
+  @override
   String cashWalletTripStatusDaysLeft(int days) {
     return 'متبقي $days أيام';
   }

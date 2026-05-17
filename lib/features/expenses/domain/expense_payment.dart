@@ -50,11 +50,13 @@ NormalizedExpensePayment normalizeExpensePaymentMetadata({
   }
 
   if (_isMobileWalletPayment(trimmedMethod, trimmedChannel)) {
-    return const NormalizedExpensePayment(
-      paymentMethod: 'Mobile Wallet',
-      paymentNetwork: null,
-      paymentChannel: 'Mobile Wallet',
-      cardProfileId: null,
+    // Mobile Wallet is a payment rail/wrapper around an actual card.
+    // Map it to Card as the real financial source.
+    return NormalizedExpensePayment(
+      paymentMethod: 'Credit Card',
+      paymentNetwork: trimmedNetwork ?? 'Other',
+      paymentChannel: 'POS Purchase',
+      cardProfileId: cardProfileId,
     );
   }
 

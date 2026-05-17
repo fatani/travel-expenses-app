@@ -142,9 +142,10 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       case 'Cash':
         return const _InitialPaymentSelection(network: 'Other', channel: 'Cash');
       case 'Wallet':
+        // Legacy: Mobile Wallet was a wrapper around a card. Map to Card.
         return const _InitialPaymentSelection(
-          network: 'Other',
-          channel: 'Mobile Wallet',
+          network: 'Visa',
+          channel: 'POS Purchase',
         );
       case 'Card':
         return const _InitialPaymentSelection(
@@ -755,7 +756,8 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       return 'Cash';
     }
     if (channel == 'Mobile Wallet') {
-      return 'Mobile Wallet';
+      // Legacy: Mobile Wallet maps to Credit Card (the real financial source)
+      return 'Credit Card';
     }
     if (network == null || network.isEmpty) {
       return 'Other';

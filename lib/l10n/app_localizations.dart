@@ -605,6 +605,18 @@ abstract class AppLocalizations {
   /// **'ATM'**
   String get cashWalletQuickAtmShort;
 
+  /// No description provided for @quickAddQuickSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Quick Save'**
+  String get quickAddQuickSave;
+
+  /// No description provided for @quickAddAddDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Details'**
+  String get quickAddAddDetails;
+
   /// No description provided for @cashWalletTripStatusDaysLeft.
   ///
   /// In en, this message translates to:

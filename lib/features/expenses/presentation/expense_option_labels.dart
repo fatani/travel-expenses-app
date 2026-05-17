@@ -20,7 +20,6 @@ class ExpenseOptionLabels {
     'Credit Card',
     'Debit Card',
     'Bank Transfer',
-    'Mobile Wallet',
     'Other',
   ];
 
@@ -35,7 +34,6 @@ class ExpenseOptionLabels {
     'POS Purchase',
     'Online Purchase',
     'Cash',
-    'Mobile Wallet',
     'Other',
   ];
 
@@ -68,8 +66,6 @@ class ExpenseOptionLabels {
         return l10n.paymentMethodDebitCard;
       case 'Bank Transfer':
         return l10n.paymentMethodBankTransfer;
-      case 'Mobile Wallet':
-        return l10n.paymentMethodMobileWallet;
       case 'Other':
         return l10n.paymentMethodOther;
       default:
@@ -100,9 +96,6 @@ class ExpenseOptionLabels {
         return l10n.paymentChannelOnline;
       case 'Cash':
         return l10n.paymentMethodCash;
-      case 'Mobile Wallet':
-      case 'Wallet':
-        return l10n.paymentMethodMobileWallet;
       default:
         return l10n.paymentChannelOther;
     }

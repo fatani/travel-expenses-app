@@ -990,7 +990,8 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       return 'Cash';
     }
     if (channel == 'Mobile Wallet') {
-      return 'Mobile Wallet';
+      // Legacy: Mobile Wallet maps to Credit Card (the real financial source)
+      return 'Credit Card';
     }
     if (network == null || network.isEmpty) {
       return 'Other';

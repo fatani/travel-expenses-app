@@ -96,6 +96,8 @@
   "cashWalletTimeLabel": "Time",
   "cashWalletQuickAtmWithdrawal": "ATM Withdrawal",
   "cashWalletQuickAtmShort": "ATM",
+  "quickAddQuickSave": "Quick Save",
+  "quickAddAddDetails": "Add Details",
   "cashWalletTripStatusDaysLeft": "{days} days left",
   "@cashWalletTripStatusDaysLeft": {"placeholders": {"days": {"type": "int"}}},
   "cashWalletTripStatusStartsIn": "Starts in {days} days",
