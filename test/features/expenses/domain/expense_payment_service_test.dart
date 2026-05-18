@@ -42,4 +42,56 @@ void main() {
     expect(result.paymentChannel, 'POS Purchase');
     expect(result.paymentNetwork, 'Mada');
   });
+
+  // ─── resolvePaymentMethodHint ───────────────────────────────────────────
+
+  group('resolvePaymentMethodHint', () {
+    test('cash channel returns Cash', () {
+      expect(service.resolvePaymentMethodHint(null, 'Cash'), 'Cash');
+      expect(service.resolvePaymentMethodHint('Visa', 'Cash'), 'Cash');
+    });
+
+    test('mobile wallet channel returns Credit Card', () {
+      expect(
+        service.resolvePaymentMethodHint(null, 'Mobile Wallet'),
+        'Credit Card',
+      );
+    });
+
+    test('null network with card channel returns Other', () {
+      expect(service.resolvePaymentMethodHint(null, 'POS Purchase'), 'Other');
+      expect(
+        service.resolvePaymentMethodHint('', 'Online Purchase'),
+        'Other',
+      );
+    });
+
+    test('Mada network returns Debit Card', () {
+      expect(
+        service.resolvePaymentMethodHint('Mada', 'POS Purchase'),
+        'Debit Card',
+      );
+    });
+
+    test('Visa network returns Credit Card', () {
+      expect(
+        service.resolvePaymentMethodHint('Visa', 'POS Purchase'),
+        'Credit Card',
+      );
+    });
+
+    test('Mastercard network returns Credit Card', () {
+      expect(
+        service.resolvePaymentMethodHint('Mastercard', 'Online Purchase'),
+        'Credit Card',
+      );
+    });
+
+    test('unknown network with card channel returns Other', () {
+      expect(
+        service.resolvePaymentMethodHint('UnknownBank', 'POS Purchase'),
+        'Other',
+      );
+    });
+  });
 }

@@ -320,7 +320,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           onChanged: (value) {
                             setState(() {
                               _selectedPaymentChannel = value;
-                              if (!_isCardPaymentChannel(value)) {
+                              if (!isCardExpenseChannel(value)) {
                                 _selectedCardProfileId = null;
                               }
                             });
@@ -621,7 +621,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     final paymentNetwork = _isCashChannel(paymentChannel)
       ? null
       : (derivedCardNetwork ?? _selectedPaymentNetwork);
-    final paymentMethodHint = _resolvePaymentMethodCompatibility(
+    final paymentMethodHint = resolvePaymentMethodHint(
       paymentNetwork,
       paymentChannel,
     );
@@ -751,29 +751,6 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     );
   }
 
-  String _resolvePaymentMethodCompatibility(String? network, String channel) {
-    if (channel == 'Cash') {
-      return 'Cash';
-    }
-    if (channel == 'Mobile Wallet') {
-      // Legacy: Mobile Wallet maps to Credit Card (the real financial source)
-      return 'Credit Card';
-    }
-    if (network == null || network.isEmpty) {
-      return 'Other';
-    }
-    if (network == 'Mada') {
-      return 'Debit Card';
-    }
-    if (network == 'Visa' || network == 'Mastercard') {
-      return 'Credit Card';
-    }
-    if (channel == 'POS Purchase' || channel == 'Online Purchase') {
-      return 'Other';
-    }
-    return 'Other';
-  }
-
   void _syncDateAndTimeFields({bool useLocale = true}) {
     if (_spentAt == null) {
       _dateController.text = '';
@@ -792,10 +769,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     return '$label *';
   }
 
-  bool get _isCardPayment => _isCardPaymentChannel(_selectedPaymentChannel);
-
-  bool _isCardPaymentChannel(String? channel) =>
-      channel == 'POS Purchase' || channel == 'Online Purchase';
+  bool get _isCardPayment => isCardExpenseChannel(_selectedPaymentChannel);
 
   bool _isCashChannel(String? channel) => channel == 'Cash';
 

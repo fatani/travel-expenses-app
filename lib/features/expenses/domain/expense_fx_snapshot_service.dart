@@ -4,6 +4,8 @@ import '../domain/money_model.dart';
 import 'expense_payment_service.dart';
 
 class ExpenseConversionSnapshot {
+  // FX snapshots are immutable write-time facts used by reports later.
+  // We resolve once at save/update and never mutate historical rows in place.
   const ExpenseConversionSnapshot({
     required this.originalAmount,
     required this.originalCurrency,
@@ -133,7 +135,7 @@ class ExpenseFxSnapshotService {
         );
 
     if (normalizedHomeCurrency == null || normalizedHomeCurrency.isEmpty) {
-      return const ExpenseConversionSnapshot(
+      return ExpenseConversionSnapshot(
         originalAmount: null,
         originalCurrency: null,
         convertedHomeAmount: null,
@@ -178,7 +180,13 @@ class ExpenseFxSnapshotService {
 
       if (previousExpense != null &&
           !wasCashPayment &&
-          previousExpense.conversionRate != null) {
+          previousExpense.conversionRate != null &&
+          _canInheritPreviousRate(
+            previousExpense: previousExpense,
+            currentOriginalCurrency: normalizedTransactionCurrency,
+            currentHomeCurrency: normalizedHomeCurrency,
+          )) {
+        // Inherited rates are valid only within the same currency pair.
         final storedRate = previousExpense.conversionRate!;
         return ExpenseConversionSnapshot(
           originalAmount: normalizedTransactionAmount,
@@ -190,13 +198,13 @@ class ExpenseFxSnapshotService {
         );
       }
 
-      return const ExpenseConversionSnapshot(
+      return ExpenseConversionSnapshot(
         originalAmount: null,
         originalCurrency: null,
         convertedHomeAmount: null,
         homeCurrency: null,
         conversionRate: null,
-        missingManualRate: false,
+        missingManualRate: normalizedTransactionCurrency != normalizedHomeCurrency,
       );
     }
 
@@ -204,9 +212,15 @@ class ExpenseFxSnapshotService {
         previousExpense != null &&
         wasCashPayment &&
         isCashPayment &&
-        previousExpense.conversionRate != null;
+        previousExpense.conversionRate != null &&
+        _canInheritPreviousRate(
+          previousExpense: previousExpense,
+          currentOriginalCurrency: normalizedOriginalCurrency,
+          currentHomeCurrency: normalizedHomeCurrency,
+        );
 
     if (shouldKeepCashRate) {
+      // Inherited rates are valid only within the same currency pair.
       final storedRate = previousExpense.conversionRate!;
       return ExpenseConversionSnapshot(
         originalAmount: normalizedOriginalAmount,
@@ -256,8 +270,20 @@ class ExpenseFxSnapshotService {
       convertedHomeAmount: null,
       homeCurrency: null,
       conversionRate: null,
-      missingManualRate: false,
+      missingManualRate: true,
     );
+  }
+
+  bool _canInheritPreviousRate({
+    required Expense previousExpense,
+    required String currentOriginalCurrency,
+    required String currentHomeCurrency,
+  }) {
+    final previousOriginalCurrency = _normalizeCurrency(previousExpense.originalCurrency);
+    final previousHomeCurrency = _normalizeCurrency(previousExpense.homeCurrency);
+    // Cross-currency comparisons are dangerous; only match an exact pair.
+    return previousOriginalCurrency == currentOriginalCurrency &&
+        previousHomeCurrency == currentHomeCurrency;
   }
 
   String? _normalizeCurrency(String? value) {
@@ -297,7 +323,8 @@ class ExpenseFxSnapshotService {
         originalAmount: normalizedTransactionAmount,
         originalCurrency: normalizedTransactionCurrency,
         convertedHomeAmount: chargedAmount,
-        homeCurrency: chargedCurrency,
+        // Home currency must remain the trip/home snapshot, never charged FX currency.
+        homeCurrency: normalizedHomeCurrency,
         conversionRate: chargedAmount / normalizedTransactionAmount,
         missingManualRate: false,
       );

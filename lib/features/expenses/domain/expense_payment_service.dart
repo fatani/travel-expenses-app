@@ -81,6 +81,32 @@ class ExpensePaymentService {
         normalizedChannel == 'online purchase';
   }
 
+  /// Infers the canonical payment method string from the user-selected
+  /// [network] and [channel]. Call this to produce the [paymentMethod] hint
+  /// before passing it to [normalizeExpensePaymentMetadata].
+  String resolvePaymentMethodHint(String? network, String channel) {
+    if (channel == 'Cash') {
+      return 'Cash';
+    }
+    if (channel == 'Mobile Wallet') {
+      // Legacy: Mobile Wallet maps to Credit Card (the real financial source)
+      return 'Credit Card';
+    }
+    if (network == null || network.isEmpty) {
+      return 'Other';
+    }
+    if (network == 'Mada') {
+      return 'Debit Card';
+    }
+    if (network == 'Visa' || network == 'Mastercard') {
+      return 'Credit Card';
+    }
+    if (channel == 'POS Purchase' || channel == 'Online Purchase') {
+      return 'Other';
+    }
+    return 'Other';
+  }
+
   String? _normalizeText(String? value) {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) {
@@ -161,4 +187,15 @@ bool isCashExpensePayment({
 
 bool isCardExpenseChannel(String? paymentChannel) {
   return expensePaymentService.isCardExpenseChannel(paymentChannel);
+}
+
+/// Infers the canonical payment method string from the user-selected
+/// [network] and [channel]. Used as a hint before calling
+/// [normalizeExpensePaymentMetadata], which performs the authoritative
+/// normalization.
+///
+/// This logic is shared by [ExpenseFormScreen] and [SmsExpenseScreen] to
+/// avoid duplicating the same channel/network → method mapping.
+String resolvePaymentMethodHint(String? network, String channel) {
+  return expensePaymentService.resolvePaymentMethodHint(network, channel);
 }

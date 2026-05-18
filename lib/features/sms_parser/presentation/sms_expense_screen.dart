@@ -9,6 +9,7 @@ import 'package:intl/intl.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../../core/providers/database_providers.dart';
+import '../../expenses/domain/expense_payment.dart';
 import '../../expenses/presentation/expense_controller.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
 import '../../settings/domain/card_display_helper.dart';
@@ -490,7 +491,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
                 onChanged: (value) {
                   setState(() {
                     _selectedPaymentChannel = value;
-                    if (!_isCardPaymentChannel(value)) {
+                    if (!isCardExpenseChannel(value)) {
                       _selectedCardProfileId = null;
                     }
                   });
@@ -882,7 +883,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         : (derivedCardNetwork ??
               _selectedPaymentNetwork ??
               inferredNetworkFromRawText);
-    final paymentMethod = _resolvePaymentMethodCompatibility(
+    final paymentMethod = resolvePaymentMethodHint(
       paymentNetwork,
       paymentChannel,
     );
@@ -985,29 +986,6 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     );
   }
 
-  String _resolvePaymentMethodCompatibility(String? network, String channel) {
-    if (channel == 'Cash') {
-      return 'Cash';
-    }
-    if (channel == 'Mobile Wallet') {
-      // Legacy: Mobile Wallet maps to Credit Card (the real financial source)
-      return 'Credit Card';
-    }
-    if (network == null || network.isEmpty) {
-      return 'Other';
-    }
-    if (network == 'Mada') {
-      return 'Debit Card';
-    }
-    if (network == 'Visa' || network == 'Mastercard') {
-      return 'Credit Card';
-    }
-    if (channel == 'POS Purchase' || channel == 'Online Purchase') {
-      return 'Other';
-    }
-    return 'Other';
-  }
-
   InputDecoration _premiumInputDecoration(
     BuildContext context, {
     required String labelText,
@@ -1060,10 +1038,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     return '$label *';
   }
 
-  bool get _isCardPayment => _isCardPaymentChannel(_selectedPaymentChannel);
-
-  bool _isCardPaymentChannel(String? channel) =>
-      channel == 'POS Purchase' || channel == 'Online Purchase';
+  bool get _isCardPayment => isCardExpenseChannel(_selectedPaymentChannel);
 
   bool _isCashChannel(String? channel) => channel == 'Cash';
 
