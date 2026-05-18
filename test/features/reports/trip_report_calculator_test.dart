@@ -310,8 +310,8 @@ void main() {
         expect(summary.totalFeesByCurrency.first.totalAmount, 5.0);
       });
 
-      test('top category is Food (200 SAR equivalent transaction total)', () {
-        expect(summary.topCategory, 'Food');
+      test('top category is suppressed for mixed transaction currencies', () {
+        expect(summary.topCategory, isNull);
       });
 
       test('smart insights are empty when expenses are below minimum gate', () {

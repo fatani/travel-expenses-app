@@ -239,7 +239,7 @@ void main() {
   );
 
   testWidgets(
-    'trip details shows no-base-currency message instead of misleading zero and keeps SAR charged total',
+    'trip details shows no-base-currency message and a partial charged total label',
     (tester) async {
       final repository = _FakeExpenseRepository(
         initialExpenses: [
@@ -293,7 +293,7 @@ void main() {
 
       expect(find.text('No expenses in this currency'), findsOneWidget);
       expect(find.textContaining('0 CNY'), findsNothing);
-      expect(find.text('Total charged (SAR)'), findsOneWidget);
+      expect(find.text('Total in SAR only'), findsOneWidget);
       expect(find.textContaining('12.45 SAR'), findsOneWidget);
     },
   );
@@ -354,7 +354,7 @@ void main() {
 
       expect(find.text('لا توجد مصاريف بهذه العملة'), findsOneWidget);
       expect(find.textContaining('0 CNY'), findsNothing);
-      expect(find.text('إجمالي المخصوم'), findsOneWidget);
+      expect(find.text('الإجمالي بعملة SAR فقط'), findsOneWidget);
       expect(find.textContaining('12.45 SAR'), findsOneWidget);
     },
   );

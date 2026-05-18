@@ -14,6 +14,7 @@ class ExpenseCreateOutcome {
     required this.cashBalanceInsufficient,
     required this.noCashBalanceRecorded,
     required this.missingManualRate,
+    this.createdExpenseId,
     this.missingFromCurrency,
     this.missingToCurrency,
   });
@@ -21,6 +22,7 @@ class ExpenseCreateOutcome {
   final bool cashBalanceInsufficient;
   final bool noCashBalanceRecorded;
   final bool missingManualRate;
+  final String? createdExpenseId;
   final String? missingFromCurrency;
   final String? missingToCurrency;
 }
@@ -156,6 +158,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           cashBalanceInsufficient: false,
           noCashBalanceRecorded: false,
           missingManualRate: conversionSnapshot.missingManualRate,
+          createdExpenseId: created.id,
           missingFromCurrency:
             conversionSnapshot.missingManualRate
               ? conversionSnapshot.originalCurrency
@@ -187,6 +190,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
                       .abs() <
                   0.0001,
           missingManualRate: conversionSnapshot.missingManualRate,
+                createdExpenseId: created.id,
           missingFromCurrency:
               conversionSnapshot.missingManualRate
                   ? conversionSnapshot.originalCurrency
@@ -202,6 +206,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           cashBalanceInsufficient: false,
           noCashBalanceRecorded: false,
           missingManualRate: conversionSnapshot.missingManualRate,
+          createdExpenseId: created.id,
           missingFromCurrency:
               conversionSnapshot.missingManualRate
                   ? conversionSnapshot.originalCurrency

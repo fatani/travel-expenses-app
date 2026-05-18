@@ -64,8 +64,12 @@ class GlobalReportCalculator {
     }
 
     final totalBilledByCurrency = _toBuckets(billedByCurrency);
+    final hasMultipleTransactionCurrencies = totalBilledByCurrency.length > 1;
     final isSingleTrip = totalTrips == 1;
-    final topCategory = isSingleTrip ? null : _topAccumulatorKey(categoryTotals);
+    final topCategory =
+      isSingleTrip || hasMultipleTransactionCurrencies
+        ? null
+        : _topAccumulatorKey(categoryTotals);
     final mostUsedPaymentChannel =
       isSingleTrip ? null : _topUsageKey(paymentChannelUsage);
     final mostUsedPaymentNetwork =
@@ -222,11 +226,6 @@ class GlobalReportCalculator {
     final countComparison = right.count.compareTo(left.count);
     if (countComparison != 0) {
       return countComparison;
-    }
-
-    final amountComparison = right.total.compareTo(left.total);
-    if (amountComparison != 0) {
-      return amountComparison;
     }
 
     return leftKey.compareTo(rightKey);

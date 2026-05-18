@@ -90,6 +90,10 @@ class ExpenseRepository {
     );
   }
 
+  @Deprecated(
+    'Unsafe across mixed currencies: this raw SUM(amount) can be mathematically misleading. '
+    'Use currency-grouped totals from report calculators instead.',
+  )
   Future<double> getTotalByTrip(String tripId) async {
     final db = await _appDatabase.database;
     final result = await db.rawQuery(

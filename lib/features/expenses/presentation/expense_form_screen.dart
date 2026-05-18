@@ -235,6 +235,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: _amountController,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           textInputAction: TextInputAction.next,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
@@ -249,6 +250,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         const SizedBox(height: 12),
                         TextFormField(
                           controller: _currencyController,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           textInputAction: TextInputAction.next,
                           textCapitalization: TextCapitalization.characters,
                           inputFormatters: [
@@ -268,6 +270,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         ),
                         DropdownButtonFormField<String>(
                           isExpanded: true,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           initialValue: _selectedCategory,
                           items: ExpenseOptionLabels.categories
                               .map(
@@ -295,6 +298,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         const SizedBox(height: 12),
                         DropdownButtonFormField<String>(
                           isExpanded: true,
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           initialValue: _selectedPaymentChannel,
                           items: ExpenseOptionLabels.paymentChannels
                               .map(

@@ -13,6 +13,10 @@ class InsightEngine {
       return const [];
     }
 
+    if (!_isSafeForAmountBasedInsights(expenses)) {
+      return const [];
+    }
+
     final insights = <Insight>[];
 
     // Priority 1: spend spike signal.
@@ -31,6 +35,30 @@ class InsightEngine {
     }
 
     return insights.take(maxInsights).toList(growable: false);
+  }
+
+  bool _isSafeForAmountBasedInsights(List<Expense> expenses) {
+    final currencyCounts = <String, int>{};
+    var totalCount = 0;
+
+    for (final expense in expenses) {
+      final currency = expense.transactionCurrency.trim().toUpperCase();
+      if (currency.isEmpty) {
+        continue;
+      }
+      currencyCounts[currency] = (currencyCounts[currency] ?? 0) + 1;
+      totalCount++;
+    }
+
+    if (currencyCounts.length > 1 || totalCount == 0) {
+      return false;
+    }
+
+    final dominantCount = currencyCounts.values.fold<int>(
+      0,
+      (maxCount, current) => current > maxCount ? current : maxCount,
+    );
+    return dominantCount / totalCount >= 0.8;
   }
 
   Insight? _buildSpikeInsight(

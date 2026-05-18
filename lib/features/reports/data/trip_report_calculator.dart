@@ -115,17 +115,21 @@ class TripReportCalculator {
         .add(e.transactionAmount);
     }
 
-    // --- top category (by total billed, first currency encountered) ----------
+    final hasMultipleTransactionCurrencies = txCurrencyMap.length > 1;
+
+    // Top category is suppressed when totals span multiple transaction currencies.
     String? topCategory;
-    double topAmount = -1;
-    categoryMap.forEach((cat, currencyAccumulators) {
-      final catTotal = currencyAccumulators.values
-          .fold<double>(0, (sum, acc) => sum + acc.total);
-      if (catTotal > topAmount) {
-        topAmount = catTotal;
-        topCategory = cat;
-      }
-    });
+    if (!hasMultipleTransactionCurrencies) {
+      double topAmount = -1;
+      categoryMap.forEach((cat, currencyAccumulators) {
+        final catTotal = currencyAccumulators.values
+            .fold<double>(0, (sum, acc) => sum + acc.total);
+        if (catTotal > topAmount) {
+          topAmount = catTotal;
+          topCategory = cat;
+        }
+      });
+    }
 
     final byCategoryBuckets = _toNestedBuckets(categoryMap);
     final byTransactionCurrencyBuckets =

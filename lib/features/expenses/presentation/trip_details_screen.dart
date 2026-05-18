@@ -20,6 +20,8 @@ import '../../cash_wallet/presentation/trip_cash_wallet_screen.dart';
 import '../../exchange_rates/presentation/trip_exchange_rates_screen.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../reports/presentation/trip_reports_screen.dart';
+import '../../settings/domain/card_profile.dart';
+import '../../settings/presentation/cards_provider.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_timeline_status.dart';
 import '../../trips/domain/trip_title_resolver.dart';
@@ -58,6 +60,7 @@ class TripDetailsScreen extends ConsumerStatefulWidget {
 class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   late Trip _trip;
   int _cashWalletVersion = 0;
+  final Set<String> _pendingDeletionExpenseIds = <String>{};
 
   @override
   void initState() {
@@ -98,12 +101,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           _TopActionWrapper(
             child: _TopActionIconButton(
               tooltip: context.l10n.tripDetailsReportTooltip,
-              onPressed: () => Navigator.push<void>(
-                context,
-                MaterialPageRoute<void>(
-                  builder: (_) => TripReportsScreen(trip: _trip),
-                ),
-              ),
+              onPressed: _openTripReports,
               icon: Icons.bar_chart_outlined,
             ),
           ),
@@ -118,9 +116,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         ],
       ),
       body: expensesState.when(
-        data: (expenses) => _TripDetailsContent(
+        data: (expenses) {
+          final visibleExpenses = expenses
+              .where((expense) => !_pendingDeletionExpenseIds.contains(expense.id))
+              .toList(growable: false);
+          return _TripDetailsContent(
           trip: _trip,
-          expenses: expenses,
+          expenses: visibleExpenses,
           cashWalletVersion: _cashWalletVersion,
           onAddExpense: () => _openQuickAddSheet(expenses),
           onOpenCashWallet: _openCashWallet,
@@ -129,7 +131,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           onFixDates: _openTripEditor,
           onEditExpense: (expense) => _openExpenseForm(expense: expense),
           onDeleteExpense: (expense) => _confirmDelete(expense),
-        ),
+        );
+        },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
           child: Padding(
@@ -160,7 +163,12 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     );
   }
 
+  void _hideCurrentSnackBar() {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  }
+
   Future<void> _openTripEditor() async {
+    _hideCurrentSnackBar();
     await Navigator.of(context).push<Trip?>(
       MaterialPageRoute<Trip?>(builder: (_) => TripFormScreen(trip: _trip)),
     );
@@ -185,6 +193,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     String? initialCurrency,
     DateTime? initialSpentAt,
   }) async {
+    _hideCurrentSnackBar();
     final outcome = await Navigator.of(context).push<ExpenseCreateOutcome?>(
       MaterialPageRoute<ExpenseCreateOutcome?>(
         builder: (_) => ExpenseFormScreen(
@@ -200,6 +209,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     );
 
     _showCashGuidanceIfNeeded(outcome);
+    if (outcome != null) {
+      _showSaveConfirmationWithUndo(outcome);
+      return;
+    }
+    if (expense != null) {
+      _showEditSaveConfirmationWithUndo(expense);
+    }
   }
 
   Future<void> _openQuickAddSheet(List<Expense> expenses) async {
@@ -244,15 +260,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     }
 
     unawaited(_createQuickExpense(payload));
-
     HapticFeedback.lightImpact();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(AppLocalizations.of(context)!.tripDetailsQuickAddExpenseAdded),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   Future<void> _createQuickExpense(_QuickAddSubmitPayload payload) async {
@@ -274,6 +282,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             paymentMethod: payload.payment.method,
             paymentNetwork: isCashQuickExpense ? null : payload.payment.network,
             paymentChannel: payload.payment.channel,
+            cardProfileId: payload.payment.cardProfileId,
             tripHomeCurrency: _trip.homeCurrencySnapshot,
           );
 
@@ -282,6 +291,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       }
 
       _showCashGuidanceIfNeeded(outcome);
+      _showSaveConfirmationWithUndo(outcome);
     } catch (error) {
       if (!mounted) {
         return;
@@ -294,6 +304,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _openSmsExpenseScreen() async {
+    _hideCurrentSnackBar();
     final outcome = await Navigator.of(context).push<ExpenseCreateOutcome?>(
       MaterialPageRoute<ExpenseCreateOutcome?>(
         builder: (_) => SmsExpenseScreen(trip: _trip),
@@ -301,9 +312,127 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     );
 
     _showCashGuidanceIfNeeded(outcome);
+    _showSaveConfirmationWithUndo(outcome);
+  }
+
+  Future<void> _openTripReports() async {
+    _hideCurrentSnackBar();
+    await Navigator.push<void>(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => TripReportsScreen(trip: _trip),
+      ),
+    );
+  }
+
+  void _showSaveConfirmationWithUndo(ExpenseCreateOutcome? outcome) {
+    if (!mounted || outcome == null) {
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context)!;
+    final createdExpenseId = outcome.createdExpenseId;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        content: Text(l10n.tripDetailsQuickAddExpenseAdded),
+        action: createdExpenseId == null
+            ? null
+            : SnackBarAction(
+                label: isArabic ? 'تراجع' : 'Undo',
+                onPressed: () {
+                  unawaited(_undoCreatedExpense(createdExpenseId));
+                },
+              ),
+      ),
+    );
+  }
+
+  Future<void> _undoCreatedExpense(String expenseId) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    try {
+      await ref.read(expenseControllerProvider(_trip.id).notifier).deleteExpense(expenseId);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.tripDetailsDeleteExpenseError('$error'))),
+      );
+    }
+  }
+
+  void _showEditSaveConfirmationWithUndo(Expense previousExpense) {
+    if (!mounted) {
+      return;
+    }
+
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+        content: Text(isArabic ? 'تم حفظ التعديلات' : 'Changes saved'),
+        action: SnackBarAction(
+          label: isArabic ? 'تراجع' : 'Undo',
+          onPressed: () {
+            unawaited(_restorePreviousExpense(previousExpense));
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _restorePreviousExpense(Expense previousExpense) async {
+    final l10n = AppLocalizations.of(context)!;
+
+    try {
+      await ref.read(expenseControllerProvider(_trip.id).notifier).updateExpense(
+        expense: previousExpense,
+        title: previousExpense.title,
+        amount: previousExpense.amount,
+        currencyCode: previousExpense.currencyCode,
+        transactionAmount: previousExpense.transactionAmount,
+        transactionCurrency: previousExpense.transactionCurrency,
+        originalAmount: previousExpense.originalAmount,
+        originalCurrency: previousExpense.originalCurrency,
+        convertedHomeAmount: previousExpense.convertedHomeAmount,
+        homeCurrency: previousExpense.homeCurrency,
+        conversionRate: previousExpense.conversionRate,
+        billedAmount: previousExpense.billedAmount,
+        billedCurrency: previousExpense.billedCurrency,
+        feesAmount: previousExpense.feesAmount,
+        feesCurrency: previousExpense.feesCurrency,
+        totalChargedAmount: previousExpense.totalChargedAmount,
+        totalChargedCurrency: previousExpense.totalChargedCurrency,
+        isInternational: previousExpense.isInternational,
+        category: previousExpense.category ?? 'Other',
+        spentAt: previousExpense.spentAt,
+        paymentMethod: previousExpense.paymentMethod,
+        paymentNetwork: previousExpense.paymentNetwork,
+        paymentChannel: previousExpense.paymentChannel,
+        source: previousExpense.source,
+        note: previousExpense.note,
+        rawSmsText: previousExpense.rawSmsText,
+        cardProfileId: previousExpense.cardProfileId,
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.expenseFormSaveError('$error'))),
+      );
+    }
   }
 
   Future<void> _openCashWallet() async {
+    _hideCurrentSnackBar();
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => TripCashWalletScreen(trip: _trip),
@@ -320,6 +449,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _openExchangeRates() async {
+    _hideCurrentSnackBar();
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => TripExchangeRatesScreen(trip: _trip),
@@ -391,14 +521,66 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       return;
     }
 
+    if (_pendingDeletionExpenseIds.contains(expense.id)) {
+      return;
+    }
+
+    setState(() {
+      _pendingDeletionExpenseIds.add(expense.id);
+    });
+
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    var undone = false;
+    final messenger = ScaffoldMessenger.of(context);
+    final closed = messenger
+        .showSnackBar(
+          SnackBar(
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 3),
+            content: Text(
+              isArabic ? 'تم حذف المصروف' : 'Expense deleted',
+            ),
+            action: SnackBarAction(
+              label: isArabic ? 'تراجع' : 'Undo',
+              onPressed: () {
+                undone = true;
+                if (!mounted) {
+                  return;
+                }
+                setState(() {
+                  _pendingDeletionExpenseIds.remove(expense.id);
+                });
+              },
+            ),
+          ),
+        )
+        .closed;
+
+    await closed;
+
+    if (undone || !mounted) {
+      return;
+    }
+
     try {
       await ref
           .read(expenseControllerProvider(_trip.id).notifier)
           .deleteExpense(expense.id);
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _pendingDeletionExpenseIds.remove(expense.id);
+      });
     } catch (error) {
       if (!mounted) {
         return;
       }
+
+      setState(() {
+        _pendingDeletionExpenseIds.remove(expense.id);
+      });
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.tripDetailsDeleteExpenseError('$error'))),
@@ -622,14 +804,25 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       ? l10n.tripDetailsNoExpensesInBaseCurrency
       : _formatCurrency(total, widget.trip.baseCurrency);
 
-    // SAR total: sum totalChargedAmount (fallback billedAmount) for international expenses
-    final sarTotal = widget.expenses
-        .where((e) => e.isInternational)
-        .fold<double>(0, (sum, e) {
-          final charged = e.totalChargedAmount ?? e.billedAmount;
-          return sum + (charged ?? 0);
-        });
-    final hasSarTotal = sarTotal > 0;
+    // Partial charged total: only one currency is shown to avoid mixed-currency sums.
+    String? chargedSummaryCurrency;
+    var chargedSummaryTotal = 0.0;
+    for (final expense in widget.expenses.where((e) => e.isInternational)) {
+      final amount = expense.totalChargedAmount ?? expense.billedAmount;
+      final currency =
+          (expense.totalChargedCurrency ?? expense.billedCurrency)
+              ?.trim()
+              .toUpperCase();
+      if (amount == null || amount <= 0 || currency == null || currency.isEmpty) {
+        continue;
+      }
+      chargedSummaryCurrency ??= currency;
+      if (currency == chargedSummaryCurrency) {
+        chargedSummaryTotal += amount;
+      }
+    }
+    final hasChargedSummary =
+        chargedSummaryCurrency != null && chargedSummaryTotal > 0;
     final listBottomPadding = MediaQuery.of(context).padding.bottom + 128;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final datesMissing = widget.trip.startDate == null || widget.trip.endDate == null;
@@ -684,11 +877,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                 ? l10n.tripDetailsTopCategoryNone
                 : ExpenseOptionLabels.category(l10n, topCategory),
           ),
-          if (hasSarTotal) ...[
+          if (hasChargedSummary) ...[
             const SizedBox(height: 12),
             _StatCard(
-              label: l10n.tripDetailsActuallyCharged,
-              value: _formatCurrency(sarTotal, 'SAR'),
+              label: isArabic
+                  ? 'الإجمالي بعملة $chargedSummaryCurrency فقط'
+                  : 'Total in $chargedSummaryCurrency only',
+              value: _formatCurrency(chargedSummaryTotal, chargedSummaryCurrency),
             ),
           ],
           if (hasExcludedCurrencies) ...[
@@ -2595,6 +2790,8 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   bool _isPrefilledFromMemory = false;
   double? _lastAmountSuggestion;
   Map<String, String> _amountCategoryMemory = {};
+  int? _lastUsedCardProfileId;
+  String _selectedPaymentChipKey = 'cash';
 
   static const String _prefsLastAmountKey = 'last_amount';
   static const String _prefsLastCategoryKey = 'last_category';
@@ -2613,7 +2810,24 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   void initState() {
     super.initState();
     _userSelectedCategory = false;
+    _lastUsedCardProfileId = _resolveLastUsedCardProfileId();
+    if (_lastUsedCardProfileId != null) {
+      _selectedPaymentChipKey = _paymentChipKeyForCard(_lastUsedCardProfileId!);
+    }
     _loadPreferences();
+  }
+
+  int? _resolveLastUsedCardProfileId() {
+    for (final expense in widget.expenses) {
+      if (expense.cardProfileId == null) {
+        continue;
+      }
+      if (!isCardExpenseChannel(expense.paymentChannel)) {
+        continue;
+      }
+      return expense.cardProfileId;
+    }
+    return null;
   }
 
   String _amountRangeKey(double amount) {
@@ -2703,6 +2917,8 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     final amountHint = _lastAmountSuggestion != null
       ? _lastAmountSuggestion!.toStringAsFixed(2)
       : '0.00';
+    final cards = ref.watch(cardsProvider).valueOrNull ?? const <CardProfile>[];
+    final paymentOptions = _buildPaymentOptions(cards);
 
     final amountError = _showValidationError ? _validateAmount(l10n) : null;
 
@@ -2840,6 +3056,90 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 );
               }).toList(),
             ),
+            const SizedBox(height: 12),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final maxCards = constraints.maxWidth < 380 ? 2 : 3;
+                final cashOption = paymentOptions.firstWhere(
+                  (option) => option.key == 'cash',
+                  orElse: () => paymentOptions.first,
+                );
+                final cardOptions = paymentOptions
+                    .where((option) => option.key != 'cash')
+                    .toList(growable: false)
+                  ..sort((a, b) {
+                    final rankA = a.label.startsWith('Visa') ? 0 : (a.label.startsWith('MC') ? 1 : 2);
+                    final rankB = b.label.startsWith('Visa') ? 0 : (b.label.startsWith('MC') ? 1 : 2);
+                    if (rankA != rankB) {
+                      return rankA.compareTo(rankB);
+                    }
+                    return a.label.compareTo(b.label);
+                  });
+                final visibleOptions = <_QuickAddPaymentOption>[cashOption];
+                for (final option in cardOptions) {
+                  if (visibleOptions.length - 1 >= maxCards) {
+                    break;
+                  }
+                  visibleOptions.add(option);
+                }
+
+                return Row(
+                  children: [
+                    ...visibleOptions.map((option) {
+                      final isSelected = _selectedPaymentChipKey == option.key;
+                      return Expanded(
+                        child: Padding(
+                          padding: const EdgeInsetsDirectional.only(end: 6),
+                          child: SizedBox(
+                            height: 32,
+                            child: ChoiceChip(
+                              selected: isSelected,
+                              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                              visualDensity: VisualDensity.compact,
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              label: Text(
+                                option.label,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                softWrap: false,
+                                style: TextStyle(
+                                  color: isSelected
+                                      ? const Color(0xFF334155)
+                                      : const Color(0xFF64748B),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              backgroundColor: const Color(0xFFF8FAFC),
+                              selectedColor: const Color(0xFFEFF3F7),
+                              side: BorderSide(
+                                color: isSelected
+                                    ? const Color(0xFF94A3B8)
+                                    : const Color(0xFFE2E8F0),
+                              ),
+                              onSelected: (_) {
+                                setState(() {
+                                  _selectedPaymentChipKey = option.key;
+                                });
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    SizedBox(
+                      height: 32,
+                      child: ActionChip(
+                        labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        label: const Text('⋯'),
+                        onPressed: _openMoreDetails,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -2889,24 +3189,6 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () {
-                _savePreferences();
-                Navigator.of(context).pop(
-                  _QuickAddSheetResult.moreDetails(
-                    _QuickAddDraftPayload(
-                      amountText: _amountController.text,
-                      category: _selectedCategory,
-                      paymentMethod: _defaultQuickPayment.method,
-                      currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
-                      spentAt: DateTime.now(),
-                    ),
-                  ),
-                );
-              },
-              child: Text(AppLocalizations.of(context)!.quickAddAddDetails),
-            ),
           ],
         ),
       ),
@@ -2929,6 +3211,10 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   }
 
   void _save() {
+    _saveWithPayment(_selectedQuickPayment());
+  }
+
+  void _saveWithPayment(_QuickAddPaymentData payment) {
     final l10n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -2954,10 +3240,133 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
           currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
           category: _selectedCategory,
           spentAt: now,
-          payment: _defaultQuickPayment,
+          payment: payment,
         ),
       ),
     );
+  }
+
+  void _openMoreDetails() {
+    final selectedPayment = _selectedQuickPayment();
+    _savePreferences();
+    Navigator.of(context).pop(
+      _QuickAddSheetResult.moreDetails(
+        _QuickAddDraftPayload(
+          amountText: _amountController.text,
+          category: _selectedCategory,
+          paymentMethod: selectedPayment.method,
+          currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
+          spentAt: DateTime.now(),
+        ),
+      ),
+    );
+  }
+
+  List<_QuickAddPaymentOption> _buildPaymentOptions(List<CardProfile> cards) {
+    final cardsById = <int, CardProfile>{for (final card in cards) card.id: card};
+    final options = <_QuickAddPaymentOption>[
+      _QuickAddPaymentOption(
+        key: 'cash',
+        label: AppLocalizations.of(context)!.paymentMethodCash,
+        payment: _defaultQuickPayment,
+      ),
+    ];
+
+    final seenCardIds = <int>{};
+    for (final expense in widget.expenses) {
+      final cardId = expense.cardProfileId;
+      if (cardId == null || seenCardIds.contains(cardId)) {
+        continue;
+      }
+      if (!isCardExpenseChannel(expense.paymentChannel)) {
+        continue;
+      }
+
+      final card = cardsById[cardId];
+      if (card == null) {
+        continue;
+      }
+
+      options.add(
+        _QuickAddPaymentOption(
+          key: _paymentChipKeyForCard(cardId),
+          label: _cardChipLabel(card, expense.paymentNetwork),
+          payment: _paymentForCard(card, expense),
+        ),
+      );
+      seenCardIds.add(cardId);
+      if (seenCardIds.length >= 3) {
+        break;
+      }
+    }
+
+    return options;
+  }
+
+  _QuickAddPaymentData _selectedQuickPayment() {
+    final cards = ref.read(cardsProvider).valueOrNull ?? const <CardProfile>[];
+    final options = _buildPaymentOptions(cards);
+    for (final option in options) {
+      if (option.key == _selectedPaymentChipKey) {
+        return option.payment;
+      }
+    }
+    return _defaultQuickPayment;
+  }
+
+  String _paymentChipKeyForCard(int cardId) => 'card:$cardId';
+
+  String _cardChipLabel(CardProfile card, String? fallbackNetwork) {
+    final network = _normalizedText(
+          fallbackNetwork ?? card.cardNetwork ?? card.customCardNetwork,
+        ) ??
+        'Card';
+    final compactNetwork = _compactNetworkLabel(network);
+    final last4 = _normalizedText(card.last4);
+    if (last4 != null) {
+      return '$compactNetwork ••••$last4';
+    }
+    return compactNetwork;
+  }
+
+  String _compactNetworkLabel(String network) {
+    final normalized = network.trim().toLowerCase();
+    if (normalized == 'mastercard') {
+      return 'MC';
+    }
+    if (normalized == 'visa') {
+      return 'Visa';
+    }
+    if (normalized == 'apple pay') {
+      return 'Apple';
+    }
+    return network;
+  }
+
+  _QuickAddPaymentData _paymentForCard(CardProfile card, Expense recentExpense) {
+    final network = _normalizedText(
+          recentExpense.paymentNetwork ?? card.cardNetwork ?? card.customCardNetwork,
+        ) ??
+        'Other';
+    final recentChannel = _normalizedText(recentExpense.paymentChannel);
+    final channel = recentChannel == 'Online Purchase'
+        ? 'Online Purchase'
+        : 'POS Purchase';
+
+    return _QuickAddPaymentData(
+      method: resolvePaymentMethodHint(network, channel),
+      network: network,
+      channel: channel,
+      cardProfileId: card.id,
+    );
+  }
+
+  String? _normalizedText(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return null;
+    }
+    return trimmed;
   }
 
   Future<void> _savePreferences([double? amount]) async {
@@ -2974,6 +3383,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     method: 'Cash',
     network: '',
     channel: 'Cash',
+    cardProfileId: null,
   );
 }
 
@@ -2982,11 +3392,25 @@ class _QuickAddPaymentData {
     required this.method,
     required this.network,
     required this.channel,
+    required this.cardProfileId,
   });
 
   final String method;
   final String network;
   final String channel;
+  final int? cardProfileId;
+}
+
+class _QuickAddPaymentOption {
+  const _QuickAddPaymentOption({
+    required this.key,
+    required this.label,
+    required this.payment,
+  });
+
+  final String key;
+  final String label;
+  final _QuickAddPaymentData payment;
 }
 
 class _QuickAddSubmitPayload {
