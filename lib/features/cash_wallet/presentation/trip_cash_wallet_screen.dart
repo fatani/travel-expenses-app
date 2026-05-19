@@ -11,6 +11,8 @@ import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../expenses/presentation/expense_form_screen.dart';
+import '../../trips/domain/country_database.dart';
+import '../../trips/domain/country_info.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../domain/cash_transaction.dart';
@@ -651,13 +653,15 @@ class _AddManualRateSheetState extends ConsumerState<_AddManualRateSheet> {
   }
 }
 
+
+
 class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   final _amountController = TextEditingController();
-  final _currencyController = TextEditingController();
   final _homeValueController = TextEditingController();
   final _noteController = TextEditingController();
   late final TextEditingController _dateController;
   late final TextEditingController _timeController;
+  late String _selectedCurrencyCode;
   CashTransactionType _selectedType = CashTransactionType.initialCash;
   DateTime? _selectedDateTime;
   bool _isSaving = false;
@@ -671,7 +675,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     if (editingTransaction != null) {
       _selectedType = editingTransaction.type;
       _amountController.text = editingTransaction.amount.toStringAsFixed(2);
-      _currencyController.text = editingTransaction.currencyCode;
+      _selectedCurrencyCode = editingTransaction.currencyCode.trim().toUpperCase();
       if (editingTransaction.homeCurrencyAmount != null) {
         _homeValueController.text = editingTransaction.homeCurrencyAmount!.toStringAsFixed(2);
       }
@@ -681,7 +685,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     }
 
     _selectedType = widget.initialType;
-    _currencyController.text = widget.trip.destinationCurrency;
+    _selectedCurrencyCode = widget.trip.destinationCurrency.trim().toUpperCase();
     _selectedDateTime = DateTime.now();
   }
 
@@ -694,7 +698,6 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   @override
   void dispose() {
     _amountController.dispose();
-    _currencyController.dispose();
     _homeValueController.dispose();
     _noteController.dispose();
     _dateController.dispose();
@@ -749,18 +752,43 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: _currencyController,
-                  textCapitalization: TextCapitalization.characters,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp('[a-zA-Z]')),
-                    LengthLimitingTextInputFormatter(3),
-                  ],
-                  decoration: InputDecoration(
-                    labelText: l10n.cashWalletCashCurrencyLabel,
-                    hintText: 'THB',
-                    prefixIcon: const Icon(Icons.currency_exchange_outlined),
-                  ),
+                GestureDetector(
+                  onTap: _isSaving ? null : _pickCurrency,
+                  child: Builder(builder: (ctx) {
+                    final isArabic =
+                        Localizations.localeOf(ctx).languageCode == 'ar';
+                    final entry = CountryDatabase.countries.firstWhere(
+                      (c) => c.currencyCode == _selectedCurrencyCode,
+                      orElse: () => CountryInfo(
+                        countryCode: '',
+                        englishName: _selectedCurrencyCode,
+                        arabicName: _selectedCurrencyCode,
+                        currencyCode: _selectedCurrencyCode,
+                        currencyName: '',
+                        flagEmoji: '🏳',
+                      ),
+                    );
+                    return InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: l10n.cashWalletCashCurrencyLabel,
+                        prefixIcon: const Icon(Icons.currency_exchange_outlined),
+                        suffixIcon: const Icon(Icons.arrow_drop_down),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(entry.flagEmoji,
+                              style: const TextStyle(fontSize: 20)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${entry.getLocalizedName(isArabic)}  —  ${entry.currencyCode}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -967,14 +995,58 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     });
   }
 
+  Future<void> _pickCurrency() async {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final tripDest = widget.trip.destinationCurrency.trim().toUpperCase();
+    final tripHome = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+
+    // Deduplicate: first occurrence per currency code from CountryDatabase.
+    final seen = <String>{};
+    final allUnique = <CountryInfo>[];
+    for (final c in CountryDatabase.countries) {
+      if (seen.add(c.currencyCode)) allUnique.add(c);
+    }
+
+    // Pinned: trip currencies first, then rest sorted by code.
+    final pinned = allUnique
+        .where((c) => c.currencyCode == tripDest || c.currencyCode == tripHome)
+        .toList();
+    final rest = allUnique
+        .where((c) => c.currencyCode != tripDest && c.currencyCode != tripHome)
+        .toList()
+      ..sort((a, b) => a.currencyCode.compareTo(b.currencyCode));
+    final fullList = [...pinned, ...rest];
+
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CurrencyPickerSheet(
+        allEntries: fullList,
+        selectedCode: _selectedCurrencyCode,
+        isArabic: isArabic,
+      ),
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedCurrencyCode = picked;
+      });
+    }
+  }
+
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
     final amount = double.tryParse(_amountController.text.trim());
     final homeValue = double.tryParse(_homeValueController.text.trim());
-    final currencyCode = _currencyController.text.trim().toUpperCase();
+    final currencyCode = _selectedCurrencyCode.trim().toUpperCase();
     final homeCurrencyCode = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
 
-    if (amount == null || amount <= 0 || currencyCode.length != 3 || homeValue == null || homeValue <= 0) {
+    if (amount == null || amount <= 0 ||
+        currencyCode.length != 3 ||
+        !RegExp(r'^[A-Z]{3}$').hasMatch(currencyCode) ||
+        homeValue == null || homeValue <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.commonEnterValidNumber)),
       );
@@ -1910,6 +1982,129 @@ String? _formatTripStatus(BuildContext context, Trip trip) {
   }
 
   return null;
+}
+
+// ── Currency picker sheet ──────────────────────────────────────────────────
+
+class _CurrencyPickerSheet extends StatefulWidget {
+  const _CurrencyPickerSheet({
+    required this.allEntries,
+    required this.selectedCode,
+    required this.isArabic,
+  });
+
+  final List<CountryInfo> allEntries;
+  final String selectedCode;
+  final bool isArabic;
+
+  @override
+  State<_CurrencyPickerSheet> createState() => _CurrencyPickerSheetState();
+}
+
+class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
+  final _searchController = TextEditingController();
+  late List<CountryInfo> _filtered;
+
+  @override
+  void initState() {
+    super.initState();
+    _filtered = widget.allEntries;
+    _searchController.addListener(_onSearch);
+  }
+
+  void _onSearch() {
+    final q = _searchController.text.trim();
+    setState(() {
+      _filtered = q.isEmpty
+          ? widget.allEntries
+          : widget.allEntries.where((c) => c.matchesSearch(q)).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.6,
+      maxChildSize: 0.9,
+      builder: (ctx, scrollController) {
+        return Material(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: TextField(
+                  controller: _searchController,
+                  autofocus: false,
+                  decoration: InputDecoration(
+                    hintText: widget.isArabic ? 'بحث...' : 'Search...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: _filtered.isEmpty
+                    ? const Center(child: Icon(Icons.search_off, size: 48, color: Color(0xFFCBD5E1)))
+                    : ListView.builder(
+                        controller: scrollController,
+                        itemCount: _filtered.length,
+                        itemBuilder: (_, i) {
+                          final entry = _filtered[i];
+                          final isSelected =
+                              entry.currencyCode == widget.selectedCode;
+                          return ListTile(
+                            leading: Text(entry.flagEmoji,
+                                style: const TextStyle(fontSize: 22)),
+                            title: Text(
+                              entry.getLocalizedName(widget.isArabic),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            subtitle: Text(
+                              '${entry.currencyCode}  •  ${entry.currencyName}',
+                              textDirection: TextDirection.ltr,
+                            ),
+                            trailing: isSelected
+                                ? const Icon(Icons.check_rounded,
+                                    color: Color(0xFF4F46E5))
+                                : null,
+                            onTap: () =>
+                                Navigator.of(ctx).pop(entry.currencyCode),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _SheetGradientButton extends StatelessWidget {
