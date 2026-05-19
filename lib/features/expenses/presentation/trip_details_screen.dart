@@ -163,12 +163,19 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     );
   }
 
-  void _hideCurrentSnackBar() {
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  void _clearSnackBars() {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.clearSnackBars();
+  }
+
+  void _showLocalSnackBar(SnackBar snackBar) {
+    _clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   Future<void> _openTripEditor() async {
-    _hideCurrentSnackBar();
+    _clearSnackBars();
     await Navigator.of(context).push<Trip?>(
       MaterialPageRoute<Trip?>(builder: (_) => TripFormScreen(trip: _trip)),
     );
@@ -187,18 +194,20 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
   Future<void> _openExpenseForm({
     Expense? expense,
+    String? initialTitle,
     String? initialAmount,
     String? initialCategory,
     String? initialPaymentMethod,
     String? initialCurrency,
     DateTime? initialSpentAt,
   }) async {
-    _hideCurrentSnackBar();
+    _clearSnackBars();
     final outcome = await Navigator.of(context).push<ExpenseCreateOutcome?>(
       MaterialPageRoute<ExpenseCreateOutcome?>(
         builder: (_) => ExpenseFormScreen(
           trip: _trip,
           expense: expense,
+          initialTitle: initialTitle,
           initialAmount: initialAmount,
           initialCategory: initialCategory,
           initialPaymentMethod: initialPaymentMethod,
@@ -219,6 +228,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _openQuickAddSheet(List<Expense> expenses) async {
+    _clearSnackBars();
     final result = await showModalBottomSheet<_QuickAddSheetResult>(
       context: context,
       isScrollControlled: true,
@@ -242,9 +252,17 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       return;
     }
 
+    _clearSnackBars();
+
+    if (result.openCashWallet) {
+      await _openCashWallet();
+      return;
+    }
+
     if (result.openMoreDetails) {
       final draft = result.draft;
       await _openExpenseForm(
+        initialTitle: draft?.title,
         initialAmount: draft?.amountText,
         initialCategory: draft?.category,
         initialPaymentMethod: draft?.paymentMethod,
@@ -297,14 +315,14 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      _showLocalSnackBar(
         SnackBar(content: Text(l10n.expenseFormSaveError('$error'))),
       );
     }
   }
 
   Future<void> _openSmsExpenseScreen() async {
-    _hideCurrentSnackBar();
+    _clearSnackBars();
     final outcome = await Navigator.of(context).push<ExpenseCreateOutcome?>(
       MaterialPageRoute<ExpenseCreateOutcome?>(
         builder: (_) => SmsExpenseScreen(trip: _trip),
@@ -316,7 +334,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _openTripReports() async {
-    _hideCurrentSnackBar();
+    _clearSnackBars();
     await Navigator.push<void>(
       context,
       MaterialPageRoute<void>(
@@ -334,7 +352,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final createdExpenseId = outcome.createdExpenseId;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    _showLocalSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
@@ -360,7 +378,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
+      _showLocalSnackBar(
         SnackBar(content: Text(l10n.tripDetailsDeleteExpenseError('$error'))),
       );
     }
@@ -373,7 +391,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    ScaffoldMessenger.of(context).showSnackBar(
+    _showLocalSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
@@ -425,14 +443,14 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
+      _showLocalSnackBar(
         SnackBar(content: Text(l10n.expenseFormSaveError('$error'))),
       );
     }
   }
 
   Future<void> _openCashWallet() async {
-    _hideCurrentSnackBar();
+    _clearSnackBars();
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => TripCashWalletScreen(trip: _trip),
@@ -449,7 +467,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _openExchangeRates() async {
-    _hideCurrentSnackBar();
+    _clearSnackBars();
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
         builder: (_) => TripExchangeRatesScreen(trip: _trip),
@@ -465,7 +483,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     if (outcome.cashBalanceInsufficient) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      _showLocalSnackBar(
         SnackBar(
           behavior: SnackBarBehavior.floating,
           content: Text(
@@ -532,6 +550,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     var undone = false;
     final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.clearSnackBars();
     final closed = messenger
         .showSnackBar(
           SnackBar(
@@ -582,7 +602,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         _pendingDeletionExpenseIds.remove(expense.id);
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      _showLocalSnackBar(
         SnackBar(content: Text(l10n.tripDetailsDeleteExpenseError('$error'))),
       );
     }
@@ -2744,15 +2764,24 @@ class _EmptyFilteredState extends StatelessWidget {
 class _QuickAddSheetResult {
   const _QuickAddSheetResult.moreDetails(_QuickAddDraftPayload value)
     : openMoreDetails = true,
+      openCashWallet = false,
       payload = null,
       draft = value;
 
   const _QuickAddSheetResult.submit(_QuickAddSubmitPayload value)
     : openMoreDetails = false,
+      openCashWallet = false,
       payload = value,
       draft = null;
 
+  const _QuickAddSheetResult.openCashWallet()
+    : openMoreDetails = false,
+      openCashWallet = true,
+      payload = null,
+      draft = null;
+
   final bool openMoreDetails;
+  final bool openCashWallet;
   final _QuickAddSubmitPayload? payload;
   final _QuickAddDraftPayload? draft;
 }
@@ -2770,6 +2799,8 @@ class QuickAddExpenseSheet extends ConsumerStatefulWidget {
 
 class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _firstCardLast4Controller =
+      TextEditingController();
   final TextInputFormatter _amountFormatter = TextInputFormatter.withFunction((
     oldValue,
     newValue,
@@ -2792,6 +2823,11 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   Map<String, String> _amountCategoryMemory = {};
   int? _lastUsedCardProfileId;
   String _selectedPaymentChipKey = 'cash';
+  bool _hasCashSetup = true;
+  bool _cashSetupLoaded = false;
+  bool _firstPaymentResolved = false;
+  _FirstPaymentStep _firstPaymentStep = _FirstPaymentStep.chooseHowToPay;
+  String _firstCardNetwork = 'Visa';
 
   static const String _prefsLastAmountKey = 'last_amount';
   static const String _prefsLastCategoryKey = 'last_category';
@@ -2815,6 +2851,39 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       _selectedPaymentChipKey = _paymentChipKeyForCard(_lastUsedCardProfileId!);
     }
     _loadPreferences();
+    unawaited(_loadCashSetupState());
+  }
+
+  Future<void> _loadCashSetupState() async {
+    try {
+      final repository = ref.read(cashWalletRepositoryProvider);
+      final balances = await repository.getBalancesByTrip(widget.trip.id);
+      final transactions = await repository.getRecentTransactionsByTrip(
+        widget.trip.id,
+      );
+      final hasIntentionalCashTx = transactions.any(
+        (transaction) =>
+            transaction.type != CashTransactionType.cashExpenseDeduction,
+      );
+      final hasPositiveBalance = balances.any(
+        (balance) => balance.balanceAmount > 0,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _hasCashSetup = hasIntentionalCashTx || hasPositiveBalance;
+        _cashSetupLoaded = true;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _hasCashSetup = true;
+        _cashSetupLoaded = true;
+      });
+    }
   }
 
   int? _resolveLastUsedCardProfileId() {
@@ -2903,6 +2972,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   @override
   void dispose() {
     _amountController.dispose();
+    _firstCardLast4Controller.dispose();
     super.dispose();
   }
 
@@ -2910,14 +2980,29 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final sheetHeight = MediaQuery.sizeOf(context).height * 0.42;
+    final cardsState = ref.watch(cardsProvider);
+    final cards = cardsState.valueOrNull ?? const <CardProfile>[];
+    final hasCardsLoaded = cardsState.hasValue;
+    final showFirstPaymentOnboarding =
+      !_firstPaymentResolved &&
+      hasCardsLoaded &&
+      _cashSetupLoaded &&
+      cards.isEmpty &&
+      !_hasCashSetup;
+    final showCardInlineSetup =
+      showFirstPaymentOnboarding &&
+      _firstPaymentStep == _FirstPaymentStep.cardSetup;
+    final showCashInlineChoices =
+      showFirstPaymentOnboarding &&
+      _firstPaymentStep == _FirstPaymentStep.cashChoice;
+    final sheetHeight = MediaQuery.sizeOf(context).height *
+      (showFirstPaymentOnboarding ? 0.58 : 0.42);
     final amountText = _amountController.text.trim();
     final amount = double.tryParse(amountText);
     final canSave = amount != null && amount > 0;
     final amountHint = _lastAmountSuggestion != null
       ? _lastAmountSuggestion!.toStringAsFixed(2)
       : '0.00';
-    final cards = ref.watch(cardsProvider).valueOrNull ?? const <CardProfile>[];
     final paymentOptions = _buildPaymentOptions(cards);
 
     final amountError = _showValidationError ? _validateAmount(l10n) : null;
@@ -3057,89 +3142,100 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
               }).toList(),
             ),
             const SizedBox(height: 12),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                final maxCards = constraints.maxWidth < 380 ? 2 : 3;
-                final cashOption = paymentOptions.firstWhere(
-                  (option) => option.key == 'cash',
-                  orElse: () => paymentOptions.first,
-                );
-                final cardOptions = paymentOptions
-                    .where((option) => option.key != 'cash')
-                    .toList(growable: false)
-                  ..sort((a, b) {
-                    final rankA = a.label.startsWith('Visa') ? 0 : (a.label.startsWith('MC') ? 1 : 2);
-                    final rankB = b.label.startsWith('Visa') ? 0 : (b.label.startsWith('MC') ? 1 : 2);
-                    if (rankA != rankB) {
-                      return rankA.compareTo(rankB);
+            if (showFirstPaymentOnboarding)
+              _buildFirstPaymentOnboarding(
+                context,
+                showCardInlineSetup: showCardInlineSetup,
+                showCashInlineChoices: showCashInlineChoices,
+              )
+            else
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final maxCards = constraints.maxWidth < 380 ? 2 : 3;
+                  final cashOption = paymentOptions.firstWhere(
+                    (option) => option.key == 'cash',
+                    orElse: () => paymentOptions.first,
+                  );
+                  final cardOptions = paymentOptions
+                      .where((option) => option.key != 'cash')
+                      .toList(growable: false)
+                    ..sort((a, b) {
+                      final rankA = a.label.startsWith('Visa')
+                          ? 0
+                          : (a.label.startsWith('MC') ? 1 : 2);
+                      final rankB = b.label.startsWith('Visa')
+                          ? 0
+                          : (b.label.startsWith('MC') ? 1 : 2);
+                      if (rankA != rankB) {
+                        return rankA.compareTo(rankB);
+                      }
+                      return a.label.compareTo(b.label);
+                    });
+                  final visibleOptions = <_QuickAddPaymentOption>[cashOption];
+                  for (final option in cardOptions) {
+                    if (visibleOptions.length - 1 >= maxCards) {
+                      break;
                     }
-                    return a.label.compareTo(b.label);
-                  });
-                final visibleOptions = <_QuickAddPaymentOption>[cashOption];
-                for (final option in cardOptions) {
-                  if (visibleOptions.length - 1 >= maxCards) {
-                    break;
+                    visibleOptions.add(option);
                   }
-                  visibleOptions.add(option);
-                }
 
-                return Row(
-                  children: [
-                    ...visibleOptions.map((option) {
-                      final isSelected = _selectedPaymentChipKey == option.key;
-                      return Expanded(
-                        child: Padding(
-                          padding: const EdgeInsetsDirectional.only(end: 6),
-                          child: SizedBox(
-                            height: 32,
-                            child: ChoiceChip(
-                              selected: isSelected,
-                              labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                              visualDensity: VisualDensity.compact,
-                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                              label: Text(
-                                option.label,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                softWrap: false,
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? const Color(0xFF334155)
-                                      : const Color(0xFF64748B),
-                                  fontWeight: FontWeight.w600,
+                  return Row(
+                    children: [
+                      ...visibleOptions.map((option) {
+                        final isSelected = _selectedPaymentChipKey == option.key;
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsetsDirectional.only(end: 6),
+                            child: SizedBox(
+                              height: 32,
+                              child: ChoiceChip(
+                                selected: isSelected,
+                                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                                visualDensity: VisualDensity.compact,
+                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                label: Text(
+                                  option.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  softWrap: false,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? const Color(0xFF334155)
+                                        : const Color(0xFF64748B),
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
+                                backgroundColor: const Color(0xFFF8FAFC),
+                                selectedColor: const Color(0xFFEFF3F7),
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? const Color(0xFF94A3B8)
+                                      : const Color(0xFFE2E8F0),
+                                ),
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedPaymentChipKey = option.key;
+                                  });
+                                },
                               ),
-                              backgroundColor: const Color(0xFFF8FAFC),
-                              selectedColor: const Color(0xFFEFF3F7),
-                              side: BorderSide(
-                                color: isSelected
-                                    ? const Color(0xFF94A3B8)
-                                    : const Color(0xFFE2E8F0),
-                              ),
-                              onSelected: (_) {
-                                setState(() {
-                                  _selectedPaymentChipKey = option.key;
-                                });
-                              },
                             ),
                           ),
+                        );
+                      }),
+                      SizedBox(
+                        height: 32,
+                        child: ActionChip(
+                          labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                          visualDensity: VisualDensity.compact,
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          label: const Text('⋯'),
+                          onPressed: _openMoreDetails,
                         ),
-                      );
-                    }),
-                    SizedBox(
-                      height: 32,
-                      child: ActionChip(
-                        labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                        visualDensity: VisualDensity.compact,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        label: const Text('⋯'),
-                        onPressed: _openMoreDetails,
                       ),
-                    ),
-                  ],
-                );
-              },
-            ),
+                    ],
+                  );
+                },
+              ),
             const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
@@ -3187,6 +3283,15 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                     ),
                   ),
                 ),
+              ),
+            ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _openMoreDetails,
+                icon: const Icon(Icons.edit_note_rounded),
+                label: Text(l10n.quickAddAddDetails),
               ),
             ),
           ],
@@ -3252,6 +3357,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     Navigator.of(context).pop(
       _QuickAddSheetResult.moreDetails(
         _QuickAddDraftPayload(
+          title: _selectedCategory,
           amountText: _amountController.text,
           category: _selectedCategory,
           paymentMethod: selectedPayment.method,
@@ -3300,7 +3406,216 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       }
     }
 
+    if (options.length == 1 && cards.isNotEmpty) {
+      final fallbackCard = _lastUsedCardProfileId == null
+          ? cards.first
+          : cards.firstWhere(
+              (card) => card.id == _lastUsedCardProfileId,
+              orElse: () => cards.first,
+            );
+      options.add(
+        _QuickAddPaymentOption(
+          key: _paymentChipKeyForCard(fallbackCard.id),
+          label: _cardChipLabel(fallbackCard, fallbackCard.cardNetwork),
+          payment: _paymentForCardFallback(fallbackCard),
+        ),
+      );
+    }
+
     return options;
+  }
+
+  _QuickAddPaymentData _paymentForCardFallback(CardProfile card) {
+    final network =
+        _normalizedText(card.cardNetwork ?? card.customCardNetwork) ?? 'Other';
+    const channel = 'POS Purchase';
+    return _QuickAddPaymentData(
+      method: resolvePaymentMethodHint(network, channel),
+      network: network,
+      channel: channel,
+      cardProfileId: card.id,
+    );
+  }
+
+  Widget _buildFirstPaymentOnboarding(
+    BuildContext context, {
+    required bool showCardInlineSetup,
+    required bool showCashInlineChoices,
+  }) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final firstCardLast4 = _firstCardLast4Controller.text.trim();
+    final canSaveFirstCard = RegExp(r'^\d{4}$').hasMatch(firstCardLast4);
+
+    if (showCardInlineSetup) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isArabic ? 'إعداد بطاقة سريع' : 'Quick card setup',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: <String>['Visa', 'Mastercard', 'Mada'].map((network) {
+              return ChoiceChip(
+                selected: _firstCardNetwork == network,
+                label: Text(network == 'Mastercard' ? 'MC' : network),
+                onSelected: (_) {
+                  setState(() {
+                    _firstCardNetwork = network;
+                  });
+                },
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 10),
+          TextField(
+            controller: _firstCardLast4Controller,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(4),
+            ],
+            decoration: InputDecoration(
+              labelText: isArabic ? 'آخر 4 أرقام' : 'Last 4 digits',
+              hintText: '1234',
+            ),
+            onChanged: (_) {
+              setState(() {});
+            },
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: canSaveFirstCard ? _saveFirstCardAndContinue : null,
+              child: Text(isArabic ? 'حفظ والمتابعة' : 'Save & continue'),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (showCashInlineChoices) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isArabic
+                ? 'هل تريد إدخال رصيد الكاش الآن؟'
+                : 'Do you want to add cash balance now?',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _continueWithTemporaryCash,
+                  child: Text(isArabic ? 'لاحقاً' : 'Later'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _openCashWalletFromQuickAdd,
+                  child: Text(isArabic ? 'إدخال الرصيد' : 'Add balance'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          isArabic ? 'كيف دفعت؟' : 'How did you pay?',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _firstPaymentStep = _FirstPaymentStep.cardSetup;
+                  });
+                },
+                child: Text(isArabic ? 'بطاقة' : 'Card'),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedPaymentChipKey = 'cash';
+                    _firstPaymentStep = _FirstPaymentStep.cashChoice;
+                  });
+                },
+                child: Text(isArabic ? 'كاش' : 'Cash'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _saveFirstCardAndContinue() async {
+    final last4 = _firstCardLast4Controller.text.trim();
+    if (!RegExp(r'^\d{4}$').hasMatch(last4)) {
+      return;
+    }
+
+    final network = _firstCardNetwork;
+
+    try {
+      final createdCard = await ref.read(cardRepositoryProvider).addCard(
+            name: '$network ••••$last4',
+            cardNetwork: network,
+            cardTier: network == 'Mada' ? 'Other' : 'Classic',
+            last4: last4,
+          );
+      ref.invalidate(cardsProvider);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _firstPaymentResolved = true;
+        _selectedPaymentChipKey = _paymentChipKeyForCard(createdCard.id);
+        _lastUsedCardProfileId = createdCard.id;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isArabic ? 'تعذر حفظ البطاقة. حاول مرة أخرى.' : 'Could not save card. Try again.',
+          ),
+        ),
+      );
+    }
+  }
+
+  void _continueWithTemporaryCash() {
+    setState(() {
+      _firstPaymentResolved = true;
+      _selectedPaymentChipKey = 'cash';
+    });
+  }
+
+  void _openCashWalletFromQuickAdd() {
+    Navigator.of(context).pop(const _QuickAddSheetResult.openCashWallet());
   }
 
   _QuickAddPaymentData _selectedQuickPayment() {
@@ -3433,6 +3748,7 @@ class _QuickAddSubmitPayload {
 
 class _QuickAddDraftPayload {
   const _QuickAddDraftPayload({
+    required this.title,
     required this.amountText,
     required this.category,
     required this.paymentMethod,
@@ -3440,9 +3756,16 @@ class _QuickAddDraftPayload {
     required this.spentAt,
   });
 
+  final String title;
   final String amountText;
   final String category;
   final String paymentMethod;
   final String currencyCode;
   final DateTime spentAt;
+}
+
+enum _FirstPaymentStep {
+  chooseHowToPay,
+  cardSetup,
+  cashChoice,
 }
