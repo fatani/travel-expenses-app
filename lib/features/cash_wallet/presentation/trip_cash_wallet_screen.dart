@@ -206,6 +206,10 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final unknownBalanceMessage = isArabic
+        ? 'الرصيد الحالي غير معروف. تم تسجيل مصاريف كاش قبل إدخال الرصيد الابتدائي.'
+        : 'Current cash balance is unknown. Cash expenses were recorded before adding an initial balance.';
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.tripDetailsCashWalletAction),
@@ -231,7 +235,9 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                   const SizedBox(height: 22),
                   _SectionHeader(title: l10n.cashWalletBalancesTitle),
                   const SizedBox(height: 10),
-                  if (_balances.isEmpty)
+                  if (!_hasCashSetup)
+                    _EmptyCard(message: unknownBalanceMessage)
+                  else if (_balances.isEmpty)
                     _EmptyCard(message: l10n.cashWalletNoBalances)
                   else ...[
                     for (final balance in _balances)
@@ -263,7 +269,9 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                             padding: const EdgeInsets.only(bottom: 10),
                             child: _TransactionTile(
                               transaction: transaction,
-                              balanceAfterTransaction: _balanceAfterByTransactionId[transaction.id],
+                              balanceAfterTransaction: _hasCashSetup
+                                  ? _balanceAfterByTransactionId[transaction.id]
+                                  : null,
                               onEdit: _canEditManualTransaction(transaction)
                                   ? () => _showAddCashSheet(
                                         initialType: transaction.type,
@@ -1161,7 +1169,9 @@ class _CashHeroCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            l10n.cashBalanceInsufficientWarning,
+                            Localizations.localeOf(context).languageCode == 'ar'
+                                ? 'الرصيد الحالي غير معروف حتى تضيف الرصيد الابتدائي.'
+                                : 'Current cash balance is unknown until you add an initial balance.',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: const Color(0xFF475569),
                               height: 1.4,
