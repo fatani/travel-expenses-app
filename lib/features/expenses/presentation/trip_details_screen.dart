@@ -238,7 +238,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       builder: (sheetContext) {
         return Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
           ),
           child: QuickAddExpenseSheet(
             trip: _trip,
@@ -2995,8 +2995,9 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     final showCashInlineChoices =
       showFirstPaymentOnboarding &&
       _firstPaymentStep == _FirstPaymentStep.cashChoice;
-    final sheetHeight = MediaQuery.sizeOf(context).height *
-      (showFirstPaymentOnboarding ? 0.58 : 0.42);
+    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
+    final isKeyboardOpen = keyboardInset > 0;
+    final sheetHeight = MediaQuery.sizeOf(context).height * 0.42;
     final amountText = _amountController.text.trim();
     final amount = double.tryParse(amountText);
     final canSave = amount != null && amount > 0;
@@ -3012,7 +3013,12 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       child: Container(
         height: sheetHeight,
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          showFirstPaymentOnboarding ? 14 : 20,
+          24,
+          showFirstPaymentOnboarding ? 14 : 24,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -3024,9 +3030,14 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
             ),
           ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
+        child: SingleChildScrollView(
+          physics: isKeyboardOpen
+              ? const ClampingScrollPhysics()
+              : const NeverScrollableScrollPhysics(),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
             Container(
               width: 44,
               height: 5,
@@ -3035,7 +3046,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: showFirstPaymentOnboarding ? 6 : 10),
             TextField(
               controller: _amountController,
               autofocus: true,
@@ -3076,7 +3087,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: showFirstPaymentOnboarding ? 8 : 12),
             Wrap(
               alignment: WrapAlignment.center,
               spacing: 8,
@@ -3141,7 +3152,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: showFirstPaymentOnboarding ? 6 : 8),
             if (showFirstPaymentOnboarding)
               _buildFirstPaymentOnboarding(
                 context,
@@ -3236,7 +3247,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                   );
                 },
               ),
-            const SizedBox(height: 16),
+            SizedBox(height: showFirstPaymentOnboarding ? 8 : 16),
             SizedBox(
               width: double.infinity,
               child: Opacity(
@@ -3285,16 +3296,19 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 ),
               ),
             ),
-            const SizedBox(height: 10),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _openMoreDetails,
-                icon: const Icon(Icons.edit_note_rounded),
-                label: Text(l10n.quickAddAddDetails),
+            if (!showFirstPaymentOnboarding) ...[
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _openMoreDetails,
+                  icon: const Icon(Icons.edit_note_rounded),
+                  label: Text(l10n.quickAddAddDetails),
+                ),
               ),
-            ),
-          ],
+            ],
+            ],
+          ),
         ),
       ),
     );
@@ -3450,48 +3464,71 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            isArabic ? 'إعداد بطاقة سريع' : 'Quick card setup',
-            style: Theme.of(context).textTheme.titleSmall,
-          ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 2),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 6,
+            runSpacing: 6,
             children: <String>['Visa', 'Mastercard', 'Mada'].map((network) {
-              return ChoiceChip(
-                selected: _firstCardNetwork == network,
-                label: Text(network == 'Mastercard' ? 'MC' : network),
-                onSelected: (_) {
-                  setState(() {
-                    _firstCardNetwork = network;
-                  });
-                },
+              return SizedBox(
+                height: 30,
+                child: ChoiceChip(
+                  visualDensity: VisualDensity.compact,
+                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  selected: _firstCardNetwork == network,
+                  label: Text(network == 'Mastercard' ? 'MC' : network),
+                  onSelected: (_) {
+                    setState(() {
+                      _firstCardNetwork = network;
+                    });
+                  },
+                ),
               );
             }).toList(),
           ),
-          const SizedBox(height: 10),
-          TextField(
-            controller: _firstCardLast4Controller,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(4),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              const Text(
+                '••••',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF64748B),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: _firstCardLast4Controller,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(4),
+                  ],
+                  decoration: InputDecoration(
+                    isDense: true,
+                    hintText: '1234',
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
+                  ),
+                  onChanged: (_) {
+                    setState(() {});
+                  },
+                ),
+              ),
             ],
-            decoration: InputDecoration(
-              labelText: isArabic ? 'آخر 4 أرقام' : 'Last 4 digits',
-              hintText: '1234',
-            ),
-            onChanged: (_) {
-              setState(() {});
-            },
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 6),
           SizedBox(
             width: double.infinity,
             child: FilledButton(
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(38),
+                visualDensity: VisualDensity.compact,
+              ),
               onPressed: canSaveFirstCard ? _saveFirstCardAndContinue : null,
-              child: Text(isArabic ? 'حفظ والمتابعة' : 'Save & continue'),
+              child: Text(isArabic ? 'متابعة' : 'Continue'),
             ),
           ),
         ],
@@ -3506,9 +3543,9 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
             isArabic
                 ? 'هل تريد إدخال رصيد الكاش الآن؟'
                 : 'Do you want to add cash balance now?',
-            style: Theme.of(context).textTheme.titleSmall,
+            style: Theme.of(context).textTheme.bodySmall,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
           Row(
             children: [
               Expanded(
@@ -3535,9 +3572,9 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       children: [
         Text(
           isArabic ? 'كيف دفعت؟' : 'How did you pay?',
-          style: Theme.of(context).textTheme.titleSmall,
+          style: Theme.of(context).textTheme.bodySmall,
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 4),
         Row(
           children: [
             Expanded(
