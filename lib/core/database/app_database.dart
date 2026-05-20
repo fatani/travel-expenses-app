@@ -5,11 +5,16 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 3;
+  static const int databaseVersion = 16;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
   static const String settingsTable = 'settings';
+  static const String cardsTable = 'cards';
+  static const String userFinancialProfileTable = 'user_financial_profile';
+  static const String tripCashBalancesTable = 'trip_cash_balances';
+  static const String cashTransactionsTable = 'cash_transactions';
+  static const String manualExchangeRatesTable = 'manual_exchange_rates';
 
   Database? _database;
 
@@ -37,6 +42,23 @@ class AppDatabase {
       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
+      onOpen: (db) async {
+        await _ensureUserFinancialProfileTable(db);
+        await _ensureSettingsLocaleColumn(db);
+        await _ensureTripsBudgetCurrencyColumn(db);
+        await _ensureTripsFinancialSnapshotColumns(db);
+        await _ensureExpensesRawSmsColumn(db);
+        await _ensureExpensesPaymentDetailsColumns(db);
+        await _ensureExpensesFinancialColumns(db);
+        await _ensureExpensesConversionFoundationColumns(db);
+        await _ensureExpensesCardProfileIdColumn(db);
+        await _ensureCardsProfileColumns(db);
+        await _ensureTripsCustomTitleColumns(db);
+        await _ensureTripCashBalancesTable(db);
+        await _ensureCashTransactionsTable(db);
+        await _ensureCashTransactionsHomeValueColumns(db);
+        await _ensureManualExchangeRatesTable(db);
+      },
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE $tripsTable (
@@ -46,9 +68,14 @@ class AppDatabase {
             start_date TEXT,
             end_date TEXT,
             base_currency TEXT NOT NULL,
+            destination_currency TEXT,
+            home_currency_snapshot TEXT,
             budget REAL,
+            budget_currency TEXT,
             created_at TEXT NOT NULL,
-            updated_at TEXT NOT NULL
+            updated_at TEXT NOT NULL,
+            is_custom_title INTEGER NOT NULL DEFAULT 0,
+            destination_country_code TEXT
           )
         ''');
 
@@ -59,11 +86,29 @@ class AppDatabase {
             title TEXT NOT NULL,
             amount REAL NOT NULL,
             currency_code TEXT NOT NULL,
+            transaction_amount REAL,
+            transaction_currency TEXT,
+            billed_amount REAL,
+            billed_currency TEXT,
+            fees_amount REAL,
+            fees_currency TEXT,
+            total_charged_amount REAL,
+            total_charged_currency TEXT,
+            original_amount REAL,
+            original_currency TEXT,
+            converted_home_amount REAL,
+            home_currency TEXT,
+            conversion_rate REAL,
+            is_international INTEGER NOT NULL DEFAULT 0,
             spent_at TEXT NOT NULL,
             payment_method TEXT NOT NULL,
+            payment_network TEXT,
+            payment_channel TEXT,
             source TEXT NOT NULL,
             category TEXT,
             note TEXT,
+            raw_sms_text TEXT,
+            card_profile_id INTEGER,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
@@ -74,10 +119,79 @@ class AppDatabase {
           CREATE TABLE $settingsTable (
             id INTEGER PRIMARY KEY,
             currency_code TEXT NOT NULL,
+            locale_code TEXT NOT NULL,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL
           )
         ''');
+
+        await db.execute('''
+          CREATE TABLE $cardsTable (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $userFinancialProfileTable (
+            id INTEGER PRIMARY KEY,
+            home_country_code TEXT NOT NULL,
+            home_country_english TEXT NOT NULL,
+            home_country_arabic TEXT NOT NULL,
+            home_currency_code TEXT NOT NULL,
+            onboarding_completed INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $tripCashBalancesTable (
+            trip_id TEXT NOT NULL,
+            currency_code TEXT NOT NULL,
+            balance_amount REAL NOT NULL DEFAULT 0,
+            updated_at TEXT NOT NULL,
+            PRIMARY KEY (trip_id, currency_code),
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $cashTransactionsTable (
+            id TEXT PRIMARY KEY,
+            trip_id TEXT NOT NULL,
+            expense_id TEXT,
+            type TEXT NOT NULL,
+            amount REAL NOT NULL,
+            currency_code TEXT NOT NULL,
+            home_currency_amount REAL,
+            home_currency_code TEXT,
+            is_reversed INTEGER NOT NULL DEFAULT 0,
+            reversed_at TEXT,
+            note TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+          )
+        ''');
+
+        await db.execute('''
+          CREATE TABLE $manualExchangeRatesTable (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            trip_id TEXT,
+            from_currency TEXT NOT NULL,
+            to_currency TEXT NOT NULL,
+            rate REAL NOT NULL,
+            source_note TEXT,
+            created_at TEXT NOT NULL
+          )
+        ''');
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_manual_exchange_rates_trip_pair_created '
+          'ON $manualExchangeRatesTable (trip_id, from_currency, to_currency, created_at)',
+        );
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -98,7 +212,628 @@ class AppDatabase {
             "ALTER TABLE $expensesTable ADD COLUMN source TEXT NOT NULL DEFAULT 'manual'",
           );
         }
+
+        if (oldVersion < 4) {
+          final hasLocaleCode = await _hasColumn(
+            db,
+            settingsTable,
+            'locale_code',
+          );
+          if (!hasLocaleCode) {
+            await db.execute(
+              "ALTER TABLE $settingsTable ADD COLUMN locale_code TEXT NOT NULL DEFAULT 'ar'",
+            );
+          }
+        }
+
+        if (oldVersion < 5) {
+          final hasRawSmsText = await _hasColumn(
+            db,
+            expensesTable,
+            'raw_sms_text',
+          );
+          if (!hasRawSmsText) {
+            await db.execute(
+              'ALTER TABLE $expensesTable ADD COLUMN raw_sms_text TEXT',
+            );
+          }
+        }
+
+        if (oldVersion < 6) {
+          final hasPaymentNetwork = await _hasColumn(
+            db,
+            expensesTable,
+            'payment_network',
+          );
+          if (!hasPaymentNetwork) {
+            await db.execute(
+              'ALTER TABLE $expensesTable ADD COLUMN payment_network TEXT',
+            );
+          }
+
+          final hasPaymentChannel = await _hasColumn(
+            db,
+            expensesTable,
+            'payment_channel',
+          );
+          if (!hasPaymentChannel) {
+            await db.execute(
+              'ALTER TABLE $expensesTable ADD COLUMN payment_channel TEXT',
+            );
+          }
+        }
+
+        if (oldVersion < 7) {
+          await _ensureExpensesFinancialColumns(db);
+        }
+
+        if (oldVersion < 8) {
+          await _recomputeExpensesInternationalFlag(db);
+        }
+
+        if (oldVersion < 9) {
+          await _ensureTripsBudgetCurrencyColumn(db);
+        }
+
+        if (oldVersion < 10) {
+          await _ensureCardsTable(db);
+        }
+
+        if (oldVersion < 11) {
+          await _ensureExpensesCardProfileIdColumn(db);
+        }
+
+        if (oldVersion < 12) {
+          await _ensureTripsCustomTitleColumns(db);
+        }
+
+        if (oldVersion < 13) {
+          await _ensureUserFinancialProfileTable(db);
+          await _ensureTripsFinancialSnapshotColumns(db);
+          await _ensureExpensesConversionFoundationColumns(db);
+        }
+
+        if (oldVersion < 14) {
+          await _ensureTripCashBalancesTable(db);
+          await _ensureCashTransactionsTable(db);
+          await _ensureManualExchangeRatesTable(db);
+        }
+
+        if (oldVersion < 15) {
+          await _ensureCashTransactionsTable(db);
+        }
+
+        if (oldVersion < 16) {
+          await _ensureCashTransactionsHomeValueColumns(db);
+        }
       },
+    );
+  }
+
+  Future<bool> _hasColumn(Database db, String table, String columnName) async {
+    final columns = await db.rawQuery('PRAGMA table_info($table)');
+    return columns.any((column) => column['name'] == columnName);
+  }
+
+  Future<void> _ensureSettingsLocaleColumn(Database db) async {
+    final hasLocaleCode = await _hasColumn(db, settingsTable, 'locale_code');
+
+    if (hasLocaleCode) {
+      return;
+    }
+
+    await db.execute(
+      "ALTER TABLE $settingsTable ADD COLUMN locale_code TEXT NOT NULL DEFAULT 'ar'",
+    );
+  }
+
+  Future<void> _ensureTripsBudgetCurrencyColumn(Database db) async {
+    final hasBudgetCurrency = await _hasColumn(db, tripsTable, 'budget_currency');
+
+    if (hasBudgetCurrency) {
+      return;
+    }
+
+    await db.execute('ALTER TABLE $tripsTable ADD COLUMN budget_currency TEXT');
+    await db.execute(
+      "UPDATE $tripsTable SET budget_currency = base_currency WHERE budget IS NOT NULL AND (budget_currency IS NULL OR budget_currency = '')",
+    );
+  }
+
+  Future<void> _ensureTripsFinancialSnapshotColumns(Database db) async {
+    final hasDestinationCurrency = await _hasColumn(
+      db,
+      tripsTable,
+      'destination_currency',
+    );
+    if (!hasDestinationCurrency) {
+      await db.execute(
+        'ALTER TABLE $tripsTable ADD COLUMN destination_currency TEXT',
+      );
+    }
+
+    final hasHomeCurrencySnapshot = await _hasColumn(
+      db,
+      tripsTable,
+      'home_currency_snapshot',
+    );
+    if (!hasHomeCurrencySnapshot) {
+      await db.execute(
+        'ALTER TABLE $tripsTable ADD COLUMN home_currency_snapshot TEXT',
+      );
+    }
+
+    await db.execute(
+      'UPDATE $tripsTable SET destination_currency = base_currency '
+      "WHERE destination_currency IS NULL OR TRIM(destination_currency) = ''",
+    );
+  }
+
+  Future<void> _ensureExpensesRawSmsColumn(Database db) async {
+    final hasRawSmsText = await _hasColumn(db, expensesTable, 'raw_sms_text');
+
+    if (hasRawSmsText) {
+      return;
+    }
+
+    await db.execute('ALTER TABLE $expensesTable ADD COLUMN raw_sms_text TEXT');
+  }
+
+  Future<void> _ensureExpensesPaymentDetailsColumns(Database db) async {
+    final hasPaymentNetwork = await _hasColumn(
+      db,
+      expensesTable,
+      'payment_network',
+    );
+    if (!hasPaymentNetwork) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN payment_network TEXT',
+      );
+    }
+
+    final hasPaymentChannel = await _hasColumn(
+      db,
+      expensesTable,
+      'payment_channel',
+    );
+    if (!hasPaymentChannel) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN payment_channel TEXT',
+      );
+    }
+  }
+
+  Future<void> _ensureExpensesFinancialColumns(Database db) async {
+    final hasTransactionAmount = await _hasColumn(
+      db,
+      expensesTable,
+      'transaction_amount',
+    );
+    if (!hasTransactionAmount) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN transaction_amount REAL',
+      );
+    }
+
+    final hasTransactionCurrency = await _hasColumn(
+      db,
+      expensesTable,
+      'transaction_currency',
+    );
+    if (!hasTransactionCurrency) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN transaction_currency TEXT',
+      );
+    }
+
+    final hasBilledAmount = await _hasColumn(
+      db,
+      expensesTable,
+      'billed_amount',
+    );
+    if (!hasBilledAmount) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN billed_amount REAL');
+    }
+
+    final hasBilledCurrency = await _hasColumn(
+      db,
+      expensesTable,
+      'billed_currency',
+    );
+    if (!hasBilledCurrency) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN billed_currency TEXT');
+    }
+
+    final hasFeesAmount = await _hasColumn(db, expensesTable, 'fees_amount');
+    if (!hasFeesAmount) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN fees_amount REAL');
+    }
+
+    final hasFeesCurrency = await _hasColumn(db, expensesTable, 'fees_currency');
+    if (!hasFeesCurrency) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN fees_currency TEXT');
+    }
+
+    final hasTotalChargedAmount = await _hasColumn(
+      db,
+      expensesTable,
+      'total_charged_amount',
+    );
+    if (!hasTotalChargedAmount) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN total_charged_amount REAL',
+      );
+    }
+
+    final hasTotalChargedCurrency = await _hasColumn(
+      db,
+      expensesTable,
+      'total_charged_currency',
+    );
+    if (!hasTotalChargedCurrency) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN total_charged_currency TEXT',
+      );
+    }
+
+    final hasIsInternational = await _hasColumn(
+      db,
+      expensesTable,
+      'is_international',
+    );
+    if (!hasIsInternational) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN is_international INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    // Backfill for existing rows to keep old data compatible with the new model.
+    await db.execute(
+      'UPDATE $expensesTable SET transaction_amount = amount WHERE transaction_amount IS NULL',
+    );
+    await db.execute(
+      "UPDATE $expensesTable SET transaction_currency = currency_code WHERE transaction_currency IS NULL OR transaction_currency = ''",
+    );
+    await _recomputeExpensesInternationalFlag(db);
+  }
+
+  Future<void> _ensureExpensesConversionFoundationColumns(Database db) async {
+    final hasOriginalAmount = await _hasColumn(
+      db,
+      expensesTable,
+      'original_amount',
+    );
+    if (!hasOriginalAmount) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN original_amount REAL',
+      );
+    }
+
+    final hasOriginalCurrency = await _hasColumn(
+      db,
+      expensesTable,
+      'original_currency',
+    );
+    if (!hasOriginalCurrency) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN original_currency TEXT',
+      );
+    }
+
+    final hasConvertedHomeAmount = await _hasColumn(
+      db,
+      expensesTable,
+      'converted_home_amount',
+    );
+    if (!hasConvertedHomeAmount) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN converted_home_amount REAL',
+      );
+    }
+
+    final hasHomeCurrency = await _hasColumn(db, expensesTable, 'home_currency');
+    if (!hasHomeCurrency) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN home_currency TEXT');
+    }
+
+    final hasConversionRate = await _hasColumn(
+      db,
+      expensesTable,
+      'conversion_rate',
+    );
+    if (!hasConversionRate) {
+      await db.execute('ALTER TABLE $expensesTable ADD COLUMN conversion_rate REAL');
+    }
+
+    await db.execute(
+      'UPDATE $expensesTable SET original_amount = transaction_amount '
+      'WHERE original_amount IS NULL AND transaction_amount IS NOT NULL',
+    );
+    await db.execute(
+      'UPDATE $expensesTable SET original_amount = amount '
+      'WHERE original_amount IS NULL',
+    );
+    await db.execute(
+      'UPDATE $expensesTable SET original_currency = transaction_currency '
+      "WHERE (original_currency IS NULL OR TRIM(original_currency) = '') "
+      "AND transaction_currency IS NOT NULL AND TRIM(transaction_currency) != ''",
+    );
+    await db.execute(
+      'UPDATE $expensesTable SET original_currency = currency_code '
+      "WHERE original_currency IS NULL OR TRIM(original_currency) = ''",
+    );
+  }
+
+  Future<void> _ensureExpensesCardProfileIdColumn(Database db) async {
+    final hasColumn = await _hasColumn(db, expensesTable, 'card_profile_id');
+    if (hasColumn) {
+      return;
+    }
+    await db.execute(
+      'ALTER TABLE $expensesTable ADD COLUMN card_profile_id INTEGER',
+    );
+  }
+
+  Future<void> _ensureCardsProfileColumns(Database db) async {
+    final hasBankName = await _hasColumn(db, cardsTable, 'bank_name');
+    if (!hasBankName) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN bank_name TEXT');
+    }
+
+    final hasCustomBankName = await _hasColumn(db, cardsTable, 'custom_bank_name');
+    if (!hasCustomBankName) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN custom_bank_name TEXT');
+    }
+
+    final hasCardNetwork = await _hasColumn(db, cardsTable, 'card_network');
+    if (!hasCardNetwork) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN card_network TEXT');
+    }
+
+    final hasCustomCardNetwork = await _hasColumn(
+      db,
+      cardsTable,
+      'custom_card_network',
+    );
+    if (!hasCustomCardNetwork) {
+      await db.execute(
+        'ALTER TABLE $cardsTable ADD COLUMN custom_card_network TEXT',
+      );
+    }
+
+    final hasCardTier = await _hasColumn(db, cardsTable, 'card_tier');
+    if (!hasCardTier) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN card_tier TEXT');
+    }
+
+    final hasCustomCardTier = await _hasColumn(db, cardsTable, 'custom_card_tier');
+    if (!hasCustomCardTier) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN custom_card_tier TEXT');
+    }
+
+    final hasLast4 = await _hasColumn(db, cardsTable, 'last4');
+    if (!hasLast4) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN last4 TEXT');
+    }
+
+    final hasDisplayName = await _hasColumn(db, cardsTable, 'display_name');
+    if (!hasDisplayName) {
+      await db.execute('ALTER TABLE $cardsTable ADD COLUMN display_name TEXT');
+    }
+  }
+
+  Future<void> _ensureTripsCustomTitleColumns(Database db) async {
+    final hasIsCustomTitle = await _hasColumn(db, tripsTable, 'is_custom_title');
+    if (!hasIsCustomTitle) {
+      await db.execute(
+        'ALTER TABLE $tripsTable ADD COLUMN is_custom_title INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    final hasCountryCode = await _hasColumn(db, tripsTable, 'destination_country_code');
+    if (!hasCountryCode) {
+      await db.execute(
+        'ALTER TABLE $tripsTable ADD COLUMN destination_country_code TEXT',
+      );
+    }
+  }
+
+  Future<void> _ensureCardsTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [cardsTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+    await db.execute('''
+      CREATE TABLE $cardsTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _ensureUserFinancialProfileTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [userFinancialProfileTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+    await db.execute('''
+      CREATE TABLE $userFinancialProfileTable (
+        id INTEGER PRIMARY KEY,
+        home_country_code TEXT NOT NULL,
+        home_country_english TEXT NOT NULL,
+        home_country_arabic TEXT NOT NULL,
+        home_currency_code TEXT NOT NULL,
+        onboarding_completed INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _ensureTripCashBalancesTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [tripCashBalancesTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $tripCashBalancesTable (
+        trip_id TEXT NOT NULL,
+        currency_code TEXT NOT NULL,
+        balance_amount REAL NOT NULL DEFAULT 0,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (trip_id, currency_code),
+        FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+      )
+    ''');
+  }
+
+  Future<void> _ensureCashTransactionsTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [cashTransactionsTable],
+    );
+    if (tables.isEmpty) {
+      await db.execute('''
+        CREATE TABLE $cashTransactionsTable (
+          id TEXT PRIMARY KEY,
+          trip_id TEXT NOT NULL,
+          expense_id TEXT,
+          type TEXT NOT NULL,
+          amount REAL NOT NULL,
+          currency_code TEXT NOT NULL,
+          home_currency_amount REAL,
+          home_currency_code TEXT,
+          is_reversed INTEGER NOT NULL DEFAULT 0,
+          reversed_at TEXT,
+          note TEXT,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+        )
+      ''');
+    }
+
+    final hasExpenseId = await _hasColumn(db, cashTransactionsTable, 'expense_id');
+    if (!hasExpenseId) {
+      await db.execute('ALTER TABLE $cashTransactionsTable ADD COLUMN expense_id TEXT');
+    }
+
+    final hasIsReversed = await _hasColumn(db, cashTransactionsTable, 'is_reversed');
+    if (!hasIsReversed) {
+      await db.execute(
+        'ALTER TABLE $cashTransactionsTable ADD COLUMN is_reversed INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    final hasReversedAt = await _hasColumn(db, cashTransactionsTable, 'reversed_at');
+    if (!hasReversedAt) {
+      await db.execute('ALTER TABLE $cashTransactionsTable ADD COLUMN reversed_at TEXT');
+    }
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_transactions_trip_expense_active '
+      'ON $cashTransactionsTable (trip_id, expense_id, type, is_reversed, created_at)',
+    );
+  }
+
+  Future<void> _ensureCashTransactionsHomeValueColumns(Database db) async {
+    final hasHomeCurrencyAmount = await _hasColumn(
+      db,
+      cashTransactionsTable,
+      'home_currency_amount',
+    );
+    if (!hasHomeCurrencyAmount) {
+      await db.execute(
+        'ALTER TABLE $cashTransactionsTable ADD COLUMN home_currency_amount REAL',
+      );
+    }
+
+    final hasHomeCurrencyCode = await _hasColumn(
+      db,
+      cashTransactionsTable,
+      'home_currency_code',
+    );
+    if (!hasHomeCurrencyCode) {
+      await db.execute(
+        'ALTER TABLE $cashTransactionsTable ADD COLUMN home_currency_code TEXT',
+      );
+    }
+  }
+
+  Future<void> _ensureManualExchangeRatesTripColumn(Database db) async {
+    final hasTripId = await _hasColumn(db, manualExchangeRatesTable, 'trip_id');
+    if (!hasTripId) {
+      await db.execute(
+        'ALTER TABLE $manualExchangeRatesTable ADD COLUMN trip_id TEXT',
+      );
+    }
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_manual_exchange_rates_trip_pair_created '
+      'ON $manualExchangeRatesTable (trip_id, from_currency, to_currency, created_at)',
+    );
+  }
+
+  Future<void> _ensureManualExchangeRatesTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [manualExchangeRatesTable],
+    );
+    if (tables.isNotEmpty) {
+      await _ensureManualExchangeRatesTripColumn(db);
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $manualExchangeRatesTable (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        trip_id TEXT,
+        from_currency TEXT NOT NULL,
+        to_currency TEXT NOT NULL,
+        rate REAL NOT NULL,
+        source_note TEXT,
+        created_at TEXT NOT NULL
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_manual_exchange_rates_trip_pair_created '
+      'ON $manualExchangeRatesTable (trip_id, from_currency, to_currency, created_at)',
+    );
+  }
+
+  Future<void> _recomputeExpensesInternationalFlag(Database db) async {
+    await db.execute(
+      'UPDATE $expensesTable '
+      'SET is_international = CASE '
+      "WHEN UPPER(COALESCE(transaction_currency, currency_code, '')) != 'SAR' "
+      'OR fees_amount IS NOT NULL '
+      'OR ('
+      '  billed_amount IS NOT NULL OR '
+      "  (billed_currency IS NOT NULL AND TRIM(billed_currency) != '')"
+      ') AND ('
+      "  UPPER(COALESCE(billed_currency, transaction_currency, currency_code, '')) != UPPER(COALESCE(transaction_currency, currency_code, '')) "
+      '  OR ABS(COALESCE(billed_amount, transaction_amount, amount) - COALESCE(transaction_amount, amount)) > 0.000001'
+      ') '
+      'OR ('
+      '  total_charged_amount IS NOT NULL OR '
+      "  (total_charged_currency IS NOT NULL AND TRIM(total_charged_currency) != '')"
+      ') AND ('
+      "  UPPER(COALESCE(total_charged_currency, transaction_currency, currency_code, '')) != UPPER(COALESCE(transaction_currency, currency_code, '')) "
+      '  OR ABS(COALESCE(total_charged_amount, transaction_amount, amount) - COALESCE(transaction_amount, amount)) > 0.000001'
+      ') '
+      'THEN 1 ELSE 0 END',
     );
   }
 }
