@@ -115,7 +115,7 @@ class TripPdfExporter {
     final dateLine = _formatDateRange(trip.startDate, trip.endDate);
     final baseCurrencyLine = trip.baseCurrency.isNotEmpty
       ? trip.baseCurrency
-      : '—';
+      : '-';
     final citiesLine = _formatCitiesLine(trip.destination);
 
     return pw.Column(
@@ -227,7 +227,7 @@ class TripPdfExporter {
     final groups = <String, int>{};
     for (final e in expenses) {
       final key =
-          e.paymentChannel?.isNotEmpty == true ? e.paymentChannel! : '—';
+          e.paymentChannel?.isNotEmpty == true ? e.paymentChannel! : '-';
       groups[key] = (groups[key] ?? 0) + 1;
     }
     return _buildSection(
@@ -241,7 +241,7 @@ class TripPdfExporter {
     final groups = <String, int>{};
     for (final e in expenses) {
       final key =
-          e.paymentNetwork?.isNotEmpty == true ? e.paymentNetwork! : '—';
+          e.paymentNetwork?.isNotEmpty == true ? e.paymentNetwork! : '-';
       groups[key] = (groups[key] ?? 0) + 1;
     }
     return _buildSection(
@@ -361,19 +361,19 @@ class TripPdfExporter {
       safeEnd = start;
     }
 
-    final startText = safeStart != null ? fmt.format(safeStart.toLocal()) : '—';
-    final endText = safeEnd != null ? fmt.format(safeEnd.toLocal()) : '—';
+    final startText = safeStart != null ? fmt.format(safeStart.toLocal()) : '-';
+    final endText = safeEnd != null ? fmt.format(safeEnd.toLocal()) : '-';
     return '$startText -> $endText';
   }
 
   String _formatCitiesLine(String destination) {
-    if (destination.trim().isEmpty) return '—';
+    if (destination.trim().isEmpty) return '-';
     final cities = destination
         .split(RegExp(r'\s*(?:,|،|\|)\s*'))
         .map((city) => city.trim())
         .where((city) => city.isNotEmpty)
         .toList();
-    if (cities.isEmpty) return '—';
+    if (cities.isEmpty) return '-';
     return cities.join(' - ');
   }
 

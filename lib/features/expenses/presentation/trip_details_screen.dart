@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
 
@@ -93,7 +93,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
               trip: _trip,
               enabled: hasExpenses,
               trigger: Tooltip(
-                message: isArabic ? 'تصدير' : 'Export',
+                message: isArabic ? 'طھطµط¯ظٹط±' : 'Export',
                 child: const _TopActionIcon(icon: Icons.file_download_outlined),
               ),
             ),
@@ -120,18 +120,41 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           final visibleExpenses = expenses
               .where((expense) => !_pendingDeletionExpenseIds.contains(expense.id))
               .toList(growable: false);
-          return _TripDetailsContent(
-          trip: _trip,
-          expenses: visibleExpenses,
-          cashWalletVersion: _cashWalletVersion,
-          onAddExpense: () => _openQuickAddSheet(expenses),
-          onOpenCashWallet: _openCashWallet,
-          onOpenExchangeRates: _openExchangeRates,
-          onAddViaSms: _openSmsExpenseScreen,
-          onFixDates: _openTripEditor,
-          onEditExpense: (expense) => _openExpenseForm(expense: expense),
-          onDeleteExpense: (expense) => _confirmDelete(expense),
-        );
+          return Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 8, left: 20, right: 20, bottom: 0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (visibleExpenses.isNotEmpty)
+                      ActionChip(
+                        label: Text(AppLocalizations.of(context)!.tripDetailsRepeatLastExpense),
+                        avatar: const Icon(Icons.refresh, size: 18),
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () {
+                          _openQuickAddSheet(visibleExpenses, repeat: true, lastExpense: visibleExpenses.last);
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: _TripDetailsContent(
+                  trip: _trip,
+                  expenses: visibleExpenses,
+                  cashWalletVersion: _cashWalletVersion,
+                  onAddExpense: () => _openQuickAddSheet(visibleExpenses),
+                  onOpenCashWallet: _openCashWallet,
+                  onOpenExchangeRates: _openExchangeRates,
+                  onAddViaSms: _openSmsExpenseScreen,
+                  onFixDates: _openTripEditor,
+                  onEditExpense: (expense) => _openExpenseForm(expense: expense),
+                  onDeleteExpense: (expense) => _confirmDelete(expense),
+                ),
+              ),
+            ],
+          );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
@@ -172,6 +195,15 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   void _showLocalSnackBar(SnackBar snackBar) {
     _clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
+  @override
+  void deactivate() {
+    // Clear any lingering snackbars when navigating away from this screen.
+    ScaffoldMessenger.maybeOf(context)
+        ?..hideCurrentSnackBar()
+        ..clearSnackBars();
+    super.deactivate();
   }
 
   Future<void> _openTripEditor() async {
@@ -227,7 +259,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     }
   }
 
-  Future<void> _openQuickAddSheet(List<Expense> expenses) async {
+  Future<void> _openQuickAddSheet(
+    List<Expense> expenses, {
+    bool repeat = false,
+    Expense? lastExpense,
+    String? repeatCategory,
+    String? repeatPaymentChipKey,
+  }) async {
     _clearSnackBars();
     final result = await showModalBottomSheet<_QuickAddSheetResult>(
       context: context,
@@ -243,6 +281,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           child: QuickAddExpenseSheet(
             trip: _trip,
             expenses: expenses,
+            repeatLast: repeat,
+            lastExpense: lastExpense,
+            repeatCategory: repeatCategory,
+            repeatPaymentChipKey: repeatPaymentChipKey,
           ),
         );
       },
@@ -279,6 +321,17 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
     unawaited(_createQuickExpense(payload));
     HapticFeedback.lightImpact();
+    if (result.addAnother) {
+      await Future.delayed(const Duration(milliseconds: 120));
+      if (mounted) {
+        await _openQuickAddSheet(
+          expenses,
+          repeat: true,
+          repeatCategory: result.repeatCategory,
+          repeatPaymentChipKey: result.repeatPaymentChipKey,
+        );
+      }
+    }
   }
 
   Future<void> _createQuickExpense(_QuickAddSubmitPayload payload) async {
@@ -360,7 +413,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         action: createdExpenseId == null
             ? null
             : SnackBarAction(
-                label: isArabic ? 'تراجع' : 'Undo',
+                label: isArabic ? 'طھط±ط§ط¬ط¹' : 'Undo',
                 onPressed: () {
                   unawaited(_undoCreatedExpense(createdExpenseId));
                 },
@@ -395,9 +448,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       SnackBar(
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
-        content: Text(isArabic ? 'تم حفظ التعديلات' : 'Changes saved'),
+        content: Text(isArabic ? 'طھظ… ط­ظپط¸ ط§ظ„طھط¹ط¯ظٹظ„ط§طھ' : 'Changes saved'),
         action: SnackBarAction(
-          label: isArabic ? 'تراجع' : 'Undo',
+          label: isArabic ? 'طھط±ط§ط¬ط¹' : 'Undo',
           onPressed: () {
             unawaited(_restorePreviousExpense(previousExpense));
           },
@@ -558,10 +611,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
             content: Text(
-              isArabic ? 'تم حذف المصروف' : 'Expense deleted',
+              isArabic ? 'طھظ… ط­ط°ظپ ط§ظ„ظ…طµط±ظˆظپ' : 'Expense deleted',
             ),
             action: SnackBarAction(
-              label: isArabic ? 'تراجع' : 'Undo',
+              label: isArabic ? 'طھط±ط§ط¬ط¹' : 'Undo',
               onPressed: () {
                 undone = true;
                 if (!mounted) {
@@ -843,6 +896,8 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     }
     final hasChargedSummary =
         chargedSummaryCurrency != null && chargedSummaryTotal > 0;
+    final chargedSummaryLabelCurrency =
+      hasChargedSummary ? chargedSummaryCurrency : null;
     final listBottomPadding = MediaQuery.of(context).padding.bottom + 128;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final datesMissing = widget.trip.startDate == null || widget.trip.endDate == null;
@@ -869,10 +924,19 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
         context,
       ).read(expenseControllerProvider(widget.trip.id).notifier).reload(),
       child: ListView(
+        cacheExtent: 10000,
         padding: EdgeInsets.fromLTRB(16, 16, 16, listBottomPadding),
         children: [
           _TripSummaryCard(trip: widget.trip),
           const SizedBox(height: 18),
+          if (chargedSummaryLabelCurrency != null) ...[
+            _StatCard(
+              label: l10n.tripDetailsTotalInCurrencyOnly(chargedSummaryLabelCurrency),
+              value: _formatCurrency(chargedSummaryTotal, chargedSummaryLabelCurrency),
+              labelTextDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
+            ),
+            const SizedBox(height: 12),
+          ],
           Row(
             children: [
               Expanded(
@@ -897,15 +961,6 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                 ? l10n.tripDetailsTopCategoryNone
                 : ExpenseOptionLabels.category(l10n, topCategory),
           ),
-          if (hasChargedSummary) ...[
-            const SizedBox(height: 12),
-            _StatCard(
-              label: isArabic
-                  ? 'الإجمالي بعملة $chargedSummaryCurrency فقط'
-                  : 'Total in $chargedSummaryCurrency only',
-              value: _formatCurrency(chargedSummaryTotal, chargedSummaryCurrency),
-            ),
-          ],
           if (hasExcludedCurrencies) ...[
             const SizedBox(height: 12),
             Card(
@@ -1567,22 +1622,22 @@ class _TripSummaryCard extends StatelessWidget {
   ) {
     return switch (resolveTripTimelineStatus(trip)) {
       TripTimelineStatus.datesPending => (
-        label: isArabic ? 'التواريخ ناقصة' : 'Dates Pending',
+        label: isArabic ? 'ط§ظ„طھظˆط§ط±ظٹط® ظ†ط§ظ‚طµط©' : 'Dates Pending',
         background: const Color(0xFFFFEDD5),
         foreground: const Color(0xFF9A3412),
       ),
       TripTimelineStatus.upcoming => (
-        label: isArabic ? 'قادمة' : 'Upcoming',
+        label: isArabic ? 'ظ‚ط§ط¯ظ…ط©' : 'Upcoming',
         background: const Color(0xFFDBEAFE),
         foreground: const Color(0xFF1D4ED8),
       ),
       TripTimelineStatus.active => (
-        label: isArabic ? 'نشطة' : 'Active',
+        label: isArabic ? 'ظ†ط´ط·ط©' : 'Active',
         background: const Color(0xFFDCFCE7),
         foreground: const Color(0xFF166534),
       ),
       TripTimelineStatus.completed => (
-        label: isArabic ? 'مكتملة' : 'Completed',
+        label: isArabic ? 'ظ…ظƒطھظ…ظ„ط©' : 'Completed',
         background: const Color(0xFFE2E8F0),
         foreground: const Color(0xFF475569),
       ),
@@ -1606,10 +1661,15 @@ class _TripSummaryCard extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({required this.label, required this.value});
+  const _StatCard({
+    required this.label,
+    required this.value,
+    this.labelTextDirection,
+  });
 
   final String label;
   final String value;
+  final TextDirection? labelTextDirection;
 
   @override
   Widget build(BuildContext context) {
@@ -1635,6 +1695,7 @@ class _StatCard extends StatelessWidget {
             children: [
               Text(
                 label,
+                textDirection: labelTextDirection,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: const Color(0xFF475569),
                       fontWeight: FontWeight.w500,
@@ -1680,7 +1741,7 @@ class _ExpenseCard extends StatelessWidget {
 
     // Primary display is always the real travel-country transaction amount.
     // Charged/billed home amounts are secondary FX metadata shown in the
-    // conversion block only — never promoted to primary.
+    // conversion block only â€” never promoted to primary.
     final double primaryAmount = expense.transactionAmount;
     final String primaryCurrency = expense.transactionCurrency;
     final originalAmount = expense.originalAmount ?? expense.transactionAmount;
@@ -1700,28 +1761,38 @@ class _ExpenseCard extends StatelessWidget {
           normalizedStoredHomeCurrency ??
           (storedRate != null ? normalizedTripHomeCurrency : null);
       displayedConversionRate = storedRate;
-    } else if (storedRate != null && storedOriginalAmount != null) {
-      displayedConvertedHomeAmount = storedOriginalAmount * storedRate;
-      displayedHomeCurrency =
-          normalizedStoredHomeCurrency ?? normalizedTripHomeCurrency;
-      displayedConversionRate = storedRate;
-    } else if (storedRate != null) {
-      displayedConvertedHomeAmount = expense.transactionAmount * storedRate;
-      displayedHomeCurrency =
-          normalizedStoredHomeCurrency ?? normalizedTripHomeCurrency;
-      displayedConversionRate = storedRate;
     } else {
-      final cashRate = _isCashExpense(expense)
-          ? cashConversionContext.findRate(originalCurrency)
-          : null;
-      if (cashRate != null) {
-        displayedConvertedHomeAmount = originalAmount * cashRate.rate;
-        displayedHomeCurrency = cashRate.homeCurrencyCode;
-        displayedConversionRate = cashRate.rate;
+      final fallbackHomeCurrency =
+          normalizedStoredHomeCurrency ?? normalizedTripHomeCurrency;
+      final canUseStoredRateFallback =
+          storedRate != null &&
+          storedRate > 0 &&
+          fallbackHomeCurrency.isNotEmpty &&
+          originalCurrency.trim().toUpperCase() != fallbackHomeCurrency;
+
+      if (canUseStoredRateFallback) {
+        // Legacy data path: when converted amount is missing, trust persisted
+        // conversion snapshots before deriving any rate from cash wallet history.
+        final baseAmount =
+            (storedOriginalAmount != null && storedOriginalAmount > 0)
+                ? storedOriginalAmount
+                : originalAmount;
+        displayedConvertedHomeAmount = baseAmount * storedRate;
+        displayedHomeCurrency = fallbackHomeCurrency;
+        displayedConversionRate = storedRate;
       } else {
-        displayedConvertedHomeAmount = null;
-        displayedHomeCurrency = null;
-        displayedConversionRate = null;
+        final cashRate = _isCashExpense(expense)
+            ? cashConversionContext.findRate(originalCurrency)
+            : null;
+        if (cashRate != null) {
+          displayedConvertedHomeAmount = originalAmount * cashRate.rate;
+          displayedHomeCurrency = cashRate.homeCurrencyCode;
+          displayedConversionRate = cashRate.rate;
+        } else {
+          displayedConvertedHomeAmount = null;
+          displayedHomeCurrency = null;
+          displayedConversionRate = null;
+        }
       }
     }
 
@@ -1732,7 +1803,7 @@ class _ExpenseCard extends StatelessWidget {
 
     final dateFormatter = DateFormat(
       expense.spentAt.hour != 0 || expense.spentAt.minute != 0
-          ? 'dd MMM yyyy • HH:mm'
+          ? 'dd MMM yyyy â€¢ HH:mm'
           : 'dd MMM yyyy',
       Localizations.localeOf(context).toLanguageTag(),
     );
@@ -1782,7 +1853,7 @@ class _ExpenseCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} • ${ExpenseOptionLabels.paymentSummary(
+                          '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} â€¢ ${ExpenseOptionLabels.paymentSummary(
                             l10n,
                             paymentMethodValue: expense.paymentMethod,
                             paymentNetworkValue: expense.paymentNetwork,
@@ -1857,7 +1928,7 @@ class _ExpenseCard extends StatelessWidget {
                       if (hasHomeConversion) ...[
                         const SizedBox(height: 3),
                         Text(
-                          '${_formatAmountCurrencyLtr(originalAmount, originalCurrency)} → ${_formatAmountCurrencyLtr(displayedConvertedHomeAmount, displayedHomeCurrency as String)}',
+                          '${_formatAmountCurrencyLtr(originalAmount, originalCurrency)} â†’ ${_formatAmountCurrencyLtr(displayedConvertedHomeAmount, displayedHomeCurrency as String)}',
                           textAlign: TextAlign.end,
                           textDirection: ui.TextDirection.ltr,
                           style: mutedStyle,
@@ -1927,7 +1998,7 @@ class _ExpenseCard extends StatelessWidget {
   String _formatRate(double rate) {
     if (rate >= 100) return rate.toStringAsFixed(2);
     if (rate >= 1) return rate.toStringAsFixed(3);
-    // For small rates strip trailing zeros (e.g. 0.103000 → 0.103)
+    // For small rates strip trailing zeros (e.g. 0.103000 â†’ 0.103)
     final s = rate.toStringAsFixed(6);
     return s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
   }
@@ -2105,7 +2176,7 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
                 _NoExpensesInfoLine(
                   isArabic: isArabic,
                   icon: Icons.monetization_on_outlined,
-                  label: isArabic ? 'العملة الأساسية' : 'Base currency',
+                  label: isArabic ? 'ط§ظ„ط¹ظ…ظ„ط© ط§ظ„ط£ط³ط§ط³ظٹط©' : 'Base currency',
                   trailing: baseCurrency,
                   trailingColor: const Color(0xFF00897B),
                 ),
@@ -2118,12 +2189,12 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
                     icon: Icons.calendar_month_outlined,
                     label: datesMissing
                         ? (isArabic
-                            ? 'التواريخ تحتاج تحديد'
+                            ? 'ط§ظ„طھظˆط§ط±ظٹط® طھط­طھط§ط¬ طھط­ط¯ظٹط¯'
                             : 'Dates need attention')
                         : (dateRangeText ?? ''),
                     subtitle: datesMissing
                         ? (isArabic
-                            ? 'حدد تاريخ البداية والنهاية'
+                            ? 'ط­ط¯ط¯ طھط§ط±ظٹط® ط§ظ„ط¨ط¯ط§ظٹط© ظˆط§ظ„ظ†ظ‡ط§ظٹط©'
                             : 'Set start and end dates')
                         : null,
                     trailingIcon: null,
@@ -2145,22 +2216,22 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
   ) {
     return switch (resolveTripTimelineStatus(trip)) {
       TripTimelineStatus.datesPending => (
-        label: isArabic ? 'التواريخ ناقصة' : 'Dates Pending',
+        label: isArabic ? 'ط§ظ„طھظˆط§ط±ظٹط® ظ†ط§ظ‚طµط©' : 'Dates Pending',
         background: const Color(0xFFFFEDD5),
         foreground: const Color(0xFF9A3412),
       ),
       TripTimelineStatus.upcoming => (
-        label: isArabic ? 'قادمة' : 'Upcoming',
+        label: isArabic ? 'ظ‚ط§ط¯ظ…ط©' : 'Upcoming',
         background: const Color(0xFFDBEAFE),
         foreground: const Color(0xFF1D4ED8),
       ),
       TripTimelineStatus.active => (
-        label: isArabic ? 'نشطة' : 'Active',
+        label: isArabic ? 'ظ†ط´ط·ط©' : 'Active',
         background: const Color(0xFFDCFCE7),
         foreground: const Color(0xFF166534),
       ),
       TripTimelineStatus.completed => (
-        label: isArabic ? 'مكتملة' : 'Completed',
+        label: isArabic ? 'ظ…ظƒطھظ…ظ„ط©' : 'Completed',
         background: const Color(0xFFE2E8F0),
         foreground: const Color(0xFF475569),
       ),
@@ -2765,32 +2836,68 @@ class _QuickAddSheetResult {
   const _QuickAddSheetResult.moreDetails(_QuickAddDraftPayload value)
     : openMoreDetails = true,
       openCashWallet = false,
+      addAnother = false,
+      repeatCategory = null,
+      repeatPaymentChipKey = null,
       payload = null,
       draft = value;
 
   const _QuickAddSheetResult.submit(_QuickAddSubmitPayload value)
     : openMoreDetails = false,
       openCashWallet = false,
+      addAnother = false,
+      repeatCategory = null,
+      repeatPaymentChipKey = null,
       payload = value,
       draft = null;
+
+  const _QuickAddSheetResult.submitAndAddAnother(
+    _QuickAddSubmitPayload value, {
+    required String category,
+    required String paymentChipKey,
+  }) : openMoreDetails = false,
+       openCashWallet = false,
+       addAnother = true,
+       repeatCategory = category,
+       repeatPaymentChipKey = paymentChipKey,
+       payload = value,
+       draft = null;
 
   const _QuickAddSheetResult.openCashWallet()
     : openMoreDetails = false,
       openCashWallet = true,
+      addAnother = false,
+      repeatCategory = null,
+      repeatPaymentChipKey = null,
       payload = null,
       draft = null;
 
   final bool openMoreDetails;
   final bool openCashWallet;
+  final bool addAnother;
+  final String? repeatCategory;
+  final String? repeatPaymentChipKey;
   final _QuickAddSubmitPayload? payload;
   final _QuickAddDraftPayload? draft;
 }
 
 class QuickAddExpenseSheet extends ConsumerStatefulWidget {
-  const QuickAddExpenseSheet({super.key, required this.trip, required this.expenses});
+  const QuickAddExpenseSheet({
+    super.key,
+    required this.trip,
+    required this.expenses,
+    this.repeatLast = false,
+    this.lastExpense,
+    this.repeatCategory,
+    this.repeatPaymentChipKey,
+  });
 
   final Trip trip;
   final List<Expense> expenses;
+  final bool repeatLast;
+  final Expense? lastExpense;
+  final String? repeatCategory;
+  final String? repeatPaymentChipKey;
 
   @override
   ConsumerState<QuickAddExpenseSheet> createState() =>
@@ -2798,6 +2905,7 @@ class QuickAddExpenseSheet extends ConsumerStatefulWidget {
 }
 
 class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
+  bool _showRepeatHint = false;
   final TextEditingController _amountController = TextEditingController();
   final TextEditingController _firstCardLast4Controller =
       TextEditingController();
@@ -2850,8 +2958,33 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     if (_lastUsedCardProfileId != null) {
       _selectedPaymentChipKey = _paymentChipKeyForCard(_lastUsedCardProfileId!);
     }
-    _loadPreferences();
+    // Repeat Last / Add Another logic
+    if (widget.repeatLast) {
+      final category = widget.repeatCategory ?? widget.lastExpense?.category;
+      final paymentKey = widget.repeatPaymentChipKey ??
+          (widget.lastExpense != null ? _paymentChipKeyForExpense(widget.lastExpense!) : null);
+      if (category != null) {
+        _selectedCategory = category;
+        _userSelectedCategory = true;
+      }
+      if (paymentKey != null) {
+        _selectedPaymentChipKey = paymentKey;
+      }
+      _lastUsedCardProfileId = widget.lastExpense?.cardProfileId;
+      _amountController.text = '';
+      _showRepeatHint = true;
+      _isPrefilledFromMemory = false;
+    } else {
+      _loadPreferences();
+    }
     unawaited(_loadCashSetupState());
+  }
+
+  String _paymentChipKeyForExpense(Expense e) {
+    if (e.cardProfileId != null) {
+      return _paymentChipKeyForCard(e.cardProfileId!);
+    }
+    return e.paymentMethod;
   }
 
   Future<void> _loadCashSetupState() async {
@@ -3047,6 +3180,18 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
               ),
             ),
             SizedBox(height: showFirstPaymentOnboarding ? 6 : 10),
+            if (_showRepeatHint)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  AppLocalizations.of(context)!.tripDetailsRepeatHint,
+                  style: const TextStyle(
+                    color: Color(0xFF7C3AED),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
             TextField(
               controller: _amountController,
               autofocus: true,
@@ -3239,7 +3384,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                           labelPadding: const EdgeInsets.symmetric(horizontal: 6),
                           visualDensity: VisualDensity.compact,
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          label: const Text('⋯'),
+                          label: const Text('â‹¯'),
                           onPressed: _openMoreDetails,
                         ),
                       ),
@@ -3248,53 +3393,56 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 },
               ),
             SizedBox(height: showFirstPaymentOnboarding ? 8 : 16),
-            SizedBox(
-              width: double.infinity,
-              child: Opacity(
-                opacity: canSave ? 1.0 : 0.65,
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(18),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: canSave ? _save : null,
-                    child: Ink(
-                      height: 58,
-                      decoration: BoxDecoration(
+            Row(
+              children: [
+                Expanded(
+                  child: Opacity(
+                    opacity: canSave ? 1.0 : 0.65,
+                    child: Material(
+                      color: Colors.transparent,
+                      borderRadius: BorderRadius.circular(18),
+                      child: InkWell(
                         borderRadius: BorderRadius.circular(18),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
-                            const SizedBox(width: 9),
-                            Text(
-                              AppLocalizations.of(context)!.quickAddQuickSave,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 16,
-                                letterSpacing: 0.2,
-                              ),
+                        onTap: canSave ? _save : null,
+                        child: Ink(
+                          height: 58,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(18),
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
                             ),
-                          ],
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
+                                blurRadius: 16,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
+                                const SizedBox(width: 9),
+                                Text(
+                                  AppLocalizations.of(context)!.quickAddQuickSave,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16,
+                                    letterSpacing: 0.2,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
+              ],
             ),
             if (!showFirstPaymentOnboarding) ...[
               const SizedBox(height: 10),
@@ -3333,7 +3481,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     _saveWithPayment(_selectedQuickPayment());
   }
 
-  void _saveWithPayment(_QuickAddPaymentData payment) {
+  void _saveWithPayment(_QuickAddPaymentData payment, {bool addAnother = false}) {
     final l10n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -3351,17 +3499,23 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     // Save category memory for next time
     _savePreferences(amount);
 
+    final submitPayload = _QuickAddSubmitPayload(
+      title: _selectedCategory,
+      amount: amount,
+      currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
+      category: _selectedCategory,
+      spentAt: now,
+      payment: payment,
+    );
+
     Navigator.of(context).pop(
-      _QuickAddSheetResult.submit(
-        _QuickAddSubmitPayload(
-          title: _selectedCategory,
-          amount: amount,
-          currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
-          category: _selectedCategory,
-          spentAt: now,
-          payment: payment,
-        ),
-      ),
+      addAnother
+          ? _QuickAddSheetResult.submitAndAddAnother(
+              submitPayload,
+              category: _selectedCategory,
+              paymentChipKey: _selectedPaymentChipKey,
+            )
+          : _QuickAddSheetResult.submit(submitPayload),
     );
   }
 
@@ -3489,7 +3643,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
           Row(
             children: [
               const Text(
-                '••••',
+                'â€¢â€¢â€¢â€¢',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF64748B),
@@ -3528,7 +3682,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 visualDensity: VisualDensity.compact,
               ),
               onPressed: canSaveFirstCard ? _saveFirstCardAndContinue : null,
-              child: Text(isArabic ? 'متابعة' : 'Continue'),
+              child: Text(isArabic ? 'ظ…طھط§ط¨ط¹ط©' : 'Continue'),
             ),
           ),
         ],
@@ -3541,7 +3695,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
         children: [
           Text(
             isArabic
-                ? 'هل تريد إدخال رصيد الكاش الآن؟'
+                ? 'ظ‡ظ„ طھط±ظٹط¯ ط¥ط¯ط®ط§ظ„ ط±طµظٹط¯ ط§ظ„ظƒط§ط´ ط§ظ„ط¢ظ†طں'
                 : 'Do you want to add cash balance now?',
             style: Theme.of(context).textTheme.bodySmall,
           ),
@@ -3551,14 +3705,14 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
               Expanded(
                 child: OutlinedButton(
                   onPressed: _continueWithTemporaryCash,
-                  child: Text(isArabic ? 'لاحقاً' : 'Later'),
+                  child: Text(isArabic ? 'ظ„ط§ط­ظ‚ط§ظ‹' : 'Later'),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
                 child: FilledButton(
                   onPressed: _openCashWalletFromQuickAdd,
-                  child: Text(isArabic ? 'إدخال الرصيد' : 'Add balance'),
+                  child: Text(isArabic ? 'ط¥ط¯ط®ط§ظ„ ط§ظ„ط±طµظٹط¯' : 'Add balance'),
                 ),
               ),
             ],
@@ -3571,7 +3725,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          isArabic ? 'كيف دفعت؟' : 'How did you pay?',
+          isArabic ? 'ظƒظٹظپ ط¯ظپط¹طھطں' : 'How did you pay?',
           style: Theme.of(context).textTheme.bodySmall,
         ),
         const SizedBox(height: 4),
@@ -3584,7 +3738,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                     _firstPaymentStep = _FirstPaymentStep.cardSetup;
                   });
                 },
-                child: Text(isArabic ? 'بطاقة' : 'Card'),
+                child: Text(isArabic ? 'ط¨ط·ط§ظ‚ط©' : 'Card'),
               ),
             ),
             const SizedBox(width: 8),
@@ -3596,7 +3750,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                     _firstPaymentStep = _FirstPaymentStep.cashChoice;
                   });
                 },
-                child: Text(isArabic ? 'كاش' : 'Cash'),
+                child: Text(isArabic ? 'ظƒط§ط´' : 'Cash'),
               ),
             ),
           ],
@@ -3615,7 +3769,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
 
     try {
       final createdCard = await ref.read(cardRepositoryProvider).addCard(
-            name: '$network ••••$last4',
+            name: '$network â€¢â€¢â€¢â€¢$last4',
             cardNetwork: network,
             cardTier: network == 'Mada' ? 'Other' : 'Classic',
             last4: last4,
@@ -3637,7 +3791,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            isArabic ? 'تعذر حفظ البطاقة. حاول مرة أخرى.' : 'Could not save card. Try again.',
+            isArabic ? 'طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط¨ط·ط§ظ‚ط©. ط­ط§ظˆظ„ ظ…ط±ط© ط£ط®ط±ظ‰.' : 'Could not save card. Try again.',
           ),
         ),
       );
@@ -3676,7 +3830,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     final compactNetwork = _compactNetworkLabel(network);
     final last4 = _normalizedText(card.last4);
     if (last4 != null) {
-      return '$compactNetwork ••••$last4';
+      return '$compactNetwork â€¢â€¢â€¢â€¢$last4';
     }
     return compactNetwork;
   }
@@ -3806,3 +3960,4 @@ enum _FirstPaymentStep {
   cardSetup,
   cashChoice,
 }
+

@@ -518,6 +518,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsNoMatchingExpenses => 'No expenses match the current search and filters.';
 
   @override
+  String get tripDetailsRepeatLastExpense => 'Repeat last expense';
+
+  @override
+  String get tripDetailsRepeatHint => 'Last settings loaded';
+
+  @override
   String get tripDetailsClearFilters => 'Clear filters';
 
   @override
@@ -971,6 +977,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripDetailsActuallyCharged => 'Total charged (SAR)';
+
+  @override
+  String tripDetailsTotalInCurrencyOnly(Object currency) {
+    return 'Total in $currency only';
+  }
 
   @override
   String get tripDetailsReportTooltip => 'Trip report';

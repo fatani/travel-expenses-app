@@ -518,6 +518,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsNoMatchingExpenses => 'لا توجد مصاريف تطابق البحث والتصفيات الحالية.';
 
   @override
+  String get tripDetailsRepeatLastExpense => 'كرر آخر مصروف';
+
+  @override
+  String get tripDetailsRepeatHint => 'تم تجهيز آخر إعداداتك';
+
+  @override
   String get tripDetailsClearFilters => 'مسح التصفيات';
 
   @override
@@ -971,6 +977,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripDetailsActuallyCharged => 'إجمالي المخصوم';
+
+  @override
+  String tripDetailsTotalInCurrencyOnly(Object currency) {
+    return 'الإجمالي بعملة $currency فقط';
+  }
 
   @override
   String get tripDetailsReportTooltip => 'تقرير الرحلة';

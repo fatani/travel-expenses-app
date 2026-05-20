@@ -21,6 +21,7 @@ class ExpenseFormScreen extends ConsumerStatefulWidget {
     super.key,
     required this.trip,
     this.expense,
+    this.initialTitle,
     this.initialAmount,
     this.initialCategory,
     this.initialPaymentMethod,
@@ -30,6 +31,7 @@ class ExpenseFormScreen extends ConsumerStatefulWidget {
 
   final Trip trip;
   final Expense? expense;
+  final String? initialTitle;
   final String? initialAmount;
   final String? initialCategory;
   final String? initialPaymentMethod;
@@ -65,7 +67,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     super.initState();
     final expense = widget.expense;
     final initialPayment = _mapInitialPaymentMethod(widget.initialPaymentMethod);
-    _titleController = TextEditingController(text: expense?.title ?? '');
+    _titleController = TextEditingController(
+      text: expense?.title ?? widget.initialTitle ?? '',
+    );
     _amountController = TextEditingController(
       text: expense == null
           ? (widget.initialAmount?.trim() ?? '')

@@ -1049,6 +1049,18 @@ abstract class AppLocalizations {
   /// **'No expenses match the current search and filters.'**
   String get tripDetailsNoMatchingExpenses;
 
+  /// No description provided for @tripDetailsRepeatLastExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat last expense'**
+  String get tripDetailsRepeatLastExpense;
+
+  /// No description provided for @tripDetailsRepeatHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Last settings loaded'**
+  String get tripDetailsRepeatHint;
+
   /// No description provided for @tripDetailsClearFilters.
   ///
   /// In en, this message translates to:
@@ -1918,6 +1930,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total charged (SAR)'**
   String get tripDetailsActuallyCharged;
+
+  /// No description provided for @tripDetailsTotalInCurrencyOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Total in {currency} only'**
+  String tripDetailsTotalInCurrencyOnly(Object currency);
 
   /// No description provided for @tripDetailsReportTooltip.
   ///

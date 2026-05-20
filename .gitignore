@@ -46,3 +46,8 @@ app.*.map.json
 
 # FVM Version Cache
 .fvm/
+
+# Cursor AI
+/ai_system
+
+/run_git_commands.py
