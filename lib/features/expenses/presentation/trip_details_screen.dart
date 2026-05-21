@@ -108,6 +108,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           final visibleExpenses = expenses
               .where((expense) => !_pendingDeletionExpenseIds.contains(expense.id))
               .toList(growable: false);
+          if (visibleExpenses.isEmpty) {
+            return null;
+          }
           return _CalmAddExpenseFab(
             label: l10n.tripDetailsAddExpense,
             onPressed: () => _openQuickAddSheet(visibleExpenses),
