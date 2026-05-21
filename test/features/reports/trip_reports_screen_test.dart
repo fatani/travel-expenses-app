@@ -238,6 +238,8 @@ void main() {
     expect(find.text('Overview'), findsOneWidget);
     expect(find.text('Total expenses'), findsOneWidget);
     expect(find.text('Total billed'), findsOneWidget);
+    expect(find.text('Overall spending'), findsNothing);
+    expect(find.textContaining('only'), findsWidgets);
 
     await tester.drag(find.byType(ListView), const Offset(0, -300));
     await tester.pumpAndSettle();

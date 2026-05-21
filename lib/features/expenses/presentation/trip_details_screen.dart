@@ -867,10 +867,15 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       0,
       (sum, expense) => sum + expense.transactionAmount,
     );
-    final topCategory = _topCategory(widget.expenses);
+    final hasMultipleTransactionCurrencies =
+        _hasMultipleTransactionCurrencies(widget.expenses);
+    final topCategory = hasMultipleTransactionCurrencies
+        ? null
+        : _topCategory(widget.expenses);
     final filteredExpenses = _filteredAndSortedExpenses();
     final hasExcludedCurrencies =
         totalableExpenses.length != widget.expenses.length;
+    final baseCurrency = widget.trip.baseCurrency.trim().toUpperCase();
     final hasExpensesOutsideBaseCurrency =
       total == 0 && hasExcludedCurrencies && widget.expenses.isNotEmpty;
     final totalDisplayValue = hasExpensesOutsideBaseCurrency
@@ -941,7 +946,9 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
             children: [
               Expanded(
                 child: _StatCard(
-                  label: l10n.tripDetailsTotalExpenses,
+                  label: hasExcludedCurrencies
+                      ? l10n.tripDetailsTotalInCurrencyOnly(baseCurrency)
+                      : l10n.tripDetailsTotalExpenses,
                   value: totalDisplayValue,
                 ),
               ),
@@ -1179,8 +1186,23 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     return filtered;
   }
 
+  bool _hasMultipleTransactionCurrencies(List<Expense> expenses) {
+    final currencies = <String>{};
+    for (final expense in expenses) {
+      final currency = expense.transactionCurrency.trim().toUpperCase();
+      if (currency.isEmpty) {
+        continue;
+      }
+      currencies.add(currency);
+      if (currencies.length > 1) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   String? _topCategory(List<Expense> expenses) {
-    if (expenses.isEmpty) {
+    if (expenses.isEmpty || _hasMultipleTransactionCurrencies(expenses)) {
       return null;
     }
 

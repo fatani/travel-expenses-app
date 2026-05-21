@@ -1997,6 +1997,12 @@ abstract class AppLocalizations {
   /// **'Overview'**
   String get tripReportsOverview;
 
+  /// No description provided for @tripReportsOverallSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Overall spending'**
+  String get tripReportsOverallSpending;
+
   /// No description provided for @tripReportsTotalExpenses.
   ///
   /// In en, this message translates to:

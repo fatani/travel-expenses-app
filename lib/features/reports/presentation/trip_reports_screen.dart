@@ -322,11 +322,20 @@ class _ReportHeroSummaryCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
+    final hasMultipleTransactionCurrencies =
+        summary.byTransactionCurrency.length > 1;
     final totalBucket =
         summary.topBilledBucket ?? summary.topTransactionCurrencyBucket;
     final totalText = totalBucket == null
         ? '--'
       : '${_formatAmount(totalBucket.totalAmount)} ${totalBucket.currency.trim().toUpperCase()}';
+    final spendingLabel = totalBucket == null
+        ? '--'
+        : hasMultipleTransactionCurrencies
+            ? context.l10n.tripDetailsTotalInCurrencyOnly(
+                totalBucket.currency.trim().toUpperCase(),
+              )
+            : context.l10n.tripReportsOverallSpending;
     final topCategoryLabel = summary.topCategory == null
         ? (isArabic ? 'غير متوفر' : 'N/A')
         : ExpenseOptionLabels.category(context.l10n, summary.topCategory!);
@@ -374,7 +383,7 @@ class _ReportHeroSummaryCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                isArabic ? 'إجمالي المصروفات' : 'Overall spending',
+                spendingLabel,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,

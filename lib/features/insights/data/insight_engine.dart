@@ -39,7 +39,6 @@ class InsightEngine {
 
   bool _isSafeForAmountBasedInsights(List<Expense> expenses) {
     final currencyCounts = <String, int>{};
-    var totalCount = 0;
 
     for (final expense in expenses) {
       final currency = expense.transactionCurrency.trim().toUpperCase();
@@ -47,18 +46,9 @@ class InsightEngine {
         continue;
       }
       currencyCounts[currency] = (currencyCounts[currency] ?? 0) + 1;
-      totalCount++;
     }
 
-    if (currencyCounts.length > 1 || totalCount == 0) {
-      return false;
-    }
-
-    final dominantCount = currencyCounts.values.fold<int>(
-      0,
-      (maxCount, current) => current > maxCount ? current : maxCount,
-    );
-    return dominantCount / totalCount >= 0.8;
+    return currencyCounts.length == 1;
   }
 
   Insight? _buildSpikeInsight(

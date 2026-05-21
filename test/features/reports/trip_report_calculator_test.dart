@@ -314,6 +314,11 @@ void main() {
         expect(summary.topCategory, isNull);
       });
 
+      test('top payment network and channel are suppressed for mixed currencies', () {
+        expect(summary.topPaymentNetwork, isNull);
+        expect(summary.topPaymentChannel, isNull);
+      });
+
       test('smart insights are empty when expenses are below minimum gate', () {
         expect(summary.smartInsights, isEmpty);
       });

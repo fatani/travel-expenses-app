@@ -372,6 +372,7 @@
   "tripReportsByPaymentNetwork": "By payment network",
   "tripReportsByPaymentChannel": "By payment method",
   "tripReportsOverview": "Overview",
+  "tripReportsOverallSpending": "Overall spending",
   "tripReportsTotalExpenses": "Total expenses",
   "tripReportsDomestic": "Domestic",
   "tripReportsInternational": "International",

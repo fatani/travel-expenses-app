@@ -7,6 +7,7 @@ Expense _expense({
   required double amount,
   required DateTime spentAt,
   String currency = 'SAR',
+  String? transactionCurrency,
   String? category,
   String? paymentNetwork,
   String? paymentChannel,
@@ -17,6 +18,7 @@ Expense _expense({
     title: 'Expense',
     amount: amount,
     currencyCode: currency,
+    transactionCurrency: transactionCurrency,
     category: category,
     paymentMethod: 'Card',
     paymentNetwork: paymentNetwork,
@@ -335,6 +337,81 @@ void main() {
     ]);
 
     expect(insights.where((i) => i.type == InsightType.spike), isEmpty);
+  });
+
+  test('mixed transaction currencies suppress all amount-based insights', () {
+    final insights = engine.build([
+      _expense(
+        amount: 200,
+        spentAt: DateTime(2026, 10, 1),
+        category: 'Food',
+        transactionCurrency: 'SAR',
+      ),
+      _expense(
+        amount: 180,
+        spentAt: DateTime(2026, 10, 2),
+        category: 'Food',
+        transactionCurrency: 'SAR',
+      ),
+      _expense(
+        amount: 150,
+        spentAt: DateTime(2026, 10, 3),
+        category: 'Food',
+        transactionCurrency: 'USD',
+      ),
+      _expense(
+        amount: 140,
+        spentAt: DateTime(2026, 10, 4),
+        category: 'Shopping',
+        transactionCurrency: 'USD',
+      ),
+      _expense(
+        amount: 130,
+        spentAt: DateTime(2026, 10, 5),
+        category: 'Transport',
+        transactionCurrency: 'EUR',
+      ),
+    ]);
+
+    expect(insights, isEmpty);
+  });
+
+  test('dominant-but-not-sole currency suppresses amount-based insights', () {
+    final insights = engine.build([
+      _expense(
+        amount: 400,
+        spentAt: DateTime(2026, 11, 1),
+        category: 'Food',
+        transactionCurrency: 'SAR',
+      ),
+      _expense(
+        amount: 350,
+        spentAt: DateTime(2026, 11, 2),
+        category: 'Food',
+        transactionCurrency: 'SAR',
+      ),
+      _expense(
+        amount: 300,
+        spentAt: DateTime(2026, 11, 3),
+        category: 'Food',
+        transactionCurrency: 'SAR',
+      ),
+      _expense(
+        amount: 280,
+        spentAt: DateTime(2026, 11, 4),
+        category: 'Food',
+        transactionCurrency: 'SAR',
+      ),
+      _expense(
+        amount: 50,
+        spentAt: DateTime(2026, 11, 5),
+        category: 'Transport',
+        transactionCurrency: 'USD',
+      ),
+    ]);
+
+    expect(insights.where((i) => i.type == InsightType.spike), isEmpty);
+    expect(insights.where((i) => i.type == InsightType.categoryDrift), isEmpty);
   });
 
   test('Case D: spike should generate with valid 6-expense split and higher second half average', () {

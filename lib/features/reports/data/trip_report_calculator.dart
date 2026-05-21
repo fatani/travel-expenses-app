@@ -140,8 +140,12 @@ class TripReportCalculator {
         _toBuckets(billedByCurrency, keyFn: (k) => k);
     final totalFeesByCurrencyBuckets =
         _toBuckets(feesByCurrency, keyFn: (k) => k);
-    final topPaymentNetwork = _topNestedKey(networkMap);
-    final topPaymentChannel = _topNestedKey(channelMap);
+    String? topPaymentNetwork;
+    String? topPaymentChannel;
+    if (!hasMultipleTransactionCurrencies) {
+      topPaymentNetwork = _topNestedKey(networkMap);
+      topPaymentChannel = _topNestedKey(channelMap);
+    }
     final smartInsights = (expenses.length < 5
             ? const <Insight>[]
             : _insightEngine.build(

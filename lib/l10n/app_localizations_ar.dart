@@ -1016,6 +1016,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsOverview => 'نظرة عامة';
 
   @override
+  String get tripReportsOverallSpending => 'إجمالي الإنفاق';
+
+  @override
   String get tripReportsTotalExpenses => 'إجمالي المصاريف';
 
   @override

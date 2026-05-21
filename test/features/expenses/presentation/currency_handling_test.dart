@@ -171,6 +171,9 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('Total in CNY only'), findsOneWidget);
+      expect(find.text('Total expenses'), findsNothing);
+      expect(find.text('No category yet'), findsOneWidget);
     },
   );
 
@@ -235,6 +238,9 @@ void main() {
         ),
         findsOneWidget,
       );
+      expect(find.text('Total in SAR only'), findsOneWidget);
+      expect(find.text('Total expenses'), findsNothing);
+      expect(find.text('No category yet'), findsOneWidget);
     },
   );
 

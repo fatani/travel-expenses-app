@@ -372,6 +372,7 @@
   "tripReportsByPaymentNetwork": "حسب شبكة البطاقة",
   "tripReportsByPaymentChannel": "حسب طريقة الدفع",
   "tripReportsOverview": "نظرة عامة",
+  "tripReportsOverallSpending": "إجمالي الإنفاق",
   "tripReportsTotalExpenses": "إجمالي المصاريف",
   "tripReportsDomestic": "محلي",
   "tripReportsInternational": "دولي",
