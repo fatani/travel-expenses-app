@@ -8,8 +8,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
-import 'package:travel_expenses/l10n/l10n_extension.dart';
-
 import '../../../core/design_system/app_confirmation_dialog.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -89,20 +87,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         ),
         actions: [
           _TopActionWrapper(
-            child: ExportMenu(
+            child: _TripDetailsOverflowMenu(
               trip: _trip,
-              enabled: hasExpenses,
-              trigger: Tooltip(
-                message: l10n.tripDetailsExportTooltip,
-                child: const _TopActionIcon(icon: Icons.file_download_outlined),
-              ),
-            ),
-          ),
-          _TopActionWrapper(
-            child: _TopActionIconButton(
-              tooltip: context.l10n.tripDetailsReportTooltip,
-              onPressed: _openTripReports,
-              icon: Icons.bar_chart_outlined,
+              hasExpenses: hasExpenses,
+              onOpenReports: _openTripReports,
             ),
           ),
           _TopActionWrapper(
@@ -115,45 +103,42 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           const SizedBox(width: 2),
         ],
       ),
+      floatingActionButton: expensesState.maybeWhen(
+        data: (expenses) {
+          final visibleExpenses = expenses
+              .where((expense) => !_pendingDeletionExpenseIds.contains(expense.id))
+              .toList(growable: false);
+          return _CalmAddExpenseFab(
+            label: l10n.tripDetailsAddExpense,
+            onPressed: () => _openQuickAddSheet(visibleExpenses),
+          );
+        },
+        orElse: () => null,
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       body: expensesState.when(
         data: (expenses) {
           final visibleExpenses = expenses
               .where((expense) => !_pendingDeletionExpenseIds.contains(expense.id))
               .toList(growable: false);
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(top: 8, left: 20, right: 20, bottom: 0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (visibleExpenses.isNotEmpty)
-                      ActionChip(
-                        label: Text(AppLocalizations.of(context)!.tripDetailsRepeatLastExpense),
-                        avatar: const Icon(Icons.refresh, size: 18),
-                        visualDensity: VisualDensity.compact,
-                        onPressed: () {
-                          _openQuickAddSheet(visibleExpenses, repeat: true, lastExpense: visibleExpenses.last);
-                        },
-                      ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: _TripDetailsContent(
-                  trip: _trip,
-                  expenses: visibleExpenses,
-                  cashWalletVersion: _cashWalletVersion,
-                  onAddExpense: () => _openQuickAddSheet(visibleExpenses),
-                  onOpenCashWallet: _openCashWallet,
-                  onOpenExchangeRates: _openExchangeRates,
-                  onAddViaSms: _openSmsExpenseScreen,
-                  onFixDates: _openTripEditor,
-                  onEditExpense: (expense) => _openExpenseForm(expense: expense),
-                  onDeleteExpense: (expense) => _confirmDelete(expense),
-                ),
-              ),
-            ],
+          return _TripDetailsContent(
+            trip: _trip,
+            expenses: visibleExpenses,
+            cashWalletVersion: _cashWalletVersion,
+            onAddExpense: () => _openQuickAddSheet(visibleExpenses),
+            onRepeatLast: visibleExpenses.isEmpty
+                ? null
+                : () => _openQuickAddSheet(
+                      visibleExpenses,
+                      repeat: true,
+                      lastExpense: visibleExpenses.last,
+                    ),
+            onOpenCashWallet: _openCashWallet,
+            onOpenExchangeRates: _openExchangeRates,
+            onAddViaSms: _openSmsExpenseScreen,
+            onFixDates: _openTripEditor,
+            onEditExpense: (expense) => _openExpenseForm(expense: expense),
+            onDeleteExpense: (expense) => _confirmDelete(expense),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -658,6 +643,7 @@ class _TripDetailsContent extends StatefulWidget {
     required this.expenses,
     required this.cashWalletVersion,
     required this.onAddExpense,
+    this.onRepeatLast,
     required this.onOpenCashWallet,
     required this.onOpenExchangeRates,
     required this.onAddViaSms,
@@ -670,6 +656,7 @@ class _TripDetailsContent extends StatefulWidget {
   final List<Expense> expenses;
   final int cashWalletVersion;
   final VoidCallback onAddExpense;
+  final VoidCallback? onRepeatLast;
   final VoidCallback onOpenCashWallet;
   final VoidCallback onOpenExchangeRates;
   final VoidCallback onAddViaSms;
@@ -989,9 +976,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
           ],
           const SizedBox(height: AppSpacing.md),
           _PrimaryGradientButton(
-            label: l10n.tripDetailsAddExpense,
-            icon: Icons.add_rounded,
-            onTap: widget.onAddExpense,
+            label: widget.onRepeatLast != null
+                ? l10n.tripDetailsRepeatLastExpense
+                : l10n.tripDetailsAddExpense,
+            icon: widget.onRepeatLast != null
+                ? Icons.refresh_rounded
+                : Icons.add_rounded,
+            onTap: widget.onRepeatLast ?? widget.onAddExpense,
           ),
           const SizedBox(height: AppSpacing.sm),
           Builder(
@@ -1017,10 +1008,9 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               );
             },
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _OutlineActionButton(
+          const SizedBox(height: AppSpacing.xs),
+          _TertiarySmsButton(
             label: l10n.tripDetailsAddViaSms,
-            icon: Icons.sms_outlined,
             onTap: widget.onAddViaSms,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -2530,6 +2520,152 @@ class _AnimatedCta extends StatelessWidget {
         CurvedAnimation(parent: animController, curve: Curves.easeOutCubic),
       ),
       child: child,
+    );
+  }
+}
+
+enum _TripDetailsOverflowAction { reports, exportCsv, exportPdf }
+
+class _TripDetailsOverflowMenu extends ConsumerWidget {
+  const _TripDetailsOverflowMenu({
+    required this.trip,
+    required this.hasExpenses,
+    required this.onOpenReports,
+  });
+
+  final Trip trip;
+  final bool hasExpenses;
+  final VoidCallback onOpenReports;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return PopupMenuButton<_TripDetailsOverflowAction>(
+      tooltip: l10n.tripDetailsExportTooltip,
+      padding: EdgeInsets.zero,
+      position: PopupMenuPosition.under,
+      onSelected: (action) {
+        switch (action) {
+          case _TripDetailsOverflowAction.reports:
+            onOpenReports();
+          case _TripDetailsOverflowAction.exportCsv:
+            unawaited(
+              handleTripExport(
+                context,
+                ref,
+                trip: trip,
+                format: TripExportFormat.csv,
+              ),
+            );
+          case _TripDetailsOverflowAction.exportPdf:
+            unawaited(
+              handleTripExport(
+                context,
+                ref,
+                trip: trip,
+                format: TripExportFormat.pdf,
+              ),
+            );
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: _TripDetailsOverflowAction.reports,
+          child: Row(
+            children: [
+              const Icon(Icons.bar_chart_outlined, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Text(l10n.tripDetailsReportTooltip),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem(
+          enabled: hasExpenses,
+          value: _TripDetailsOverflowAction.exportCsv,
+          child: Text(l10n.exportMenuCsv),
+        ),
+        PopupMenuItem(
+          enabled: hasExpenses,
+          value: _TripDetailsOverflowAction.exportPdf,
+          child: Text(l10n.exportMenuPdf),
+        ),
+      ],
+      child: const _TopActionIcon(icon: Icons.more_horiz_rounded),
+    );
+  }
+}
+
+class _CalmAddExpenseFab extends StatelessWidget {
+  const _CalmAddExpenseFab({
+    required this.label,
+    required this.onPressed,
+  });
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton.extended(
+      elevation: 1,
+      highlightElevation: 2,
+      focusElevation: 2,
+      hoverElevation: 2,
+      backgroundColor: AppColors.surfaceLavender,
+      foregroundColor: AppColors.primaryDeep,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        side: const BorderSide(color: AppColors.borderSoft, width: AppBorderWidth.thin),
+      ),
+      extendedIconLabelSpacing: AppSpacing.xs,
+      icon: const Icon(Icons.add_rounded, size: 20),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: 14,
+          letterSpacing: 0.1,
+        ),
+      ),
+      onPressed: onPressed,
+    );
+  }
+}
+
+class _TertiarySmsButton extends StatelessWidget {
+  const _TertiarySmsButton({
+    required this.label,
+    required this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextButton.icon(
+      onPressed: onTap,
+      style: TextButton.styleFrom(
+        minimumSize: const Size.fromHeight(44),
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        foregroundColor: AppColors.textMuted,
+        overlayColor: AppColors.primarySoft.withValues(alpha: 0.45),
+      ),
+      icon: Icon(
+        Icons.sms_outlined,
+        size: 18,
+        color: AppColors.textMuted.withValues(alpha: 0.9),
+      ),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+          color: AppColors.textMuted,
+        ),
+      ),
     );
   }
 }
