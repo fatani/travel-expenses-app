@@ -167,13 +167,14 @@ void main() {
       expect(find.textContaining('30 CNY'), findsNothing);
       expect(
         find.text(
-          'Some expenses in other currencies are not included in the total',
+          'Some expenses in other currencies are not included in the totals above',
         ),
         findsOneWidget,
       );
       expect(find.text('Total in CNY only'), findsOneWidget);
       expect(find.text('Total expenses'), findsNothing);
-      expect(find.text('No category yet'), findsOneWidget);
+      expect(find.text('Mixed currencies'), findsOneWidget);
+      expect(find.text('No category yet'), findsNothing);
     },
   );
 
@@ -234,13 +235,14 @@ void main() {
       expect(find.textContaining('70 SAR'), findsNothing);
       expect(
         find.text(
-          'Some expenses in other currencies are not included in the total',
+          'Some expenses in other currencies are not included in the totals above',
         ),
         findsOneWidget,
       );
       expect(find.text('Total in SAR only'), findsOneWidget);
       expect(find.text('Total expenses'), findsNothing);
-      expect(find.text('No category yet'), findsOneWidget);
+      expect(find.text('Mixed currencies'), findsOneWidget);
+      expect(find.text('No category yet'), findsNothing);
     },
   );
 
@@ -299,7 +301,8 @@ void main() {
 
       expect(find.text('No expenses in this currency'), findsOneWidget);
       expect(find.textContaining('0 CNY'), findsNothing);
-      expect(find.text('Total in SAR only'), findsOneWidget);
+      expect(find.text('Card charges in SAR'), findsOneWidget);
+      expect(find.text('Total in SAR only'), findsNothing);
       expect(find.textContaining('12.45 SAR'), findsOneWidget);
     },
   );
@@ -360,7 +363,8 @@ void main() {
 
       expect(find.text('لا توجد مصاريف بهذه العملة'), findsOneWidget);
       expect(find.textContaining('0 CNY'), findsNothing);
-      expect(find.text('الإجمالي بعملة SAR فقط'), findsOneWidget);
+      expect(find.text('مشتريات البطاقة بعملة SAR'), findsOneWidget);
+      expect(find.text('الإجمالي بعملة SAR فقط'), findsNothing);
       expect(find.textContaining('12.45 SAR'), findsOneWidget);
     },
   );

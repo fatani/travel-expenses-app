@@ -234,7 +234,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsTotalExpenses => 'إجمالي المصاريف';
 
   @override
-  String get tripDetailsExpenseCount => 'عدد المصاريف';
+  String get tripDetailsExpenseCount => 'المصاريف المسجلة';
 
   @override
   String get tripDetailsTopCategory => 'أعلى فئة إنفاق';
@@ -630,7 +630,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get tripDetailsExcludedCurrenciesWarning => 'بعض المصاريف بعملات أخرى غير مشمولة في الإجمالي';
+  String get tripDetailsExcludedCurrenciesWarning => 'بعض المصاريف بعملات أخرى غير مشمولة في الإجماليات أعلاه';
 
   @override
   String get tripDetailsNoExpensesInBaseCurrency => 'لا توجد مصاريف بهذه العملة';
@@ -1056,6 +1056,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String tripDetailsTotalInCurrencyOnly(Object currency) {
     return 'الإجمالي بعملة $currency فقط';
   }
+
+  @override
+  String tripDetailsCardChargesInCurrency(Object currency) {
+    return 'مشتريات البطاقة بعملة $currency';
+  }
+
+  @override
+  String get tripDetailsTopCategoryMultiCurrency => 'عملات متعددة';
 
   @override
   String get tripDetailsReportTooltip => 'تقرير الرحلة';

@@ -524,7 +524,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsExpenseCount.
   ///
   /// In en, this message translates to:
-  /// **'Expense count'**
+  /// **'Expenses logged'**
   String get tripDetailsExpenseCount;
 
   /// No description provided for @tripDetailsTopCategory.
@@ -1256,7 +1256,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsExcludedCurrenciesWarning.
   ///
   /// In en, this message translates to:
-  /// **'Some expenses in other currencies are not included in the total'**
+  /// **'Some expenses in other currencies are not included in the totals above'**
   String get tripDetailsExcludedCurrenciesWarning;
 
   /// No description provided for @tripDetailsNoExpensesInBaseCurrency.
@@ -2080,6 +2080,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Total in {currency} only'**
   String tripDetailsTotalInCurrencyOnly(Object currency);
+
+  /// No description provided for @tripDetailsCardChargesInCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Card charges in {currency}'**
+  String tripDetailsCardChargesInCurrency(Object currency);
+
+  /// No description provided for @tripDetailsTopCategoryMultiCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed currencies'**
+  String get tripDetailsTopCategoryMultiCurrency;
 
   /// No description provided for @tripDetailsReportTooltip.
   ///

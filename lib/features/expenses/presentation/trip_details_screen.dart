@@ -920,7 +920,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
           const SizedBox(height: AppSpacing.lg - 2),
           if (chargedSummaryLabelCurrency != null) ...[
             _StatCard(
-              label: l10n.tripDetailsTotalInCurrencyOnly(chargedSummaryLabelCurrency),
+              label: l10n.tripDetailsCardChargesInCurrency(chargedSummaryLabelCurrency),
               value: _formatCurrency(chargedSummaryTotal, chargedSummaryLabelCurrency),
               labelTextDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
             ),
@@ -948,9 +948,11 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
           const SizedBox(height: AppSpacing.sm),
           _StatCard(
             label: l10n.tripDetailsTopCategory,
-            value: topCategory == null
-                ? l10n.tripDetailsTopCategoryNone
-                : ExpenseOptionLabels.category(l10n, topCategory),
+            value: hasMultipleTransactionCurrencies
+                ? l10n.tripDetailsTopCategoryMultiCurrency
+                : topCategory == null
+                    ? l10n.tripDetailsTopCategoryNone
+                    : ExpenseOptionLabels.category(l10n, topCategory),
           ),
           if (hasExcludedCurrencies) ...[
             const SizedBox(height: AppSpacing.sm),

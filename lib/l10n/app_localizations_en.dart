@@ -234,7 +234,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsTotalExpenses => 'Total expenses';
 
   @override
-  String get tripDetailsExpenseCount => 'Expense count';
+  String get tripDetailsExpenseCount => 'Expenses logged';
 
   @override
   String get tripDetailsTopCategory => 'Top spending category';
@@ -630,7 +630,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tripDetailsExcludedCurrenciesWarning => 'Some expenses in other currencies are not included in the total';
+  String get tripDetailsExcludedCurrenciesWarning => 'Some expenses in other currencies are not included in the totals above';
 
   @override
   String get tripDetailsNoExpensesInBaseCurrency => 'No expenses in this currency';
@@ -1056,6 +1056,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripDetailsTotalInCurrencyOnly(Object currency) {
     return 'Total in $currency only';
   }
+
+  @override
+  String tripDetailsCardChargesInCurrency(Object currency) {
+    return 'Card charges in $currency';
+  }
+
+  @override
+  String get tripDetailsTopCategoryMultiCurrency => 'Mixed currencies';
 
   @override
   String get tripDetailsReportTooltip => 'Trip report';
