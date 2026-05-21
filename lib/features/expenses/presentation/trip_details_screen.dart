@@ -1741,7 +1741,7 @@ class _ExpenseCard extends StatelessWidget {
 
     // Primary display is always the real travel-country transaction amount.
     // Charged/billed home amounts are secondary FX metadata shown in the
-    // conversion block only â€” never promoted to primary.
+    // conversion block only and never promoted to primary.
     final double primaryAmount = expense.transactionAmount;
     final String primaryCurrency = expense.transactionCurrency;
     final originalAmount = expense.originalAmount ?? expense.transactionAmount;
@@ -1801,12 +1801,17 @@ class _ExpenseCard extends StatelessWidget {
       (displayedHomeCurrency ?? '').isNotEmpty &&
       originalCurrency.isNotEmpty;
 
-    final dateFormatter = DateFormat(
-      expense.spentAt.hour != 0 || expense.spentAt.minute != 0
-          ? 'dd MMM yyyy â€¢ HH:mm'
-          : 'dd MMM yyyy',
-      Localizations.localeOf(context).toLanguageTag(),
-    );
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final isArabic = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+    final hasTime = expense.spentAt.hour != 0 || expense.spentAt.minute != 0;
+    final dateText = DateFormat(
+      isArabic ? 'd MMMM' : 'dd MMM yyyy',
+      localeTag,
+    ).format(expense.spentAt);
+    final timeText = hasTime
+        ? DateFormat(isArabic ? 'h:mm a' : 'HH:mm', localeTag).format(expense.spentAt)
+        : null;
+    final spentAtText = timeText == null ? dateText : '$dateText | $timeText';
 
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
       color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.74),
@@ -1853,7 +1858,7 @@ class _ExpenseCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} â€¢ ${ExpenseOptionLabels.paymentSummary(
+                          '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} | ${ExpenseOptionLabels.paymentSummary(
                             l10n,
                             paymentMethodValue: expense.paymentMethod,
                             paymentNetworkValue: expense.paymentNetwork,
@@ -1865,7 +1870,8 @@ class _ExpenseCard extends StatelessWidget {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          dateFormatter.format(expense.spentAt),
+                          spentAtText,
+                          textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
@@ -1928,7 +1934,7 @@ class _ExpenseCard extends StatelessWidget {
                       if (hasHomeConversion) ...[
                         const SizedBox(height: 3),
                         Text(
-                          '${_formatAmountCurrencyLtr(originalAmount, originalCurrency)} â†’ ${_formatAmountCurrencyLtr(displayedConvertedHomeAmount, displayedHomeCurrency as String)}',
+                          '${isArabic ? 'تقريبًا' : 'Approx.'} ${_formatAmountCurrencyLtr(displayedConvertedHomeAmount, displayedHomeCurrency as String)}',
                           textAlign: TextAlign.end,
                           textDirection: ui.TextDirection.ltr,
                           style: mutedStyle,
@@ -1998,7 +2004,7 @@ class _ExpenseCard extends StatelessWidget {
   String _formatRate(double rate) {
     if (rate >= 100) return rate.toStringAsFixed(2);
     if (rate >= 1) return rate.toStringAsFixed(3);
-    // For small rates strip trailing zeros (e.g. 0.103000 â†’ 0.103)
+    // For small rates strip trailing zeros (e.g. 0.103000 -> 0.103)
     final s = rate.toStringAsFixed(6);
     return s.replaceAll(RegExp(r'0+$'), '').replaceAll(RegExp(r'\.$'), '');
   }
@@ -3384,7 +3390,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                           labelPadding: const EdgeInsets.symmetric(horizontal: 6),
                           visualDensity: VisualDensity.compact,
                           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          label: const Text('â‹¯'),
+                          label: const Text('...'),
                           onPressed: _openMoreDetails,
                         ),
                       ),
@@ -3643,7 +3649,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
           Row(
             children: [
               const Text(
-                'â€¢â€¢â€¢â€¢',
+                '****',
                 style: TextStyle(
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF64748B),
@@ -3769,7 +3775,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
 
     try {
       final createdCard = await ref.read(cardRepositoryProvider).addCard(
-            name: '$network â€¢â€¢â€¢â€¢$last4',
+        name: '$network ****$last4',
             cardNetwork: network,
             cardTier: network == 'Mada' ? 'Other' : 'Classic',
             last4: last4,
@@ -3830,7 +3836,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     final compactNetwork = _compactNetworkLabel(network);
     final last4 = _normalizedText(card.last4);
     if (last4 != null) {
-      return '$compactNetwork â€¢â€¢â€¢â€¢$last4';
+      return '$compactNetwork ****$last4';
     }
     return compactNetwork;
   }

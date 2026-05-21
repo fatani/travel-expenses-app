@@ -222,7 +222,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletHealthCritical => 'Critical';
 
   @override
-  String get cashWalletLastAtmNotAvailable => 'Last ATM: —';
+  String get cashWalletLastAtmNotAvailable => 'Last ATM: N/A';
 
   @override
   String get cashWalletOnboardingTitle => 'How much cash are you carrying?';

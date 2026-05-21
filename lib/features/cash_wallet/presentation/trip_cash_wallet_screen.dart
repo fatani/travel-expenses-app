@@ -781,7 +781,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              '${entry.getLocalizedName(isArabic)}  —  ${entry.currencyCode}',
+                              '${entry.getLocalizedName(isArabic)} | ${entry.currencyCode}',
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
@@ -1782,7 +1782,7 @@ class _TransactionTile extends StatelessWidget {
                 DateFormat('dd MMM yyyy, HH:mm').format(transaction.createdAt.toLocal()),
                 if (transaction.note != null && transaction.note!.isNotEmpty)
                   transaction.note!,
-              ].join(' • '),
+              ].join(' | '),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: const Color(0xFF6B7280),
                   ),
@@ -2086,7 +2086,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             subtitle: Text(
-                              '${entry.currencyCode}  •  ${entry.currencyName}',
+                              '${entry.currencyCode} | ${entry.currencyName}',
                               textDirection: TextDirection.ltr,
                             ),
                             trailing: isSelected

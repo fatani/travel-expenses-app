@@ -122,7 +122,7 @@ class ExpenseOptionLabels {
       parts.add(paymentChannel(l10n, paymentChannelValue));
     }
     if (parts.isNotEmpty) {
-      return parts.join(' • ');
+      return parts.join(' | ');
     }
     return paymentMethod(l10n, paymentMethodValue ?? 'Other');
   }

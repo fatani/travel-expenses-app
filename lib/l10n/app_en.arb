@@ -77,7 +77,7 @@
   "cashWalletHealthMedium": "Medium",
   "cashWalletHealthLow": "Low",
   "cashWalletHealthCritical": "Critical",
-  "cashWalletLastAtmNotAvailable": "Last ATM: —",
+  "cashWalletLastAtmNotAvailable": "Last ATM: N/A",
   "cashWalletOnboardingTitle": "How much cash are you carrying?",
   "cashWalletOnboardingSkip": "Skip",
   "cashWalletOnboardingCardsOnly": "I'll use cards only",

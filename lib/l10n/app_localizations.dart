@@ -500,7 +500,7 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletLastAtmNotAvailable.
   ///
   /// In en, this message translates to:
-  /// **'Last ATM: —'**
+  /// **'Last ATM: N/A'**
   String get cashWalletLastAtmNotAvailable;
 
   /// No description provided for @cashWalletOnboardingTitle.

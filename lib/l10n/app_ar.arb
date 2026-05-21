@@ -77,7 +77,7 @@
   "cashWalletHealthMedium": "متوسط",
   "cashWalletHealthLow": "منخفض",
   "cashWalletHealthCritical": "حرج",
-  "cashWalletLastAtmNotAvailable": "آخر ATM: —",
+  "cashWalletLastAtmNotAvailable": "آخر ATM: غير متاح",
   "cashWalletOnboardingTitle": "كم كاش تحمل معك؟",
   "cashWalletOnboardingSkip": "تخطي",
   "cashWalletOnboardingCardsOnly": "سأستخدم البطاقة فقط",
