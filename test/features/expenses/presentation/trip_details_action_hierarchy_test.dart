@@ -58,7 +58,20 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FloatingActionButton), findsOneWidget);
-    expect(find.text('Add Expense'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(FloatingActionButton),
+        matching: find.byIcon(Icons.add_rounded),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(FloatingActionButton),
+        matching: find.text('Add Expense'),
+      ),
+      findsNothing,
+    );
     expect(find.text('Repeat last expense'), findsOneWidget);
   });
 
