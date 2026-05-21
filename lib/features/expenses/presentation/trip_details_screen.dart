@@ -112,7 +112,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             return null;
           }
           return _CalmAddExpenseFab(
-            label: l10n.tripDetailsAddExpense,
             onPressed: () => _openQuickAddSheet(visibleExpenses),
           );
         },
@@ -2601,38 +2600,66 @@ class _TripDetailsOverflowMenu extends ConsumerWidget {
 }
 
 class _CalmAddExpenseFab extends StatelessWidget {
-  const _CalmAddExpenseFab({
-    required this.label,
-    required this.onPressed,
-  });
+  const _CalmAddExpenseFab({required this.onPressed});
 
-  final String label;
   final VoidCallback onPressed;
+
+  static const double _size = 67;
+  static const double _iconSize = 34;
+  static const Color _fabColor = AppColors.primaryDeep;
+
+  static final List<BoxShadow> _premiumShadow = [
+    BoxShadow(
+      color: _fabColor.withValues(alpha: 0.20),
+      blurRadius: 22,
+      spreadRadius: 0,
+      offset: const Offset(0, 8),
+    ),
+    BoxShadow(
+      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+      blurRadius: 28,
+      spreadRadius: 0,
+      offset: const Offset(0, 10),
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    return FloatingActionButton.extended(
-      elevation: 1,
-      highlightElevation: 2,
-      focusElevation: 2,
-      hoverElevation: 2,
-      backgroundColor: AppColors.surfaceLavender,
-      foregroundColor: AppColors.primaryDeep,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        side: const BorderSide(color: AppColors.borderSoft, width: AppBorderWidth.thin),
+    return Padding(
+      padding: const EdgeInsets.only(
+        right: AppSpacing.xs,
+        bottom: AppSpacing.md,
       ),
-      extendedIconLabelSpacing: AppSpacing.xs,
-      icon: const Icon(Icons.add_rounded, size: 20),
-      label: Text(
-        label,
-        style: const TextStyle(
-          fontWeight: FontWeight.w700,
-          fontSize: 14,
-          letterSpacing: 0.1,
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          floatingActionButtonTheme: FloatingActionButtonThemeData(
+            sizeConstraints: const BoxConstraints.tightFor(
+              width: _size,
+              height: _size,
+            ),
+            elevation: 0,
+            highlightElevation: 0,
+            shape: const CircleBorder(),
+            backgroundColor: _fabColor,
+            foregroundColor: Colors.white,
+          ),
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: _premiumShadow,
+          ),
+          child: FloatingActionButton(
+            onPressed: onPressed,
+            elevation: 0,
+            highlightElevation: 0,
+            backgroundColor: _fabColor,
+            foregroundColor: Colors.white,
+            shape: const CircleBorder(),
+            child: const Icon(Icons.add_rounded, size: _iconSize),
+          ),
         ),
       ),
-      onPressed: onPressed,
     );
   }
 }
