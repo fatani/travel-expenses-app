@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
 
@@ -920,17 +920,22 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       ).read(expenseControllerProvider(widget.trip.id).notifier).reload(),
       child: ListView(
         cacheExtent: 10000,
-        padding: EdgeInsets.fromLTRB(16, 16, 16, listBottomPadding),
+        padding: EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          listBottomPadding,
+        ),
         children: [
           _TripSummaryCard(trip: widget.trip),
-          const SizedBox(height: 18),
+          const SizedBox(height: AppSpacing.lg - 2),
           if (chargedSummaryLabelCurrency != null) ...[
             _StatCard(
               label: l10n.tripDetailsTotalInCurrencyOnly(chargedSummaryLabelCurrency),
               value: _formatCurrency(chargedSummaryTotal, chargedSummaryLabelCurrency),
               labelTextDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
           ],
           Row(
             children: [
@@ -942,7 +947,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                   value: totalDisplayValue,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: _StatCard(
                   label: l10n.tripDetailsExpenseCount,
@@ -951,7 +956,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           _StatCard(
             label: l10n.tripDetailsTopCategory,
             value: topCategory == null
@@ -959,11 +964,11 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                 : ExpenseOptionLabels.category(l10n, topCategory),
           ),
           if (hasExcludedCurrencies) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             Card(
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(AppSpacing.sm),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -971,7 +976,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                       Icons.info_outline_rounded,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Text(
                         l10n.tripDetailsExcludedCurrenciesWarning,
@@ -982,13 +987,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               ),
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           _PrimaryGradientButton(
             label: l10n.tripDetailsAddExpense,
             icon: Icons.add_rounded,
             onTap: widget.onAddExpense,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           Builder(
             builder: (context) {
               final primaryBalance = _resolvePrimaryCashBalance(
@@ -1012,23 +1017,18 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               );
             },
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           _OutlineActionButton(
             label: l10n.tripDetailsAddViaSms,
             icon: Icons.sms_outlined,
             onTap: widget.onAddViaSms,
           ),
-          const SizedBox(height: 12),
-          // TODO: Temporarily hiding Expense Estimates CTA for UX evaluation
-          // _OutlineActionButton(
-          //   label: l10n.tripExchangeRatesTitle,
-          //   subtitle: l10n.tripExchangeRatesSubtitle,
-          //   icon: Icons.currency_exchange,
-          //   onTap: widget.onOpenExchangeRates,
-          // ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm - 2,
+              vertical: AppSpacing.xs,
+            ),
             decoration: BoxDecoration(
               color: const Color(0xFFF8FAFC),
               borderRadius: BorderRadius.circular(16),
@@ -1051,7 +1051,6 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                       });
                     },
                     decoration: InputDecoration(
-                      labelText: l10n.tripDetailsSearchLabel,
                       hintText: l10n.tripDetailsSearchHint,
                       prefixIcon: const Icon(Icons.search_rounded),
                       filled: true,
@@ -1061,13 +1060,13 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 12,
+                        horizontal: AppSpacing.md - 2,
+                        vertical: AppSpacing.sm,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.xs),
                 Badge(
                   isLabelVisible: _activeFilterCount > 0,
                   label: Text('$_activeFilterCount'),
@@ -1080,12 +1079,12 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               ],
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             l10n.tripDetailsExpensesSection,
             style: Theme.of(context).textTheme.titleLarge,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.sm),
           if (filteredExpenses.isEmpty)
             _EmptyFilteredState(
               message: l10n.tripDetailsNoMatchingExpenses,
@@ -1095,7 +1094,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
           else
             ...filteredExpenses.map(
               (expense) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: _ExpenseCard(
                   expense: expense,
                   tripHomeCurrency: widget.trip.homeCurrencySnapshot,
@@ -1469,7 +1468,12 @@ class _TripSummaryCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg,
+          AppSpacing.lg - 2,
+        ),
         child: Column(
           crossAxisAlignment:
               isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -1483,46 +1487,30 @@ class _TripSummaryCard extends StatelessWidget {
                         ? CrossAxisAlignment.end
                         : CrossAxisAlignment.start,
                     children: [
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 8,
-                        crossAxisAlignment: WrapCrossAlignment.center,
+                      Align(
                         alignment: isArabic
-                            ? WrapAlignment.end
-                            : WrapAlignment.start,
-                        children: [
-                          Text(
-                            TripTitleResolver.resolve(trip, isArabic),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.headlineSmall
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  color: const Color(0xFF0F172A),
-                                  letterSpacing: -0.4,
-                                ),
+                            ? AlignmentDirectional.centerEnd
+                            : AlignmentDirectional.centerStart,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.sm - 2,
+                            vertical: 6,
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: status.background,
-                              borderRadius: BorderRadius.circular(999),
-                            ),
-                            child: Text(
-                              status.label,
-                              style: TextStyle(
-                                color: status.foreground,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 12,
-                              ),
+                          decoration: BoxDecoration(
+                            color: status.background,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            status.label,
+                            style: TextStyle(
+                              color: status.foreground,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 12,
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.sm),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1546,7 +1534,7 @@ class _TripSummaryCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSpacing.sm - 2),
                       Directionality(
                         textDirection: ui.TextDirection.ltr,
                         child: Row(
@@ -1574,10 +1562,10 @@ class _TripSummaryCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.sm),
                 Container(
-                  width: 100,
-                  height: 100,
+                  width: 72,
+                  height: 72,
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.75),
                     borderRadius: BorderRadius.circular(18),
@@ -1587,18 +1575,21 @@ class _TripSummaryCard extends StatelessWidget {
                     fit: BoxFit.contain,
                     errorBuilder: (context, error, stackTrace) => const Icon(
                       Icons.flight_takeoff_rounded,
-                      size: 46,
+                      size: 36,
                       color: Color(0xFF7C3AED),
                     ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: AppSpacing.md - 2),
             Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm - 2,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(12),
@@ -1685,47 +1676,40 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      shadowColor: const Color(0xFF7C3AED).withValues(alpha: 0.06),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7C3AED).withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg - 2,
+          vertical: AppSpacing.md,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              textDirection: labelTextDirection,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF475569),
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.1,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.sm - 2),
+            Text(
+              value,
+              textDirection: ui.TextDirection.ltr,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF0F172A),
+                    letterSpacing: -0.5,
+                  ),
             ),
           ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                textDirection: labelTextDirection,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: const Color(0xFF475569),
-                      fontWeight: FontWeight.w500,
-                      letterSpacing: 0.1,
-                    ),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                value,
-                textDirection: ui.TextDirection.ltr,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF0F172A),
-                      letterSpacing: -0.5,
-                    ),
-              ),
-            ],
-          ),
         ),
       ),
     );
@@ -1832,23 +1816,17 @@ class _ExpenseCard extends StatelessWidget {
       height: 1.15,
     );
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      shadowColor: const Color(0xFF7C3AED).withValues(alpha: 0.05),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).cardColor,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: AppShadows.soft,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.md - 2,
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1868,7 +1846,7 @@ class _ExpenseCard extends StatelessWidget {
                                 color: const Color(0xFF0F172A),
                               ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} | ${ExpenseOptionLabels.paymentSummary(
                             l10n,
@@ -1880,7 +1858,7 @@ class _ExpenseCard extends StatelessWidget {
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: AppSpacing.xs),
                         Text(
                           spentAtText,
                           textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
@@ -1889,7 +1867,7 @@ class _ExpenseCard extends StatelessWidget {
                               ),
                         ),
                         if (expense.note != null && expense.note!.isNotEmpty) ...[
-                          const SizedBox(height: 8),
+                          const SizedBox(height: AppSpacing.xs),
                           Text(
                             expense.note!,
                             maxLines: 3,
@@ -1902,7 +1880,7 @@ class _ExpenseCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: AppSpacing.sm),
                   ConstrainedBox(
                     constraints: const BoxConstraints(minWidth: 136, maxWidth: 184),
                     child: Column(
@@ -1971,7 +1949,7 @@ class _ExpenseCard extends StatelessWidget {
                           style: mutedStyle,
                         ),
                       ],
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.xs),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -2009,7 +1987,6 @@ class _ExpenseCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 
