@@ -595,7 +595,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsRepeatLastExpense => 'كرر آخر مصروف';
 
   @override
-  String get tripDetailsRepeatHint => 'تم تجهيز آخر إعداداتك';
+  String get tripDetailsRepeatHint => 'جاهز لإضافة مصروف مشابه';
 
   @override
   String get tripDetailsClearFilters => 'مسح التصفيات';

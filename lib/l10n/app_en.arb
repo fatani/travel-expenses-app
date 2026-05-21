@@ -224,7 +224,7 @@
   "tripDetailsSortLowestAmount": "Lowest amount",
   "tripDetailsNoMatchingExpenses": "No expenses match the current search and filters.",
   "tripDetailsRepeatLastExpense": "Repeat last expense",
-  "tripDetailsRepeatHint": "Last settings loaded",
+  "tripDetailsRepeatHint": "Ready to add a similar expense",
   "tripDetailsClearFilters": "Clear filters",
   "tripDetailsFiltersAndSort": "Filters & Sort",
   "tripDetailsApplyFilters": "Apply",

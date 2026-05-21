@@ -277,17 +277,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
             ),
             const SizedBox(height: 10),
             if (_showRepeatHint)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  AppLocalizations.of(context)!.tripDetailsRepeatHint,
-                  style: const TextStyle(
-                    color: Color(0xFF7C3AED),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
+              _buildRepeatHintBanner(l10n, paymentOptions),
             TextField(
               controller: _amountController,
               autofocus: true,
@@ -336,9 +326,11 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
               children: _quickCategories.map((category) {
                 final isSelected = _selectedCategory == category;
                 final isAnimating = _animatingCategory == category;
-                final selectedColor = _isPrefilledFromMemory && !_userSelectedCategory
-                    ? const Color(0xFFA78BFA)
-                    : const Color(0xFF7C3AED);
+                final selectedColor = _showRepeatHint
+                    ? const Color(0xFF6D28D9)
+                    : (_isPrefilledFromMemory && !_userSelectedCategory
+                        ? const Color(0xFFA78BFA)
+                        : const Color(0xFF7C3AED));
                 return AnimatedScale(
                   scale: isAnimating ? 0.95 : 1.0,
                   duration: const Duration(milliseconds: 120),
@@ -371,11 +363,16 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                             ? selectedColor
                             : Colors.grey.shade100,
                         borderRadius: BorderRadius.circular(16),
+                        border: isSelected && _showRepeatHint
+                            ? Border.all(color: const Color(0xFF5B21B6), width: 1.5)
+                            : null,
                         boxShadow: isSelected
                             ? [
                                 BoxShadow(
-                                  color: selectedColor.withValues(alpha: 0.25),
-                                  blurRadius: 10,
+                                  color: selectedColor.withValues(
+                                    alpha: _showRepeatHint ? 0.35 : 0.25,
+                                  ),
+                                  blurRadius: _showRepeatHint ? 12 : 10,
                                   offset: const Offset(0, 4),
                                 ),
                               ]
@@ -445,17 +442,26 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                                   softWrap: false,
                                   style: TextStyle(
                                     color: isSelected
-                                        ? const Color(0xFF334155)
+                                        ? (_showRepeatHint
+                                            ? const Color(0xFF1E293B)
+                                            : const Color(0xFF334155))
                                         : const Color(0xFF64748B),
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: isSelected && _showRepeatHint
+                                        ? FontWeight.w700
+                                        : FontWeight.w600,
                                   ),
                                 ),
                                 backgroundColor: const Color(0xFFF8FAFC),
-                                selectedColor: const Color(0xFFEFF3F7),
+                                selectedColor: _showRepeatHint && isSelected
+                                    ? const Color(0xFFE0E7FF)
+                                    : const Color(0xFFEFF3F7),
                                 side: BorderSide(
                                   color: isSelected
-                                      ? const Color(0xFF94A3B8)
+                                      ? (_showRepeatHint
+                                          ? const Color(0xFF475569)
+                                          : const Color(0xFF94A3B8))
                                       : const Color(0xFFE2E8F0),
+                                  width: isSelected && _showRepeatHint ? 1.5 : 1,
                                 ),
                                 onSelected: (_) {
                                   setState(() {
@@ -545,6 +551,41 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRepeatHintBanner(
+    AppLocalizations l10n,
+    List<_QuickAddPaymentOption> paymentOptions,
+  ) {
+    final categoryLabel = ExpenseOptionLabels.category(l10n, _selectedCategory);
+    var paymentLabel = l10n.paymentMethodCash;
+    for (final option in paymentOptions) {
+      if (option.key == _selectedPaymentChipKey) {
+        paymentLabel = option.label;
+        break;
+      }
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        children: [
+          Text(
+            l10n.tripDetailsRepeatHint,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFF7C3AED),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          _RepeatRestoredLine(label: categoryLabel),
+          const SizedBox(height: 2),
+          _RepeatRestoredLine(label: paymentLabel),
+        ],
       ),
     );
   }
@@ -774,6 +815,26 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     channel: 'Cash',
     cardProfileId: null,
   );
+}
+
+class _RepeatRestoredLine extends StatelessWidget {
+  const _RepeatRestoredLine({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      '• $label',
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        color: Color(0xFF64748B),
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        height: 1.35,
+      ),
+    );
+  }
 }
 
 class _QuickAddPaymentData {

@@ -1202,7 +1202,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsRepeatHint.
   ///
   /// In en, this message translates to:
-  /// **'Last settings loaded'**
+  /// **'Ready to add a similar expense'**
   String get tripDetailsRepeatHint;
 
   /// No description provided for @tripDetailsClearFilters.

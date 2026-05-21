@@ -224,7 +224,7 @@
   "tripDetailsSortLowestAmount": "الأقل مبلغاً",
   "tripDetailsNoMatchingExpenses": "لا توجد مصاريف تطابق البحث والتصفيات الحالية.",
   "tripDetailsRepeatLastExpense": "كرر آخر مصروف",
-  "tripDetailsRepeatHint": "تم تجهيز آخر إعداداتك",
+  "tripDetailsRepeatHint": "جاهز لإضافة مصروف مشابه",
   "tripDetailsClearFilters": "مسح التصفيات",
   "tripDetailsFiltersAndSort": "التصفية والترتيب",
   "tripDetailsApplyFilters": "تطبيق",

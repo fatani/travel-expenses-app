@@ -595,7 +595,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsRepeatLastExpense => 'Repeat last expense';
 
   @override
-  String get tripDetailsRepeatHint => 'Last settings loaded';
+  String get tripDetailsRepeatHint => 'Ready to add a similar expense';
 
   @override
   String get tripDetailsClearFilters => 'Clear filters';
