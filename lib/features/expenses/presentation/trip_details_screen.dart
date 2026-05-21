@@ -296,11 +296,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
     _clearSnackBars();
 
-    if (result.openCashWallet) {
-      await _openCashWallet();
-      return;
-    }
-
     if (result.openMoreDetails) {
       final draft = result.draft;
       await _openExpenseForm(
@@ -2863,7 +2858,6 @@ class _EmptyFilteredState extends StatelessWidget {
 class _QuickAddSheetResult {
   const _QuickAddSheetResult.moreDetails(_QuickAddDraftPayload value)
     : openMoreDetails = true,
-      openCashWallet = false,
       addAnother = false,
       repeatCategory = null,
       repeatPaymentChipKey = null,
@@ -2872,7 +2866,6 @@ class _QuickAddSheetResult {
 
   const _QuickAddSheetResult.submit(_QuickAddSubmitPayload value)
     : openMoreDetails = false,
-      openCashWallet = false,
       addAnother = false,
       repeatCategory = null,
       repeatPaymentChipKey = null,
@@ -2884,24 +2877,13 @@ class _QuickAddSheetResult {
     required String category,
     required String paymentChipKey,
   }) : openMoreDetails = false,
-       openCashWallet = false,
        addAnother = true,
        repeatCategory = category,
        repeatPaymentChipKey = paymentChipKey,
        payload = value,
        draft = null;
 
-  const _QuickAddSheetResult.openCashWallet()
-    : openMoreDetails = false,
-      openCashWallet = true,
-      addAnother = false,
-      repeatCategory = null,
-      repeatPaymentChipKey = null,
-      payload = null,
-      draft = null;
-
   final bool openMoreDetails;
-  final bool openCashWallet;
   final bool addAnother;
   final String? repeatCategory;
   final String? repeatPaymentChipKey;
@@ -2935,8 +2917,6 @@ class QuickAddExpenseSheet extends ConsumerStatefulWidget {
 class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   bool _showRepeatHint = false;
   final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _firstCardLast4Controller =
-      TextEditingController();
   final TextInputFormatter _amountFormatter = TextInputFormatter.withFunction((
     oldValue,
     newValue,
@@ -2959,11 +2939,6 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   Map<String, String> _amountCategoryMemory = {};
   int? _lastUsedCardProfileId;
   String _selectedPaymentChipKey = 'cash';
-  bool _hasCashSetup = true;
-  bool _cashSetupLoaded = false;
-  bool _firstPaymentResolved = false;
-  _FirstPaymentStep _firstPaymentStep = _FirstPaymentStep.chooseHowToPay;
-  String _firstCardNetwork = 'Visa';
 
   static const String _prefsLastAmountKey = 'last_amount';
   static const String _prefsLastCategoryKey = 'last_category';
@@ -3005,7 +2980,6 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     } else {
       _loadPreferences();
     }
-    unawaited(_loadCashSetupState());
   }
 
   String _paymentChipKeyForExpense(Expense e) {
@@ -3013,38 +2987,6 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       return _paymentChipKeyForCard(e.cardProfileId!);
     }
     return e.paymentMethod;
-  }
-
-  Future<void> _loadCashSetupState() async {
-    try {
-      final repository = ref.read(cashWalletRepositoryProvider);
-      final balances = await repository.getBalancesByTrip(widget.trip.id);
-      final transactions = await repository.getRecentTransactionsByTrip(
-        widget.trip.id,
-      );
-      final hasIntentionalCashTx = transactions.any(
-        (transaction) =>
-            transaction.type != CashTransactionType.cashExpenseDeduction,
-      );
-      final hasPositiveBalance = balances.any(
-        (balance) => balance.balanceAmount > 0,
-      );
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _hasCashSetup = hasIntentionalCashTx || hasPositiveBalance;
-        _cashSetupLoaded = true;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _hasCashSetup = true;
-        _cashSetupLoaded = true;
-      });
-    }
   }
 
   int? _resolveLastUsedCardProfileId() {
@@ -3133,7 +3075,6 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   @override
   void dispose() {
     _amountController.dispose();
-    _firstCardLast4Controller.dispose();
     super.dispose();
   }
 
@@ -3143,19 +3084,6 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     final theme = Theme.of(context);
     final cardsState = ref.watch(cardsProvider);
     final cards = cardsState.valueOrNull ?? const <CardProfile>[];
-    final hasCardsLoaded = cardsState.hasValue;
-    final showFirstPaymentOnboarding =
-      !_firstPaymentResolved &&
-      hasCardsLoaded &&
-      _cashSetupLoaded &&
-      cards.isEmpty &&
-      !_hasCashSetup;
-    final showCardInlineSetup =
-      showFirstPaymentOnboarding &&
-      _firstPaymentStep == _FirstPaymentStep.cardSetup;
-    final showCashInlineChoices =
-      showFirstPaymentOnboarding &&
-      _firstPaymentStep == _FirstPaymentStep.cashChoice;
     final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
     final isKeyboardOpen = keyboardInset > 0;
     final sheetHeight = MediaQuery.sizeOf(context).height * 0.42;
@@ -3174,12 +3102,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       child: Container(
         height: sheetHeight,
         width: double.infinity,
-        padding: EdgeInsets.fromLTRB(
-          24,
-          showFirstPaymentOnboarding ? 14 : 20,
-          24,
-          showFirstPaymentOnboarding ? 14 : 24,
-        ),
+        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -3207,7 +3130,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            SizedBox(height: showFirstPaymentOnboarding ? 6 : 10),
+            const SizedBox(height: 10),
             if (_showRepeatHint)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -3260,7 +3183,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 contentPadding: EdgeInsets.zero,
               ),
             ),
-            SizedBox(height: showFirstPaymentOnboarding ? 8 : 12),
+            const SizedBox(height: 12),
             Wrap(
               alignment: WrapAlignment.center,
               spacing: 8,
@@ -3325,15 +3248,8 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 );
               }).toList(),
             ),
-            SizedBox(height: showFirstPaymentOnboarding ? 6 : 8),
-            if (showFirstPaymentOnboarding)
-              _buildFirstPaymentOnboarding(
-                context,
-                showCardInlineSetup: showCardInlineSetup,
-                showCashInlineChoices: showCashInlineChoices,
-              )
-            else
-              LayoutBuilder(
+            const SizedBox(height: 8),
+            LayoutBuilder(
                 builder: (context, constraints) {
                   final maxCards = constraints.maxWidth < 380 ? 2 : 3;
                   final cashOption = paymentOptions.firstWhere(
@@ -3420,7 +3336,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                   );
                 },
               ),
-            SizedBox(height: showFirstPaymentOnboarding ? 8 : 16),
+            const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
@@ -3472,17 +3388,15 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 ),
               ],
             ),
-            if (!showFirstPaymentOnboarding) ...[
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: _openMoreDetails,
-                  icon: const Icon(Icons.edit_note_rounded),
-                  label: Text(l10n.quickAddAddDetails),
-                ),
+            const SizedBox(height: 10),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _openMoreDetails,
+                icon: const Icon(Icons.edit_note_rounded),
+                label: Text(l10n.quickAddAddDetails),
               ),
-            ],
+            ),
             ],
           ),
         ),
@@ -3633,210 +3547,6 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     );
   }
 
-  Widget _buildFirstPaymentOnboarding(
-    BuildContext context, {
-    required bool showCardInlineSetup,
-    required bool showCashInlineChoices,
-  }) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final firstCardLast4 = _firstCardLast4Controller.text.trim();
-    final canSaveFirstCard = RegExp(r'^\d{4}$').hasMatch(firstCardLast4);
-
-    if (showCardInlineSetup) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 2),
-          Wrap(
-            spacing: 6,
-            runSpacing: 6,
-            children: <String>['Visa', 'Mastercard', 'Mada'].map((network) {
-              return SizedBox(
-                height: 30,
-                child: ChoiceChip(
-                  visualDensity: VisualDensity.compact,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  selected: _firstCardNetwork == network,
-                  label: Text(network == 'Mastercard' ? 'MC' : network),
-                  onSelected: (_) {
-                    setState(() {
-                      _firstCardNetwork = network;
-                    });
-                  },
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              const Text(
-                '****',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  controller: _firstCardLast4Controller,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    LengthLimitingTextInputFormatter(4),
-                  ],
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: '1234',
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                  ),
-                  onChanged: (_) {
-                    setState(() {});
-                  },
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(38),
-                visualDensity: VisualDensity.compact,
-              ),
-              onPressed: canSaveFirstCard ? _saveFirstCardAndContinue : null,
-              child: Text(isArabic ? 'ظ…طھط§ط¨ط¹ط©' : 'Continue'),
-            ),
-          ),
-        ],
-      );
-    }
-
-    if (showCashInlineChoices) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            isArabic
-                ? 'ظ‡ظ„ طھط±ظٹط¯ ط¥ط¯ط®ط§ظ„ ط±طµظٹط¯ ط§ظ„ظƒط§ط´ ط§ظ„ط¢ظ†طں'
-                : 'Do you want to add cash balance now?',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _continueWithTemporaryCash,
-                  child: Text(isArabic ? 'ظ„ط§ط­ظ‚ط§ظ‹' : 'Later'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _openCashWalletFromQuickAdd,
-                  child: Text(isArabic ? 'ط¥ط¯ط®ط§ظ„ ط§ظ„ط±طµظٹط¯' : 'Add balance'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          isArabic ? 'ظƒظٹظپ ط¯ظپط¹طھطں' : 'How did you pay?',
-          style: Theme.of(context).textTheme.bodySmall,
-        ),
-        const SizedBox(height: 4),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  setState(() {
-                    _firstPaymentStep = _FirstPaymentStep.cardSetup;
-                  });
-                },
-                child: Text(isArabic ? 'ط¨ط·ط§ظ‚ط©' : 'Card'),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () {
-                  setState(() {
-                    _selectedPaymentChipKey = 'cash';
-                    _firstPaymentStep = _FirstPaymentStep.cashChoice;
-                  });
-                },
-                child: Text(isArabic ? 'ظƒط§ط´' : 'Cash'),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Future<void> _saveFirstCardAndContinue() async {
-    final last4 = _firstCardLast4Controller.text.trim();
-    if (!RegExp(r'^\d{4}$').hasMatch(last4)) {
-      return;
-    }
-
-    final network = _firstCardNetwork;
-
-    try {
-      final createdCard = await ref.read(cardRepositoryProvider).addCard(
-        name: '$network ****$last4',
-            cardNetwork: network,
-            cardTier: network == 'Mada' ? 'Other' : 'Classic',
-            last4: last4,
-          );
-      ref.invalidate(cardsProvider);
-      if (!mounted) {
-        return;
-      }
-      setState(() {
-        _firstPaymentResolved = true;
-        _selectedPaymentChipKey = _paymentChipKeyForCard(createdCard.id);
-        _lastUsedCardProfileId = createdCard.id;
-      });
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            isArabic ? 'طھط¹ط°ط± ط­ظپط¸ ط§ظ„ط¨ط·ط§ظ‚ط©. ط­ط§ظˆظ„ ظ…ط±ط© ط£ط®ط±ظ‰.' : 'Could not save card. Try again.',
-          ),
-        ),
-      );
-    }
-  }
-
-  void _continueWithTemporaryCash() {
-    setState(() {
-      _firstPaymentResolved = true;
-      _selectedPaymentChipKey = 'cash';
-    });
-  }
-
-  void _openCashWalletFromQuickAdd() {
-    Navigator.of(context).pop(const _QuickAddSheetResult.openCashWallet());
-  }
-
   _QuickAddPaymentData _selectedQuickPayment() {
     final cards = ref.read(cardsProvider).valueOrNull ?? const <CardProfile>[];
     final options = _buildPaymentOptions(cards);
@@ -3981,11 +3691,5 @@ class _QuickAddDraftPayload {
   final String paymentMethod;
   final String currencyCode;
   final DateTime spentAt;
-}
-
-enum _FirstPaymentStep {
-  chooseHowToPay,
-  cardSetup,
-  cashChoice,
 }
 
