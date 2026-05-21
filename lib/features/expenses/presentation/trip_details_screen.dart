@@ -1793,7 +1793,7 @@ class _ExpenseCard extends StatelessWidget {
     final isArabic = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     final hasTime = expense.spentAt.hour != 0 || expense.spentAt.minute != 0;
     final dateText = DateFormat(
-      isArabic ? 'd MMMM' : 'dd MMM yyyy',
+      isArabic ? 'd MMM yyyy' : 'dd MMM yyyy',
       localeTag,
     ).format(expense.spentAt);
     final timeText = hasTime
@@ -1804,8 +1804,8 @@ class _ExpenseCard extends StatelessWidget {
     final mutedStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
       color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.74),
       fontWeight: FontWeight.w500,
-      fontSize: 10.5,
-      height: 1.15,
+      fontSize: 12,
+      height: 1.3,
     );
 
     return Container(
@@ -1840,12 +1840,15 @@ class _ExpenseCard extends StatelessWidget {
                         ),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} | ${ExpenseOptionLabels.paymentSummary(
+                          '${ExpenseOptionLabels.category(l10n, expense.category ?? 'Other')} · ${ExpenseOptionLabels.paymentSummary(
                             l10n,
                             paymentMethodValue: expense.paymentMethod,
                             paymentNetworkValue: expense.paymentNetwork,
                             paymentChannelValue: expense.paymentChannel,
                           )}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: Theme.of(context).colorScheme.onSurfaceVariant,
                               ),
@@ -1864,6 +1867,7 @@ class _ExpenseCard extends StatelessWidget {
                             expense.note!,
                             maxLines: 3,
                             overflow: TextOverflow.ellipsis,
+                            textDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 ),
