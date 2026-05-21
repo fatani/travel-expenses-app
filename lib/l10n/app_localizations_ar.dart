@@ -30,6 +30,80 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonEnterValidNumber => 'أدخل رقماً صالحاً.';
 
   @override
+  String get commonUndo => 'تراجع';
+
+  @override
+  String get commonApprox => 'تقريبًا';
+
+  @override
+  String get tripDetailsExportTooltip => 'تصدير';
+
+  @override
+  String get tripDetailsChangesSaved => 'تم حفظ التعديلات';
+
+  @override
+  String get tripDetailsExpenseDeleted => 'تم حذف المصروف';
+
+  @override
+  String get tripDetailsSetStartEndDates => 'حدد تاريخ البداية والنهاية';
+
+  @override
+  String get tripTimelineDatesPending => 'التواريخ ناقصة';
+
+  @override
+  String get tripTimelineNoDates => 'بلا تواريخ';
+
+  @override
+  String get tripTimelineUpcoming => 'قادمة';
+
+  @override
+  String get tripTimelineActive => 'نشطة';
+
+  @override
+  String get tripTimelineTraveling => 'في سفر';
+
+  @override
+  String get tripTimelineCompleted => 'مكتملة';
+
+  @override
+  String get exportMenuTooltip => 'تصدير';
+
+  @override
+  String get exportMenuCsv => 'تصدير CSV';
+
+  @override
+  String get exportMenuPdf => 'تصدير PDF';
+
+  @override
+  String get exportNoExpenses => 'لا توجد مصاريف لتصديرها.';
+
+  @override
+  String get exportSuccess => 'تم تصدير الملف بنجاح';
+
+  @override
+  String exportFailed(Object format, Object error) {
+    return 'تعذر تصدير $format: $error';
+  }
+
+  @override
+  String get settingsToggleLanguageTooltip => 'تبديل اللغة';
+
+  @override
+  String get tripsMyTitle => 'رحلاتي';
+
+  @override
+  String get tripsDeleteTripToBeDeleted => 'الرحلة التي سيتم حذفها';
+
+  @override
+  String get tripsDeleteTripAction => 'حذف الرحلة';
+
+  @override
+  String get tripsDatesNotSet => 'التواريخ غير محددة';
+
+  @override
+  String get tripsNewTrip => 'رحلة جديدة';
+
+  @override
   String get tripsTitle => 'الرحلات';
 
   @override

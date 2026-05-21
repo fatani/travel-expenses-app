@@ -228,6 +228,13 @@ import '../data/repositories/...';
 - ❌ Global mutable state outside Riverpod
 - ❌ Hardcoded strings (use l10n + constants)
 
+### Localization (Arabic / English)
+
+- **Single source of truth:** `lib/l10n/app_ar.arb` (Arabic) and `lib/l10n/app_en.arb` (English). Regenerate with `fvm flutter gen-l10n`; never edit `app_localizations*.dart` by hand.
+- **No Arabic in Dart:** Do not use `isArabic ? '...' : '...'`, string literals with Arabic script, or Arabic fallbacks in widgets, state, or models. Use `AppLocalizations` / `context.l10n` only.
+- **Fallbacks:** When a localized string is unavailable in code paths without `BuildContext`, use **English ASCII** only (never Arabic literals as a stand-in).
+- **Encoding:** Save ARB and Dart sources as **UTF-8 without BOM**. Mojibake in source (e.g. `ط±ط­`) means the file was saved with the wrong encoding—delete the broken literal and restore from ARB, do not “fix” character-by-character in Dart.
+
 ---
 
 ## Pragmatic Excellence

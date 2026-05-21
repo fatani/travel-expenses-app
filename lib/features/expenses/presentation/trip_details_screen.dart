@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui' as ui;
 
@@ -75,8 +75,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final expensesState = ref.watch(expenseControllerProvider(_trip.id));
     final hasExpenses = expensesState.valueOrNull?.isNotEmpty == true;
-    final isArabic = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
@@ -95,7 +93,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
               trip: _trip,
               enabled: hasExpenses,
               trigger: Tooltip(
-                message: isArabic ? 'طھطµط¯ظٹط±' : 'Export',
+                message: l10n.tripDetailsExportTooltip,
                 child: const _TopActionIcon(icon: Icons.file_download_outlined),
               ),
             ),
@@ -400,8 +398,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
     final l10n = AppLocalizations.of(context)!;
     final createdExpenseId = outcome.createdExpenseId;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
     _showLocalSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -410,7 +406,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         action: createdExpenseId == null
             ? null
             : SnackBarAction(
-                label: isArabic ? 'طھط±ط§ط¬ط¹' : 'Undo',
+                label: l10n.commonUndo,
                 onPressed: () {
                   unawaited(_undoCreatedExpense(createdExpenseId));
                 },
@@ -439,15 +435,15 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       return;
     }
 
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final l10n = AppLocalizations.of(context)!;
 
     _showLocalSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 3),
-        content: Text(isArabic ? 'طھظ… ط­ظپط¸ ط§ظ„طھط¹ط¯ظٹظ„ط§طھ' : 'Changes saved'),
+        content: Text(l10n.tripDetailsChangesSaved),
         action: SnackBarAction(
-          label: isArabic ? 'طھط±ط§ط¬ط¹' : 'Undo',
+          label: l10n.commonUndo,
           onPressed: () {
             unawaited(_restorePreviousExpense(previousExpense));
           },
@@ -597,7 +593,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       _pendingDeletionExpenseIds.add(expense.id);
     });
 
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     var undone = false;
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
@@ -607,11 +602,9 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           SnackBar(
             behavior: SnackBarBehavior.floating,
             duration: const Duration(seconds: 3),
-            content: Text(
-              isArabic ? 'طھظ… ط­ط°ظپ ط§ظ„ظ…طµط±ظˆظپ' : 'Expense deleted',
-            ),
+            content: Text(l10n.tripDetailsExpenseDeleted),
             action: SnackBarAction(
-              label: isArabic ? 'طھط±ط§ط¬ط¹' : 'Undo',
+              label: l10n.commonUndo,
               onPressed: () {
                 undone = true;
                 if (!mounted) {
@@ -1457,7 +1450,7 @@ class _TripSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final status = _resolveStatus(isArabic);
+    final status = _resolveStatus(l10n);
 
     return Container(
       decoration: BoxDecoration(
@@ -1637,26 +1630,26 @@ class _TripSummaryCard extends StatelessWidget {
   }
 
   ({String label, Color background, Color foreground}) _resolveStatus(
-    bool isArabic,
+    AppLocalizations l10n,
   ) {
     return switch (resolveTripTimelineStatus(trip)) {
       TripTimelineStatus.datesPending => (
-        label: isArabic ? 'ط§ظ„طھظˆط§ط±ظٹط® ظ†ط§ظ‚طµط©' : 'Dates Pending',
+        label: l10n.tripTimelineDatesPending,
         background: const Color(0xFFFFEDD5),
         foreground: const Color(0xFF9A3412),
       ),
       TripTimelineStatus.upcoming => (
-        label: isArabic ? 'ظ‚ط§ط¯ظ…ط©' : 'Upcoming',
+        label: l10n.tripTimelineUpcoming,
         background: const Color(0xFFDBEAFE),
         foreground: const Color(0xFF1D4ED8),
       ),
       TripTimelineStatus.active => (
-        label: isArabic ? 'ظ†ط´ط·ط©' : 'Active',
+        label: l10n.tripTimelineActive,
         background: const Color(0xFFDCFCE7),
         foreground: const Color(0xFF166534),
       ),
       TripTimelineStatus.completed => (
-        label: isArabic ? 'ظ…ظƒطھظ…ظ„ط©' : 'Completed',
+        label: l10n.tripTimelineCompleted,
         background: const Color(0xFFE2E8F0),
         foreground: const Color(0xFF475569),
       ),
@@ -1953,7 +1946,7 @@ class _ExpenseCard extends StatelessWidget {
                       if (hasHomeConversion) ...[
                         const SizedBox(height: 3),
                         Text(
-                          '${isArabic ? 'تقريبًا' : 'Approx.'} ${_formatAmountCurrencyLtr(displayedConvertedHomeAmount, displayedHomeCurrency as String)}',
+                          '${l10n.commonApprox} ${_formatAmountCurrencyLtr(displayedConvertedHomeAmount, displayedHomeCurrency as String)}',
                           textAlign: TextAlign.end,
                           textDirection: ui.TextDirection.ltr,
                           style: mutedStyle,
@@ -2127,7 +2120,8 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = _resolveStatus(isArabic);
+    final l10n = AppLocalizations.of(context)!;
+    final status = _resolveStatus(l10n);
 
     return Container(
       width: double.infinity,
@@ -2201,7 +2195,7 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
                 _NoExpensesInfoLine(
                   isArabic: isArabic,
                   icon: Icons.monetization_on_outlined,
-                  label: isArabic ? 'ط§ظ„ط¹ظ…ظ„ط© ط§ظ„ط£ط³ط§ط³ظٹط©' : 'Base currency',
+                  label: l10n.tripFormCurrencyLabel,
                   trailing: baseCurrency,
                   trailingColor: const Color(0xFF00897B),
                 ),
@@ -2213,14 +2207,10 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
                     isArabic: isArabic,
                     icon: Icons.calendar_month_outlined,
                     label: datesMissing
-                        ? (isArabic
-                            ? 'ط§ظ„طھظˆط§ط±ظٹط® طھط­طھط§ط¬ طھط­ط¯ظٹط¯'
-                            : 'Dates need attention')
+                        ? l10n.tripsDatesNeedAttention
                         : (dateRangeText ?? ''),
                     subtitle: datesMissing
-                        ? (isArabic
-                            ? 'ط­ط¯ط¯ طھط§ط±ظٹط® ط§ظ„ط¨ط¯ط§ظٹط© ظˆط§ظ„ظ†ظ‡ط§ظٹط©'
-                            : 'Set start and end dates')
+                        ? l10n.tripDetailsSetStartEndDates
                         : null,
                     trailingIcon: null,
                     labelColor: datesMissing
@@ -2237,26 +2227,26 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
   }
 
   ({String label, Color background, Color foreground}) _resolveStatus(
-    bool isArabic,
+    AppLocalizations l10n,
   ) {
     return switch (resolveTripTimelineStatus(trip)) {
       TripTimelineStatus.datesPending => (
-        label: isArabic ? 'ط§ظ„طھظˆط§ط±ظٹط® ظ†ط§ظ‚طµط©' : 'Dates Pending',
+        label: l10n.tripTimelineDatesPending,
         background: const Color(0xFFFFEDD5),
         foreground: const Color(0xFF9A3412),
       ),
       TripTimelineStatus.upcoming => (
-        label: isArabic ? 'ظ‚ط§ط¯ظ…ط©' : 'Upcoming',
+        label: l10n.tripTimelineUpcoming,
         background: const Color(0xFFDBEAFE),
         foreground: const Color(0xFF1D4ED8),
       ),
       TripTimelineStatus.active => (
-        label: isArabic ? 'ظ†ط´ط·ط©' : 'Active',
+        label: l10n.tripTimelineActive,
         background: const Color(0xFFDCFCE7),
         foreground: const Color(0xFF166534),
       ),
       TripTimelineStatus.completed => (
-        label: isArabic ? 'ظ…ظƒطھظ…ظ„ط©' : 'Completed',
+        label: l10n.tripTimelineCompleted,
         background: const Color(0xFFE2E8F0),
         foreground: const Color(0xFF475569),
       ),

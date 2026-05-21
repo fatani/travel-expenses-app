@@ -98,7 +98,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
               elevation: 0,
               scrolledUnderElevation: 0,
               title: Text(
-                isArabic ? 'رحلاتي' : 'Trips',
+                l10n.tripsMyTitle,
                 style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w800,
@@ -124,7 +124,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                 ),
                 const SizedBox(width: 4),
                 Tooltip(
-                  message: isArabic ? 'تبديل اللغة' : 'Toggle language',
+                  message: l10n.settingsToggleLanguageTooltip,
                   child: _SubtleLanguageToggle(
                     isLoading: settingsState.isLoading,
                     onTap: () => _toggleLanguage(context, ref, currentLocaleCode),
@@ -282,15 +282,15 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isArabic =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+    final tripName = TripTitleResolver.resolve(trip, isArabic);
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
-        final title = isArabic ? 'حذف الرحلة؟' : 'Delete trip?';
-        final message = isArabic
-            ? 'سيتم حذف الرحلة وكل مصاريفها المرتبطة نهائيًا.'
-            : 'This will permanently remove the trip and its linked expenses.';
-        final cancelLabel = isArabic ? 'إلغاء' : 'Cancel';
-        final deleteLabel = isArabic ? 'حذف الرحلة' : 'Delete trip';
+        final dialogL10n = AppLocalizations.of(context)!;
+        final title = dialogL10n.tripsDeleteDialogTitle;
+        final message = dialogL10n.tripsDeleteDialogMessage(tripName);
+        final cancelLabel = dialogL10n.commonCancel;
+        final deleteLabel = dialogL10n.tripsDeleteTripAction;
 
         return Dialog(
           elevation: 0,
@@ -351,7 +351,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                     alignment:
                         isArabic ? Alignment.centerRight : Alignment.centerLeft,
                     child: Text(
-                      isArabic ? 'الرحلة التي سيتم حذفها' : 'Trip to be deleted',
+                      dialogL10n.tripsDeleteTripToBeDeleted,
                       style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -664,7 +664,7 @@ class _TripCard extends StatelessWidget {
     final end = trip.endDate;
 
     if (start == null || end == null) {
-      return isArabic ? 'التواريخ غير محددة' : 'Dates not set';
+      return l10n.tripsDatesNotSet;
     }
 
     final shortFmt = DateFormat('d MMM', localeName);
@@ -722,24 +722,25 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final statusUi = switch (status) {
       TripTimelineStatus.datesPending => (
-        label: isArabic ? 'بلا تواريخ' : 'No dates',
+        label: l10n.tripTimelineNoDates,
         background: const Color(0xFFFEF3C7),
         foreground: const Color(0xFFB45309),
       ),
       TripTimelineStatus.upcoming => (
-        label: isArabic ? 'قادمة' : 'Upcoming',
+        label: l10n.tripTimelineUpcoming,
         background: const Color(0xFFDBEAFE),
         foreground: const Color(0xFF1D4ED8),
       ),
       TripTimelineStatus.active => (
-        label: isArabic ? 'في سفر' : 'Traveling',
+        label: l10n.tripTimelineTraveling,
         background: const Color(0xFFDCFCE7),
         foreground: const Color(0xFF166534),
       ),
       TripTimelineStatus.completed => (
-        label: isArabic ? 'مكتملة' : 'Completed',
+        label: l10n.tripTimelineCompleted,
         background: const Color(0xFFE2E8F0),
         foreground: const Color(0xFF475569),
       ),
@@ -835,7 +836,7 @@ class _GradientAddTripButton extends StatelessWidget {
               const Icon(Icons.add_rounded, color: Colors.white),
               const SizedBox(width: 8),
               Text(
-                isArabic ? 'رحلة جديدة' : 'New Trip',
+                AppLocalizations.of(context)!.tripsNewTrip,
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 15,

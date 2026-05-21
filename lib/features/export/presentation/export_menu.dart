@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:travel_expenses/l10n/app_localizations.dart';
+import 'package:travel_expenses/l10n/l10n_extension.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../../trips/domain/trip.dart';
@@ -25,20 +27,22 @@ class ExportMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+
     return PopupMenuButton<_ExportType>(
       enabled: enabled,
       icon: trigger == null ? const Icon(Icons.file_download_outlined) : null,
       padding: EdgeInsets.zero,
-      tooltip: 'تصدير',
+      tooltip: l10n.exportMenuTooltip,
       onSelected: (type) => _handleExport(context, ref, type),
-      itemBuilder: (_) => const [
+      itemBuilder: (_) => [
         PopupMenuItem(
           value: _ExportType.csv,
-          child: Text('تصدير CSV'),
+          child: Text(l10n.exportMenuCsv),
         ),
         PopupMenuItem(
           value: _ExportType.pdf,
-          child: Text('تصدير PDF'),
+          child: Text(l10n.exportMenuPdf),
         ),
       ],
       child: trigger,
@@ -50,6 +54,7 @@ class ExportMenu extends ConsumerWidget {
     WidgetRef ref,
     _ExportType type,
   ) async {
+    final l10n = AppLocalizations.of(context)!;
     final messenger = ScaffoldMessenger.of(context);
     messenger.hideCurrentSnackBar();
 
@@ -68,7 +73,7 @@ class ExportMenu extends ConsumerWidget {
       if (expenses.isEmpty) {
         if (!context.mounted) return;
         messenger.showSnackBar(
-          const SnackBar(content: Text('لا توجد مصاريف لتصديرها.')),
+          SnackBar(content: Text(l10n.exportNoExpenses)),
         );
         return;
       }
@@ -99,13 +104,13 @@ class ExportMenu extends ConsumerWidget {
       if (!context.mounted) return;
 
       messenger.showSnackBar(
-        const SnackBar(content: Text('تم تصدير الملف بنجاح')),
+        SnackBar(content: Text(l10n.exportSuccess)),
       );
     } catch (error) {
       if (!context.mounted) return;
       final label = type == _ExportType.csv ? 'CSV' : 'PDF';
       messenger.showSnackBar(
-        SnackBar(content: Text('تعذر تصدير $label: $error')),
+        SnackBar(content: Text(l10n.exportFailed(label, '$error'))),
       );
     }
   }

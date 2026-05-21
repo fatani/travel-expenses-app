@@ -137,6 +137,150 @@ abstract class AppLocalizations {
   /// **'Enter a valid number.'**
   String get commonEnterValidNumber;
 
+  /// No description provided for @commonUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get commonUndo;
+
+  /// No description provided for @commonApprox.
+  ///
+  /// In en, this message translates to:
+  /// **'Approx.'**
+  String get commonApprox;
+
+  /// No description provided for @tripDetailsExportTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get tripDetailsExportTooltip;
+
+  /// No description provided for @tripDetailsChangesSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes saved'**
+  String get tripDetailsChangesSaved;
+
+  /// No description provided for @tripDetailsExpenseDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Expense deleted'**
+  String get tripDetailsExpenseDeleted;
+
+  /// No description provided for @tripDetailsSetStartEndDates.
+  ///
+  /// In en, this message translates to:
+  /// **'Set start and end dates'**
+  String get tripDetailsSetStartEndDates;
+
+  /// No description provided for @tripTimelineDatesPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates pending'**
+  String get tripTimelineDatesPending;
+
+  /// No description provided for @tripTimelineNoDates.
+  ///
+  /// In en, this message translates to:
+  /// **'No dates'**
+  String get tripTimelineNoDates;
+
+  /// No description provided for @tripTimelineUpcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get tripTimelineUpcoming;
+
+  /// No description provided for @tripTimelineActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get tripTimelineActive;
+
+  /// No description provided for @tripTimelineTraveling.
+  ///
+  /// In en, this message translates to:
+  /// **'Traveling'**
+  String get tripTimelineTraveling;
+
+  /// No description provided for @tripTimelineCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get tripTimelineCompleted;
+
+  /// No description provided for @exportMenuTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Export'**
+  String get exportMenuTooltip;
+
+  /// No description provided for @exportMenuCsv.
+  ///
+  /// In en, this message translates to:
+  /// **'Export CSV'**
+  String get exportMenuCsv;
+
+  /// No description provided for @exportMenuPdf.
+  ///
+  /// In en, this message translates to:
+  /// **'Export PDF'**
+  String get exportMenuPdf;
+
+  /// No description provided for @exportNoExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'No expenses to export.'**
+  String get exportNoExpenses;
+
+  /// No description provided for @exportSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'File exported successfully'**
+  String get exportSuccess;
+
+  /// No description provided for @exportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not export {format}: {error}'**
+  String exportFailed(Object format, Object error);
+
+  /// No description provided for @settingsToggleLanguageTooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Toggle language'**
+  String get settingsToggleLanguageTooltip;
+
+  /// No description provided for @tripsMyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'My Trips'**
+  String get tripsMyTitle;
+
+  /// No description provided for @tripsDeleteTripToBeDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip to be deleted'**
+  String get tripsDeleteTripToBeDeleted;
+
+  /// No description provided for @tripsDeleteTripAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete trip'**
+  String get tripsDeleteTripAction;
+
+  /// No description provided for @tripsDatesNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates not set'**
+  String get tripsDatesNotSet;
+
+  /// No description provided for @tripsNewTrip.
+  ///
+  /// In en, this message translates to:
+  /// **'New Trip'**
+  String get tripsNewTrip;
+
   /// No description provided for @tripsTitle.
   ///
   /// In en, this message translates to:

@@ -30,6 +30,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonEnterValidNumber => 'Enter a valid number.';
 
   @override
+  String get commonUndo => 'Undo';
+
+  @override
+  String get commonApprox => 'Approx.';
+
+  @override
+  String get tripDetailsExportTooltip => 'Export';
+
+  @override
+  String get tripDetailsChangesSaved => 'Changes saved';
+
+  @override
+  String get tripDetailsExpenseDeleted => 'Expense deleted';
+
+  @override
+  String get tripDetailsSetStartEndDates => 'Set start and end dates';
+
+  @override
+  String get tripTimelineDatesPending => 'Dates pending';
+
+  @override
+  String get tripTimelineNoDates => 'No dates';
+
+  @override
+  String get tripTimelineUpcoming => 'Upcoming';
+
+  @override
+  String get tripTimelineActive => 'Active';
+
+  @override
+  String get tripTimelineTraveling => 'Traveling';
+
+  @override
+  String get tripTimelineCompleted => 'Completed';
+
+  @override
+  String get exportMenuTooltip => 'Export';
+
+  @override
+  String get exportMenuCsv => 'Export CSV';
+
+  @override
+  String get exportMenuPdf => 'Export PDF';
+
+  @override
+  String get exportNoExpenses => 'No expenses to export.';
+
+  @override
+  String get exportSuccess => 'File exported successfully';
+
+  @override
+  String exportFailed(Object format, Object error) {
+    return 'Could not export $format: $error';
+  }
+
+  @override
+  String get settingsToggleLanguageTooltip => 'Toggle language';
+
+  @override
+  String get tripsMyTitle => 'My Trips';
+
+  @override
+  String get tripsDeleteTripToBeDeleted => 'Trip to be deleted';
+
+  @override
+  String get tripsDeleteTripAction => 'Delete trip';
+
+  @override
+  String get tripsDatesNotSet => 'Dates not set';
+
+  @override
+  String get tripsNewTrip => 'New Trip';
+
+  @override
   String get tripsTitle => 'Trips';
 
   @override
