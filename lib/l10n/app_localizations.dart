@@ -530,7 +530,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsExpenseCount.
   ///
   /// In en, this message translates to:
-  /// **'Expenses logged'**
+  /// **'Expenses'**
   String get tripDetailsExpenseCount;
 
   /// No description provided for @tripDetailsTopCategory.

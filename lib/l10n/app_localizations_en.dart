@@ -237,7 +237,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsTotalExpenses => 'Total expenses';
 
   @override
-  String get tripDetailsExpenseCount => 'Expenses logged';
+  String get tripDetailsExpenseCount => 'Expenses';
 
   @override
   String get tripDetailsTopCategory => 'Top spending category';

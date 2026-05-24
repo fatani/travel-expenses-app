@@ -54,7 +54,7 @@ void main() {
     expect(find.text('Total in SAR only'), findsNothing);
   });
 
-  testWidgets('expense count label shows Expenses logged', (tester) async {
+  testWidgets('expense count label shows Expenses', (tester) async {
     final repository = _FakeExpenseRepository(
       initialExpenses: [
         Expense.create(
@@ -82,8 +82,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Expenses logged'), findsOneWidget);
+    expect(find.text('Expenses logged'), findsNothing);
     expect(find.text('Expense count'), findsNothing);
+
+    final expenseCountStatCard = find.byWidgetPredicate(
+      (widget) {
+        if (widget is! Column) return false;
+        final labels =
+            widget.children.whereType<Text>().map((text) => text.data).toSet();
+        return labels.contains('Expenses') && labels.contains('1');
+      },
+    );
+    expect(expenseCountStatCard, findsOneWidget);
   });
 
   testWidgets('multi-currency top category shows Mixed currencies not No category yet',
@@ -261,7 +271,17 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('إجمالي المصاريف'), findsOneWidget);
-    expect(find.text('المصاريف المسجلة'), findsOneWidget);
+    expect(find.text('المصاريف المسجلة'), findsNothing);
+
+    final expenseCountStatCard = find.byWidgetPredicate(
+      (widget) {
+        if (widget is! Column) return false;
+        final labels =
+            widget.children.whereType<Text>().map((text) => text.data).toSet();
+        return labels.contains('المصاريف') && labels.contains('1');
+      },
+    );
+    expect(expenseCountStatCard, findsOneWidget);
     expect(find.text('أعلى فئة إنفاق'), findsOneWidget);
     expect(find.text('إضافة مصروف'), findsOneWidget);
     expect(find.text('لم يبدأ تتبع الكاش بعد'), findsNothing);

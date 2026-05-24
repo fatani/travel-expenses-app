@@ -85,7 +85,7 @@
   "tripDetailsAddExpense": "Add Expense",
   "tripDetailsEditTripTooltip": "Edit trip",
   "tripDetailsTotalExpenses": "Total expenses",
-  "tripDetailsExpenseCount": "Expenses logged",
+  "tripDetailsExpenseCount": "Expenses",
   "tripDetailsTopCategory": "Top spending category",
   "tripDetailsTopCategoryNone": "No category yet",
   "tripDetailsExpensesSection": "Expenses",

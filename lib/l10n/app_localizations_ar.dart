@@ -237,7 +237,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsTotalExpenses => 'إجمالي المصاريف';
 
   @override
-  String get tripDetailsExpenseCount => 'المصاريف المسجلة';
+  String get tripDetailsExpenseCount => 'المصاريف';
 
   @override
   String get tripDetailsTopCategory => 'أعلى فئة إنفاق';
