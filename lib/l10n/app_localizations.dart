@@ -617,12 +617,6 @@ abstract class AppLocalizations {
   /// **'Add the cash you carry to track what remains during your trip'**
   String get cashWalletEmptySubtitle;
 
-  /// No description provided for @cashWalletTripDatesPending.
-  ///
-  /// In en, this message translates to:
-  /// **'Dates pending'**
-  String get cashWalletTripDatesPending;
-
   /// No description provided for @cashWalletHealthTitle.
   ///
   /// In en, this message translates to:
@@ -665,12 +659,6 @@ abstract class AppLocalizations {
   /// **'Running low'**
   String get cashWalletHealthCritical;
 
-  /// No description provided for @cashWalletLastAtmNotAvailable.
-  ///
-  /// In en, this message translates to:
-  /// **'Last ATM: N/A'**
-  String get cashWalletLastAtmNotAvailable;
-
   /// No description provided for @cashWalletOnboardingTitle.
   ///
   /// In en, this message translates to:
@@ -682,12 +670,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'I\'ll add cash later'**
   String get cashWalletOnboardingSkip;
-
-  /// No description provided for @cashWalletOnboardingCardsOnly.
-  ///
-  /// In en, this message translates to:
-  /// **'I\'ll use cards only'**
-  String get cashWalletOnboardingCardsOnly;
 
   /// No description provided for @cashWalletDailyBurnTitle.
   ///
@@ -904,12 +886,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Optional — helps estimate your home currency spending.'**
   String get cashWalletHomeValueHelper;
-
-  /// No description provided for @cashWalletHomeValueCaption.
-  ///
-  /// In en, this message translates to:
-  /// **'Optional — helps estimate your home currency spending.'**
-  String get cashWalletHomeValueCaption;
 
   /// No description provided for @cashWalletBalanceUnknownUntilInitial.
   ///

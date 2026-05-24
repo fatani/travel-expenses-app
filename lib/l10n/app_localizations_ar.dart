@@ -284,9 +284,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletEmptySubtitle => 'أضف الكاش الذي تحمله لتتبع المتبقي أثناء السفر';
 
   @override
-  String get cashWalletTripDatesPending => 'التواريخ غير محددة';
-
-  @override
   String get cashWalletHealthTitle => 'حالة الكاش';
 
   @override
@@ -308,16 +305,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletHealthCritical => 'على وشك النفاد';
 
   @override
-  String get cashWalletLastAtmNotAvailable => 'آخر ATM: غير متاح';
-
-  @override
   String get cashWalletOnboardingTitle => 'كم كاش تحمل معك؟';
 
   @override
   String get cashWalletOnboardingSkip => 'سأضيف الكاش لاحقًا';
-
-  @override
-  String get cashWalletOnboardingCardsOnly => 'سأستخدم البطاقة فقط';
 
   @override
   String get cashWalletDailyBurnTitle => 'متوسط الصرف اليومي';
@@ -434,9 +425,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cashWalletHomeValueHelper => 'اختياري — يساعد في تقدير المصروف بعملتك الأساسية.';
-
-  @override
-  String get cashWalletHomeValueCaption => 'اختياري — يساعد في تقدير المصروف بعملتك الأساسية.';
 
   @override
   String get cashWalletBalanceUnknownUntilInitial => 'أضف كاشك الابتدائي لبدء التتبع.';
