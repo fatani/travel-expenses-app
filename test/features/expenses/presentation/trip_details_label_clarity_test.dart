@@ -263,7 +263,8 @@ void main() {
     expect(find.text('إجمالي المصاريف'), findsOneWidget);
     expect(find.text('المصاريف المسجلة'), findsOneWidget);
     expect(find.text('أعلى فئة إنفاق'), findsOneWidget);
-    expect(find.text('لم يبدأ تتبع الكاش بعد'), findsOneWidget);
+    expect(find.text('إضافة مصروف'), findsOneWidget);
+    expect(find.text('لم يبدأ تتبع الكاش بعد'), findsNothing);
     expect(find.text('كرر آخر مصروف'), findsOneWidget);
 
     final totalLabel = find.text('إجمالي المصاريف');

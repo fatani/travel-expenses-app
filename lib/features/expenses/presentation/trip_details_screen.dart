@@ -989,100 +989,105 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
           ],
           const SizedBox(height: AppSpacing.md),
           _PrimaryGradientButton(
-            label: widget.onRepeatLast != null
-                ? l10n.tripDetailsRepeatLastExpense
-                : l10n.tripDetailsAddExpense,
-            icon: widget.onRepeatLast != null
-                ? Icons.refresh_rounded
-                : Icons.add_rounded,
-            onTap: widget.onRepeatLast ?? widget.onAddExpense,
+            label: l10n.tripDetailsAddExpense,
+            icon: Icons.add_rounded,
+            onTap: widget.onAddExpense,
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Builder(
-            builder: (context) {
-              final primaryBalance = _resolvePrimaryCashBalance(
-                balances: _cashWalletCtaState.balances,
-                preferredCurrency: widget.trip.destinationCurrency,
-              );
-              final amountText = _formatAmountCurrencyLtr(
-                primaryBalance.amount,
-                primaryBalance.currencyCode,
-              );
+          if (widget.onRepeatLast != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _OutlineActionButton(
+              label: l10n.tripDetailsRepeatLastExpense,
+              subtitle: null,
+              icon: Icons.refresh_rounded,
+              onTap: widget.onRepeatLast!,
+            ),
+          ],
+          if (_cashWalletCtaState.hasTrackingStarted) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Builder(
+              builder: (context) {
+                final primaryBalance = _resolvePrimaryCashBalance(
+                  balances: _cashWalletCtaState.balances,
+                  preferredCurrency: widget.trip.destinationCurrency,
+                );
+                final amountText = _formatAmountCurrencyLtr(
+                  primaryBalance.amount,
+                  primaryBalance.currencyCode,
+                );
 
-              return _OutlineActionButton(
-                label: _cashWalletCtaState.hasTrackingStarted
-                    ? l10n.tripDetailsCashWalletRemainingCta(amountText)
-                    : l10n.cashTrackingNotStarted,
-                subtitle: _cashWalletCtaState.hasTrackingStarted
-                    ? l10n.tripDetailsCashWalletAction
-                    : l10n.cashBalanceAddCashAction,
-                icon: Icons.account_balance_wallet_outlined,
-                onTap: widget.onOpenCashWallet,
-              );
-            },
-          ),
+                return _OutlineActionButton(
+                  label: l10n.tripDetailsCashWalletRemainingCta(amountText),
+                  subtitle: l10n.tripDetailsCashWalletAction,
+                  icon: Icons.account_balance_wallet_outlined,
+                  onTap: widget.onOpenCashWallet,
+                );
+              },
+            ),
+          ],
           const SizedBox(height: AppSpacing.xs),
           _TertiarySmsButton(
             label: l10n.tripDetailsAddViaSms,
             onTap: widget.onAddViaSms,
           ),
-          const SizedBox(height: AppSpacing.lg),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm - 2,
-              vertical: AppSpacing.xs,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value.trim().toLowerCase();
-                      });
-                    },
-                    decoration: InputDecoration(
-                      hintText: l10n.tripDetailsSearchHint,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md - 2,
-                        vertical: AppSpacing.sm,
+          if (widget.expenses.length >= 5) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm - 2,
+                vertical: AppSpacing.xs,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0F172A).withValues(alpha: 0.06),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (value) {
+                        setState(() {
+                          _searchQuery = value.trim().toLowerCase();
+                        });
+                      },
+                      decoration: InputDecoration(
+                        hintText: l10n.tripDetailsSearchHint,
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md - 2,
+                          vertical: AppSpacing.sm,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Badge(
-                  isLabelVisible: _activeFilterCount > 0,
-                  label: Text('$_activeFilterCount'),
-                  child: IconButton.outlined(
-                    tooltip: l10n.tripDetailsFiltersAndSort,
-                    onPressed: () => _showFiltersBottomSheet(context),
-                    icon: const Icon(Icons.tune_rounded),
+                  const SizedBox(width: AppSpacing.xs),
+                  Badge(
+                    isLabelVisible: _activeFilterCount > 0,
+                    label: Text('$_activeFilterCount'),
+                    child: IconButton.outlined(
+                      tooltip: l10n.tripDetailsFiltersAndSort,
+                      onPressed: () => _showFiltersBottomSheet(context),
+                      icon: const Icon(Icons.tune_rounded),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+            const SizedBox(height: AppSpacing.lg),
+          ],
           Text(
             l10n.tripDetailsExpensesSection,
             style: Theme.of(context).textTheme.titleLarge,
