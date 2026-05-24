@@ -9,6 +9,7 @@ import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.da
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
+import 'package:travel_expenses/features/sms_parser/presentation/sms_expense_screen.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
@@ -236,8 +237,62 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Trip report'), findsOneWidget);
+    expect(find.text('Add via Bank SMS'), findsOneWidget);
     expect(find.text('Export CSV'), findsOneWidget);
     expect(find.text('Export PDF'), findsOneWidget);
+  });
+
+  testWidgets('hides inline SMS button in active expense-list state', (tester) async {
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        repository: _FakeExpenseRepository(
+          initialExpenses: [sampleExpense],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add via Bank SMS'), findsNothing);
+  });
+
+  testWidgets('overflow menu SMS import opens SMS expense screen', (tester) async {
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        repository: _FakeExpenseRepository(
+          initialExpenses: [sampleExpense],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.more_horiz_rounded));
+    await tester.pumpAndSettle();
+
+    final smsMenuItem = find.descendant(
+      of: find.byWidgetPredicate((widget) => widget is PopupMenuItem),
+      matching: find.text('Add via Bank SMS'),
+    );
+    expect(smsMenuItem, findsOneWidget);
+
+    await tester.tap(smsMenuItem);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SmsExpenseScreen), findsOneWidget);
+  });
+
+  testWidgets('empty state keeps inline SMS button for discoverability', (tester) async {
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        repository: _FakeExpenseRepository(initialExpenses: const []),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Add your first expense now'), findsOneWidget);
+    expect(find.text('Add via Bank SMS'), findsOneWidget);
   });
 
   testWidgets('overflow menu is present on empty trip details', (tester) async {
@@ -255,6 +310,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Trip report'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byWidgetPredicate((widget) => widget is PopupMenuItem),
+        matching: find.text('Add via Bank SMS'),
+      ),
+      findsNothing,
+    );
     expect(find.text('Export CSV'), findsOneWidget);
     expect(find.text('Export PDF'), findsOneWidget);
   });

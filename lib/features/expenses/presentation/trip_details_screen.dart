@@ -91,6 +91,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
               trip: _trip,
               hasExpenses: hasExpenses,
               onOpenReports: _openTripReports,
+              onAddViaSms: _openSmsExpenseScreen,
             ),
           ),
           _TopActionWrapper(
@@ -1024,11 +1025,6 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
               },
             ),
           ],
-          const SizedBox(height: AppSpacing.xs),
-          _TertiarySmsButton(
-            label: l10n.tripDetailsAddViaSms,
-            onTap: widget.onAddViaSms,
-          ),
           if (widget.expenses.length >= 5) ...[
             const SizedBox(height: AppSpacing.lg),
             Container(
@@ -2538,18 +2534,20 @@ class _AnimatedCta extends StatelessWidget {
   }
 }
 
-enum _TripDetailsOverflowAction { reports, exportCsv, exportPdf }
+enum _TripDetailsOverflowAction { reports, smsImport, exportCsv, exportPdf }
 
 class _TripDetailsOverflowMenu extends ConsumerWidget {
   const _TripDetailsOverflowMenu({
     required this.trip,
     required this.hasExpenses,
     required this.onOpenReports,
+    required this.onAddViaSms,
   });
 
   final Trip trip;
   final bool hasExpenses;
   final VoidCallback onOpenReports;
+  final VoidCallback onAddViaSms;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -2563,6 +2561,8 @@ class _TripDetailsOverflowMenu extends ConsumerWidget {
         switch (action) {
           case _TripDetailsOverflowAction.reports:
             onOpenReports();
+          case _TripDetailsOverflowAction.smsImport:
+            onAddViaSms();
           case _TripDetailsOverflowAction.exportCsv:
             unawaited(
               handleTripExport(
@@ -2594,6 +2594,21 @@ class _TripDetailsOverflowMenu extends ConsumerWidget {
             ],
           ),
         ),
+        if (hasExpenses) ...[
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: _TripDetailsOverflowAction.smsImport,
+            child: Row(
+              children: [
+                const Icon(Icons.sms_outlined, size: 20),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(l10n.tripDetailsAddViaSms),
+                ),
+              ],
+            ),
+          ),
+        ],
         const PopupMenuDivider(),
         PopupMenuItem(
           enabled: hasExpenses,
@@ -2670,42 +2685,6 @@ class _CalmAddExpenseFab extends StatelessWidget {
             shape: const CircleBorder(),
             child: const Icon(Icons.add_rounded, size: _iconSize),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TertiarySmsButton extends StatelessWidget {
-  const _TertiarySmsButton({
-    required this.label,
-    required this.onTap,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onTap,
-      style: TextButton.styleFrom(
-        minimumSize: const Size.fromHeight(44),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-        foregroundColor: AppColors.textMuted,
-        overlayColor: AppColors.primarySoft.withValues(alpha: 0.45),
-      ),
-      icon: Icon(
-        Icons.sms_outlined,
-        size: 18,
-        color: AppColors.textMuted.withValues(alpha: 0.9),
-      ),
-      label: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textMuted,
         ),
       ),
     );
