@@ -785,6 +785,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormEditTitle => 'Edit Expense';
 
   @override
+  String get expenseEditTooltip => 'Edit expense';
+
+  @override
   String get expenseFormTitleLabel => 'Title';
 
   @override

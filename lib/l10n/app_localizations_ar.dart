@@ -785,6 +785,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormEditTitle => 'تعديل المصروف';
 
   @override
+  String get expenseEditTooltip => 'تعديل المصروف';
+
+  @override
   String get expenseFormTitleLabel => 'العنوان';
 
   @override

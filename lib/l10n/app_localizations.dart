@@ -1559,6 +1559,12 @@ abstract class AppLocalizations {
   /// **'Edit Expense'**
   String get expenseFormEditTitle;
 
+  /// Tooltip for the edit button on an expense card.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit expense'**
+  String get expenseEditTooltip;
+
   /// No description provided for @expenseFormTitleLabel.
   ///
   /// In en, this message translates to:

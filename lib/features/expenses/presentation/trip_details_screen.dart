@@ -1954,7 +1954,7 @@ class _ExpenseCard extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            tooltip: l10n.tripsEditTooltip,
+                            tooltip: l10n.expenseEditTooltip,
                             onPressed: onEdit,
                             icon: Icon(
                               Icons.edit_outlined,

@@ -292,6 +292,10 @@
   "cardFormDuplicate": "توجد بطاقة بهذه التفاصيل بالفعل.",
   "expenseFormCreateTitle": "مصروف جديد",
   "expenseFormEditTitle": "تعديل المصروف",
+  "expenseEditTooltip": "تعديل المصروف",
+  "@expenseEditTooltip": {
+    "description": "تلميح زر تعديل المصروف في بطاقة المصروف."
+  },
   "expenseFormTitleLabel": "العنوان",
   "expenseFormTitleHint": "تاكسي المطار",
   "expenseFormTitleHelper": "اختياري. إذا تُرك فارغاً فسيتم استخدام الفئة.",

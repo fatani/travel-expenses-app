@@ -292,6 +292,10 @@
   "cardFormDuplicate": "A card with these details already exists.",
   "expenseFormCreateTitle": "New Expense",
   "expenseFormEditTitle": "Edit Expense",
+  "expenseEditTooltip": "Edit expense",
+  "@expenseEditTooltip": {
+    "description": "Tooltip for the edit button on an expense card."
+  },
   "expenseFormTitleLabel": "Title",
   "expenseFormTitleHint": "Airport taxi",
   "expenseFormTitleHelper": "Optional. If empty, category will be used.",
