@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../trips/domain/trip.dart';
 import '../data/trip_csv_exporter.dart';
@@ -26,8 +27,7 @@ class ExportTripButton extends ConsumerWidget {
   }
 
   Future<void> _exportTrip(BuildContext context, WidgetRef ref) async {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
+    CalmSnackBar.clear(context);
 
     try {
       final expenses = await ref.read(expenseRepositoryProvider).getExpensesByTrip(
@@ -39,8 +39,9 @@ class ExportTripButton extends ConsumerWidget {
           return;
         }
 
-        messenger.showSnackBar(
-          const SnackBar(content: Text('لا توجد مصاريف لتصديرها.')),
+        CalmSnackBar.showMessage(
+          context,
+          message: 'لا توجد مصاريف لتصديرها.',
         );
         return;
       }
@@ -55,21 +56,14 @@ class ExportTripButton extends ConsumerWidget {
         [XFile(result.filePath)],
         subject: result.fileName,
       );
-
-      if (!context.mounted) {
-        return;
-      }
-
-      messenger.showSnackBar(
-        const SnackBar(content: Text('تم تصدير الملف بنجاح')),
-      );
     } catch (error) {
       if (!context.mounted) {
         return;
       }
 
-      messenger.showSnackBar(
-        SnackBar(content: Text('تعذر تصدير CSV: $error')),
+      CalmSnackBar.showMessage(
+        context,
+        message: 'تعذر تصدير CSV: $error',
       );
     }
   }

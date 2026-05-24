@@ -455,27 +455,13 @@ class _EarlyReportEmptyState extends StatelessWidget {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              context.l10n.tripReportsEarlyNoExpenses,
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              context.l10n.tripReportsEarlyAddFirstHint,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+        padding: const EdgeInsets.all(24),
+        child: Text(
+          context.l10n.tripReportsEarlyNoExpenses,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -534,13 +520,6 @@ class _LightweightSummaryCard extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 12),
-          Text(
-            context.l10n.tripReportsEarlyAddMoreHint,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
         ],
       ),
     );

@@ -99,7 +99,7 @@ void main() {
     await _pumpReport(tester, trip: trip, expenses: expenses);
 
     expect(find.textContaining('recorded 1 expense'), findsOneWidget);
-    expect(find.text('Add more expenses to see clearer spending patterns.'), findsOneWidget);
+    expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
     expect(find.text('Total billed'), findsOneWidget);
@@ -135,7 +135,7 @@ void main() {
     await _pumpReport(tester, trip: trip, expenses: expenses);
 
     expect(find.textContaining('recorded 2 expenses'), findsOneWidget);
-    expect(find.text('Add more expenses to see clearer spending patterns.'), findsOneWidget);
+    expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
     expect(find.text('Total billed'), findsOneWidget);
@@ -177,7 +177,7 @@ void main() {
     await _pumpReport(tester, trip: trip, expenses: expenses);
 
     expect(find.textContaining('recorded 3 expenses'), findsOneWidget);
-    expect(find.text('Add more expenses to see clearer spending patterns.'), findsOneWidget);
+    expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
     expect(find.text('Total billed'), findsOneWidget);

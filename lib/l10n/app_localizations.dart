@@ -1226,7 +1226,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsRepeatHint.
   ///
   /// In en, this message translates to:
-  /// **'Ready to add a similar expense'**
+  /// **'Same as last time'**
   String get tripDetailsRepeatHint;
 
   /// No description provided for @tripDetailsClearFilters.
@@ -2318,7 +2318,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripReportsEarlyNoExpenses.
   ///
   /// In en, this message translates to:
-  /// **'No expenses recorded yet.'**
+  /// **'No expenses yet'**
   String get tripReportsEarlyNoExpenses;
 
   /// No description provided for @tripReportsEarlyAddFirstHint.

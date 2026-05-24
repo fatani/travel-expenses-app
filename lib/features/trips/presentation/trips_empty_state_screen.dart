@@ -14,85 +14,37 @@ class TripsEmptyStateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = isArabic
-        ? (isFirstTime ? _arabicFirstTimeData : _arabicReturningData)
-        : (isFirstTime ? _englishFirstTimeData : _englishReturningData);
+    final data = isArabic ? _arabicData : _englishData;
 
     return Directionality(
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
         backgroundColor: const Color(0xFFF7F8FB),
         body: SafeArea(
-          child: Column(
-            children: [
-              Expanded(
-                child: Center(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Opacity(
-                          opacity: 0.68,
-                          child: Image.asset('assets/travel.png', height: 120),
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          data.title,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF0F172A),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          data.description,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 15,
-                            height: 1.4,
-                            color: Color(0xFF64748B),
-                          ),
-                        ),
-                      ],
-                    ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  data.title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF0F172A),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                child: Material(
-                  color: Colors.transparent,
-                  borderRadius: BorderRadius.circular(18),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: onStartTrip,
-                    child: Ink(
-                      height: 56,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(18),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          data.cta,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: onStartTrip,
+                    child: Text(data.cta),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -102,36 +54,20 @@ class TripsEmptyStateScreen extends StatelessWidget {
 
 class _Data {
   final String title;
-  final String description;
   final String cta;
 
-  _Data({
+  const _Data({
     required this.title,
-    required this.description,
     required this.cta,
   });
 }
 
-final _arabicFirstTimeData = _Data(
-  title: 'ابدأ رحلتك الأولى',
-  description: 'أنشئ رحلة وابدأ تسجيل مصاريفك.',
+const _arabicData = _Data(
+  title: 'لا توجد رحلات',
   cta: 'إضافة رحلة',
 );
 
-final _arabicReturningData = _Data(
-  title: 'لا توجد رحلات حالياً',
-  description: 'يمكنك إضافة رحلة جديدة في أي وقت.',
-  cta: 'إضافة رحلة جديدة',
-);
-
-final _englishFirstTimeData = _Data(
-  title: 'Start your first trip',
-  description: 'Create a trip and begin logging expenses.',
+const _englishData = _Data(
+  title: 'No trips yet',
   cta: 'Add trip',
-);
-
-final _englishReturningData = _Data(
-  title: 'No trips right now',
-  description: 'You can add a new trip anytime.',
-  cta: 'Add new trip',
 );

@@ -18,7 +18,7 @@ void main() {
     baseCurrency: 'AED',
   );
 
-  testWidgets('single charged currency shows normal card charges total',
+  testWidgets('card charge summaries are not shown as dashboard stats',
       (tester) async {
     final repository = _FakeExpenseRepository(
       initialExpenses: [
@@ -65,75 +65,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Card charges in SAR'), findsOneWidget);
-    expect(find.textContaining('150 SAR'), findsOneWidget);
+    expect(find.text('Card charges in SAR'), findsNothing);
+    expect(find.textContaining('150 SAR'), findsNothing);
     expect(find.text('Card charges in multiple currencies'), findsNothing);
     expect(find.text('Mixed'), findsNothing);
+    expect(find.text('Hotel'), findsOneWidget);
   });
 
-  testWidgets(
-    'multiple charged currencies show mixed label not a single combined total',
-    (tester) async {
-      final repository = _FakeExpenseRepository(
-        initialExpenses: [
-          Expense.create(
-            id: 'intl-sar',
-            tripId: trip.id,
-            title: 'Hotel',
-            amount: 100,
-            currencyCode: 'USD',
-            transactionAmount: 100,
-            transactionCurrency: 'USD',
-            totalChargedAmount: 100,
-            totalChargedCurrency: 'SAR',
-            isInternational: true,
-            spentAt: DateTime(2026, 4, 13),
-            paymentMethod: 'Credit Card',
-            category: 'Accommodation',
-          ),
-          Expense.create(
-            id: 'intl-aed',
-            tripId: trip.id,
-            title: 'Local fee',
-            amount: 50,
-            currencyCode: 'EUR',
-            transactionAmount: 50,
-            transactionCurrency: 'EUR',
-            totalChargedAmount: 50,
-            totalChargedCurrency: 'AED',
-            isInternational: true,
-            spentAt: DateTime(2026, 4, 14),
-            paymentMethod: 'Credit Card',
-            category: 'Other',
-          ),
-        ],
-      );
-
-      await tester.pumpWidget(
-        _buildApp(
-          child: TripDetailsScreen(trip: trip),
-          overrides: [
-            expenseRepositoryProvider.overrideWithValue(repository),
-          ],
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text('Card charges in multiple currencies'),
-        findsOneWidget,
-      );
-      expect(find.text('Mixed'), findsOneWidget);
-      expect(find.text('Card charges in SAR'), findsNothing);
-      expect(find.text('Card charges in AED'), findsNothing);
-      expect(find.textContaining('100 SAR'), findsNothing);
-      expect(find.textContaining('50 AED'), findsNothing);
-      expect(find.textContaining('150'), findsNothing);
-    },
-  );
-
-  testWidgets('Arabic locale shows multiple charged currencies safely',
-      (tester) async {
+  testWidgets('Arabic locale also hides card charge dashboard stats', (tester) async {
     final repository = _FakeExpenseRepository(
       initialExpenses: [
         Expense.create(
@@ -180,8 +119,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('مشتريات البطاقة بعدة عملات'), findsOneWidget);
-    expect(find.text('مختلطة'), findsOneWidget);
+    expect(find.text('مشتريات البطاقة بعدة عملات'), findsNothing);
+    expect(find.text('مختلطة'), findsNothing);
     expect(find.text('مشتريات البطاقة بعملة SAR'), findsNothing);
   });
 }

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/finance/manual_exchange_rate.dart';
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../trips/domain/trip.dart';
@@ -232,24 +233,15 @@ class _TripExchangeRatesScreenState
           return;
         }
         final refreshedL10n = AppLocalizations.of(context)!;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(refreshedL10n.tripExchangeRatesLoadError),
-            behavior: SnackBarBehavior.floating,
-          ),
+        CalmSnackBar.showMessage(
+          context,
+          message: refreshedL10n.tripExchangeRatesLoadError,
         );
         return;
       }
       if (!mounted) {
         return;
       }
-      final refreshedL10n = AppLocalizations.of(context)!;
-      final message = existing == null
-          ? refreshedL10n.tripExchangeRatesSaved
-          : refreshedL10n.tripExchangeRatesUpdated;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
-      );
     }
   }
 

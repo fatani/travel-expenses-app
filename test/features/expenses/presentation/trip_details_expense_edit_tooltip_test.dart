@@ -6,6 +6,7 @@ import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
+import 'package:travel_expenses/features/expenses/presentation/expense_form_screen.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
@@ -32,12 +33,7 @@ void main() {
     category: 'Food',
   );
 
-  testWidgets('expense edit button uses Edit expense tooltip in English',
-      (tester) async {
-    tester.view.physicalSize = const Size(800, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-
+  testWidgets('tapping expense card opens edit form in English', (tester) async {
     await tester.pumpWidget(
       _buildApp(
         child: TripDetailsScreen(trip: trip),
@@ -50,31 +46,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('Lunch'), 200);
+    expect(find.byTooltip('Edit expense'), findsNothing);
+
+    await tester.tap(find.text('Lunch'));
     await tester.pumpAndSettle();
 
-    final expenseEditButton = find.byWidgetPredicate(
-      (widget) => widget is IconButton && widget.tooltip == 'Edit expense',
-    );
-    expect(expenseEditButton, findsOneWidget);
+    expect(find.byType(ExpenseFormScreen), findsOneWidget);
     expect(find.text('Edit trip'), findsNothing);
-
-    final iconButton = tester.widget<IconButton>(expenseEditButton);
-    expect(iconButton.tooltip, 'Edit expense');
   });
 
-  testWidgets('expense edit button uses Arabic expense tooltip not trip tooltip',
-      (tester) async {
-    tester.view.physicalSize = const Size(800, 2400);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
+  testWidgets('tapping expense card opens edit form in Arabic', (tester) async {
+    final arabicExpense = sampleExpense.copyWith(title: 'غداء');
 
     await tester.pumpWidget(
       _buildApp(
         child: TripDetailsScreen(trip: trip),
         overrides: [
           expenseRepositoryProvider.overrideWithValue(
-            _FakeExpenseRepository(initialExpenses: [sampleExpense]),
+            _FakeExpenseRepository(initialExpenses: [arabicExpense]),
           ),
         ],
         locale: const Locale('ar'),
@@ -82,17 +71,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(find.text('Lunch'), 200);
+    expect(find.byTooltip('تعديل المصروف'), findsNothing);
+
+    await tester.tap(find.text('غداء'));
     await tester.pumpAndSettle();
 
-    final expenseEditButton = find.byWidgetPredicate(
-      (widget) => widget is IconButton && widget.tooltip == 'تعديل المصروف',
-    );
-    expect(expenseEditButton, findsOneWidget);
+    expect(find.byType(ExpenseFormScreen), findsOneWidget);
     expect(find.text('تعديل الرحلة'), findsNothing);
-
-    final iconButton = tester.widget<IconButton>(expenseEditButton);
-    expect(iconButton.tooltip, 'تعديل المصروف');
   });
 }
 

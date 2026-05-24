@@ -134,6 +134,28 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     return e.paymentMethod;
   }
 
+  void _activateRepeatLast() {
+    if (widget.expenses.isEmpty) {
+      return;
+    }
+
+    final lastExpense = widget.expenses.last;
+    final category = lastExpense.category;
+    final paymentKey = _paymentChipKeyForExpense(lastExpense);
+
+    setState(() {
+      if (category != null && category.isNotEmpty) {
+        _selectedCategory = category;
+        _userSelectedCategory = true;
+      }
+      _selectedPaymentChipKey = paymentKey;
+      _lastUsedCardProfileId = lastExpense.cardProfileId;
+      _amountController.clear();
+      _showRepeatHint = true;
+      _isPrefilledFromMemory = false;
+    });
+  }
+
   int? _resolveLastUsedCardProfileId() {
     for (final expense in widget.expenses) {
       if (expense.cardProfileId == null) {
@@ -546,7 +568,15 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            if (widget.expenses.isNotEmpty && !_showRepeatHint) ...[
+              const SizedBox(height: 4),
+              TextButton.icon(
+                onPressed: _activateRepeatLast,
+                icon: const Icon(Icons.refresh_rounded, size: 18),
+                label: Text(l10n.tripDetailsRepeatLastExpense),
+              ),
+            ],
+            const SizedBox(height: 6),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
@@ -582,13 +612,13 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
           Text(
             l10n.tripDetailsRepeatHint,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFF7C3AED),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           _RepeatRestoredLine(label: categoryLabel),
           const SizedBox(height: 2),
           _RepeatRestoredLine(label: paymentLabel),

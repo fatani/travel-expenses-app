@@ -34,9 +34,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Dates need attention'), findsOneWidget);
-    expect(find.text('Set start and end dates'), findsOneWidget);
+    expect(find.text('Set start and end dates'), findsNothing);
 
-    await tester.tap(find.text('Set start and end dates'));
+    await tester.tap(find.text('Dates need attention'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 

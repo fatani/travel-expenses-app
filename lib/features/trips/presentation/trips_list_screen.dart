@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -6,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/extensions/rtl_extension.dart';
 import '../../expenses/presentation/trip_details_screen.dart';
 import '../../global_reports/presentation/global_reports_screen.dart';
@@ -100,37 +102,27 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
               title: Text(
                 l10n.tripsMyTitle,
                 style: const TextStyle(
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.w800,
                   color: Color(0xFF0F172A),
                 ),
               ),
               actions: [
                 Tooltip(
-                  message: l10n.globalReportsTooltip,
+                  message: l10n.settingsTitle,
                   child: IconButton(
-                    tooltip: l10n.globalReportsTooltip,
-                    onPressed: () => _openGlobalReports(context),
-                    icon: const Icon(Icons.analytics_outlined),
-                  ),
-                ),
-                Tooltip(
-                  message: l10n.settingsLanguageTooltip,
-                  child: IconButton(
-                    tooltip: l10n.settingsLanguageTooltip,
+                    tooltip: l10n.settingsTitle,
                     onPressed: () => _openSettings(context),
                     icon: const Icon(Icons.settings_outlined),
                   ),
                 ),
-                const SizedBox(width: 4),
-                Tooltip(
-                  message: l10n.settingsToggleLanguageTooltip,
-                  child: _SubtleLanguageToggle(
-                    isLoading: settingsState.isLoading,
-                    onTap: () => _toggleLanguage(context, ref, currentLocaleCode),
-                  ),
+                _TripsListOverflowMenu(
+                  isLoading: settingsState.isLoading,
+                  onOpenGlobalReports: () => _openGlobalReports(context),
+                  onToggleLanguage: () =>
+                      _toggleLanguage(context, ref, currentLocaleCode),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
               ],
             ),
       body: tripsState.when(
@@ -155,30 +147,24 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
             );
           }
 
-          return Stack(
-            children: [
-              const Positioned.fill(child: _TripsSoftBackground()),
-              RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(tripsControllerProvider.notifier).reload(),
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 104),
-                  itemCount: trips.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 14),
-                  itemBuilder: (context, index) {
-                    final trip = trips[index];
+          return RefreshIndicator(
+            onRefresh: () =>
+                ref.read(tripsControllerProvider.notifier).reload(),
+            child: ListView.separated(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 104),
+              itemCount: trips.length,
+              separatorBuilder: (context, index) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final trip = trips[index];
 
-                    return _TripCard(
-                      trip: trip,
-                      onTap: () => _openTripDetails(context, trip),
-                      onEdit: () => _openTripForm(context, trip: trip),
-                      onDelete: () => _confirmDelete(context, ref, trip),
-                    );
-                  },
-                ),
-              ),
-            ],
+                return _TripCard(
+                  trip: trip,
+                  onTap: () => _openTripDetails(context, trip),
+                  onEdit: () => _openTripForm(context, trip: trip),
+                  onDelete: () => _confirmDelete(context, ref, trip),
+                );
+              },
+            ),
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -268,9 +254,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$error')),
-      );
+      CalmSnackBar.showMessage(context, message: '$error');
     }
   }
 
@@ -456,12 +440,17 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(
+      CalmSnackBar.showMessage(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.tripsDeleteError('$error'))));
+        message: l10n.tripsDeleteError('$error'),
+      );
     }
   }
 }
+
+enum _TripCardAction { edit, delete }
+
+enum _TripsListOverflowAction { globalReports, language }
 
 class _TripCard extends StatelessWidget {
   const _TripCard({
@@ -485,163 +474,134 @@ class _TripCard extends StatelessWidget {
     final status = resolveTripTimelineStatus(trip);
     final hasDates = status != TripTimelineStatus.datesPending;
     final hasCurrency = trip.baseCurrency.trim().isNotEmpty;
+    final title = TripTitleResolver.resolve(trip, isArabic);
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(24),
-        onTap: onTap,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF0F172A).withValues(alpha: 0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 8),
-              ),
-            ],
-            border: Border.all(color: const Color(0xFFE8ECF5)),
-          ),
+    return Semantics(
+      button: true,
+      label: title,
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(14), // Slightly reduced for density
-            child: Column(
+            padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
-                        color: const Color(0xFFF6F8FF),
-                        width: 56,
-                        height: 56,
-                        child: Padding(
-                          padding: const EdgeInsets.all(8),
-                          child: Image.asset(
-                            'assets/travel.png',
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                              Icons.flight_takeoff_rounded,
-                              color: Color(0xFF5B7CFF),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            TripTitleResolver.resolve(trip, isArabic),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: Color(0xFF0F172A),
-                            ),
-                          ),
-                          if (trip.destination.trim().isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              trip.destination,
+                          Expanded(
+                            child: Text(
+                              title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF64748B),
+                                fontSize: 17,
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF0F172A),
+                                height: 1.2,
                               ),
                             ),
-                          ],
+                          ),
+                          const SizedBox(width: 8),
+                          _StatusChip(
+                            isArabic: isArabic,
+                            status: status,
+                          ),
                         ],
                       ),
-                    ),
-                    _StatusChip(
-                      isArabic: isArabic,
-                      status: status,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8), // Slightly reduced for density
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.event_note_rounded,
-                      size: 16,
-                      color: Color(0xFF64748B),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        _formatDateRange(trip, localeName, l10n, isArabic, status),
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatDateRange(
+                          trip,
+                          localeName,
+                          l10n,
+                          isArabic,
+                          status,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
+                          fontSize: 13,
+                          height: 1.3,
                           color: hasDates
-                              ? const Color(0xFF334155)
+                              ? const Color(0xFF64748B)
                               : const Color(0xFFB45309),
                           fontWeight: hasDates
                               ? FontWeight.w500
-                              : FontWeight.w700,
+                              : FontWeight.w600,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                if (hasCurrency) ...[
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.currency_exchange_rounded,
-                        size: 16,
-                        color: Color(0xFF64748B),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        trip.baseCurrency,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Color(0xFF334155),
-                          fontWeight: FontWeight.w600,
+                      if (hasCurrency) ...[
+                        const SizedBox(height: 2),
+                        Directionality(
+                          textDirection: ui.TextDirection.ltr,
+                          child: Text(
+                            trip.baseCurrency.trim().toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF94A3B8),
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
-                ],
-                if (trip.budget != null) ...[
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment:
-                        isArabic ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Text(
-                      l10n.tripsBudgetLabel(_formatBudget(trip)),
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: Color(0xFF334155),
-                        fontWeight: FontWeight.w600,
+                ),
+                PopupMenuButton<_TripCardAction>(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(
+                    Icons.more_vert_rounded,
+                    size: 18,
+                    color: const Color(0xFF64748B).withValues(alpha: 0.55),
+                  ),
+                  onSelected: (action) {
+                    switch (action) {
+                      case _TripCardAction.edit:
+                        onEdit();
+                      case _TripCardAction.delete:
+                        onDelete();
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    PopupMenuItem(
+                      value: _TripCardAction.edit,
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.edit_outlined,
+                            size: 18,
+                            color: Color(0xFF475569),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(l10n.tripsEditTooltip),
+                        ],
                       ),
                     ),
-                  ),
-                ],
-                const SizedBox(height: 8), // Slightly reduced for density
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _ActionIconButton(
-                      tooltip: l10n.tripsEditTooltip,
-                      icon: Icons.edit_outlined,
-                      onTap: onEdit,
-                    ),
-                    const SizedBox(width: 8),
-                    _ActionIconButton(
-                      tooltip: l10n.tripsDeleteTooltip,
-                      icon: Icons.delete_outline_rounded,
-                      onTap: onDelete,
-                      isDanger: true,
+                    PopupMenuItem(
+                      value: _TripCardAction.delete,
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.delete_outline_rounded,
+                            size: 18,
+                            color: Theme.of(context).colorScheme.error.withValues(
+                                  alpha: 0.85,
+                                ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(l10n.tripsDeleteTooltip),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -680,10 +640,14 @@ class _TripCard extends StatelessWidget {
         final totalDays = endDay.difference(startDay).inDays + 1;
         final daysLeft = endDay.difference(today).inDays;
         if (isArabic) {
-          final suffix = daysLeft == 0 ? 'ينتهي اليوم' : 'ينتهي ${shortFmt.format(end)}';
+          final suffix = daysLeft == 0
+              ? 'ينتهي اليوم'
+              : 'ينتهي ${shortFmt.format(end)}';
           return 'يوم $dayOfTrip من $totalDays · $suffix';
         }
-        final suffix = daysLeft == 0 ? 'ends today' : 'ends ${shortFmt.format(end)}';
+        final suffix = daysLeft == 0
+            ? 'ends today'
+            : 'ends ${shortFmt.format(end)}';
         return 'Day $dayOfTrip of $totalDays · $suffix';
 
       case TripTimelineStatus.upcoming:
@@ -694,23 +658,15 @@ class _TripCard extends StatelessWidget {
           return 'يبدأ خلال $daysUntil أيام · ${shortFmt.format(start)}';
         }
         if (daysUntil == 0) return 'Starts today · ${shortFmt.format(start)}';
-        if (daysUntil == 1) return 'Starts tomorrow · ${shortFmt.format(start)}';
+        if (daysUntil == 1) {
+          return 'Starts tomorrow · ${shortFmt.format(start)}';
+        }
         return 'Starts in $daysUntil days · ${shortFmt.format(start)}';
 
       case TripTimelineStatus.completed:
       case TripTimelineStatus.datesPending:
         return '${fullFmt.format(start)} – ${fullFmt.format(end)}';
     }
-  }
-
-  String _formatBudget(Trip trip) {
-    final formatter = NumberFormat.currency(
-      name: trip.baseCurrency,
-      symbol: '${trip.baseCurrency} ',
-      decimalDigits: 2,
-    );
-
-    return formatter.format(trip.budget);
   }
 }
 
@@ -728,26 +684,30 @@ class _StatusChip extends StatelessWidget {
         label: l10n.tripTimelineNoDates,
         background: const Color(0xFFFEF3C7),
         foreground: const Color(0xFFB45309),
+        fontWeight: FontWeight.w700,
       ),
       TripTimelineStatus.upcoming => (
         label: l10n.tripTimelineUpcoming,
         background: const Color(0xFFDBEAFE),
         foreground: const Color(0xFF1D4ED8),
+        fontWeight: FontWeight.w700,
       ),
       TripTimelineStatus.active => (
         label: l10n.tripTimelineTraveling,
         background: const Color(0xFFDCFCE7),
         foreground: const Color(0xFF166534),
+        fontWeight: FontWeight.w700,
       ),
       TripTimelineStatus.completed => (
         label: l10n.tripTimelineCompleted,
-        background: const Color(0xFFE2E8F0),
-        foreground: const Color(0xFF475569),
+        background: const Color(0xFFF1F5F9),
+        foreground: const Color(0xFF94A3B8),
+        fontWeight: FontWeight.w500,
       ),
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: statusUi.background,
         borderRadius: BorderRadius.circular(999),
@@ -755,8 +715,8 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         statusUi.label,
         style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
+          fontSize: 10,
+          fontWeight: statusUi.fontWeight,
           color: statusUi.foreground,
         ),
       ),
@@ -764,38 +724,64 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-class _ActionIconButton extends StatelessWidget {
-  const _ActionIconButton({
-    required this.tooltip,
-    required this.icon,
-    required this.onTap,
-    this.isDanger = false,
+class _TripsListOverflowMenu extends StatelessWidget {
+  const _TripsListOverflowMenu({
+    required this.isLoading,
+    required this.onOpenGlobalReports,
+    required this.onToggleLanguage,
   });
 
-  final String tooltip;
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool isDanger;
+  final bool isLoading;
+  final VoidCallback onOpenGlobalReports;
+  final VoidCallback onToggleLanguage;
 
   @override
   Widget build(BuildContext context) {
-    final base = isDanger ? const Color(0xFFDC2626) : const Color(0xFF2563EB);
+    final l10n = AppLocalizations.of(context)!;
 
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: base.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: onTap,
-          child: SizedBox(
-            width: 36,
-            height: 36,
-            child: Icon(icon, size: 18, color: base),
+    return PopupMenuButton<_TripsListOverflowAction>(
+      icon: const Icon(Icons.more_vert_rounded),
+      onSelected: (action) {
+        switch (action) {
+          case _TripsListOverflowAction.globalReports:
+            onOpenGlobalReports();
+          case _TripsListOverflowAction.language:
+            if (!isLoading) {
+              onToggleLanguage();
+            }
+        }
+      },
+      itemBuilder: (_) => [
+        PopupMenuItem(
+          value: _TripsListOverflowAction.globalReports,
+          child: Row(
+            children: [
+              const Icon(
+                Icons.analytics_outlined,
+                size: 18,
+                color: Color(0xFF475569),
+              ),
+              const SizedBox(width: 10),
+              Text(l10n.globalReportsTooltip),
+            ],
           ),
         ),
-      ),
+        PopupMenuItem(
+          value: _TripsListOverflowAction.language,
+          enabled: !isLoading,
+          child: Row(
+            children: [
+              const Icon(
+                Icons.translate_rounded,
+                size: 18,
+                color: Color(0xFF475569),
+              ),
+              const SizedBox(width: 10),
+              Text(l10n.settingsToggleLanguageTooltip),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -869,34 +855,6 @@ class _SubtleLanguageToggle extends StatelessWidget {
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       ),
       child: const Text('AR | EN'),
-    );
-  }
-}
-
-class _TripsSoftBackground extends StatelessWidget {
-  const _TripsSoftBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Positioned(
-          top: -80,
-          left: -40,
-          right: -40,
-          child: Container(
-            height: 220,
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                colors: [
-                  const Color(0xFF7C3AED).withValues(alpha: 0.08),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }

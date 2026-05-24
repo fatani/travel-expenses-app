@@ -18,7 +18,7 @@ void main() {
     baseCurrency: 'CNY',
   );
 
-  testWidgets('charged summary uses Card charges label not Total in currency only',
+  testWidgets('does not show card charges dashboard stat on trip details',
       (tester) async {
     final repository = _FakeExpenseRepository(
       initialExpenses: [
@@ -50,11 +50,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Card charges in SAR'), findsOneWidget);
+    expect(find.text('Card charges in SAR'), findsNothing);
     expect(find.text('Total in SAR only'), findsNothing);
   });
 
-  testWidgets('expense count label shows Expenses', (tester) async {
+  testWidgets('single-currency trip shows subtle total in context strip only',
+      (tester) async {
     final repository = _FakeExpenseRepository(
       initialExpenses: [
         Expense.create(
@@ -82,21 +83,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.textContaining('Total expenses:'), findsOneWidget);
+    expect(find.textContaining('10 CNY'), findsOneWidget); // subtle strip total
+    expect(find.text('Top spending category'), findsNothing);
     expect(find.text('Expenses logged'), findsNothing);
-    expect(find.text('Expense count'), findsNothing);
-
-    final expenseCountStatCard = find.byWidgetPredicate(
-      (widget) {
-        if (widget is! Column) return false;
-        final labels =
-            widget.children.whereType<Text>().map((text) => text.data).toSet();
-        return labels.contains('Expenses') && labels.contains('1');
-      },
-    );
-    expect(expenseCountStatCard, findsOneWidget);
   });
 
-  testWidgets('multi-currency top category shows Mixed currencies not No category yet',
+  testWidgets('multi-currency trip hides combined total from context strip',
       (tester) async {
     final repository = _FakeExpenseRepository(
       initialExpenses: [
@@ -137,110 +130,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Mixed currencies'), findsOneWidget);
-    expect(find.text('No category yet'), findsNothing);
-  });
-
-  testWidgets('excluded currencies warning mentions totals above', (tester) async {
-    final repository = _FakeExpenseRepository(
-      initialExpenses: [
-        Expense.create(
-          id: 'e1',
-          tripId: trip.id,
-          title: 'Lunch',
-          amount: 10,
-          currencyCode: 'CNY',
-          transactionAmount: 10,
-          transactionCurrency: 'CNY',
-          spentAt: DateTime(2026, 4, 12),
-          paymentMethod: 'Cash',
-          category: 'Food',
-        ),
-        Expense.create(
-          id: 'e2',
-          tripId: trip.id,
-          title: 'Taxi',
-          amount: 20,
-          currencyCode: 'SAR',
-          transactionAmount: 20,
-          transactionCurrency: 'SAR',
-          spentAt: DateTime(2026, 4, 12),
-          paymentMethod: 'Cash',
-          category: 'Transport',
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      _buildApp(
-        child: TripDetailsScreen(trip: trip),
-        overrides: [
-          expenseRepositoryProvider.overrideWithValue(repository),
-        ],
-      ),
-    );
-    await tester.pumpAndSettle();
-
+    expect(find.textContaining('Total expenses:'), findsNothing);
+    expect(find.text('Mixed currencies'), findsNothing);
     expect(
       find.text(
         'Some expenses in other currencies are not included in the totals above',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.text(
-        'Some expenses in other currencies are not included in the total',
       ),
       findsNothing,
     );
   });
 
-  testWidgets('single-currency trip shows real top spending category', (tester) async {
-    final repository = _FakeExpenseRepository(
-      initialExpenses: [
-        Expense.create(
-          id: 'food-1',
-          tripId: trip.id,
-          title: 'Lunch',
-          amount: 30,
-          currencyCode: 'CNY',
-          transactionAmount: 30,
-          transactionCurrency: 'CNY',
-          spentAt: DateTime(2026, 4, 12),
-          paymentMethod: 'Cash',
-          category: 'Food',
-        ),
-        Expense.create(
-          id: 'transport-1',
-          tripId: trip.id,
-          title: 'Taxi',
-          amount: 10,
-          currencyCode: 'CNY',
-          transactionAmount: 10,
-          transactionCurrency: 'CNY',
-          spentAt: DateTime(2026, 4, 12),
-          paymentMethod: 'Cash',
-          category: 'Transport',
-        ),
-      ],
-    );
-
-    await tester.pumpWidget(
-      _buildApp(
-        child: TripDetailsScreen(trip: trip),
-        overrides: [
-          expenseRepositoryProvider.overrideWithValue(repository),
-        ],
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Food'), findsOneWidget);
-    expect(find.text('Mixed currencies'), findsNothing);
-    expect(find.text('No category yet'), findsNothing);
-  });
-
-  testWidgets('trip details shows Arabic labels and stat card RTL alignment',
+  testWidgets('Arabic locale keeps compressed strip without dashboard stats',
       (tester) async {
     final repository = _FakeExpenseRepository(
       initialExpenses: [
@@ -270,33 +170,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('إجمالي المصاريف'), findsOneWidget);
-    expect(find.text('المصاريف المسجلة'), findsNothing);
-
-    final expenseCountStatCard = find.byWidgetPredicate(
-      (widget) {
-        if (widget is! Column) return false;
-        final labels =
-            widget.children.whereType<Text>().map((text) => text.data).toSet();
-        return labels.contains('المصاريف') && labels.contains('1');
-      },
-    );
-    expect(expenseCountStatCard, findsOneWidget);
-    expect(find.text('أعلى فئة إنفاق'), findsOneWidget);
-    expect(find.text('إضافة مصروف'), findsOneWidget);
-    expect(find.text('لم يبدأ تتبع الكاش بعد'), findsNothing);
-    expect(find.text('كرر آخر مصروف'), findsOneWidget);
-
-    final totalLabel = find.text('إجمالي المصاريف');
-    final statColumn = find.ancestor(
-      of: totalLabel,
-      matching: find.byWidgetPredicate(
-        (widget) =>
-            widget is Column &&
-            widget.crossAxisAlignment == CrossAxisAlignment.end,
-      ),
-    );
-    expect(statColumn, findsWidgets);
+    expect(find.textContaining('إجمالي المصاريف'), findsOneWidget);
+    expect(find.text('أعلى فئة إنفاق'), findsNothing);
+    expect(find.text('إضافة مصروف'), findsNothing);
+    expect(find.text('كرر آخر مصروف'), findsNothing);
   });
 }
 

@@ -23,7 +23,7 @@ void main() {
   );
 
   testWidgets(
-    'trip details prefers stored cash conversionRate when converted amount is missing',
+    'trip details uses stored conversion snapshot for approximate card amount',
     (tester) async {
       final thaiTrip = Trip.create(
         id: 'trip-thb-snapshot',
@@ -91,26 +91,15 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      expect(find.textContaining('52.5'), findsOneWidget);
+      expect(find.textContaining('1 THB ='), findsNothing);
+
       final textWidgets = tester.widgetList<Text>(
         find.byType(Text, skipOffstage: false),
       );
       final richTextWidgets = tester.widgetList<RichText>(
         find.byType(RichText, skipOffstage: false),
       );
-
-      final hasStoredRate =
-          textWidgets.any((widget) {
-            final text = widget.data ?? widget.textSpan?.toPlainText() ?? '';
-            return text.contains('0.105') &&
-                text.contains('THB') &&
-                text.contains('SAR');
-          }) ||
-          richTextWidgets.any((widget) {
-            final text = widget.text.toPlainText();
-            return text.contains('0.105') &&
-                text.contains('THB') &&
-                text.contains('SAR');
-          });
 
       final hasFallbackRate =
           textWidgets.any((widget) {
@@ -119,7 +108,6 @@ void main() {
           }) ||
           richTextWidgets.any((widget) => widget.text.toPlainText().contains('0.11'));
 
-      expect(hasStoredRate, isTrue);
       expect(hasFallbackRate, isFalse);
     },
   );
@@ -163,18 +151,17 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('10 CNY'), findsOneWidget);
-      expect(find.textContaining('30 CNY'), findsNothing);
+      expect(find.text('Lunch'), findsOneWidget);
+      expect(find.text('10'), findsOneWidget);
+      expect(find.textContaining('Total expenses:'), findsNothing);
       expect(
         find.text(
           'Some expenses in other currencies are not included in the totals above',
         ),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('Total in CNY only'), findsOneWidget);
-      expect(find.text('Total expenses'), findsNothing);
-      expect(find.text('Mixed currencies'), findsOneWidget);
-      expect(find.text('No category yet'), findsNothing);
+      expect(find.text('Total in CNY only'), findsNothing);
+      expect(find.text('Mixed currencies'), findsNothing);
     },
   );
 
@@ -228,16 +215,18 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('500 THB'), findsOneWidget);
-      expect(find.textContaining('510 THB'), findsNothing);
+      expect(find.text('Street food'), findsOneWidget);
+      expect(find.text('500'), findsOneWidget);
+      expect(find.text('510'), findsNothing);
+      expect(find.textContaining('Total expenses:'), findsNothing);
       expect(
         find.text(
           'Some expenses in other currencies are not included in the totals above',
         ),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('Total in THB only'), findsOneWidget);
-      expect(find.text('Mixed currencies'), findsOneWidget);
+      expect(find.text('Total in THB only'), findsNothing);
+      expect(find.text('Mixed currencies'), findsNothing);
     },
   );
 
@@ -294,23 +283,23 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('50 SAR'), findsOneWidget);
-      expect(find.textContaining('70 SAR'), findsNothing);
+      expect(find.text('Lunch'), findsOneWidget);
+      expect(find.text('50'), findsOneWidget);
+      expect(find.text('70'), findsNothing);
+      expect(find.textContaining('Total expenses:'), findsNothing);
       expect(
         find.text(
           'Some expenses in other currencies are not included in the totals above',
         ),
-        findsOneWidget,
+        findsNothing,
       );
-      expect(find.text('Total in SAR only'), findsOneWidget);
-      expect(find.text('Total expenses'), findsNothing);
-      expect(find.text('Mixed currencies'), findsOneWidget);
-      expect(find.text('No category yet'), findsNothing);
+      expect(find.text('Total in SAR only'), findsNothing);
+      expect(find.text('Mixed currencies'), findsNothing);
     },
   );
 
   testWidgets(
-    'trip details shows no-base-currency message and a partial charged total label',
+    'trip details hides misleading totals when base currency has no expenses',
     (tester) async {
       final repository = _FakeExpenseRepository(
         initialExpenses: [
@@ -362,16 +351,17 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('No expenses in this currency'), findsOneWidget);
+      expect(find.text('No expenses in this currency'), findsNothing);
       expect(find.textContaining('0 CNY'), findsNothing);
-      expect(find.text('Card charges in SAR'), findsOneWidget);
-      expect(find.text('Total in SAR only'), findsNothing);
-      expect(find.textContaining('12.45 SAR'), findsOneWidget);
+      expect(find.text('Card charges in SAR'), findsNothing);
+      expect(find.textContaining('Total expenses:'), findsNothing);
+      expect(find.text('Bangkok ride'), findsOneWidget);
+      expect(find.text('Online tool'), findsOneWidget);
     },
   );
 
   testWidgets(
-    'trip details shows Arabic no-base-currency message and charged total label in ar locale',
+    'trip details hides Arabic dashboard totals for foreign-currency expenses',
     (tester) async {
       final repository = _FakeExpenseRepository(
         initialExpenses: [
@@ -424,16 +414,16 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('لا توجد مصاريف بهذه العملة'), findsOneWidget);
+      expect(find.text('لا توجد مصاريف بهذه العملة'), findsNothing);
       expect(find.textContaining('0 CNY'), findsNothing);
-      expect(find.text('مشتريات البطاقة بعملة SAR'), findsOneWidget);
-      expect(find.text('الإجمالي بعملة SAR فقط'), findsNothing);
-      expect(find.textContaining('12.45 SAR'), findsOneWidget);
+      expect(find.text('مشتريات البطاقة بعملة SAR'), findsNothing);
+      expect(find.textContaining('إجمالي المصاريف'), findsNothing);
+      expect(find.text('Bangkok ride'), findsOneWidget);
     },
   );
 
   testWidgets(
-    'empty trip details state renders premium CTAs',
+    'empty trip details state is compact and uses FAB only',
     (tester) async {
       final repository = _FakeExpenseRepository(initialExpenses: const []);
 
@@ -448,10 +438,10 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final emptyStateFinder = find.text('Add your first expense now');
-
-      expect(emptyStateFinder, findsOneWidget);
-      expect(find.text('Add via Bank SMS'), findsOneWidget);
+      expect(find.text('No expenses yet'), findsOneWidget);
+      expect(find.text('Add your first expense now'), findsNothing);
+      expect(find.text('Add via Bank SMS'), findsNothing);
+      expect(find.byType(FloatingActionButton), findsOneWidget);
     },
   );
 

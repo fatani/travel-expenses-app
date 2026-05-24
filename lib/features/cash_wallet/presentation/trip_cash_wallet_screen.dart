@@ -6,6 +6,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import '../../../core/design_system/app_buttons.dart';
 import '../../../core/design_system/app_confirmation_dialog.dart';
 import '../../../core/design_system/app_surfaces.dart';
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/finance/manual_exchange_rate.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -31,7 +32,6 @@ class TripCashWalletScreen extends ConsumerStatefulWidget {
 
 class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   bool _isLoading = true;
-  bool _didShowFirstTimeOnboarding = false;
   List<TripCashBalance> _balances = const [];
   List<CashTransaction> _transactions = const [];
 
@@ -52,19 +52,6 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       _transactions = transactions;
       _isLoading = false;
     });
-
-    if (!_didShowFirstTimeOnboarding && balances.isEmpty && transactions.isEmpty) {
-      _didShowFirstTimeOnboarding = true;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) {
-          return;
-        }
-        _showAddCashSheet(
-          initialType: CashTransactionType.initialCash,
-          isOnboarding: true,
-        );
-      });
-    }
   }
 
   _PrimaryCashBalance get _primaryCashBalance {
@@ -402,8 +389,9 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.expenseFormSaveError('$error'))),
+      CalmSnackBar.showMessage(
+        context,
+        message: l10n.expenseFormSaveError('$error'),
       );
     }
   }
@@ -454,9 +442,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
 
     if (expense == null) {
       final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.tripDetailsLoadError)),
-      );
+      CalmSnackBar.showMessage(context, message: l10n.tripDetailsLoadError);
       return;
     }
 
@@ -601,9 +587,7 @@ class _AddManualRateSheetState extends ConsumerState<_AddManualRateSheet> {
     final rate = double.tryParse(_rateController.text.trim());
 
     if (fromCurrency.length != 3 || toCurrency.length != 3 || rate == null || rate <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.commonEnterValidNumber)),
-      );
+      CalmSnackBar.showMessage(context, message: l10n.commonEnterValidNumber);
       return;
     }
 
@@ -632,9 +616,7 @@ class _AddManualRateSheetState extends ConsumerState<_AddManualRateSheet> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.manualExchangeSaveError)),
-      );
+      CalmSnackBar.showMessage(context, message: l10n.manualExchangeSaveError);
       setState(() {
         _isSaving = false;
       });
@@ -1036,9 +1018,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     }
 
     if (validationMessage != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(validationMessage)),
-      );
+      CalmSnackBar.showMessage(context, message: validationMessage);
       return;
     }
 
@@ -1084,8 +1064,9 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.expenseFormSaveError('$error'))),
+      CalmSnackBar.showMessage(
+        context,
+        message: l10n.expenseFormSaveError('$error'),
       );
       setState(() {
         _isSaving = false;
@@ -1180,89 +1161,24 @@ class _CashHeroCard extends StatelessWidget {
     if (!hasCashSetup) {
       return Card(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFEFF1FF), Color(0xFFF7EEFF)],
-            ),
-            border: Border.all(
-              color: const Color(0xFF7C3AED).withValues(alpha: 0.14),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.75),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Image.asset(
-                          'assets/travel.png',
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) => const Icon(
-                            Icons.account_balance_wallet_outlined,
-                            color: Color(0xFF7C3AED),
-                            size: 28,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            l10n.cashTrackingNotStarted,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                              color: const Color(0xFF1E1B4B),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            l10n.cashWalletBalanceUnknownUntilInitial,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF475569),
-                              height: 1.4,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                l10n.cashTrackingNotStarted,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF475569),
                 ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _HeroPrimaryActionButton(
-                        label: l10n.cashWalletAddCash,
-                        onPressed: onAddCash,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    _HeroSecondaryActionButton(
-                      label: l10n.cashWalletQuickAtmShort,
-                      onPressed: onAtmWithdrawal,
-                    ),
-                  ],
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: onAddCash,
+                child: Text(l10n.cashWalletAddCash),
+              ),
+            ],
           ),
         ),
       );

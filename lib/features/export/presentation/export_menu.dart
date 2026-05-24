@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 import 'package:travel_expenses/l10n/l10n_extension.dart';
 
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_title_resolver.dart';
@@ -19,8 +20,7 @@ Future<void> handleTripExport(
   required TripExportFormat format,
 }) async {
   final l10n = AppLocalizations.of(context)!;
-  final messenger = ScaffoldMessenger.of(context);
-  messenger.hideCurrentSnackBar();
+  CalmSnackBar.clear(context);
 
   // Resolve the trip title based on the active locale before any async gap.
   final isArabic =
@@ -36,9 +36,7 @@ Future<void> handleTripExport(
 
     if (expenses.isEmpty) {
       if (!context.mounted) return;
-      messenger.showSnackBar(
-        SnackBar(content: Text(l10n.exportNoExpenses)),
-      );
+      CalmSnackBar.showMessage(context, message: l10n.exportNoExpenses);
       return;
     }
 
@@ -64,17 +62,12 @@ Future<void> handleTripExport(
     if (!context.mounted) return;
 
     await Share.shareXFiles([XFile(filePath)], subject: fileName);
-
-    if (!context.mounted) return;
-
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.exportSuccess)),
-    );
   } catch (error) {
     if (!context.mounted) return;
     final label = format == TripExportFormat.csv ? 'CSV' : 'PDF';
-    messenger.showSnackBar(
-      SnackBar(content: Text(l10n.exportFailed(label, '$error'))),
+    CalmSnackBar.showMessage(
+      context,
+      message: l10n.exportFailed(label, '$error'),
     );
   }
 }

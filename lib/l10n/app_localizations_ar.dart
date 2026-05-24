@@ -607,7 +607,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsRepeatLastExpense => 'كرر آخر مصروف';
 
   @override
-  String get tripDetailsRepeatHint => 'جاهز لإضافة مصروف مشابه';
+  String get tripDetailsRepeatHint => 'نفس آخر مصروف';
 
   @override
   String get tripDetailsClearFilters => 'مسح التصفيات';
@@ -1205,7 +1205,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsInsightInternationalDominant => 'أغلب إنفاقك كان دوليًا';
 
   @override
-  String get tripReportsEarlyNoExpenses => 'لم يتم تسجيل أي مصاريف بعد.';
+  String get tripReportsEarlyNoExpenses => 'لا توجد مصاريف بعد';
 
   @override
   String get tripReportsEarlyAddFirstHint => 'أضف أول مصروف لبدء تتبع إنفاقك.';

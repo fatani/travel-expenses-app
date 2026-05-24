@@ -21,18 +21,24 @@ void main() {
   );
 
   testWidgets('rejects invalid non-empty home value without saving', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     final repository = _SpyCashWalletRepository();
 
     await tester.pumpWidget(_buildCashWalletApp(trip: trip, repository: repository));
     await tester.pumpAndSettle();
 
-    expect(find.text('How much cash are you carrying?'), findsOneWidget);
+    await tester.tap(find.widgetWithText(FilledButton, 'Add Cash'));
+    await tester.pumpAndSettle();
 
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '100');
     await tester.enterText(fields.at(1), '.');
 
-    await tester.tap(find.text('Add Cash').last);
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
     await tester.pump();
 
     expect(find.text('Enter a valid number.'), findsOneWidget);
@@ -41,15 +47,23 @@ void main() {
 
   testWidgets('allows empty home value and saves null home currency amount',
       (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     final repository = _SpyCashWalletRepository();
 
     await tester.pumpWidget(_buildCashWalletApp(trip: trip, repository: repository));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.widgetWithText(FilledButton, 'Add Cash'));
+    await tester.pumpAndSettle();
+
     final fields = find.byType(TextField);
     await tester.enterText(fields.at(0), '100');
 
-    await tester.tap(find.text('Add Cash').last);
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
     expect(repository.addCallCount, 1);

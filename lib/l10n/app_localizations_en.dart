@@ -607,7 +607,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsRepeatLastExpense => 'Repeat last expense';
 
   @override
-  String get tripDetailsRepeatHint => 'Ready to add a similar expense';
+  String get tripDetailsRepeatHint => 'Same as last time';
 
   @override
   String get tripDetailsClearFilters => 'Clear filters';
@@ -1201,7 +1201,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsInsightInternationalDominant => 'Most of your spending was international';
 
   @override
-  String get tripReportsEarlyNoExpenses => 'No expenses recorded yet.';
+  String get tripReportsEarlyNoExpenses => 'No expenses yet';
 
   @override
   String get tripReportsEarlyAddFirstHint => 'Add your first expense to start tracking your spending.';
