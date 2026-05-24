@@ -284,9 +284,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletEmptySubtitle => 'Add the cash you carry to track what remains during your trip';
 
   @override
-  String get cashWalletTripDatesPending => 'Dates pending';
-
-  @override
   String get cashWalletHealthTitle => 'Cash status';
 
   @override
@@ -308,16 +305,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletHealthCritical => 'Running low';
 
   @override
-  String get cashWalletLastAtmNotAvailable => 'Last ATM: N/A';
-
-  @override
   String get cashWalletOnboardingTitle => 'How much cash are you carrying?';
 
   @override
   String get cashWalletOnboardingSkip => 'I\'ll add cash later';
-
-  @override
-  String get cashWalletOnboardingCardsOnly => 'I\'ll use cards only';
 
   @override
   String get cashWalletDailyBurnTitle => 'Daily cash burn';
@@ -434,9 +425,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashWalletHomeValueHelper => 'Optional — helps estimate your home currency spending.';
-
-  @override
-  String get cashWalletHomeValueCaption => 'Optional — helps estimate your home currency spending.';
 
   @override
   String get cashWalletBalanceUnknownUntilInitial => 'Add your starting cash to begin tracking.';
