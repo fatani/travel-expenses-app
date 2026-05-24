@@ -90,22 +90,16 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   }
 
   bool get _hasCashSetup {
-      return _transactions.any(
-        (transaction) =>
-        transaction.type != CashTransactionType.cashExpenseDeduction,
-      ) ||
-      _balances.any((balance) => balance.balanceAmount > 0);
+    return _balances.isNotEmpty ||
+        _transactions.any(
+          (transaction) =>
+              transaction.type != CashTransactionType.cashExpenseDeduction,
+        );
   }
 
-  _CashHealth get _cashHealth {
+  double get _primaryCurrencyTotalCashIn {
     final primaryCurrency = _primaryCashBalance.currencyCode;
-    final currentBalance = _primaryCashBalance.amount;
-
-    if (currentBalance <= 0) {
-      return _CashHealth.critical;
-    }
-
-    final totalCashIn = _transactions.where((transaction) {
+    return _transactions.where((transaction) {
       if (transaction.currencyCode != primaryCurrency) {
         return false;
       }
@@ -115,6 +109,16 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
           transaction.type == CashTransactionType.manualAdjustment ||
           transaction.type == CashTransactionType.currencyExchangeIn;
     }).fold<double>(0, (sum, transaction) => sum + transaction.amount);
+  }
+
+  _CashHealth get _cashHealth {
+    final currentBalance = _primaryCashBalance.amount;
+
+    if (currentBalance <= 0) {
+      return _CashHealth.critical;
+    }
+
+    final totalCashIn = _primaryCurrencyTotalCashIn;
 
     if (totalCashIn <= 0) {
       return _CashHealth.good;
@@ -144,7 +148,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       final currentBalance = runningByCurrency[transaction.currencyCode] ?? 0;
       result[transaction.id] = currentBalance;
       runningByCurrency[transaction.currencyCode] =
-          currentBalance - _signedDelta(transaction.type, transaction.amount);
+          currentBalance - transaction.type.signedDelta(transaction.amount);
     }
 
     return result;
@@ -192,26 +196,10 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     return null;
   }
 
-  double _signedDelta(CashTransactionType type, double amount) {
-    switch (type) {
-      case CashTransactionType.initialCash:
-      case CashTransactionType.atmWithdrawal:
-      case CashTransactionType.currencyExchangeIn:
-      case CashTransactionType.manualAdjustment:
-        return amount;
-      case CashTransactionType.currencyExchangeOut:
-      case CashTransactionType.cashExpenseDeduction:
-        return -amount;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final unknownBalanceMessage = isArabic
-        ? 'الرصيد الحالي غير معروف. تم تسجيل مصاريف كاش قبل إدخال الرصيد الابتدائي.'
-        : 'Current cash balance is unknown. Cash expenses were recorded before adding an initial balance.';
+    final unknownBalanceMessage = l10n.cashWalletBalanceUnknownExpensesFirst;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.tripDetailsCashWalletAction),
@@ -230,6 +218,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                     balance: _primaryCashBalance,
                     health: _cashHealth,
                     hasCashSetup: _hasCashSetup,
+                    totalCashIn: _primaryCurrencyTotalCashIn,
                     lastAtmWithdrawalEvent: _lastAtmWithdrawalEvent,
                     onAddCash: () => _showAddCashSheet(initialType: CashTransactionType.initialCash),
                     onAtmWithdrawal: () => _showAddCashSheet(initialType: CashTransactionType.atmWithdrawal),
@@ -711,7 +700,6 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
     final isEditMode = widget.editingTransaction != null;
     final isOnboardingMode = widget.isOnboarding && !isEditMode;
-    final homeCurrencyCode = widget.trip.homeCurrencySnapshot;
 
     return Material(
       color: Colors.white,
@@ -798,18 +786,11 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
                   decoration: InputDecoration(
-                    labelText: l10n.cashWalletHomeValueLabel(homeCurrencyCode),
+                    labelText: l10n.cashWalletHomeValueLabel,
                     helperText: l10n.cashWalletHomeValueHelper,
                     hintText: '0.00',
                     prefixIcon: const Icon(Icons.home_outlined),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  l10n.cashWalletHomeValueCaption,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF64748B),
-                      ),
                 ),
                 const SizedBox(height: 12),
                 if (!isOnboardingMode) ...[
@@ -917,22 +898,13 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                 ),
                 if (isOnboardingMode) ...[
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      TextButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () => Navigator.of(context).pop(false),
-                        child: Text(l10n.cashWalletOnboardingSkip),
-                      ),
-                      const Spacer(),
-                      OutlinedButton(
-                        onPressed: _isSaving
-                            ? null
-                            : () => Navigator.of(context).pop(false),
-                        child: Text(l10n.cashWalletOnboardingCardsOnly),
-                      ),
-                    ],
+                  Center(
+                    child: TextButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () => Navigator.of(context).pop(false),
+                      child: Text(l10n.cashWalletOnboardingSkip),
+                    ),
                   ),
                 ],
               ],
@@ -1039,19 +1011,38 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   Future<void> _save() async {
     final l10n = AppLocalizations.of(context)!;
     final amount = double.tryParse(_amountController.text.trim());
-    final homeValue = double.tryParse(_homeValueController.text.trim());
+    final homeValueText = _homeValueController.text.trim();
+    final double? homeValue = homeValueText.isEmpty
+        ? null
+        : double.tryParse(homeValueText);
     final currencyCode = _selectedCurrencyCode.trim().toUpperCase();
     final homeCurrencyCode = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
 
-    if (amount == null || amount <= 0 ||
-        currencyCode.length != 3 ||
-        !RegExp(r'^[A-Z]{3}$').hasMatch(currencyCode) ||
-        homeValue == null || homeValue <= 0) {
+    final allowsZeroAmount =
+        _selectedType == CashTransactionType.initialCash;
+
+    String? validationMessage;
+    if (amount == null) {
+      validationMessage = l10n.cashWalletValidationInvalidAmount;
+    } else if (amount < 0) {
+      validationMessage = l10n.cashWalletValidationNegativeAmount;
+    } else if (amount == 0 && !allowsZeroAmount) {
+      validationMessage = l10n.cashWalletValidationInvalidAmount;
+    } else if (currencyCode.length != 3 ||
+        !RegExp(r'^[A-Z]{3}$').hasMatch(currencyCode)) {
+      validationMessage = l10n.cashWalletValidationInvalidCurrency;
+    } else if (homeValueText.isNotEmpty && homeValue == null) {
+      validationMessage = l10n.commonEnterValidNumber;
+    }
+
+    if (validationMessage != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.commonEnterValidNumber)),
+        SnackBar(content: Text(validationMessage)),
       );
       return;
     }
+
+    final validAmount = amount!;
 
     setState(() {
       _isSaving = true;
@@ -1063,7 +1054,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
         await ref.read(cashWalletRepositoryProvider).updateManualCashTransaction(
               existingTransaction: editingTransaction,
               nextType: _selectedType,
-              nextAmount: amount,
+              nextAmount: validAmount,
               nextCurrencyCode: currencyCode,
               nextHomeCurrencyAmount: homeValue,
               nextHomeCurrencyCode: homeCurrencyCode,
@@ -1074,7 +1065,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
         await ref.read(cashWalletRepositoryProvider).addCashTransaction(
               tripId: widget.trip.id,
               type: _selectedType,
-              amount: amount,
+              amount: validAmount,
               currencyCode: currencyCode,
               homeCurrencyAmount: homeValue,
               homeCurrencyCode: homeCurrencyCode,
@@ -1165,6 +1156,7 @@ class _CashHeroCard extends StatelessWidget {
     required this.balance,
     required this.health,
     required this.hasCashSetup,
+    required this.totalCashIn,
     required this.lastAtmWithdrawalEvent,
     required this.onAddCash,
     required this.onAtmWithdrawal,
@@ -1174,6 +1166,7 @@ class _CashHeroCard extends StatelessWidget {
   final _PrimaryCashBalance balance;
   final _CashHealth health;
   final bool hasCashSetup;
+  final double totalCashIn;
   final _LastAtmWithdrawalEvent? lastAtmWithdrawalEvent;
   final VoidCallback onAddCash;
   final VoidCallback onAtmWithdrawal;
@@ -1241,9 +1234,7 @@ class _CashHeroCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 6),
                           Text(
-                            Localizations.localeOf(context).languageCode == 'ar'
-                                ? 'الرصيد الحالي غير معروف حتى تضيف الرصيد الابتدائي.'
-                                : 'Current cash balance is unknown until you add an initial balance.',
+                            l10n.cashWalletBalanceUnknownUntilInitial,
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: const Color(0xFF475569),
                               height: 1.4,
@@ -1290,15 +1281,6 @@ class _CashHeroCard extends StatelessWidget {
       _CashHealth.low => const Color(0xFFD97706),
       _CashHealth.critical => const Color(0xFFDC2626),
     };
-
-    final lastAtmText = lastAtmWithdrawalEvent == null
-        ? l10n.cashWalletLastAtmNotAvailable
-        : l10n.cashWalletLastAtmWithdrawal(
-            _formatAmount(
-              lastAtmWithdrawalEvent!.amount,
-              lastAtmWithdrawalEvent!.currencyCode,
-            ),
-          );
 
     return Card(
       elevation: 0,
@@ -1347,26 +1329,35 @@ class _CashHeroCard extends StatelessWidget {
                 textDirection: TextDirection.ltr,
                 child: _ResponsiveHeroBalanceText(text: amountText),
               ),
-              const SizedBox(height: 14),
-              _HeroPill(
-                label: l10n.cashWalletHealthTitle,
-                value: healthText,
-                valueColor: healthColor,
-              ),
-              const SizedBox(height: 10),
-              Text(
-                lastAtmText,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF64748B),
-                  fontWeight: FontWeight.w600,
+              if (totalCashIn > 0) ...[
+                const SizedBox(height: 14),
+                _HeroPill(
+                  label: l10n.cashWalletHealthTitle,
+                  value: healthText,
+                  valueColor: healthColor,
                 ),
-              ),
+              ],
+              if (lastAtmWithdrawalEvent != null) ...[
+                const SizedBox(height: 10),
+                Text(
+                  l10n.cashWalletLastAtmWithdrawal(
+                    _formatAmount(
+                      lastAtmWithdrawalEvent!.amount,
+                      lastAtmWithdrawalEvent!.currencyCode,
+                    ),
+                  ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF64748B),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               Row(
                 children: [
                   Expanded(
                     child: _HeroPrimaryActionButton(
-                      label: l10n.cashBalanceAddCashAction,
+                      label: l10n.cashWalletAddCash,
                       onPressed: onAddCash,
                     ),
                   ),
@@ -1536,7 +1527,10 @@ class _TripContextCard extends StatelessWidget {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final title = TripTitleResolver.resolve(trip, isArabic);
     final localeName = Localizations.localeOf(context).toLanguageTag();
-    final dateText = _formatTripDates(context, trip, localeName);
+    final hasTripDates = trip.startDate != null && trip.endDate != null;
+    final dateText = hasTripDates
+        ? _formatTripDates(trip, localeName)
+        : null;
     final tripStatus = _formatTripStatus(context, trip);
 
     return Container(
@@ -1622,10 +1616,11 @@ class _TripContextCard extends StatelessWidget {
                       icon: Icons.currency_exchange_outlined,
                       label: trip.destinationCurrency.trim().toUpperCase(),
                     ),
-                    _InfoChip(
-                      icon: Icons.calendar_month_outlined,
-                      label: dateText,
-                    ),
+                    if (dateText != null)
+                      _InfoChip(
+                        icon: Icons.calendar_month_outlined,
+                        label: dateText,
+                      ),
                   ],
                 ),
               ],
@@ -1674,12 +1669,7 @@ String _formatAmount(double amount, String currencyCode) {
   return '${formatter.format(amount)} ${currencyCode.trim().toUpperCase()}';
 }
 
-String _formatTripDates(BuildContext context, Trip trip, String localeName) {
-  final l10n = AppLocalizations.of(context)!;
-  if (trip.startDate == null || trip.endDate == null) {
-    return l10n.cashWalletTripDatesPending;
-  }
-
+String _formatTripDates(Trip trip, String localeName) {
   final formatter = DateFormat('dd MMM', localeName);
   return '${formatter.format(trip.startDate!.toLocal())} - ${formatter.format(trip.endDate!.toLocal())}';
 }
@@ -1705,12 +1695,6 @@ class _BalanceTile extends StatelessWidget {
           balance.currencyCode.trim().toUpperCase(),
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w800,
-              ),
-        ),
-        subtitle: Text(
-          DateFormat('dd MMM yyyy, HH:mm').format(balance.updatedAt.toLocal()),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF64748B),
               ),
         ),
         trailing: Container(
@@ -2055,7 +2039,7 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                   controller: _searchController,
                   autofocus: false,
                   decoration: InputDecoration(
-                    hintText: widget.isArabic ? 'بحث...' : 'Search...',
+                    hintText: AppLocalizations.of(context)!.cashWalletSearchHint,
                     prefixIcon: const Icon(Icons.search),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),

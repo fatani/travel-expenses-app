@@ -249,6 +249,104 @@ void main() {
     expect(find.text('Cash tracking hasn’t started'), findsNothing);
   });
 
+  testWidgets('shows cash wallet CTA when balance row is zero', (tester) async {
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        repository: _FakeExpenseRepository(
+          initialExpenses: [sampleExpense],
+        ),
+        cashWalletRepository: _FakeCashWalletRepository(
+          balances: [
+            TripCashBalance(
+              tripId: trip.id,
+              currencyCode: 'CNY',
+              balanceAmount: 0,
+              updatedAt: DateTime(2026, 5, 16),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('remaining'), findsOneWidget);
+    expect(find.text('Cash Wallet'), findsOneWidget);
+  });
+
+  testWidgets('shows cash wallet CTA when balance row is negative',
+      (tester) async {
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        repository: _FakeExpenseRepository(
+          initialExpenses: [sampleExpense],
+        ),
+        cashWalletRepository: _FakeCashWalletRepository(
+          balances: [
+            TripCashBalance(
+              tripId: trip.id,
+              currencyCode: 'CNY',
+              balanceAmount: -120,
+              updatedAt: DateTime(2026, 5, 16),
+            ),
+          ],
+          transactions: [
+            CashTransaction.create(
+              id: 'cash-tx-deduction',
+              tripId: trip.id,
+              type: CashTransactionType.cashExpenseDeduction,
+              amount: 120,
+              currencyCode: 'CNY',
+              createdAt: DateTime(2026, 5, 16),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('remaining'), findsOneWidget);
+    expect(find.text('Cash Wallet'), findsOneWidget);
+  });
+
+  testWidgets(
+      'shows cash wallet CTA with deduction-only history when balance row exists',
+      (tester) async {
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        repository: _FakeExpenseRepository(
+          initialExpenses: [sampleExpense],
+        ),
+        cashWalletRepository: _FakeCashWalletRepository(
+          balances: [
+            TripCashBalance(
+              tripId: trip.id,
+              currencyCode: 'CNY',
+              balanceAmount: -50,
+              updatedAt: DateTime(2026, 5, 16),
+            ),
+          ],
+          transactions: [
+            CashTransaction.create(
+              id: 'cash-tx-deduction-only',
+              tripId: trip.id,
+              type: CashTransactionType.cashExpenseDeduction,
+              amount: 50,
+              currencyCode: 'CNY',
+              createdAt: DateTime(2026, 5, 16),
+            ),
+          ],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('remaining'), findsOneWidget);
+    expect(find.text('Cash Wallet'), findsOneWidget);
+  });
+
   testWidgets('shows overflow menu in app bar with reports and export actions',
       (tester) async {
     await tester.pumpWidget(

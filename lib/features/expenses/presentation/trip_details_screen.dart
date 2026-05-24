@@ -815,8 +815,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       (transaction) =>
           transaction.type != CashTransactionType.cashExpenseDeduction,
     );
-    final hasPositiveBalance = balances.any((balance) => balance.balanceAmount > 0);
-    return hasIntentionalCashTx || hasPositiveBalance;
+    return hasIntentionalCashTx || balances.isNotEmpty;
   }
 
   _PrimaryCashBalance _resolvePrimaryCashBalance({

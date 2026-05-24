@@ -137,6 +137,24 @@ abstract class AppLocalizations {
   /// **'Enter a valid number.'**
   String get commonEnterValidNumber;
 
+  /// No description provided for @cashWalletValidationInvalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid cash amount.'**
+  String get cashWalletValidationInvalidAmount;
+
+  /// No description provided for @cashWalletValidationInvalidCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid 3-letter currency code.'**
+  String get cashWalletValidationInvalidCurrency;
+
+  /// No description provided for @cashWalletValidationNegativeAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount cannot be negative.'**
+  String get cashWalletValidationNegativeAmount;
+
   /// No description provided for @commonUndo.
   ///
   /// In en, this message translates to:
@@ -608,7 +626,7 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletHealthTitle.
   ///
   /// In en, this message translates to:
-  /// **'Cash health'**
+  /// **'Cash status'**
   String get cashWalletHealthTitle;
 
   /// No description provided for @cashWalletHealthNotEnoughData.
@@ -620,13 +638,13 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletHealthExcellent.
   ///
   /// In en, this message translates to:
-  /// **'Excellent'**
+  /// **'In great shape'**
   String get cashWalletHealthExcellent;
 
   /// No description provided for @cashWalletHealthHealthy.
   ///
   /// In en, this message translates to:
-  /// **'Healthy'**
+  /// **'Looking good'**
   String get cashWalletHealthHealthy;
 
   /// No description provided for @cashWalletHealthMedium.
@@ -638,13 +656,13 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletHealthLow.
   ///
   /// In en, this message translates to:
-  /// **'Low'**
+  /// **'Getting low'**
   String get cashWalletHealthLow;
 
   /// No description provided for @cashWalletHealthCritical.
   ///
   /// In en, this message translates to:
-  /// **'Critical'**
+  /// **'Running low'**
   String get cashWalletHealthCritical;
 
   /// No description provided for @cashWalletLastAtmNotAvailable.
@@ -662,7 +680,7 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletOnboardingSkip.
   ///
   /// In en, this message translates to:
-  /// **'Skip'**
+  /// **'I\'ll add cash later'**
   String get cashWalletOnboardingSkip;
 
   /// No description provided for @cashWalletOnboardingCardsOnly.
@@ -698,13 +716,13 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletBalancesTitle.
   ///
   /// In en, this message translates to:
-  /// **'Balances by currency'**
+  /// **'By currency'**
   String get cashWalletBalancesTitle;
 
   /// No description provided for @cashWalletRecentTransactionsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Recent cash transactions'**
+  /// **'Activity'**
   String get cashWalletRecentTransactionsTitle;
 
   /// No description provided for @cashWalletNoBalances.
@@ -878,20 +896,38 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletHomeValueLabel.
   ///
   /// In en, this message translates to:
-  /// **'Approximate value in {currencyCode}'**
-  String cashWalletHomeValueLabel(Object currencyCode);
+  /// **'Approximate home value (optional)'**
+  String get cashWalletHomeValueLabel;
 
   /// No description provided for @cashWalletHomeValueHelper.
   ///
   /// In en, this message translates to:
-  /// **'About how much did this cash cost?'**
+  /// **'Optional — helps estimate your home currency spending.'**
   String get cashWalletHomeValueHelper;
 
   /// No description provided for @cashWalletHomeValueCaption.
   ///
   /// In en, this message translates to:
-  /// **'Used to estimate your travel spending value'**
+  /// **'Optional — helps estimate your home currency spending.'**
   String get cashWalletHomeValueCaption;
+
+  /// No description provided for @cashWalletBalanceUnknownUntilInitial.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your starting cash to begin tracking.'**
+  String get cashWalletBalanceUnknownUntilInitial;
+
+  /// No description provided for @cashWalletBalanceUnknownExpensesFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Some expenses were recorded before adding starting cash — your balance may not reflect them yet.'**
+  String get cashWalletBalanceUnknownExpensesFirst;
+
+  /// No description provided for @cashWalletSearchHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search...'**
+  String get cashWalletSearchHint;
 
   /// No description provided for @cashWalletTypeCashExpenseDeduction.
   ///
@@ -926,7 +962,7 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletDeleteTransactionMessage.
   ///
   /// In en, this message translates to:
-  /// **'This will reverse its effect on the balance.'**
+  /// **'Your cash balance will be updated.'**
   String get cashWalletDeleteTransactionMessage;
 
   /// No description provided for @cashWalletBalanceAfterTransaction.
@@ -956,19 +992,19 @@ abstract class AppLocalizations {
   /// No description provided for @cashBalanceNoRecordedWarning.
   ///
   /// In en, this message translates to:
-  /// **'Cash tracking hasn’t started'**
+  /// **'No cash added yet'**
   String get cashBalanceNoRecordedWarning;
 
   /// No description provided for @cashBalanceAddCashAction.
   ///
   /// In en, this message translates to:
-  /// **'Add cash balance'**
+  /// **'Add Cash'**
   String get cashBalanceAddCashAction;
 
   /// No description provided for @cashTrackingNotStarted.
   ///
   /// In en, this message translates to:
-  /// **'Cash tracking hasn’t started'**
+  /// **'No cash added yet'**
   String get cashTrackingNotStarted;
 
   /// No description provided for @manualExchangeAddRate.

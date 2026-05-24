@@ -44,6 +44,21 @@ extension CashTransactionTypeCodec on CashTransactionType {
   }
 }
 
+extension CashTransactionTypeDelta on CashTransactionType {
+  double signedDelta(double amount) {
+    switch (this) {
+      case CashTransactionType.initialCash:
+      case CashTransactionType.atmWithdrawal:
+      case CashTransactionType.currencyExchangeIn:
+      case CashTransactionType.manualAdjustment:
+        return amount;
+      case CashTransactionType.currencyExchangeOut:
+      case CashTransactionType.cashExpenseDeduction:
+        return -amount;
+    }
+  }
+}
+
 class CashTransaction {
   const CashTransaction({
     required this.id,

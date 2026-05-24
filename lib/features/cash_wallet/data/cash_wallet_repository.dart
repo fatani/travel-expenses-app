@@ -80,7 +80,7 @@ class CashWalletRepository {
       createdAt: createdAt,
     );
 
-    final signedAmount = _signedDelta(type, amount);
+    final signedAmount = type.signedDelta(amount);
 
     final db = await _appDatabase.database;
     await db.transaction((txn) async {
@@ -149,7 +149,7 @@ class CashWalletRepository {
         txn,
         tripId: replacementTransaction.tripId,
         currencyCode: replacementTransaction.currencyCode,
-        delta: _signedDelta(nextType, nextAmount),
+        delta: nextType.signedDelta(nextAmount),
         updatedAt: replacementTransaction.createdAt,
       );
     });
@@ -396,7 +396,7 @@ class CashWalletRepository {
       throw StateError('Transaction already reversed or not found.');
     }
 
-    final reversalDelta = -_signedDelta(transaction.type, transaction.amount);
+    final reversalDelta = -transaction.type.signedDelta(transaction.amount);
     await _applyBalanceDelta(
       txn,
       tripId: transaction.tripId,
@@ -486,20 +486,6 @@ class CashWalletRepository {
         payload,
         conflictAlgorithm: ConflictAlgorithm.abort,
       );
-    }
-  }
-
-  double _signedDelta(CashTransactionType type, double amount) {
-    switch (type) {
-      case CashTransactionType.initialCash:
-      case CashTransactionType.atmWithdrawal:
-      case CashTransactionType.currencyExchangeIn:
-        return amount;
-      case CashTransactionType.currencyExchangeOut:
-      case CashTransactionType.cashExpenseDeduction:
-        return -amount;
-      case CashTransactionType.manualAdjustment:
-        return amount;
     }
   }
 

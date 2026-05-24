@@ -30,6 +30,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonEnterValidNumber => 'أدخل رقماً صالحاً.';
 
   @override
+  String get cashWalletValidationInvalidAmount => 'أدخل مبلغ كاش صحيح.';
+
+  @override
+  String get cashWalletValidationInvalidCurrency => 'أدخل رمز عملة صحيح مكوّن من 3 أحرف.';
+
+  @override
+  String get cashWalletValidationNegativeAmount => 'لا يمكن أن يكون المبلغ سالبًا.';
+
+  @override
   String get commonUndo => 'تراجع';
 
   @override
@@ -284,19 +293,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletHealthNotEnoughData => 'لم نحسب الحالة بعد';
 
   @override
-  String get cashWalletHealthExcellent => 'ممتاز';
+  String get cashWalletHealthExcellent => 'في حالة ممتازة';
 
   @override
-  String get cashWalletHealthHealthy => 'جيد';
+  String get cashWalletHealthHealthy => 'يبدو جيدًا';
 
   @override
   String get cashWalletHealthMedium => 'متوسط';
 
   @override
-  String get cashWalletHealthLow => 'منخفض';
+  String get cashWalletHealthLow => 'يبدأ بالنفاد';
 
   @override
-  String get cashWalletHealthCritical => 'حرج';
+  String get cashWalletHealthCritical => 'على وشك النفاد';
 
   @override
   String get cashWalletLastAtmNotAvailable => 'آخر ATM: غير متاح';
@@ -305,7 +314,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletOnboardingTitle => 'كم كاش تحمل معك؟';
 
   @override
-  String get cashWalletOnboardingSkip => 'تخطي';
+  String get cashWalletOnboardingSkip => 'سأضيف الكاش لاحقًا';
 
   @override
   String get cashWalletOnboardingCardsOnly => 'سأستخدم البطاقة فقط';
@@ -325,10 +334,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletRemainingDaysNoData => 'سنحسب المدة المتوقعة بعد أول مصروف كاش';
 
   @override
-  String get cashWalletBalancesTitle => 'الأرصدة حسب العملة';
+  String get cashWalletBalancesTitle => 'حسب العملة';
 
   @override
-  String get cashWalletRecentTransactionsTitle => 'آخر حركات الكاش';
+  String get cashWalletRecentTransactionsTitle => 'النشاط';
 
   @override
   String get cashWalletNoBalances => 'لا توجد أرصدة كاش بعد.';
@@ -421,15 +430,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletCashCurrencyLabel => 'عملة الكاش';
 
   @override
-  String cashWalletHomeValueLabel(Object currencyCode) {
-    return 'القيمة التقريبية بـ $currencyCode';
-  }
+  String get cashWalletHomeValueLabel => 'القيمة التقريبية بعملتك الأساسية (اختياري)';
 
   @override
-  String get cashWalletHomeValueHelper => 'تقريبًا كم كلفك هذا الكاش؟';
+  String get cashWalletHomeValueHelper => 'اختياري — يساعد في تقدير المصروف بعملتك الأساسية.';
 
   @override
-  String get cashWalletHomeValueCaption => 'نستخدمها لتقدير قيمة صرفك أثناء الرحلة';
+  String get cashWalletHomeValueCaption => 'اختياري — يساعد في تقدير المصروف بعملتك الأساسية.';
+
+  @override
+  String get cashWalletBalanceUnknownUntilInitial => 'أضف كاشك الابتدائي لبدء التتبع.';
+
+  @override
+  String get cashWalletBalanceUnknownExpensesFirst => 'سُجّلت بعض المصاريف قبل إضافة الكاش الابتدائي — قد لا يعكس رصيدك ذلك بعد.';
+
+  @override
+  String get cashWalletSearchHint => 'بحث...';
 
   @override
   String get cashWalletTypeCashExpenseDeduction => 'خصم مصروف كاش';
@@ -449,7 +465,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get cashWalletDeleteTransactionMessage => 'سيتم عكس أثر هذه الحركة على الرصيد.';
+  String get cashWalletDeleteTransactionMessage => 'سيتم تحديث رصيد الكاش.';
 
   @override
   String cashWalletBalanceAfterTransaction(Object amount) {
@@ -470,13 +486,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashBalanceInsufficientWarning => 'قد يحتاج رصيد الكاش إلى تعديل';
 
   @override
-  String get cashBalanceNoRecordedWarning => 'لم يبدأ تتبع الكاش بعد';
+  String get cashBalanceNoRecordedWarning => 'لم تُضف كاش بعد';
 
   @override
-  String get cashBalanceAddCashAction => 'إضافة رصيد كاش';
+  String get cashBalanceAddCashAction => 'إضافة كاش';
 
   @override
-  String get cashTrackingNotStarted => 'لم يبدأ تتبع الكاش بعد';
+  String get cashTrackingNotStarted => 'لم تُضف كاش بعد';
 
   @override
   String get manualExchangeAddRate => 'إضافة تقدير للمصاريف';

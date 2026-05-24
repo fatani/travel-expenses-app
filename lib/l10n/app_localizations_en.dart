@@ -30,6 +30,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonEnterValidNumber => 'Enter a valid number.';
 
   @override
+  String get cashWalletValidationInvalidAmount => 'Enter a valid cash amount.';
+
+  @override
+  String get cashWalletValidationInvalidCurrency => 'Enter a valid 3-letter currency code.';
+
+  @override
+  String get cashWalletValidationNegativeAmount => 'Amount cannot be negative.';
+
+  @override
   String get commonUndo => 'Undo';
 
   @override
@@ -278,25 +287,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletTripDatesPending => 'Dates pending';
 
   @override
-  String get cashWalletHealthTitle => 'Cash health';
+  String get cashWalletHealthTitle => 'Cash status';
 
   @override
   String get cashWalletHealthNotEnoughData => 'We need cash spending data first';
 
   @override
-  String get cashWalletHealthExcellent => 'Excellent';
+  String get cashWalletHealthExcellent => 'In great shape';
 
   @override
-  String get cashWalletHealthHealthy => 'Healthy';
+  String get cashWalletHealthHealthy => 'Looking good';
 
   @override
   String get cashWalletHealthMedium => 'Medium';
 
   @override
-  String get cashWalletHealthLow => 'Low';
+  String get cashWalletHealthLow => 'Getting low';
 
   @override
-  String get cashWalletHealthCritical => 'Critical';
+  String get cashWalletHealthCritical => 'Running low';
 
   @override
   String get cashWalletLastAtmNotAvailable => 'Last ATM: N/A';
@@ -305,7 +314,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletOnboardingTitle => 'How much cash are you carrying?';
 
   @override
-  String get cashWalletOnboardingSkip => 'Skip';
+  String get cashWalletOnboardingSkip => 'I\'ll add cash later';
 
   @override
   String get cashWalletOnboardingCardsOnly => 'I\'ll use cards only';
@@ -325,10 +334,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletRemainingDaysNoData => 'We\'ll estimate remaining days after your first cash expense';
 
   @override
-  String get cashWalletBalancesTitle => 'Balances by currency';
+  String get cashWalletBalancesTitle => 'By currency';
 
   @override
-  String get cashWalletRecentTransactionsTitle => 'Recent cash transactions';
+  String get cashWalletRecentTransactionsTitle => 'Activity';
 
   @override
   String get cashWalletNoBalances => 'No cash balances yet.';
@@ -421,15 +430,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletCashCurrencyLabel => 'Cash currency';
 
   @override
-  String cashWalletHomeValueLabel(Object currencyCode) {
-    return 'Approximate value in $currencyCode';
-  }
+  String get cashWalletHomeValueLabel => 'Approximate home value (optional)';
 
   @override
-  String get cashWalletHomeValueHelper => 'About how much did this cash cost?';
+  String get cashWalletHomeValueHelper => 'Optional — helps estimate your home currency spending.';
 
   @override
-  String get cashWalletHomeValueCaption => 'Used to estimate your travel spending value';
+  String get cashWalletHomeValueCaption => 'Optional — helps estimate your home currency spending.';
+
+  @override
+  String get cashWalletBalanceUnknownUntilInitial => 'Add your starting cash to begin tracking.';
+
+  @override
+  String get cashWalletBalanceUnknownExpensesFirst => 'Some expenses were recorded before adding starting cash — your balance may not reflect them yet.';
+
+  @override
+  String get cashWalletSearchHint => 'Search...';
 
   @override
   String get cashWalletTypeCashExpenseDeduction => 'Cash expense deduction';
@@ -449,7 +465,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get cashWalletDeleteTransactionMessage => 'This will reverse its effect on the balance.';
+  String get cashWalletDeleteTransactionMessage => 'Your cash balance will be updated.';
 
   @override
   String cashWalletBalanceAfterTransaction(Object amount) {
@@ -470,13 +486,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashBalanceInsufficientWarning => 'Cash balance may need adjustment';
 
   @override
-  String get cashBalanceNoRecordedWarning => 'Cash tracking hasn’t started';
+  String get cashBalanceNoRecordedWarning => 'No cash added yet';
 
   @override
-  String get cashBalanceAddCashAction => 'Add cash balance';
+  String get cashBalanceAddCashAction => 'Add Cash';
 
   @override
-  String get cashTrackingNotStarted => 'Cash tracking hasn’t started';
+  String get cashTrackingNotStarted => 'No cash added yet';
 
   @override
   String get manualExchangeAddRate => 'Add spending estimate';
