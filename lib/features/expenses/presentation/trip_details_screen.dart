@@ -2652,6 +2652,7 @@ class _CalmAddExpenseFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.only(
         right: AppSpacing.xs,
@@ -2678,6 +2679,7 @@ class _CalmAddExpenseFab extends StatelessWidget {
           ),
           child: FloatingActionButton(
             onPressed: onPressed,
+            tooltip: l10n.tripDetailsAddExpense,
             elevation: 0,
             highlightElevation: 0,
             backgroundColor: _fabColor,

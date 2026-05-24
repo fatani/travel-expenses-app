@@ -69,6 +69,7 @@ void main() {
       ),
       findsOneWidget,
     );
+    expect(find.byTooltip('Add Expense'), findsOneWidget);
     expect(
       find.descendant(
         of: find.byType(FloatingActionButton),
@@ -76,6 +77,44 @@ void main() {
       ),
       findsNothing,
     );
+  });
+
+  testWidgets('Add Expense FAB opens fresh quick add, not repeat mode', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        repository: _FakeExpenseRepository(
+          initialExpenses: [sampleExpense],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(QuickAddExpenseSheet), findsOneWidget);
+    expect(find.text('Ready to add a similar expense'), findsNothing);
+  });
+
+  testWidgets('Add Expense FAB is not Repeat last expense', (tester) async {
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        repository: _FakeExpenseRepository(
+          initialExpenses: [sampleExpense],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Add Expense'), findsOneWidget);
+    expect(find.byTooltip('Repeat last expense'), findsNothing);
+    expect(find.text('Repeat last expense'), findsOneWidget);
   });
 
   testWidgets('primary button stays Add Expense when expenses exist', (tester) async {
