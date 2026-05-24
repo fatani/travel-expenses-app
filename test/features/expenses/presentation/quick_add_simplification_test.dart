@@ -26,6 +26,27 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  testWidgets('quick add displays trip base currency near amount field', (
+    tester,
+  ) async {
+    final thbTrip = Trip.create(
+      id: 'trip-thb',
+      name: 'Thailand',
+      destination: 'Bangkok',
+      baseCurrency: 'THB',
+    );
+
+    await tester.pumpWidget(
+      _buildQuickAddApp(
+        trip: thbTrip,
+        expenses: const [],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Amount in THB'), findsOneWidget);
+  });
+
   testWidgets(
     'quick add shows core fields without first-payment onboarding',
     (tester) async {

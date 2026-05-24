@@ -238,6 +238,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     final amountHint = _lastAmountSuggestion != null
       ? _lastAmountSuggestion!.toStringAsFixed(2)
       : '0.00';
+    final tripCurrency = widget.trip.baseCurrency.trim().toUpperCase();
     final paymentOptions = _buildPaymentOptions(cards);
 
     final amountError = _showValidationError ? _validateAmount(l10n) : null;
@@ -310,6 +311,12 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                   fontSize: 30,
                   fontWeight: FontWeight.w700,
                   color: Colors.blueGrey.shade200,
+                ),
+                helperText: l10n.quickAddAmountInCurrency(tripCurrency),
+                helperStyle: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF64748B),
                 ),
                 errorText: amountError,
                 border: InputBorder.none,

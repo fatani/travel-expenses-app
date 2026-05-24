@@ -225,6 +225,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsLoadError => 'تعذر تحميل المصاريف.';
 
   @override
+  String get tripDetailsExpensesLoadError => 'حدث خطأ أثناء تحميل المصاريف.';
+
+  @override
   String get tripDetailsAddExpense => 'إضافة مصروف';
 
   @override
@@ -356,6 +359,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get quickAddAddDetails => 'إضافة تفاصيل';
+
+  @override
+  String quickAddAmountInCurrency(Object currency) {
+    return 'المبلغ بعملة $currency';
+  }
 
   @override
   String cashWalletTripStatusDaysLeft(int days) {
@@ -1061,6 +1069,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String tripDetailsCardChargesInCurrency(Object currency) {
     return 'مشتريات البطاقة بعملة $currency';
   }
+
+  @override
+  String get tripDetailsCardChargesMultipleCurrencies => 'مشتريات البطاقة بعدة عملات';
+
+  @override
+  String get tripDetailsMixedValue => 'مختلطة';
 
   @override
   String get tripDetailsTopCategoryMultiCurrency => 'عملات متعددة';

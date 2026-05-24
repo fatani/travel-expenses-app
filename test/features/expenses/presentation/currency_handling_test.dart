@@ -179,7 +179,70 @@ void main() {
   );
 
   testWidgets(
-    'domestic SAR trip totals only SAR transaction amounts',
+    'THB base currency trip totals only THB transaction amounts',
+    (tester) async {
+      final thaiTrip = Trip.create(
+        id: 'trip-thb-total',
+        name: 'Bangkok',
+        destination: 'Bangkok',
+        baseCurrency: 'THB',
+      );
+
+      final repository = _FakeExpenseRepository(
+        initialExpenses: [
+          Expense.create(
+            id: 'thb-1',
+            tripId: thaiTrip.id,
+            title: 'Street food',
+            amount: 500,
+            currencyCode: 'THB',
+            transactionAmount: 500,
+            transactionCurrency: 'THB',
+            spentAt: DateTime(2026, 4, 12),
+            paymentMethod: 'Cash',
+            category: 'Food',
+          ),
+          Expense.create(
+            id: 'usd-1',
+            tripId: thaiTrip.id,
+            title: 'Online subscription',
+            amount: 10,
+            currencyCode: 'USD',
+            transactionAmount: 10,
+            transactionCurrency: 'USD',
+            spentAt: DateTime(2026, 4, 12),
+            paymentMethod: 'Credit Card',
+            category: 'Other',
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        _buildApp(
+          child: TripDetailsScreen(trip: thaiTrip),
+          overrides: [
+            expenseRepositoryProvider.overrideWithValue(repository),
+          ],
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('500 THB'), findsOneWidget);
+      expect(find.textContaining('510 THB'), findsNothing);
+      expect(
+        find.text(
+          'Some expenses in other currencies are not included in the totals above',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Total in THB only'), findsOneWidget);
+      expect(find.text('Mixed currencies'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'SAR base currency trip totals only SAR transaction amounts',
     (tester) async {
       final domesticTrip = Trip.create(
         id: 'trip-sar',

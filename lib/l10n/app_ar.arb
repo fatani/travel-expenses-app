@@ -78,6 +78,10 @@
   "tripFormSaveError": "فشل حفظ الرحلة: {error}",
   "@tripFormSaveError": {"placeholders": {"error": {}}},
   "tripDetailsLoadError": "تعذر تحميل المصاريف.",
+  "tripDetailsExpensesLoadError": "حدث خطأ أثناء تحميل المصاريف.",
+  "@tripDetailsExpensesLoadError": {
+    "description": "رسالة خطأ ودية تظهر عند فشل تحميل المصاريف في شاشة تفاصيل الرحلة."
+  },
   "tripDetailsAddExpense": "إضافة مصروف",
   "tripDetailsEditTripTooltip": "تعديل الرحلة",
   "tripDetailsTotalExpenses": "إجمالي المصاريف",
@@ -123,6 +127,8 @@
   "cashWalletQuickAtmShort": "ATM",
   "quickAddQuickSave": "حفظ سريع",
   "quickAddAddDetails": "إضافة تفاصيل",
+  "quickAddAmountInCurrency": "المبلغ بعملة {currency}",
+  "@quickAddAmountInCurrency": {"placeholders": {"currency": {}}},
   "cashWalletTripStatusDaysLeft": "متبقي {days} أيام",
   "@cashWalletTripStatusDaysLeft": {"placeholders": {"days": {"type": "int"}}},
   "cashWalletTripStatusStartsIn": "تبدأ بعد {days} أيام",
@@ -388,6 +394,14 @@
   "@tripDetailsTotalInCurrencyOnly": {"placeholders": {"currency": {}}},
   "tripDetailsCardChargesInCurrency": "مشتريات البطاقة بعملة {currency}",
   "@tripDetailsCardChargesInCurrency": {"placeholders": {"currency": {}}},
+  "tripDetailsCardChargesMultipleCurrencies": "مشتريات البطاقة بعدة عملات",
+  "@tripDetailsCardChargesMultipleCurrencies": {
+    "description": "تسمية تظهر عندما تكون مشتريات البطاقة مسجلة بأكثر من عملة خصم."
+  },
+  "tripDetailsMixedValue": "مختلطة",
+  "@tripDetailsMixedValue": {
+    "description": "قيمة قصيرة تظهر عندما لا يمكن تمثيل المبلغ بعملة واحدة."
+  },
   "tripDetailsTopCategoryMultiCurrency": "عملات متعددة",
   "tripDetailsReportTooltip": "تقرير الرحلة",
   "tripReportsSummarySubtitle": "ملخص التقرير",

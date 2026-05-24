@@ -229,6 +229,54 @@ void main() {
     expect(find.text('Mixed currencies'), findsNothing);
     expect(find.text('No category yet'), findsNothing);
   });
+
+  testWidgets('trip details shows Arabic labels and stat card RTL alignment',
+      (tester) async {
+    final repository = _FakeExpenseRepository(
+      initialExpenses: [
+        Expense.create(
+          id: 'e1',
+          tripId: trip.id,
+          title: 'Lunch',
+          amount: 50,
+          currencyCode: 'CNY',
+          transactionAmount: 50,
+          transactionCurrency: 'CNY',
+          spentAt: DateTime(2026, 4, 12),
+          paymentMethod: 'Cash',
+          category: 'Food',
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      _buildApp(
+        child: TripDetailsScreen(trip: trip),
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(repository),
+        ],
+        locale: const Locale('ar'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('إجمالي المصاريف'), findsOneWidget);
+    expect(find.text('المصاريف المسجلة'), findsOneWidget);
+    expect(find.text('أعلى فئة إنفاق'), findsOneWidget);
+    expect(find.text('لم يبدأ تتبع الكاش بعد'), findsOneWidget);
+    expect(find.text('كرر آخر مصروف'), findsOneWidget);
+
+    final totalLabel = find.text('إجمالي المصاريف');
+    final statColumn = find.ancestor(
+      of: totalLabel,
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is Column &&
+            widget.crossAxisAlignment == CrossAxisAlignment.end,
+      ),
+    );
+    expect(statColumn, findsWidgets);
+  });
 }
 
 Widget _buildApp({

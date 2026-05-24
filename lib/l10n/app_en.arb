@@ -78,6 +78,10 @@
   "tripFormSaveError": "Failed to save trip: {error}",
   "@tripFormSaveError": {"placeholders": {"error": {}}},
   "tripDetailsLoadError": "Could not load expenses.",
+  "tripDetailsExpensesLoadError": "Something went wrong while loading expenses.",
+  "@tripDetailsExpensesLoadError": {
+    "description": "Friendly error message shown when expenses fail to load in the trip details screen."
+  },
   "tripDetailsAddExpense": "Add Expense",
   "tripDetailsEditTripTooltip": "Edit trip",
   "tripDetailsTotalExpenses": "Total expenses",
@@ -123,6 +127,8 @@
   "cashWalletQuickAtmShort": "ATM",
   "quickAddQuickSave": "Quick Save",
   "quickAddAddDetails": "Add Details",
+  "quickAddAmountInCurrency": "Amount in {currency}",
+  "@quickAddAmountInCurrency": {"placeholders": {"currency": {}}},
   "cashWalletTripStatusDaysLeft": "{days} days left",
   "@cashWalletTripStatusDaysLeft": {"placeholders": {"days": {"type": "int"}}},
   "cashWalletTripStatusStartsIn": "Starts in {days} days",
@@ -388,6 +394,14 @@
   "@tripDetailsTotalInCurrencyOnly": {"placeholders": {"currency": {}}},
   "tripDetailsCardChargesInCurrency": "Card charges in {currency}",
   "@tripDetailsCardChargesInCurrency": {"placeholders": {"currency": {}}},
+  "tripDetailsCardChargesMultipleCurrencies": "Card charges in multiple currencies",
+  "@tripDetailsCardChargesMultipleCurrencies": {
+    "description": "Label shown when card charges are recorded in more than one charged currency."
+  },
+  "tripDetailsMixedValue": "Mixed",
+  "@tripDetailsMixedValue": {
+    "description": "Short value shown when an amount cannot be represented as one currency."
+  },
   "tripDetailsTopCategoryMultiCurrency": "Mixed currencies",
   "tripDetailsReportTooltip": "Trip report",
   "tripReportsSummarySubtitle": "Report Summary",

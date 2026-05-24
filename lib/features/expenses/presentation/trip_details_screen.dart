@@ -157,7 +157,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text('$error', textAlign: TextAlign.center),
+                Text(
+                  l10n.tripDetailsExpensesLoadError,
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 FilledButton(
                   onPressed: () => ref
@@ -861,9 +864,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       ? l10n.tripDetailsNoExpensesInBaseCurrency
       : _formatCurrency(total, widget.trip.baseCurrency);
 
-    // Partial charged total: only one currency is shown to avoid mixed-currency sums.
-    String? chargedSummaryCurrency;
-    var chargedSummaryTotal = 0.0;
+    final chargedTotalsByCurrency = <String, double>{};
     for (final expense in widget.expenses.where((e) => e.isInternational)) {
       final amount = expense.totalChargedAmount ?? expense.billedAmount;
       final currency =
@@ -873,15 +874,23 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       if (amount == null || amount <= 0 || currency == null || currency.isEmpty) {
         continue;
       }
-      chargedSummaryCurrency ??= currency;
-      if (currency == chargedSummaryCurrency) {
-        chargedSummaryTotal += amount;
-      }
+      chargedTotalsByCurrency[currency] =
+          (chargedTotalsByCurrency[currency] ?? 0) + amount;
     }
-    final hasChargedSummary =
-        chargedSummaryCurrency != null && chargedSummaryTotal > 0;
-    final chargedSummaryLabelCurrency =
-      hasChargedSummary ? chargedSummaryCurrency : null;
+    final String? chargedSummaryLabel;
+    final String? chargedSummaryValue;
+    if (chargedTotalsByCurrency.isEmpty) {
+      chargedSummaryLabel = null;
+      chargedSummaryValue = null;
+    } else if (chargedTotalsByCurrency.length == 1) {
+      final currency = chargedTotalsByCurrency.keys.first;
+      chargedSummaryLabel = l10n.tripDetailsCardChargesInCurrency(currency);
+      chargedSummaryValue =
+          _formatCurrency(chargedTotalsByCurrency[currency]!, currency);
+    } else {
+      chargedSummaryLabel = l10n.tripDetailsCardChargesMultipleCurrencies;
+      chargedSummaryValue = l10n.tripDetailsMixedValue;
+    }
     final listBottomPadding = MediaQuery.of(context).padding.bottom + 128;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final datesMissing = widget.trip.startDate == null || widget.trip.endDate == null;
@@ -918,10 +927,10 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
         children: [
           _TripSummaryCard(trip: widget.trip),
           const SizedBox(height: AppSpacing.lg - 2),
-          if (chargedSummaryLabelCurrency != null) ...[
+          if (chargedSummaryLabel != null && chargedSummaryValue != null) ...[
             _StatCard(
-              label: l10n.tripDetailsCardChargesInCurrency(chargedSummaryLabelCurrency),
-              value: _formatCurrency(chargedSummaryTotal, chargedSummaryLabelCurrency),
+              label: chargedSummaryLabel,
+              value: chargedSummaryValue,
               labelTextDirection: isArabic ? ui.TextDirection.rtl : ui.TextDirection.ltr,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -1114,18 +1123,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
 
   List<Expense> _totalableExpenses(List<Expense> expenses) {
     final baseCurrency = widget.trip.baseCurrency.trim().toUpperCase();
-    final isDomesticTrip = baseCurrency == 'SAR';
 
-    if (isDomesticTrip) {
-      return expenses
-          .where(
-            (expense) =>
-                expense.transactionCurrency.trim().toUpperCase() == 'SAR',
-          )
-          .toList();
-    }
-
-    // For international trips, avoid mixing currencies into one aggregate.
     return expenses
         .where(
           (expense) =>
@@ -1670,6 +1668,7 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
@@ -1682,7 +1681,8 @@ class _StatCard extends StatelessWidget {
           vertical: AppSpacing.md,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
           children: [
             Text(
               label,
@@ -1822,7 +1822,8 @@ class _ExpenseCard extends StatelessWidget {
           vertical: AppSpacing.md - 2,
         ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment:
+                isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
             children: [
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -2177,7 +2178,7 @@ class _NoExpensesTripSummaryCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: null,
+                  onTap: datesMissing ? onFixDates : null,
                   child: _NoExpensesInfoLine(
                     isArabic: isArabic,
                     icon: Icons.calendar_month_outlined,
@@ -2907,6 +2908,7 @@ class _OutlineActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     return OutlinedButton(
       onPressed: onTap,
       style: OutlinedButton.styleFrom(
@@ -2923,7 +2925,8 @@ class _OutlineActionButton extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(

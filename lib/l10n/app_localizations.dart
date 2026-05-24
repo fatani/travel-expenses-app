@@ -503,6 +503,12 @@ abstract class AppLocalizations {
   /// **'Could not load expenses.'**
   String get tripDetailsLoadError;
 
+  /// Friendly error message shown when expenses fail to load in the trip details screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while loading expenses.'**
+  String get tripDetailsExpensesLoadError;
+
   /// No description provided for @tripDetailsAddExpense.
   ///
   /// In en, this message translates to:
@@ -760,6 +766,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add Details'**
   String get quickAddAddDetails;
+
+  /// No description provided for @quickAddAmountInCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount in {currency}'**
+  String quickAddAmountInCurrency(Object currency);
 
   /// No description provided for @cashWalletTripStatusDaysLeft.
   ///
@@ -2086,6 +2098,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Card charges in {currency}'**
   String tripDetailsCardChargesInCurrency(Object currency);
+
+  /// Label shown when card charges are recorded in more than one charged currency.
+  ///
+  /// In en, this message translates to:
+  /// **'Card charges in multiple currencies'**
+  String get tripDetailsCardChargesMultipleCurrencies;
+
+  /// Short value shown when an amount cannot be represented as one currency.
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed'**
+  String get tripDetailsMixedValue;
 
   /// No description provided for @tripDetailsTopCategoryMultiCurrency.
   ///

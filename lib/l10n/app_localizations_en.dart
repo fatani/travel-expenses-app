@@ -225,6 +225,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsLoadError => 'Could not load expenses.';
 
   @override
+  String get tripDetailsExpensesLoadError => 'Something went wrong while loading expenses.';
+
+  @override
   String get tripDetailsAddExpense => 'Add Expense';
 
   @override
@@ -356,6 +359,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get quickAddAddDetails => 'Add Details';
+
+  @override
+  String quickAddAmountInCurrency(Object currency) {
+    return 'Amount in $currency';
+  }
 
   @override
   String cashWalletTripStatusDaysLeft(int days) {
@@ -1061,6 +1069,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripDetailsCardChargesInCurrency(Object currency) {
     return 'Card charges in $currency';
   }
+
+  @override
+  String get tripDetailsCardChargesMultipleCurrencies => 'Card charges in multiple currencies';
+
+  @override
+  String get tripDetailsMixedValue => 'Mixed';
 
   @override
   String get tripDetailsTopCategoryMultiCurrency => 'Mixed currencies';
