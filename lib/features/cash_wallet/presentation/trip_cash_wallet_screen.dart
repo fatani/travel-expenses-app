@@ -238,7 +238,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                             _groupTitle(l10n, group),
                             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                                   color: const Color(0xFF6D28D9),
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                 ),
                           ),
                         ),
@@ -1112,7 +1112,7 @@ class _SectionHeader extends StatelessWidget {
     return Text(
       title,
       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: const Color(0xFF1E1B4B),
           ),
     );
@@ -1228,7 +1228,7 @@ class _CashHeroCard extends StatelessWidget {
               Text(
                 l10n.cashWalletHeroTitle,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: const Color(0xFF4C1D95),
                 ),
               ),
@@ -1300,7 +1300,7 @@ class _ResponsiveHeroBalanceText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final baseStyle = Theme.of(context).textTheme.displaySmall?.copyWith(
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           color: const Color(0xFF0F172A),
           height: 0.98,
           letterSpacing: -0.8,
@@ -1423,7 +1423,7 @@ class _HeroPill extends StatelessWidget {
           Text(
             value,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   color: valueColor ?? const Color(0xFF0F172A),
                 ),
           ),
@@ -1497,7 +1497,7 @@ class _TripContextCard extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               color: const Color(0xFF0F172A),
                             ),
                       ),
@@ -1610,7 +1610,7 @@ class _BalanceTile extends StatelessWidget {
         title: Text(
           balance.currencyCode.trim().toUpperCase(),
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
         ),
         trailing: Container(
@@ -1624,7 +1624,7 @@ class _BalanceTile extends StatelessWidget {
             child: Text(
               '${formatter.format(balance.balanceAmount)} ${balance.currencyCode}',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     color: const Color(0xFF4C1D95),
                   ),
             ),
@@ -1670,7 +1670,7 @@ class _TransactionTile extends StatelessWidget {
         title: Text(
           _typeLabel(l10n, transaction.type),
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: const Color(0xFF1F2937),
               ),
         ),
@@ -1743,7 +1743,7 @@ class _TransactionTile extends StatelessWidget {
             child: Text(
               '$sign${formatter.format(transaction.amount)} ${transaction.currencyCode.trim().toUpperCase()}',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: -0.2,
                     color: amountColor,
                   ),
@@ -2077,7 +2077,7 @@ class _SheetHeader extends StatelessWidget {
               child: Text(
                 title,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: const Color(0xFF1E1B4B),
                     ),
               ),

@@ -83,7 +83,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Total expenses:'), findsOneWidget);
+    expect(find.textContaining('Total in CNY only'), findsOneWidget);
     expect(find.textContaining('10 CNY'), findsOneWidget); // subtle strip total
     expect(find.text('Top spending category'), findsNothing);
     expect(find.text('Expenses logged'), findsNothing);
@@ -130,7 +130,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Total expenses:'), findsNothing);
+    expect(find.textContaining('Total in'), findsNothing);
     expect(find.text('Mixed currencies'), findsNothing);
     expect(
       find.text(
@@ -170,7 +170,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('إجمالي المصاريف'), findsOneWidget);
+    expect(find.textContaining('الإجمالي بعملة'), findsOneWidget);
     expect(find.text('أعلى فئة إنفاق'), findsNothing);
     expect(find.text('إضافة مصروف'), findsNothing);
     expect(find.text('كرر آخر مصروف'), findsNothing);

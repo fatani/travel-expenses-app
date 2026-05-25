@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:travel_expenses/l10n/app_localizations.dart';
 
 class TripsEmptyStateScreen extends StatelessWidget {
   final bool isArabic;
@@ -14,7 +15,7 @@ class TripsEmptyStateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final data = isArabic ? _arabicData : _englishData;
+    final l10n = AppLocalizations.of(context)!;
 
     return Directionality(
       textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
@@ -27,12 +28,13 @@ class TripsEmptyStateScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  data.title,
+                  l10n.tripsEmptyTitle,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF0F172A),
+                    color: const Color(0xFF0F172A),
+                    height: isArabic ? 1.4 : 1.25,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -40,7 +42,7 @@ class TripsEmptyStateScreen extends StatelessWidget {
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: onStartTrip,
-                    child: Text(data.cta),
+                    child: Text(l10n.tripsAddButton),
                   ),
                 ),
               ],
@@ -51,23 +53,3 @@ class TripsEmptyStateScreen extends StatelessWidget {
     );
   }
 }
-
-class _Data {
-  final String title;
-  final String cta;
-
-  const _Data({
-    required this.title,
-    required this.cta,
-  });
-}
-
-const _arabicData = _Data(
-  title: 'لا توجد رحلات',
-  cta: 'إضافة رحلة',
-);
-
-const _englishData = _Data(
-  title: 'No trips yet',
-  cta: 'Add trip',
-);

@@ -5,11 +5,13 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../../core/design_system/app_surfaces.dart';
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../trips/domain/trip.dart';
 import '../domain/expense.dart';
 import '../domain/expense_payment.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/rtl_typography.dart';
 import 'expense_controller.dart';
 import 'expense_option_labels.dart';
 import '../../settings/presentation/cards_provider.dart';
@@ -441,9 +443,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF7C3AED).withValues(alpha: 0.24),
-                                blurRadius: 14,
-                                offset: const Offset(0, 6),
+                                color: const Color(0xFF7C3AED).withValues(alpha: 0.14),
+                                blurRadius: 10,
+                                offset: const Offset(0, 3),
                               ),
                             ],
                           ),
@@ -454,7 +456,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                                   : l10n.expenseFormSaveCreate,
                               style: const TextStyle(
                                 color: Colors.white,
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 fontSize: 16,
                               ),
                             ),
@@ -727,12 +729,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.expenseFormSaveError('$error'),
-          ),
-        ),
+      CalmSnackBar.showMessage(
+        context,
+        message: AppLocalizations.of(context)!.expenseFormSaveError('$error'),
       );
     }
   }
@@ -775,8 +774,12 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     final localeTag = useLocale
         ? Localizations.localeOf(context).toLanguageTag()
         : null;
-    _dateController.text = DateFormat('dd MMM yyyy', localeTag).format(_spentAt!);
-    _timeController.text = DateFormat('HH:mm', localeTag).format(_spentAt!);
+    final localSpentAt = _spentAt!.toLocal();
+    _dateController.text = DateFormat('d MMM yyyy', localeTag).format(localSpentAt);
+    final isArabic = useLocale &&
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+    _timeController.text =
+        DateFormat(isArabic ? 'h:mm a' : 'HH:mm', localeTag).format(localSpentAt);
   }
 
   String _requiredLabel(String label) {
@@ -858,10 +861,14 @@ class _SectionLabel extends StatelessWidget {
       child: Text(
         title,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: const Color(0xFF475569),
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.15,
-          fontSize: 14,
+          color: const Color(0xFF64748B),
+          fontWeight: RtlTypography.sectionWeight(
+            Localizations.localeOf(context).languageCode.toLowerCase() == 'ar',
+          ),
+          fontSize: 13,
+          height: RtlTypography.bodyLineHeight(
+            Localizations.localeOf(context).languageCode.toLowerCase() == 'ar',
+          ),
         ),
       ),
     );

@@ -5,13 +5,16 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' hide TextDirection;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 import '../../../core/design_system/app_confirmation_dialog.dart';
 import '../../../core/design_system/calm_snackbar.dart';
+import '../../../core/formatting/bidi_format.dart';
+import '../../../core/formatting/expense_date_format.dart';
+import '../../../core/formatting/trip_date_phrase.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/rtl_typography.dart';
 import '../../export/presentation/export_menu.dart';
 import '../../cash_wallet/presentation/trip_cash_wallet_screen.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
@@ -29,22 +32,6 @@ import 'quick_add_payment.dart';
 import 'quick_add_recent_merchants.dart';
 
 part 'quick_add_expense_sheet.dart';
-
-String _formatAmountCurrency(double amount, String currencyCode) {
-  final normalizedCurrency = currencyCode.trim().toUpperCase();
-  final formatter = NumberFormat('#,##0.##', 'en');
-  return '${formatter.format(amount)} $normalizedCurrency';
-}
-
-String _formatAmountNumber(double amount) {
-  final formatter = NumberFormat('#,##0.##', 'en');
-  return formatter.format(amount);
-}
-
-String _formatAmountCurrencyLtr(double amount, String currencyCode) {
-  // LTR isolate keeps number+currency order stable in RTL locales.
-  return '\u2066${_formatAmountCurrency(amount, currencyCode)}\u2069';
-}
 
 class TripDetailsScreen extends ConsumerStatefulWidget {
   const TripDetailsScreen({super.key, required this.trip});
@@ -680,11 +667,11 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       return null;
     }
 
-    return '${l10n.tripDetailsTotalExpenses}: ${_formatCurrency(total, baseCurrency)}';
+    return '${l10n.tripDetailsTotalInCurrencyOnly(baseCurrency)}: ${_formatCurrency(total, baseCurrency)}';
   }
 
   String _formatCurrency(double amount, String currencyCode) {
-    return _formatAmountCurrencyLtr(amount, currencyCode);
+    return BidiAmountFormat.ltrIsolate(amount, currencyCode);
   }
 
   List<Expense> _totalableExpenses(List<Expense> expenses) {
@@ -978,8 +965,8 @@ class _TripContextStrip extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  height: 1.15,
+                                  fontWeight: RtlTypography.titleWeight(isArabic),
+                                  height: RtlTypography.titleLineHeight(isArabic),
                                 ),
                           ),
                         ),
@@ -987,31 +974,42 @@ class _TripContextStrip extends StatelessWidget {
                         _TripTimelineStatusChip(status: status),
                       ],
                     ),
-                    Text(
-                      datesMissing
-                          ? l10n.tripsDatesNeedAttention
-                          : _formatDateRange(context, trip),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      textDirection: ui.TextDirection.ltr,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: datesMissing
-                                ? scheme.tertiary
-                                : scheme.onSurfaceVariant,
-                            fontSize: 12,
-                            height: 1.15,
-                          ),
-                    ),
+                    if (datesMissing)
+                      Text(
+                        l10n.tripsDatesNeedAttention,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.tertiary,
+                              fontSize: 12,
+                              height: RtlTypography.bodyLineHeight(isArabic),
+                            ),
+                      )
+                    else
+                      LtrText(
+                        data: TripDatePhrase.forContextStrip(
+                          trip: trip,
+                          localeName: Localizations.localeOf(context).toLanguageTag(),
+                          l10n: l10n,
+                          isArabic: isArabic,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                              fontSize: 12,
+                              height: RtlTypography.bodyLineHeight(isArabic),
+                            ),
+                      ),
                     if (subtleTotalLine != null)
                       Text(
                         subtleTotalLine!,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        textDirection: ui.TextDirection.ltr,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
                               fontSize: 11,
-                              height: 1.15,
+                              height: RtlTypography.bodyLineHeight(isArabic),
                             ),
                       ),
                   ],
@@ -1024,10 +1022,6 @@ class _TripContextStrip extends StatelessWidget {
     );
   }
 
-  String _formatDateRange(BuildContext context, Trip trip) {
-    final formatter = DateFormat('dd MMM yyyy', 'en');
-    return '${formatter.format(trip.startDate!)} - ${formatter.format(trip.endDate!)}';
-  }
 }
 
 class _TripTimelineStatusChip extends StatelessWidget {
@@ -1075,8 +1069,13 @@ class _TripTimelineStatusChip extends StatelessWidget {
         status.label,
         style: TextStyle(
           color: status.foreground,
-          fontWeight: FontWeight.w600,
+          fontWeight: RtlTypography.chipWeight(
+            Localizations.localeOf(context).languageCode == 'ar',
+          ),
           fontSize: 11,
+          height: RtlTypography.chipLineHeight(
+            Localizations.localeOf(context).languageCode == 'ar',
+          ),
         ),
       ),
     );
@@ -1175,19 +1174,17 @@ class _ExpenseCard extends StatelessWidget {
 
     final localeTag = Localizations.localeOf(context).toLanguageTag();
     final isArabic = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-    final hasTime = expense.spentAt.hour != 0 || expense.spentAt.minute != 0;
-    final dateText = DateFormat(
-      isArabic ? 'd MMM yyyy' : 'dd MMM yyyy',
+    final dateText = ExpenseDateFormat.cardDate(expense.spentAt, localeTag);
+    final timeText = ExpenseDateFormat.cardTime(
+      expense.spentAt,
       localeTag,
-    ).format(expense.spentAt);
-    final timeText = hasTime
-        ? DateFormat(isArabic ? 'h:mm a' : 'HH:mm', localeTag).format(expense.spentAt)
-        : null;
+      isArabic: isArabic,
+    );
 
     final secondaryStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           color: scheme.onSurfaceVariant,
           fontSize: 12,
-          height: 1.25,
+          height: RtlTypography.bodyLineHeight(isArabic),
         );
     final subtleStyle = secondaryStyle?.copyWith(
       color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
@@ -1232,9 +1229,9 @@ class _ExpenseCard extends StatelessWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w700,
+                                    fontWeight: RtlTypography.titleWeight(isArabic),
                                     color: const Color(0xFF0F172A),
-                                    height: 1.2,
+                                    height: RtlTypography.titleLineHeight(isArabic),
                                   ),
                             ),
                           ),
@@ -1268,15 +1265,13 @@ class _ExpenseCard extends StatelessWidget {
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              Text(
-                                dateText,
-                                textDirection: ui.TextDirection.ltr,
+                              LtrText(
+                                data: dateText,
                                 style: secondaryStyle,
                               ),
-                              if (timeText != null)
-                                Text(
-                                  timeText,
-                                  textDirection: ui.TextDirection.ltr,
+                              if (timeText.isNotEmpty)
+                                LtrText(
+                                  data: timeText,
                                   style: timeStyle,
                                 ),
                             ],
@@ -1287,9 +1282,11 @@ class _ExpenseCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Align(
                           alignment: AlignmentDirectional.centerEnd,
-                          child: Text(
-                            '≈ ${_formatAmountCurrencyLtr(displayedConvertedHomeAmount, normalizedHomeCurrency)}',
-                            textDirection: ui.TextDirection.ltr,
+                          child: LtrText(
+                            data: BidiAmountFormat.formatApproximate(
+                              displayedConvertedHomeAmount,
+                              normalizedHomeCurrency,
+                            ),
                             style: subtleStyle,
                           ),
                         ),
@@ -1312,7 +1309,7 @@ class _ExpenseCard extends StatelessWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(top: 2, right: 2),
+            padding: const EdgeInsetsDirectional.only(top: 2, end: 2),
             child: PopupMenuButton<_ExpenseCardAction>(
               padding: EdgeInsets.zero,
               icon: Icon(
@@ -1379,23 +1376,26 @@ class _PrimaryAmountDisplay extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                _formatAmountNumber(amount),
+                BidiAmountFormat.formatNumber(amount),
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w800,
-                      color: const Color(0xFF020617),
-                      letterSpacing: -0.2,
-                      height: 1.1,
+                      fontSize: 18,
+                      fontWeight: RtlTypography.amountWeight(
+                        Localizations.localeOf(context).languageCode == 'ar',
+                      ),
+                      color: const Color(0xFF0F172A),
+                      letterSpacing: -0.1,
+                      height: RtlTypography.amountLineHeight(
+                        Localizations.localeOf(context).languageCode == 'ar',
+                      ),
                     ),
               ),
               const SizedBox(width: 4),
               Text(
                 currency.trim().toUpperCase(),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: const Color(0xFF0F172A),
-                      letterSpacing: 0.1,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                      color: const Color(0xFF334155),
                     ),
               ),
             ],
@@ -1545,16 +1545,16 @@ class _CalmAddExpenseFab extends StatelessWidget {
 
   static final List<BoxShadow> _premiumShadow = [
     BoxShadow(
-      color: _fabColor.withValues(alpha: 0.20),
-      blurRadius: 22,
+      color: _fabColor.withValues(alpha: 0.12),
+      blurRadius: 14,
       spreadRadius: 0,
-      offset: const Offset(0, 8),
+      offset: const Offset(0, 4),
     ),
     BoxShadow(
-      color: const Color(0xFF0F172A).withValues(alpha: 0.06),
-      blurRadius: 28,
+      color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+      blurRadius: 12,
       spreadRadius: 0,
-      offset: const Offset(0, 10),
+      offset: const Offset(0, 4),
     ),
   ];
 
@@ -1627,13 +1627,7 @@ class _TopActionIcon extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: AppShadows.soft,
       ),
       child: Icon(icon, color: const Color(0xFF0F172A), size: 20),
     );

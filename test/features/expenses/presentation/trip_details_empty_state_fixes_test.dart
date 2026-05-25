@@ -33,15 +33,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Dates need attention'), findsOneWidget);
+    expect(find.text('Dates incomplete'), findsOneWidget);
     expect(find.text('Set start and end dates'), findsNothing);
 
-    await tester.tap(find.text('Dates need attention'));
+    await tester.tap(find.text('Dates incomplete'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(TripFormScreen), findsOneWidget);
-    expect(find.text('Edit Trip'), findsOneWidget);
+    expect(find.text('Edit trip'), findsOneWidget);
   });
 
   testWidgets('expenses load error shows friendly message not raw error',
@@ -56,12 +56,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(
-      find.text('Something went wrong while loading expenses.'),
-      findsOneWidget,
-    );
+    expect(find.text("Couldn't load expenses."), findsWidgets);
     expect(find.text(technicalError), findsNothing);
-    expect(find.text('Could not load expenses.'), findsOneWidget);
   });
 }
 

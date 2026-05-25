@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/design_tokens.dart';
+import '../theme/rtl_typography.dart';
 
 class AppChip extends StatelessWidget {
   const AppChip({
@@ -18,10 +19,13 @@ class AppChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
+
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
+        vertical: isArabic ? AppSpacing.xs + 1 : AppSpacing.xs,
       ),
       decoration: BoxDecoration(
         color: backgroundColor,
@@ -38,7 +42,8 @@ class AppChip extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: foregroundColor,
-                  fontWeight: FontWeight.w700,
+                  fontWeight: RtlTypography.chipWeight(isArabic),
+                  height: RtlTypography.chipLineHeight(isArabic),
                 ),
           ),
         ],
@@ -54,6 +59,9 @@ class CurrencyChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AppChip(label: code.trim().toUpperCase(), icon: Icons.currency_exchange_outlined);
+    return AppChip(
+      label: code.trim().toUpperCase(),
+      icon: Icons.currency_exchange_outlined,
+    );
   }
 }

@@ -113,7 +113,13 @@ void main() {
     final amount = tester.widget<TextField>(find.byType(TextField).first);
     expect(amount.textDirection, TextDirection.ltr);
 
-    expect(find.text('المبلغ بعملة USD'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(QuickAddExpenseSheet),
+        matching: find.text('USD'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('360x640 layout keeps save reachable without overflow',

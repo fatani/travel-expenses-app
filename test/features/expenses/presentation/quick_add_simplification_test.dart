@@ -44,7 +44,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Amount in THB'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(QuickAddExpenseSheet),
+        matching: find.text('THB'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets(

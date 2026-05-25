@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appName => 'متتبع مصاريف السفر';
+  String get appName => 'CalmLedger';
 
   @override
   String get commonTryAgain => 'إعادة المحاولة';
@@ -24,7 +24,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonDelete => 'حذف';
 
   @override
-  String get commonRequiredField => 'هذا الحقل مطلوب.';
+  String get commonRequiredField => 'مطلوب.';
 
   @override
   String get commonEnterValidNumber => 'أدخل رقماً صالحاً.';
@@ -48,7 +48,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsExportTooltip => 'تصدير';
 
   @override
-  String get tripDetailsChangesSaved => 'تم حفظ التعديلات';
+  String get tripDetailsChangesSaved => 'تم الحفظ';
 
   @override
   String get tripDetailsExpenseDeleted => 'تم حذف المصروف';
@@ -87,7 +87,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get exportNoExpenses => 'لا توجد مصاريف لتصديرها.';
 
   @override
-  String get exportSuccess => 'تم تصدير الملف بنجاح';
+  String get exportSuccess => 'تم التصدير';
 
   @override
   String exportFailed(Object format, Object error) {
@@ -107,7 +107,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripsDeleteTripAction => 'حذف الرحلة';
 
   @override
-  String get tripsDatesNotSet => 'التواريخ غير محددة';
+  String get tripsDatesNotSet => 'التواريخ ناقصة';
 
   @override
   String get tripsNewTrip => 'رحلة جديدة';
@@ -132,7 +132,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String tripsDeleteDialogMessage(Object tripName) {
-    return 'سيؤدي هذا إلى حذف $tripName وجميع المصاريف المرتبطة بها نهائياً.';
+    return 'سيُحذف $tripName ومصاريفه.';
   }
 
   @override
@@ -144,10 +144,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripsEmptyTitle => 'لا توجد رحلات بعد';
 
   @override
-  String get tripsEmptyMessage => 'أنشئ رحلتك الأولى لبدء تتبع مصاريف السفر.';
+  String get tripsEmptyMessage => 'أضف رحلة للبدء.';
 
   @override
-  String get tripsDatesNeedAttention => 'الرجاء مراجعة التواريخ';
+  String get tripsDatesNeedAttention => 'التواريخ ناقصة';
 
   @override
   String tripsBudgetLabel(Object amount) {
@@ -231,10 +231,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get tripDetailsLoadError => 'تعذر تحميل المصاريف.';
+  String get tripDetailsLoadError => 'تعذّر تحميل المصاريف.';
 
   @override
-  String get tripDetailsExpensesLoadError => 'حدث خطأ أثناء تحميل المصاريف.';
+  String get tripDetailsExpensesLoadError => 'تعذّر تحميل المصاريف.';
 
   @override
   String get tripDetailsAddExpense => 'إضافة مصروف';
@@ -249,7 +249,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsExpenseCount => 'المصاريف';
 
   @override
-  String get tripDetailsTopCategory => 'أعلى فئة إنفاق';
+  String get tripDetailsTopCategory => 'أعلى فئة';
 
   @override
   String get tripDetailsTopCategoryNone => 'لا توجد فئة بعد';
@@ -278,22 +278,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletCurrentBalanceHelper => 'الرصيد الحالي المتاح بعد جميع العمليات';
 
   @override
-  String get cashWalletEmptyTitle => 'لم تضف أي كاش لهذه الرحلة بعد';
+  String get cashWalletEmptyTitle => 'لم تُضف كاش بعد';
 
   @override
-  String get cashWalletEmptySubtitle => 'أضف الكاش الذي تحمله لتتبع المتبقي أثناء السفر';
+  String get cashWalletEmptySubtitle => 'أضف الكاش الذي معك لهذه الرحلة.';
 
   @override
   String get cashWalletHealthTitle => 'حالة الكاش';
 
   @override
-  String get cashWalletHealthNotEnoughData => 'لم نحسب الحالة بعد';
+  String get cashWalletHealthNotEnoughData => 'بيانات غير كافية بعد';
 
   @override
-  String get cashWalletHealthExcellent => 'في حالة ممتازة';
+  String get cashWalletHealthExcellent => 'متبقٍ بوفرة';
 
   @override
-  String get cashWalletHealthHealthy => 'يبدو جيدًا';
+  String get cashWalletHealthHealthy => 'ضمن المسار';
 
   @override
   String get cashWalletHealthMedium => 'متوسط';
@@ -302,7 +302,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletHealthLow => 'يبدأ بالنفاد';
 
   @override
-  String get cashWalletHealthCritical => 'على وشك النفاد';
+  String get cashWalletHealthCritical => 'منخفض';
 
   @override
   String get cashWalletOnboardingTitle => 'كم كاش تحمل معك؟';
@@ -355,7 +355,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletQuickAtmShort => 'ATM';
 
   @override
-  String get quickAddQuickSave => 'حفظ سريع';
+  String get quickAddQuickSave => 'حفظ';
 
   @override
   String get quickAddAddDetails => 'إضافة تفاصيل';
@@ -365,7 +365,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String quickAddAmountInCurrency(Object currency) {
-    return 'المبلغ بعملة $currency';
+    return '$currency';
   }
 
   @override
@@ -501,10 +501,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get manualExchangeSourceNote => 'مكان ظهور السعر (اختياري)';
 
   @override
-  String get manualExchangeSaved => 'تم حفظ التقدير. سنستخدمه لعرض مصاريفك بعملة إقامتك.';
+  String get manualExchangeSaved => 'تم حفظ التقدير.';
 
   @override
-  String get manualExchangeSaveError => 'تعذر حفظ التقدير الآن. حاول مرة أخرى.';
+  String get manualExchangeSaveError => 'تعذّر حفظ التقدير. حاول مرة أخرى.';
 
   @override
   String get tripExchangeRatesTitle => 'تقديرات المصاريف';
@@ -534,16 +534,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripExchangeRatesSourceHint => 'شاشة الصراف، تطبيق البنك، مكتب الصرافة...';
 
   @override
-  String get tripExchangeRatesSaved => 'تم حفظ التقدير. سنستخدمه لعرض مصاريف الرحلة بعملة إقامتك.';
+  String get tripExchangeRatesSaved => 'تم حفظ التقدير.';
 
   @override
-  String get tripExchangeRatesUpdated => 'تم تحديث التقدير. تم تحديث عرض المصاريف بعملة إقامتك.';
+  String get tripExchangeRatesUpdated => 'تم تحديث التقدير.';
 
   @override
-  String get tripExchangeRatesEmptyTitle => 'شوف مصاريفك بعملة إقامتك';
+  String get tripExchangeRatesEmptyTitle => 'عرض بعملة إقامتك';
 
   @override
-  String get tripExchangeRatesEmptyBody => 'أضف تقديراً سريعاً عند الحاجة. التقديرات اختيارية ولا تمنع حفظ المصاريف.';
+  String get tripExchangeRatesEmptyBody => 'أضف تقديراً عند الحاجة. اختياري.';
 
   @override
   String get tripExchangeRatesRateLabel => 'التقدير';
@@ -636,7 +636,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String tripDetailsDeleteExpenseMessage(Object expenseTitle) {
-    return 'سيؤدي هذا إلى حذف $expenseTitle من هذه الرحلة.';
+    return 'سيُحذف $expenseTitle من هذه الرحلة.';
   }
 
   @override
@@ -657,13 +657,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsEmptyExpensesMessage => 'أضف أول مصروف لهذه الرحلة';
 
   @override
-  String get noExpensesHeadline => 'أضف أول مصروف الآن';
+  String get noExpensesHeadline => 'لا توجد مصاريف بعد';
 
   @override
-  String get noExpensesSubtitle => 'أضف مصروفك الأول خلال ثواني';
+  String get noExpensesSubtitle => 'استخدم الزر أدناه للإضافة.';
 
   @override
-  String get noExpensesAddFirst => 'أضف أول مصروف';
+  String get noExpensesAddFirst => 'إضافة مصروف';
 
   @override
   String get noExpensesCashWallet => 'إدارة الكاش';
@@ -675,10 +675,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get noExpensesAddViaSms => 'إضافة من رسالة البنك';
 
   @override
-  String get noExpensesTipLabel => 'نصيحة';
+  String get noExpensesTipLabel => 'ملاحظة';
 
   @override
-  String get noExpensesTipBody => 'بمجرد إضافة أول مصروف، ستفهم أين تذهب أموالك';
+  String get noExpensesTipBody => 'تظهر المصاريف هنا عند إضافتها.';
 
   @override
   String get tripDetailsQuickAddExpenseAdded => 'تم إضافة المصروف';
@@ -1161,7 +1161,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get tripReportsSmartSummary => 'ملخص ذكي';
+  String get tripReportsSmartSummary => 'ملخص';
 
   @override
   String get tripReportsTopSpending => 'الأعلى إنفاقًا';
@@ -1211,24 +1211,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsEarlyNoExpenses => 'لا توجد مصاريف بعد';
 
   @override
-  String get tripReportsEarlyAddFirstHint => 'أضف أول مصروف لبدء تتبع إنفاقك.';
+  String get tripReportsEarlyAddFirstHint => 'أضف مصروفاً لعرض التقرير.';
 
   @override
   String tripReportsEarlyRecorded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'سجّلت $count مصروف حتى الآن.',
-      many: 'سجّلت $count مصروفًا حتى الآن.',
-      few: 'سجّلت $count مصاريف حتى الآن.',
-      two: 'سجّلت مصروفين حتى الآن.',
-      one: 'سجّلت مصروفًا واحدًا حتى الآن.',
+      other: '$count مصروف مسجّل',
+      many: '$count مصروفًا مسجّلًا',
+      few: '$count مصاريف مسجّلة',
+      two: 'مصروفان مسجّلان',
+      one: 'مصروف واحد مسجّل',
     );
     return '$_temp0';
   }
 
   @override
-  String get tripReportsEarlyAddMoreHint => 'أضف المزيد من المصاريف لرؤية أنماط إنفاقك بشكل أوضح.';
+  String get tripReportsEarlyAddMoreHint => 'أضف المزيد من المصاريف لتقرير أوضح.';
 
   @override
   String get globalReportsTitle => 'التقرير الشامل';
@@ -1245,22 +1245,22 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get globalReportsEmptyTitle => 'لا توجد رحلات للتحليل';
+  String get globalReportsEmptyTitle => 'لا توجد رحلات بعد';
 
   @override
-  String get globalReportsEmptyMessage => 'أنشئ رحلة أولاً لعرض الرؤية المالية الشاملة.';
+  String get globalReportsEmptyMessage => 'أضف رحلة لعرض التقارير.';
 
   @override
   String get globalReportsZeroTripsTitle => 'لا توجد رحلات بعد';
 
   @override
-  String get globalReportsZeroTripsSubtitle => 'أضف أول رحلة لتبدأ في تتبع مصاريفك ورؤية التقارير الشاملة';
+  String get globalReportsZeroTripsSubtitle => 'أضف رحلة لعرض التقارير عبر الرحلات.';
 
   @override
-  String get globalReportsSingleTripNote => 'أضف رحلات أكثر للحصول على مقارنات أذكى بين رحلاتك';
+  String get globalReportsSingleTripNote => 'أضف رحلات أكثر للمقارنة بينها.';
 
   @override
-  String get globalReportsSmartSummary => 'ملخص ذكي';
+  String get globalReportsSmartSummary => 'ملخص';
 
   @override
   String get globalReportsOverview => 'نظرة عامة';
@@ -1337,16 +1337,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get globalReportsInsightPaymentVariation => 'نمط الدفع لديك متنوع عبر أكثر من قناة أو شبكة';
 
   @override
-  String get globalReportsBehavioralInsightsTitle => 'إشارات ذكية';
+  String get globalReportsBehavioralInsightsTitle => 'ملاحظات';
 
   @override
-  String get globalReportsBehavioralInsightTitleSpike => 'ارتفاع الإنفاق';
+  String get globalReportsBehavioralInsightTitleSpike => 'تغيّر الإنفاق';
 
   @override
   String get globalReportsBehavioralInsightTitleCategoryDrift => 'تركيز الفئة';
 
   @override
-  String get globalReportsBehavioralInsightTitleFees => 'تنبيه الرسوم';
+  String get globalReportsBehavioralInsightTitleFees => 'الرسوم';
 
   @override
   String globalReportsBehavioralInsightSpike(int percentage) {
@@ -1369,7 +1369,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String globalReportsBehavioralInsightFees(int percentage) {
-    return 'الرسوم تستهلك حوالي $percentage% من إنفاقك. جرّب وسيلة دفع برسوم أقل.';
+    return 'الرسوم حوالي $percentage% من الإنفاق.';
   }
 
   @override
@@ -1384,10 +1384,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get createTripHeading => 'إلى أين تسافر؟';
+  String get createTripHeading => 'إلى أين تذهب؟';
 
   @override
-  String get createTripSubheading => 'اختر وجهتك وسنجهز العملة تلقائيًا';
+  String get createTripSubheading => 'اختر الوجهة. تُضبط العملة تلقائياً.';
 
   @override
   String get tripFormDestinationSearchLabel => 'ابحث عن دولة';

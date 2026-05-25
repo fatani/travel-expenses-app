@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/rtl_typography.dart';
 import '../../../l10n/l10n_extension.dart';
 import '../../../shared/widgets/insight_card.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
@@ -375,8 +376,8 @@ class _ReportHeroSummaryCard extends StatelessWidget {
                 child: Text(
                   totalText,
                   style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.15,
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -428,7 +429,7 @@ class _ReportHeroSummaryCard extends StatelessWidget {
                 child: Text(
                   '${context.l10n.tripReportsTopCategory}: $topCategoryLabel',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface,
                   ),
                 ),
@@ -477,6 +478,8 @@ class _LightweightSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isArabic =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     final totalBucket =
         summary.topBilledBucket ?? summary.topTransactionCurrencyBucket;
 
@@ -513,8 +516,8 @@ class _LightweightSummaryCard extends StatelessWidget {
               child: Text(
                 '${_formatAmount(totalBucket.totalAmount)} ${totalBucket.currency.trim().toUpperCase()}',
                 style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.3,
+                  fontWeight: RtlTypography.summaryAmountWeight(isArabic),
+                  letterSpacing: isArabic ? 0 : -0.3,
                   color: colorScheme.onSurface,
                 ),
               ),
@@ -579,7 +582,7 @@ class _SectionHeader extends StatelessWidget {
         title,
         textAlign: TextAlign.start,
         style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: theme.colorScheme.primary,
             ),
       ),
@@ -606,7 +609,7 @@ class _TripInsightsSection extends StatelessWidget {
           child: Text(
             context.l10n.globalReportsBehavioralInsightsTitle,
             style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: theme.colorScheme.primary,
             ),
           ),
@@ -894,7 +897,7 @@ class _CategoryInsightsCard extends StatelessWidget {
                                 _BucketGroupLabelType.category,
                               ),
                               style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
+                                fontWeight: FontWeight.w700,
                                 color: colorScheme.onSurface,
                               ),
                             ),
@@ -908,7 +911,7 @@ class _CategoryInsightsCard extends StatelessWidget {
                         child: Text(
                           '${_formatAmount(primaryBucket.totalAmount)} ${primaryBucket.currency}',
                           style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                             letterSpacing: -0.2,
                             color: colorScheme.onSurface,
                           ),
@@ -966,7 +969,7 @@ class _AmountAndCountColumn extends StatelessWidget {
             ? theme.textTheme.titleSmall
             : theme.textTheme.titleMedium)
         ?.copyWith(
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
           letterSpacing: -0.15,
           color: colorScheme.onSurface,
         );

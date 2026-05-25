@@ -1,14 +1,14 @@
 import 'dart:async';
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/extensions/rtl_extension.dart';
+import '../../../core/formatting/bidi_format.dart';
+import '../../../core/formatting/trip_date_phrase.dart';
+import '../../../core/theme/rtl_typography.dart';
 import '../../expenses/presentation/trip_details_screen.dart';
 import '../../global_reports/presentation/global_reports_screen.dart';
 import '../../settings/presentation/settings_controller.dart';
@@ -101,10 +101,11 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
               scrolledUnderElevation: 0,
               title: Text(
                 l10n.tripsMyTitle,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF0F172A),
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: RtlTypography.titleWeight(isArabic),
+                  color: const Color(0xFF0F172A),
+                  height: RtlTypography.titleLineHeight(isArabic),
                 ),
               ),
               actions: [
@@ -271,6 +272,8 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
       context: context,
       builder: (context) {
         final dialogL10n = AppLocalizations.of(context)!;
+        final dialogIsArabic =
+            Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
         final title = dialogL10n.tripsDeleteDialogTitle;
         final message = dialogL10n.tripsDeleteDialogMessage(tripName);
         final cancelLabel = dialogL10n.commonCancel;
@@ -314,10 +317,11 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: Color(0xFF0F172A),
+                      fontWeight: RtlTypography.titleWeight(dialogIsArabic),
+                      height: RtlTypography.titleLineHeight(dialogIsArabic),
+                      color: const Color(0xFF0F172A),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -394,10 +398,11 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                         child: Center(
                           child: Text(
                             deleteLabel,
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
                               fontSize: 16,
-                              fontWeight: FontWeight.w800,
+                              fontWeight:
+                                  RtlTypography.sectionWeight(dialogIsArabic),
                             ),
                           ),
                         ),
@@ -486,7 +491,7 @@ class _TripCard extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 6, 12),
+            padding: const EdgeInsetsDirectional.fromSTEB(14, 11, 4, 11),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -502,11 +507,11 @@ class _TripCard extends StatelessWidget {
                               title,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 17,
-                                fontWeight: FontWeight.w800,
-                                color: Color(0xFF0F172A),
-                                height: 1.2,
+                                fontWeight: RtlTypography.titleWeight(isArabic),
+                                color: const Color(0xFF0F172A),
+                                height: RtlTypography.titleLineHeight(isArabic),
                               ),
                             ),
                           ),
@@ -519,18 +524,18 @@ class _TripCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _formatDateRange(
-                          trip,
-                          localeName,
-                          l10n,
-                          isArabic,
-                          status,
+                        TripDatePhrase.forTripCard(
+                          trip: trip,
+                          status: status,
+                          localeName: localeName,
+                          l10n: l10n,
+                          isArabic: isArabic,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontSize: 13,
-                          height: 1.3,
+                          height: RtlTypography.bodyLineHeight(isArabic),
                           color: hasDates
                               ? const Color(0xFF64748B)
                               : const Color(0xFFB45309),
@@ -541,16 +546,12 @@ class _TripCard extends StatelessWidget {
                       ),
                       if (hasCurrency) ...[
                         const SizedBox(height: 2),
-                        Directionality(
-                          textDirection: ui.TextDirection.ltr,
-                          child: Text(
-                            trip.baseCurrency.trim().toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF94A3B8),
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                            ),
+                        LtrText(
+                          data: trip.baseCurrency.trim().toUpperCase(),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF94A3B8),
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ],
@@ -613,61 +614,6 @@ class _TripCard extends StatelessWidget {
     );
   }
 
-  String _formatDateRange(
-    Trip trip,
-    String localeName,
-    AppLocalizations l10n,
-    bool isArabic,
-    TripTimelineStatus status,
-  ) {
-    final start = trip.startDate;
-    final end = trip.endDate;
-
-    if (start == null || end == null) {
-      return l10n.tripsDatesNotSet;
-    }
-
-    final shortFmt = DateFormat('d MMM', localeName);
-    final fullFmt = DateFormat('d MMM yyyy', localeName);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final startDay = DateTime(start.year, start.month, start.day);
-    final endDay = DateTime(end.year, end.month, end.day);
-
-    switch (status) {
-      case TripTimelineStatus.active:
-        final dayOfTrip = today.difference(startDay).inDays + 1;
-        final totalDays = endDay.difference(startDay).inDays + 1;
-        final daysLeft = endDay.difference(today).inDays;
-        if (isArabic) {
-          final suffix = daysLeft == 0
-              ? 'ينتهي اليوم'
-              : 'ينتهي ${shortFmt.format(end)}';
-          return 'يوم $dayOfTrip من $totalDays · $suffix';
-        }
-        final suffix = daysLeft == 0
-            ? 'ends today'
-            : 'ends ${shortFmt.format(end)}';
-        return 'Day $dayOfTrip of $totalDays · $suffix';
-
-      case TripTimelineStatus.upcoming:
-        final daysUntil = startDay.difference(today).inDays;
-        if (isArabic) {
-          if (daysUntil == 0) return 'يبدأ اليوم · ${shortFmt.format(start)}';
-          if (daysUntil == 1) return 'يبدأ غدًا · ${shortFmt.format(start)}';
-          return 'يبدأ خلال $daysUntil أيام · ${shortFmt.format(start)}';
-        }
-        if (daysUntil == 0) return 'Starts today · ${shortFmt.format(start)}';
-        if (daysUntil == 1) {
-          return 'Starts tomorrow · ${shortFmt.format(start)}';
-        }
-        return 'Starts in $daysUntil days · ${shortFmt.format(start)}';
-
-      case TripTimelineStatus.completed:
-      case TripTimelineStatus.datesPending:
-        return '${fullFmt.format(start)} – ${fullFmt.format(end)}';
-    }
-  }
 }
 
 class _StatusChip extends StatelessWidget {
@@ -684,19 +630,19 @@ class _StatusChip extends StatelessWidget {
         label: l10n.tripTimelineNoDates,
         background: const Color(0xFFFEF3C7),
         foreground: const Color(0xFFB45309),
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
       TripTimelineStatus.upcoming => (
         label: l10n.tripTimelineUpcoming,
         background: const Color(0xFFDBEAFE),
         foreground: const Color(0xFF1D4ED8),
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
       TripTimelineStatus.active => (
         label: l10n.tripTimelineTraveling,
         background: const Color(0xFFDCFCE7),
         foreground: const Color(0xFF166534),
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
       TripTimelineStatus.completed => (
         label: l10n.tripTimelineCompleted,
@@ -707,7 +653,10 @@ class _StatusChip extends StatelessWidget {
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: isArabic ? 9 : 8,
+        vertical: isArabic ? 5 : 4,
+      ),
       decoration: BoxDecoration(
         color: statusUi.background,
         borderRadius: BorderRadius.circular(999),
@@ -718,6 +667,7 @@ class _StatusChip extends StatelessWidget {
           fontSize: 10,
           fontWeight: statusUi.fontWeight,
           color: statusUi.foreground,
+          height: RtlTypography.chipLineHeight(isArabic),
         ),
       ),
     );
@@ -810,9 +760,9 @@ class _GradientAddTripButton extends StatelessWidget {
             ),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF7C3AED).withValues(alpha: 0.26),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.14),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
             ],
           ),

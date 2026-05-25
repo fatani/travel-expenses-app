@@ -75,17 +75,17 @@ class AppShadows {
 
   static List<BoxShadow> get card => [
         BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-          blurRadius: 16,
-          offset: const Offset(0, 6),
+          color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
         ),
       ];
 
   static List<BoxShadow> get soft => [
         BoxShadow(
-          color: const Color(0xFF0F172A).withValues(alpha: 0.025),
-          blurRadius: 8,
-          offset: const Offset(0, 2),
+          color: const Color(0xFF0F172A).withValues(alpha: 0.018),
+          blurRadius: 6,
+          offset: const Offset(0, 1),
         ),
       ];
 
@@ -103,12 +103,12 @@ class AppTypography {
 
   static TextStyle title(BuildContext context) =>
       Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
           ) ??
       const TextStyle(
         fontSize: 18,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         color: AppColors.textPrimary,
       );
 
@@ -125,12 +125,12 @@ class AppTypography {
 
   static TextStyle label(BuildContext context) =>
       Theme.of(context).textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w600,
             color: AppColors.primaryDeep,
           ) ??
       const TextStyle(
         fontSize: 13,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
         color: AppColors.primaryDeep,
       );
 }

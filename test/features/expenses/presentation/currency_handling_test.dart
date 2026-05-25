@@ -487,8 +487,8 @@ void main() {
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.text('Create Expense'));
-      await tester.tap(find.text('Create Expense'));
+      await tester.ensureVisible(find.text('Add expense'));
+      await tester.tap(find.text('Add expense'));
       await tester.pumpAndSettle();
 
       expect(
@@ -502,8 +502,8 @@ void main() {
 
       expect(repository.createdExpenses, isEmpty);
 
-      await tester.ensureVisible(find.text('Create Expense'));
-      await tester.tap(find.text('Create Expense'));
+      await tester.ensureVisible(find.text('Add expense'));
+      await tester.tap(find.text('Add expense'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Keep as-is'));
       await tester.pumpAndSettle();
@@ -613,8 +613,8 @@ void main() {
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.text('Save Expense'));
-      await tester.tap(find.text('Save Expense'));
+      await tester.ensureVisible(find.text('Save expense'));
+      await tester.tap(find.text('Save expense'));
       await tester.pumpAndSettle();
 
       expect(
@@ -672,8 +672,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.text('Save Expense'));
-      await tester.tap(find.text('Save Expense'));
+      await tester.ensureVisible(find.text('Save expense'));
+      await tester.tap(find.text('Save expense'));
       await tester.pumpAndSettle();
 
       expect(find.text('Currency differs from trip base currency'), findsNothing);
@@ -747,8 +747,8 @@ void main() {
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.text('Save Expense'));
-      await tester.tap(find.text('Save Expense'));
+      await tester.ensureVisible(find.text('Save expense'));
+      await tester.tap(find.text('Save expense'));
       await tester.pumpAndSettle();
 
       expect(repository.createdExpenses, hasLength(1));
@@ -798,8 +798,8 @@ Balance: SAR 2354.38
       );
       expect(channelState.value, 'POS Purchase');
 
-      await tester.ensureVisible(find.text('Save Expense'));
-      await tester.tap(find.text('Save Expense'));
+      await tester.ensureVisible(find.text('Save expense'));
+      await tester.tap(find.text('Save expense'));
       await tester.pumpAndSettle();
 
       expect(repository.createdExpenses, hasLength(1));

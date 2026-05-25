@@ -327,7 +327,7 @@ class _TripExchangeRatesScreenState
                                   style: Theme.of(context)
                                       .textTheme
                                       .titleMedium
-                                      ?.copyWith(fontWeight: FontWeight.w700),
+                                      ?.copyWith(fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -335,7 +335,7 @@ class _TripExchangeRatesScreenState
                             Text(
                               l10n.tripExchangeRatesRatePreview(
                                 rate.fromCurrency,
-                                rate.rate.toStringAsFixed(6),
+                                _formatEstimateRate(rate.rate),
                                 rate.toCurrency,
                               ),
                               style: Theme.of(context).textTheme.bodySmall,
@@ -371,4 +371,14 @@ class _TripExchangeRatesScreenState
       ),
     );
   }
+}
+
+String _formatEstimateRate(double rate) {
+  if (rate >= 100) {
+    return rate.toStringAsFixed(2);
+  }
+  if (rate >= 1) {
+    return rate.toStringAsFixed(3);
+  }
+  return rate.toStringAsFixed(4);
 }

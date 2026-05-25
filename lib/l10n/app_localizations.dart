@@ -98,7 +98,7 @@ abstract class AppLocalizations {
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'Travel Expense Tracker'**
+  /// **'CalmLedger'**
   String get appName;
 
   /// No description provided for @commonTryAgain.
@@ -128,7 +128,7 @@ abstract class AppLocalizations {
   /// No description provided for @commonRequiredField.
   ///
   /// In en, this message translates to:
-  /// **'This field is required.'**
+  /// **'Required.'**
   String get commonRequiredField;
 
   /// No description provided for @commonEnterValidNumber.
@@ -176,7 +176,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsChangesSaved.
   ///
   /// In en, this message translates to:
-  /// **'Changes saved'**
+  /// **'Saved'**
   String get tripDetailsChangesSaved;
 
   /// No description provided for @tripDetailsExpenseDeleted.
@@ -254,7 +254,7 @@ abstract class AppLocalizations {
   /// No description provided for @exportSuccess.
   ///
   /// In en, this message translates to:
-  /// **'File exported successfully'**
+  /// **'Exported'**
   String get exportSuccess;
 
   /// No description provided for @exportFailed.
@@ -290,7 +290,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsDatesNotSet.
   ///
   /// In en, this message translates to:
-  /// **'Dates not set'**
+  /// **'Dates incomplete'**
   String get tripsDatesNotSet;
 
   /// No description provided for @tripsNewTrip.
@@ -308,13 +308,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripsLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Could not load trips.'**
+  /// **'Couldn\'t load trips.'**
   String get tripsLoadError;
 
   /// No description provided for @tripsAddButton.
   ///
   /// In en, this message translates to:
-  /// **'Add Trip'**
+  /// **'Add trip'**
   String get tripsAddButton;
 
   /// No description provided for @tripsEditTooltip.
@@ -338,7 +338,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripsDeleteDialogMessage.
   ///
   /// In en, this message translates to:
-  /// **'This will permanently remove {tripName} and its linked expenses.'**
+  /// **'This removes {tripName} and its expenses.'**
   String tripsDeleteDialogMessage(Object tripName);
 
   /// No description provided for @tripsDeleteError.
@@ -356,13 +356,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripsEmptyMessage.
   ///
   /// In en, this message translates to:
-  /// **'Create your first trip to start tracking travel expenses.'**
+  /// **'Add a trip to get started.'**
   String get tripsEmptyMessage;
 
   /// No description provided for @tripsDatesNeedAttention.
   ///
   /// In en, this message translates to:
-  /// **'Dates need attention'**
+  /// **'Dates incomplete'**
   String get tripsDatesNeedAttention;
 
   /// No description provided for @tripsBudgetLabel.
@@ -380,7 +380,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripFormEditTitle.
   ///
   /// In en, this message translates to:
-  /// **'Edit Trip'**
+  /// **'Edit trip'**
   String get tripFormEditTitle;
 
   /// No description provided for @tripFormNameLabel.
@@ -440,7 +440,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripFormSaveCreate.
   ///
   /// In en, this message translates to:
-  /// **'Create Trip'**
+  /// **'Create trip'**
   String get tripFormSaveCreate;
 
   /// No description provided for @tripFormSaveEdit.
@@ -518,13 +518,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Could not load expenses.'**
+  /// **'Couldn\'t load expenses.'**
   String get tripDetailsLoadError;
 
   /// Friendly error message shown when expenses fail to load in the trip details screen.
   ///
   /// In en, this message translates to:
-  /// **'Something went wrong while loading expenses.'**
+  /// **'Couldn\'t load expenses.'**
   String get tripDetailsExpensesLoadError;
 
   /// No description provided for @tripDetailsAddExpense.
@@ -554,7 +554,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsTopCategory.
   ///
   /// In en, this message translates to:
-  /// **'Top spending category'**
+  /// **'Top category'**
   String get tripDetailsTopCategory;
 
   /// No description provided for @tripDetailsTopCategoryNone.
@@ -608,13 +608,13 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'You haven’t added travel cash yet'**
+  /// **'No cash added yet'**
   String get cashWalletEmptyTitle;
 
   /// No description provided for @cashWalletEmptySubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Add the cash you carry to track what remains during your trip'**
+  /// **'Add cash you\'re carrying for this trip.'**
   String get cashWalletEmptySubtitle;
 
   /// No description provided for @cashWalletHealthTitle.
@@ -626,19 +626,19 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletHealthNotEnoughData.
   ///
   /// In en, this message translates to:
-  /// **'We need cash spending data first'**
+  /// **'Not enough data yet'**
   String get cashWalletHealthNotEnoughData;
 
   /// No description provided for @cashWalletHealthExcellent.
   ///
   /// In en, this message translates to:
-  /// **'In great shape'**
+  /// **'Plenty left'**
   String get cashWalletHealthExcellent;
 
   /// No description provided for @cashWalletHealthHealthy.
   ///
   /// In en, this message translates to:
-  /// **'Looking good'**
+  /// **'On track'**
   String get cashWalletHealthHealthy;
 
   /// No description provided for @cashWalletHealthMedium.
@@ -656,7 +656,7 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletHealthCritical.
   ///
   /// In en, this message translates to:
-  /// **'Running low'**
+  /// **'Low'**
   String get cashWalletHealthCritical;
 
   /// No description provided for @cashWalletOnboardingTitle.
@@ -758,7 +758,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickAddQuickSave.
   ///
   /// In en, this message translates to:
-  /// **'Quick Save'**
+  /// **'Save'**
   String get quickAddQuickSave;
 
   /// No description provided for @quickAddAddDetails.
@@ -776,7 +776,7 @@ abstract class AppLocalizations {
   /// No description provided for @quickAddAmountInCurrency.
   ///
   /// In en, this message translates to:
-  /// **'Amount in {currency}'**
+  /// **'{currency}'**
   String quickAddAmountInCurrency(Object currency);
 
   /// No description provided for @cashWalletTripStatusDaysLeft.
@@ -1022,13 +1022,13 @@ abstract class AppLocalizations {
   /// No description provided for @manualExchangeSaved.
   ///
   /// In en, this message translates to:
-  /// **'Estimate saved. We\'ll use it to show spending in your home currency.'**
+  /// **'Estimate saved.'**
   String get manualExchangeSaved;
 
   /// No description provided for @manualExchangeSaveError.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t save this estimate. Please try again.'**
+  /// **'Couldn\'t save estimate. Try again.'**
   String get manualExchangeSaveError;
 
   /// No description provided for @tripExchangeRatesTitle.
@@ -1088,25 +1088,25 @@ abstract class AppLocalizations {
   /// No description provided for @tripExchangeRatesSaved.
   ///
   /// In en, this message translates to:
-  /// **'Estimate saved. We\'ll use it for this trip\'s home-currency spending.'**
+  /// **'Estimate saved.'**
   String get tripExchangeRatesSaved;
 
   /// No description provided for @tripExchangeRatesUpdated.
   ///
   /// In en, this message translates to:
-  /// **'Estimate updated. Your home-currency spending view is refreshed.'**
+  /// **'Estimate updated.'**
   String get tripExchangeRatesUpdated;
 
   /// No description provided for @tripExchangeRatesEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'See your spending in your home currency'**
+  /// **'Home currency view'**
   String get tripExchangeRatesEmptyTitle;
 
   /// No description provided for @tripExchangeRatesEmptyBody.
   ///
   /// In en, this message translates to:
-  /// **'Add a quick estimate when you need it. It\'s optional and never blocks saving expenses.'**
+  /// **'Add an estimate when you need one. Optional.'**
   String get tripExchangeRatesEmptyBody;
 
   /// No description provided for @tripExchangeRatesRateLabel.
@@ -1274,7 +1274,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsDeleteExpenseMessage.
   ///
   /// In en, this message translates to:
-  /// **'This will remove {expenseTitle} from this trip.'**
+  /// **'This removes {expenseTitle} from this trip.'**
   String tripDetailsDeleteExpenseMessage(Object expenseTitle);
 
   /// No description provided for @tripDetailsDeleteExpenseError.
@@ -1304,25 +1304,25 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsEmptyExpensesMessage.
   ///
   /// In en, this message translates to:
-  /// **'Add your first manual expense for this trip.'**
+  /// **'Record an expense for this trip.'**
   String get tripDetailsEmptyExpensesMessage;
 
   /// No description provided for @noExpensesHeadline.
   ///
   /// In en, this message translates to:
-  /// **'Add your first expense now'**
+  /// **'No expenses yet'**
   String get noExpensesHeadline;
 
   /// No description provided for @noExpensesSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Add your first expense in seconds'**
+  /// **'Use the button below to add one.'**
   String get noExpensesSubtitle;
 
   /// No description provided for @noExpensesAddFirst.
   ///
   /// In en, this message translates to:
-  /// **'Add First Expense'**
+  /// **'Add expense'**
   String get noExpensesAddFirst;
 
   /// No description provided for @noExpensesCashWallet.
@@ -1334,7 +1334,7 @@ abstract class AppLocalizations {
   /// No description provided for @noExpensesCashWalletSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Track how much cash you still have'**
+  /// **'See how much cash you have left'**
   String get noExpensesCashWalletSubtitle;
 
   /// No description provided for @noExpensesAddViaSms.
@@ -1346,13 +1346,13 @@ abstract class AppLocalizations {
   /// No description provided for @noExpensesTipLabel.
   ///
   /// In en, this message translates to:
-  /// **'Tip'**
+  /// **'Note'**
   String get noExpensesTipLabel;
 
   /// No description provided for @noExpensesTipBody.
   ///
   /// In en, this message translates to:
-  /// **'Once you add your first expense, you\'ll understand where your money goes'**
+  /// **'Expenses appear here as you add them.'**
   String get noExpensesTipBody;
 
   /// No description provided for @tripDetailsQuickAddExpenseAdded.
@@ -1550,13 +1550,13 @@ abstract class AppLocalizations {
   /// No description provided for @cardFormSaveEdit.
   ///
   /// In en, this message translates to:
-  /// **'Save Changes'**
+  /// **'Save changes'**
   String get cardFormSaveEdit;
 
   /// No description provided for @cardFormSaveCreate.
   ///
   /// In en, this message translates to:
-  /// **'Add Card'**
+  /// **'Add card'**
   String get cardFormSaveCreate;
 
   /// No description provided for @cardFormDuplicate.
@@ -1682,13 +1682,13 @@ abstract class AppLocalizations {
   /// No description provided for @expenseFormSaveCreate.
   ///
   /// In en, this message translates to:
-  /// **'Create Expense'**
+  /// **'Add expense'**
   String get expenseFormSaveCreate;
 
   /// No description provided for @expenseFormSaveEdit.
   ///
   /// In en, this message translates to:
-  /// **'Save Changes'**
+  /// **'Save changes'**
   String get expenseFormSaveEdit;
 
   /// No description provided for @expenseFormAmountPositive.
@@ -2060,7 +2060,7 @@ abstract class AppLocalizations {
   /// No description provided for @smsSaveButton.
   ///
   /// In en, this message translates to:
-  /// **'Save Expense'**
+  /// **'Save expense'**
   String get smsSaveButton;
 
   /// No description provided for @smsTextRequired.
@@ -2258,7 +2258,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripReportsSmartSummary.
   ///
   /// In en, this message translates to:
-  /// **'Smart summary'**
+  /// **'Summary'**
   String get tripReportsSmartSummary;
 
   /// No description provided for @tripReportsTopSpending.
@@ -2330,19 +2330,19 @@ abstract class AppLocalizations {
   /// No description provided for @tripReportsEarlyAddFirstHint.
   ///
   /// In en, this message translates to:
-  /// **'Add your first expense to start tracking your spending.'**
+  /// **'Add an expense to see a report.'**
   String get tripReportsEarlyAddFirstHint;
 
   /// No description provided for @tripReportsEarlyRecorded.
   ///
   /// In en, this message translates to:
-  /// **'{count, plural, =1{You\'ve recorded 1 expense so far.} other{You\'ve recorded {count} expenses so far.}}'**
+  /// **'{count, plural, =1{1 expense recorded} other{{count} expenses recorded}}'**
   String tripReportsEarlyRecorded(int count);
 
   /// No description provided for @tripReportsEarlyAddMoreHint.
   ///
   /// In en, this message translates to:
-  /// **'Add more expenses to see clearer spending patterns.'**
+  /// **'Add more expenses for a fuller report.'**
   String get tripReportsEarlyAddMoreHint;
 
   /// No description provided for @globalReportsTitle.
@@ -2372,13 +2372,13 @@ abstract class AppLocalizations {
   /// No description provided for @globalReportsEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'No trips to analyze'**
+  /// **'No trips yet'**
   String get globalReportsEmptyTitle;
 
   /// No description provided for @globalReportsEmptyMessage.
   ///
   /// In en, this message translates to:
-  /// **'Create a trip first to unlock global financial insights.'**
+  /// **'Add a trip to see reports.'**
   String get globalReportsEmptyMessage;
 
   /// No description provided for @globalReportsZeroTripsTitle.
@@ -2390,19 +2390,19 @@ abstract class AppLocalizations {
   /// No description provided for @globalReportsZeroTripsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Add your first trip to start tracking expenses and see global reports.'**
+  /// **'Add a trip to see reports across trips.'**
   String get globalReportsZeroTripsSubtitle;
 
   /// No description provided for @globalReportsSingleTripNote.
   ///
   /// In en, this message translates to:
-  /// **'Add more trips to unlock smarter cross-trip comparisons.'**
+  /// **'Add more trips to compare across trips.'**
   String get globalReportsSingleTripNote;
 
   /// No description provided for @globalReportsSmartSummary.
   ///
   /// In en, this message translates to:
-  /// **'Smart summary'**
+  /// **'Summary'**
   String get globalReportsSmartSummary;
 
   /// No description provided for @globalReportsOverview.
@@ -2540,25 +2540,25 @@ abstract class AppLocalizations {
   /// No description provided for @globalReportsBehavioralInsightsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Behavioral insights'**
+  /// **'Notes'**
   String get globalReportsBehavioralInsightsTitle;
 
   /// No description provided for @globalReportsBehavioralInsightTitleSpike.
   ///
   /// In en, this message translates to:
-  /// **'Spending Spike'**
+  /// **'Spending change'**
   String get globalReportsBehavioralInsightTitleSpike;
 
   /// No description provided for @globalReportsBehavioralInsightTitleCategoryDrift.
   ///
   /// In en, this message translates to:
-  /// **'Category Concentration'**
+  /// **'Category focus'**
   String get globalReportsBehavioralInsightTitleCategoryDrift;
 
   /// No description provided for @globalReportsBehavioralInsightTitleFees.
   ///
   /// In en, this message translates to:
-  /// **'Fees Alert'**
+  /// **'Fees'**
   String get globalReportsBehavioralInsightTitleFees;
 
   /// No description provided for @globalReportsBehavioralInsightSpike.
@@ -2594,7 +2594,7 @@ abstract class AppLocalizations {
   /// No description provided for @globalReportsBehavioralInsightFees.
   ///
   /// In en, this message translates to:
-  /// **'Fees are taking about {percentage}% of your spending. Consider a lower-fee payment method.'**
+  /// **'Fees are about {percentage}% of spending.'**
   String globalReportsBehavioralInsightFees(int percentage);
 
   /// No description provided for @globalReportsBehavioralInsightAttributionIn.
@@ -2618,13 +2618,13 @@ abstract class AppLocalizations {
   /// No description provided for @createTripHeading.
   ///
   /// In en, this message translates to:
-  /// **'Where are you traveling?'**
+  /// **'Where are you going?'**
   String get createTripHeading;
 
   /// No description provided for @createTripSubheading.
   ///
   /// In en, this message translates to:
-  /// **'Choose your destination and we\'ll set the currency automatically'**
+  /// **'Pick a destination. Currency is set automatically.'**
   String get createTripSubheading;
 
   /// No description provided for @tripFormDestinationSearchLabel.

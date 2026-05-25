@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'Travel Expense Tracker';
+  String get appName => 'CalmLedger';
 
   @override
   String get commonTryAgain => 'Try Again';
@@ -24,7 +24,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDelete => 'Delete';
 
   @override
-  String get commonRequiredField => 'This field is required.';
+  String get commonRequiredField => 'Required.';
 
   @override
   String get commonEnterValidNumber => 'Enter a valid number.';
@@ -48,7 +48,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsExportTooltip => 'Export';
 
   @override
-  String get tripDetailsChangesSaved => 'Changes saved';
+  String get tripDetailsChangesSaved => 'Saved';
 
   @override
   String get tripDetailsExpenseDeleted => 'Expense deleted';
@@ -87,7 +87,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportNoExpenses => 'No expenses to export.';
 
   @override
-  String get exportSuccess => 'File exported successfully';
+  String get exportSuccess => 'Exported';
 
   @override
   String exportFailed(Object format, Object error) {
@@ -107,7 +107,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsDeleteTripAction => 'Delete trip';
 
   @override
-  String get tripsDatesNotSet => 'Dates not set';
+  String get tripsDatesNotSet => 'Dates incomplete';
 
   @override
   String get tripsNewTrip => 'New Trip';
@@ -116,10 +116,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsTitle => 'Trips';
 
   @override
-  String get tripsLoadError => 'Could not load trips.';
+  String get tripsLoadError => 'Couldn\'t load trips.';
 
   @override
-  String get tripsAddButton => 'Add Trip';
+  String get tripsAddButton => 'Add trip';
 
   @override
   String get tripsEditTooltip => 'Edit trip';
@@ -132,7 +132,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tripsDeleteDialogMessage(Object tripName) {
-    return 'This will permanently remove $tripName and its linked expenses.';
+    return 'This removes $tripName and its expenses.';
   }
 
   @override
@@ -144,10 +144,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsEmptyTitle => 'No trips yet';
 
   @override
-  String get tripsEmptyMessage => 'Create your first trip to start tracking travel expenses.';
+  String get tripsEmptyMessage => 'Add a trip to get started.';
 
   @override
-  String get tripsDatesNeedAttention => 'Dates need attention';
+  String get tripsDatesNeedAttention => 'Dates incomplete';
 
   @override
   String tripsBudgetLabel(Object amount) {
@@ -158,7 +158,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormCreateTitle => 'New Trip';
 
   @override
-  String get tripFormEditTitle => 'Edit Trip';
+  String get tripFormEditTitle => 'Edit trip';
 
   @override
   String get tripFormNameLabel => 'Trip name';
@@ -188,7 +188,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormEndDateLabel => 'End date';
 
   @override
-  String get tripFormSaveCreate => 'Create Trip';
+  String get tripFormSaveCreate => 'Create trip';
 
   @override
   String get tripFormSaveEdit => 'Save changes';
@@ -231,10 +231,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tripDetailsLoadError => 'Could not load expenses.';
+  String get tripDetailsLoadError => 'Couldn\'t load expenses.';
 
   @override
-  String get tripDetailsExpensesLoadError => 'Something went wrong while loading expenses.';
+  String get tripDetailsExpensesLoadError => 'Couldn\'t load expenses.';
 
   @override
   String get tripDetailsAddExpense => 'Add Expense';
@@ -249,7 +249,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsExpenseCount => 'Expenses';
 
   @override
-  String get tripDetailsTopCategory => 'Top spending category';
+  String get tripDetailsTopCategory => 'Top category';
 
   @override
   String get tripDetailsTopCategoryNone => 'No category yet';
@@ -278,22 +278,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletCurrentBalanceHelper => 'Current available balance after all transactions';
 
   @override
-  String get cashWalletEmptyTitle => 'You haven’t added travel cash yet';
+  String get cashWalletEmptyTitle => 'No cash added yet';
 
   @override
-  String get cashWalletEmptySubtitle => 'Add the cash you carry to track what remains during your trip';
+  String get cashWalletEmptySubtitle => 'Add cash you\'re carrying for this trip.';
 
   @override
   String get cashWalletHealthTitle => 'Cash status';
 
   @override
-  String get cashWalletHealthNotEnoughData => 'We need cash spending data first';
+  String get cashWalletHealthNotEnoughData => 'Not enough data yet';
 
   @override
-  String get cashWalletHealthExcellent => 'In great shape';
+  String get cashWalletHealthExcellent => 'Plenty left';
 
   @override
-  String get cashWalletHealthHealthy => 'Looking good';
+  String get cashWalletHealthHealthy => 'On track';
 
   @override
   String get cashWalletHealthMedium => 'Medium';
@@ -302,7 +302,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletHealthLow => 'Getting low';
 
   @override
-  String get cashWalletHealthCritical => 'Running low';
+  String get cashWalletHealthCritical => 'Low';
 
   @override
   String get cashWalletOnboardingTitle => 'How much cash are you carrying?';
@@ -355,7 +355,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletQuickAtmShort => 'ATM';
 
   @override
-  String get quickAddQuickSave => 'Quick Save';
+  String get quickAddQuickSave => 'Save';
 
   @override
   String get quickAddAddDetails => 'Add Details';
@@ -365,7 +365,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String quickAddAmountInCurrency(Object currency) {
-    return 'Amount in $currency';
+    return '$currency';
   }
 
   @override
@@ -501,10 +501,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manualExchangeSourceNote => 'Where you saw this rate (optional)';
 
   @override
-  String get manualExchangeSaved => 'Estimate saved. We\'ll use it to show spending in your home currency.';
+  String get manualExchangeSaved => 'Estimate saved.';
 
   @override
-  String get manualExchangeSaveError => 'Couldn\'t save this estimate. Please try again.';
+  String get manualExchangeSaveError => 'Couldn\'t save estimate. Try again.';
 
   @override
   String get tripExchangeRatesTitle => 'Spending Estimates';
@@ -534,16 +534,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripExchangeRatesSourceHint => 'ATM screen, bank app, exchange counter...';
 
   @override
-  String get tripExchangeRatesSaved => 'Estimate saved. We\'ll use it for this trip\'s home-currency spending.';
+  String get tripExchangeRatesSaved => 'Estimate saved.';
 
   @override
-  String get tripExchangeRatesUpdated => 'Estimate updated. Your home-currency spending view is refreshed.';
+  String get tripExchangeRatesUpdated => 'Estimate updated.';
 
   @override
-  String get tripExchangeRatesEmptyTitle => 'See your spending in your home currency';
+  String get tripExchangeRatesEmptyTitle => 'Home currency view';
 
   @override
-  String get tripExchangeRatesEmptyBody => 'Add a quick estimate when you need it. It\'s optional and never blocks saving expenses.';
+  String get tripExchangeRatesEmptyBody => 'Add an estimate when you need one. Optional.';
 
   @override
   String get tripExchangeRatesRateLabel => 'Estimate';
@@ -636,7 +636,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tripDetailsDeleteExpenseMessage(Object expenseTitle) {
-    return 'This will remove $expenseTitle from this trip.';
+    return 'This removes $expenseTitle from this trip.';
   }
 
   @override
@@ -654,31 +654,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsEmptyExpensesTitle => 'No expenses yet';
 
   @override
-  String get tripDetailsEmptyExpensesMessage => 'Add your first manual expense for this trip.';
+  String get tripDetailsEmptyExpensesMessage => 'Record an expense for this trip.';
 
   @override
-  String get noExpensesHeadline => 'Add your first expense now';
+  String get noExpensesHeadline => 'No expenses yet';
 
   @override
-  String get noExpensesSubtitle => 'Add your first expense in seconds';
+  String get noExpensesSubtitle => 'Use the button below to add one.';
 
   @override
-  String get noExpensesAddFirst => 'Add First Expense';
+  String get noExpensesAddFirst => 'Add expense';
 
   @override
   String get noExpensesCashWallet => 'Cash Wallet';
 
   @override
-  String get noExpensesCashWalletSubtitle => 'Track how much cash you still have';
+  String get noExpensesCashWalletSubtitle => 'See how much cash you have left';
 
   @override
   String get noExpensesAddViaSms => 'Add via Bank SMS';
 
   @override
-  String get noExpensesTipLabel => 'Tip';
+  String get noExpensesTipLabel => 'Note';
 
   @override
-  String get noExpensesTipBody => 'Once you add your first expense, you\'ll understand where your money goes';
+  String get noExpensesTipBody => 'Expenses appear here as you add them.';
 
   @override
   String get tripDetailsQuickAddExpenseAdded => 'Expense added';
@@ -777,10 +777,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cardFormCardPreviewLabel => 'Card preview';
 
   @override
-  String get cardFormSaveEdit => 'Save Changes';
+  String get cardFormSaveEdit => 'Save changes';
 
   @override
-  String get cardFormSaveCreate => 'Add Card';
+  String get cardFormSaveCreate => 'Add card';
 
   @override
   String get cardFormDuplicate => 'A card with these details already exists.';
@@ -845,10 +845,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormNoteHint => 'Optional details';
 
   @override
-  String get expenseFormSaveCreate => 'Create Expense';
+  String get expenseFormSaveCreate => 'Add expense';
 
   @override
-  String get expenseFormSaveEdit => 'Save Changes';
+  String get expenseFormSaveEdit => 'Save changes';
 
   @override
   String get expenseFormAmountPositive => 'Amount must be greater than zero.';
@@ -1042,7 +1042,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get smsSaveButton => 'Save Expense';
+  String get smsSaveButton => 'Save expense';
 
   @override
   String get smsTextRequired => 'Paste the SMS text first.';
@@ -1157,7 +1157,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tripReportsSmartSummary => 'Smart summary';
+  String get tripReportsSmartSummary => 'Summary';
 
   @override
   String get tripReportsTopSpending => 'Top spending';
@@ -1207,21 +1207,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsEarlyNoExpenses => 'No expenses yet';
 
   @override
-  String get tripReportsEarlyAddFirstHint => 'Add your first expense to start tracking your spending.';
+  String get tripReportsEarlyAddFirstHint => 'Add an expense to see a report.';
 
   @override
   String tripReportsEarlyRecorded(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'You\'ve recorded $count expenses so far.',
-      one: 'You\'ve recorded 1 expense so far.',
+      other: '$count expenses recorded',
+      one: '1 expense recorded',
     );
     return '$_temp0';
   }
 
   @override
-  String get tripReportsEarlyAddMoreHint => 'Add more expenses to see clearer spending patterns.';
+  String get tripReportsEarlyAddMoreHint => 'Add more expenses for a fuller report.';
 
   @override
   String get globalReportsTitle => 'Global reports';
@@ -1238,22 +1238,22 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get globalReportsEmptyTitle => 'No trips to analyze';
+  String get globalReportsEmptyTitle => 'No trips yet';
 
   @override
-  String get globalReportsEmptyMessage => 'Create a trip first to unlock global financial insights.';
+  String get globalReportsEmptyMessage => 'Add a trip to see reports.';
 
   @override
   String get globalReportsZeroTripsTitle => 'No trips yet';
 
   @override
-  String get globalReportsZeroTripsSubtitle => 'Add your first trip to start tracking expenses and see global reports.';
+  String get globalReportsZeroTripsSubtitle => 'Add a trip to see reports across trips.';
 
   @override
-  String get globalReportsSingleTripNote => 'Add more trips to unlock smarter cross-trip comparisons.';
+  String get globalReportsSingleTripNote => 'Add more trips to compare across trips.';
 
   @override
-  String get globalReportsSmartSummary => 'Smart summary';
+  String get globalReportsSmartSummary => 'Summary';
 
   @override
   String get globalReportsOverview => 'Overview';
@@ -1330,16 +1330,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get globalReportsInsightPaymentVariation => 'Your payment behavior varies across channels or networks';
 
   @override
-  String get globalReportsBehavioralInsightsTitle => 'Behavioral insights';
+  String get globalReportsBehavioralInsightsTitle => 'Notes';
 
   @override
-  String get globalReportsBehavioralInsightTitleSpike => 'Spending Spike';
+  String get globalReportsBehavioralInsightTitleSpike => 'Spending change';
 
   @override
-  String get globalReportsBehavioralInsightTitleCategoryDrift => 'Category Concentration';
+  String get globalReportsBehavioralInsightTitleCategoryDrift => 'Category focus';
 
   @override
-  String get globalReportsBehavioralInsightTitleFees => 'Fees Alert';
+  String get globalReportsBehavioralInsightTitleFees => 'Fees';
 
   @override
   String globalReportsBehavioralInsightSpike(int percentage) {
@@ -1362,7 +1362,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String globalReportsBehavioralInsightFees(int percentage) {
-    return 'Fees are taking about $percentage% of your spending. Consider a lower-fee payment method.';
+    return 'Fees are about $percentage% of spending.';
   }
 
   @override
@@ -1377,10 +1377,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get createTripHeading => 'Where are you traveling?';
+  String get createTripHeading => 'Where are you going?';
 
   @override
-  String get createTripSubheading => 'Choose your destination and we\'ll set the currency automatically';
+  String get createTripSubheading => 'Pick a destination. Currency is set automatically.';
 
   @override
   String get tripFormDestinationSearchLabel => 'Search for a country';

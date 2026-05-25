@@ -34,9 +34,9 @@ class AppSecondaryButton extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.08),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.05),
+                    blurRadius: 6,
+                    offset: const Offset(0, 1),
                   ),
                 ],
               ),
@@ -45,7 +45,7 @@ class AppSecondaryButton extends StatelessWidget {
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 15,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                   child: child,
                 ),
@@ -90,9 +90,9 @@ class AppPrimaryButton extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.2),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -101,7 +101,7 @@ class AppPrimaryButton extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                   child: child,
                 ),

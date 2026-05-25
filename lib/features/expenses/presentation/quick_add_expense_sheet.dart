@@ -234,6 +234,8 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
+    final isArabic =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     final canSave = _canSaveAmount;
     const amountHint = '0.00';
     final displayCurrency = _selectedCurrencyCode;
@@ -244,7 +246,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       color: Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+        padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 8),
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -263,16 +265,17 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
               inputFormatters: [_amountFormatter],
               onSubmitted: (_) => _onAmountSubmitted(),
               onChanged: _onAmountChanged,
-              style: const TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF0F172A),
+              style: TextStyle(
+                fontSize: 30,
+                fontWeight: RtlTypography.amountWeight(isArabic),
+                color: const Color(0xFF0F172A),
+                height: RtlTypography.amountLineHeight(isArabic),
               ),
               decoration: InputDecoration(
                 hintText: amountHint,
                 hintStyle: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w600,
                   color: Colors.blueGrey.shade200,
                 ),
                 errorText: amountError,
@@ -283,15 +286,13 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 isDense: true,
               ),
             ),
-            Directionality(
-              textDirection: TextDirection.ltr,
-              child: Text(
-                l10n.quickAddAmountInCurrency(displayCurrency),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: const Color(0xFF94A3B8),
-                  fontWeight: FontWeight.w500,
-                ),
+            LtrText(
+              data: l10n.quickAddAmountInCurrency(displayCurrency),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: const Color(0xFF94A3B8),
+                fontWeight: FontWeight.w500,
+                height: RtlTypography.bodyLineHeight(isArabic),
               ),
             ),
             const SizedBox(height: 6),
@@ -299,9 +300,11 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
               controller: _merchantController,
               focusNode: _merchantFocusNode,
               textInputAction: TextInputAction.done,
+              textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: const Color(0xFF334155),
                 fontWeight: FontWeight.w500,
+                height: RtlTypography.bodyLineHeight(isArabic),
               ),
               decoration: InputDecoration(
                 hintText: l10n.quickAddMerchantPlaceholder,
@@ -367,8 +370,10 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                       });
                     },
                     child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isArabic ? 13 : 12,
+                      vertical: isArabic ? 9 : 8,
+                    ),
                     decoration: BoxDecoration(
                       color: isSelected
                           ? selectedChipColor
@@ -379,7 +384,8 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                       ExpenseOptionLabels.category(l10n, category),
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: isSelected ? Colors.white : const Color(0xFF475569),
-                        fontWeight: FontWeight.w600,
+                        fontWeight: RtlTypography.chipWeight(isArabic),
+                        height: RtlTypography.chipLineHeight(isArabic),
                       ),
                     ),
                   ),
@@ -403,7 +409,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
               child: Text(
                 l10n.tripDetailsQuickAddSave,
                 style: const TextStyle(
-                  fontWeight: FontWeight.w700,
+                  fontWeight: FontWeight.w600,
                   fontSize: 16,
                 ),
               ),
@@ -454,6 +460,8 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   }
 
   Widget _buildPaymentRow(AppLocalizations l10n) {
+    final isArabic =
+        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     final options = <({String key, String label})>[
       (key: kQuickAddPaymentCash, label: l10n.paymentMethodCash),
       (key: kQuickAddPaymentCard, label: l10n.tripDetailsQuickAddPaymentCard),
@@ -488,8 +496,10 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                         color: isSelected
                             ? const Color(0xFF334155)
                             : const Color(0xFF64748B),
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? RtlTypography.chipWeight(isArabic)
+                            : FontWeight.w500,
+                        height: RtlTypography.chipLineHeight(isArabic),
                       ),
                     ),
                     backgroundColor: const Color(0xFFF8FAFC),

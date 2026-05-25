@@ -182,9 +182,9 @@ class _SmartSummaryHeroCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF7C4DFF).withValues(alpha: 0.08), // subtle purple shadow
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: const Color(0xFF7C4DFF).withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -215,7 +215,7 @@ class _SmartSummaryHeroCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                       color: const Color(0xFF4B3B6B), // deep lavender text
                     ),
                   ),
@@ -312,9 +312,8 @@ class _BehavioralInsightsSection extends StatelessWidget {
           child: Text(
             context.l10n.globalReportsBehavioralInsightsTitle,
             style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               color: const Color(0xFF7C4DFF), // indigo accent
-              letterSpacing: 0.3,
             ),
           ),
         ),
@@ -364,7 +363,7 @@ class _SummaryCountCard extends StatelessWidget {
             Text(
               value,
               style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
               ),
             ),
@@ -463,7 +462,7 @@ class _OverviewRow extends StatelessWidget {
           Text(
             value,
             style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: theme.colorScheme.onSurface,
             ),
           ),
@@ -487,7 +486,7 @@ class _SectionHeader extends StatelessWidget {
       child: Text(
         title,
         style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w600,
           color: theme.colorScheme.primary,
         ),
       ),
@@ -518,7 +517,7 @@ class _CurrencyBucketList extends StatelessWidget {
                         Text(
                           buckets[index].currency,
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -560,8 +559,8 @@ class _AmountText extends StatelessWidget {
       child: Text(
         '${_formatAmount(amount)} $currency',
         style: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.2,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.1,
         ),
       ),
     );

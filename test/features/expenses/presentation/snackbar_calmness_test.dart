@@ -177,9 +177,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('No trips yet'), findsOneWidget);
-    expect(find.text('Add Trip'), findsOneWidget);
+    expect(find.text('Add trip'), findsOneWidget);
     expect(
-      find.text('Add your first trip to start tracking expenses and see global reports.'),
+      find.text('Add a trip to see reports across trips.'),
       findsNothing,
     );
   });

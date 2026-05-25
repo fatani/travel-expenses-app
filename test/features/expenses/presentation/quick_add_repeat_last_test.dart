@@ -105,8 +105,20 @@ void main() {
       (tester) async {
     await openQuickAdd(tester, expenses: [lastExpense]);
 
-    expect(find.text('Amount in CNY'), findsOneWidget);
-    expect(find.text('Amount in USD'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(QuickAddExpenseSheet),
+        matching: find.text('CNY'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byType(QuickAddExpenseSheet),
+        matching: find.text('USD'),
+      ),
+      findsNothing,
+    );
   });
 
   testWidgets('repeat last is explicit via in-sheet action', (tester) async {
@@ -144,7 +156,13 @@ void main() {
       tester.widget<TextField>(merchantField(tester)).controller?.text,
       'Lunch at Cafe',
     );
-    expect(find.text('Amount in USD'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(QuickAddExpenseSheet),
+        matching: find.text('USD'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Food'), findsOneWidget);
     expect(find.text('Cash'), findsOneWidget);
   });
