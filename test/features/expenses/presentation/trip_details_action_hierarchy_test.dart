@@ -135,6 +135,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Same as last time'), findsOneWidget);
+
+    final amountField = find.descendant(
+      of: find.byType(QuickAddExpenseSheet),
+      matching: find.byType(TextField).first,
+    );
+    expect(
+      tester.widget<TextField>(amountField).controller?.text,
+      '25',
+    );
+    expect(
+      tester
+          .widget<TextField>(
+            find.descendant(
+              of: find.byType(QuickAddExpenseSheet),
+              matching: find.byType(TextField).at(1),
+            ),
+          )
+          .controller
+          ?.text,
+      'Lunch',
+    );
   });
 
   testWidgets('does not show dashboard stat cards on trip details', (tester) async {

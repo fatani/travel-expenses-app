@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../../core/design_system/app_surfaces.dart';
@@ -156,6 +156,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           network: 'Visa',
           channel: 'POS Purchase',
         );
+      case 'Other':
+        return const _InitialPaymentSelection(
+          network: 'Other',
+          channel: 'Other',
+        );
       default:
         return null;
     }
@@ -241,6 +246,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           controller: _amountController,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           textInputAction: TextInputAction.next,
+                          textDirection: TextDirection.ltr,
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),

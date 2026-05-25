@@ -3,35 +3,15 @@
 class _QuickAddSheetResult {
   const _QuickAddSheetResult.moreDetails(_QuickAddDraftPayload value)
     : openMoreDetails = true,
-      addAnother = false,
-      repeatCategory = null,
-      repeatPaymentChipKey = null,
       payload = null,
       draft = value;
 
   const _QuickAddSheetResult.submit(_QuickAddSubmitPayload value)
     : openMoreDetails = false,
-      addAnother = false,
-      repeatCategory = null,
-      repeatPaymentChipKey = null,
       payload = value,
       draft = null;
 
-  const _QuickAddSheetResult.submitAndAddAnother(
-    _QuickAddSubmitPayload value, {
-    required String category,
-    required String paymentChipKey,
-  }) : openMoreDetails = false,
-       addAnother = true,
-       repeatCategory = category,
-       repeatPaymentChipKey = paymentChipKey,
-       payload = value,
-       draft = null;
-
   final bool openMoreDetails;
-  final bool addAnother;
-  final String? repeatCategory;
-  final String? repeatPaymentChipKey;
   final _QuickAddSubmitPayload? payload;
   final _QuickAddDraftPayload? draft;
 }
@@ -41,18 +21,10 @@ class QuickAddExpenseSheet extends ConsumerStatefulWidget {
     super.key,
     required this.trip,
     required this.expenses,
-    this.repeatLast = false,
-    this.lastExpense,
-    this.repeatCategory,
-    this.repeatPaymentChipKey,
   });
 
   final Trip trip;
   final List<Expense> expenses;
-  final bool repeatLast;
-  final Expense? lastExpense;
-  final String? repeatCategory;
-  final String? repeatPaymentChipKey;
 
   @override
   ConsumerState<QuickAddExpenseSheet> createState() =>
@@ -61,7 +33,13 @@ class QuickAddExpenseSheet extends ConsumerStatefulWidget {
 
 class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   bool _showRepeatHint = false;
+  bool _isSubmitting = false;
+  late String _selectedCurrencyCode;
+  final FocusNode _amountFocusNode = FocusNode();
+  final FocusNode _merchantFocusNode = FocusNode();
   final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _merchantController = TextEditingController();
+  late final List<String> _recentMerchants;
   final TextInputFormatter _amountFormatter = TextInputFormatter.withFunction((
     oldValue,
     newValue,
@@ -76,18 +54,16 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   });
 
   String _selectedCategory = 'Other';
-  String? _animatingCategory;
   bool _showValidationError = false;
   bool _userSelectedCategory = false;
-  bool _isPrefilledFromMemory = false;
-  double? _lastAmountSuggestion;
   Map<String, String> _amountCategoryMemory = {};
-  int? _lastUsedCardProfileId;
-  String _selectedPaymentChipKey = 'cash';
+  String _selectedPaymentChipKey = kQuickAddPaymentCash;
 
-  static const String _prefsLastAmountKey = 'last_amount';
-  static const String _prefsLastCategoryKey = 'last_category';
-  static const String _prefsAmountMemoryKey = 'amount_memory';
+  String _prefsLastCategoryKeyForTrip() =>
+      'quick_add_last_category_${widget.trip.id}';
+
+  String _prefsAmountMemoryKeyForTrip() =>
+      'quick_add_amount_memory_${widget.trip.id}';
 
   static const List<String> _quickCategories = <String>[
     'Food',
@@ -101,72 +77,61 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   @override
   void initState() {
     super.initState();
+    _recentMerchants = deriveRecentMerchants(widget.expenses);
+    _selectedCurrencyCode = widget.trip.baseCurrency.trim().toUpperCase();
     _userSelectedCategory = false;
-    _lastUsedCardProfileId = _resolveLastUsedCardProfileId();
-    if (_lastUsedCardProfileId != null) {
-      _selectedPaymentChipKey = _paymentChipKeyForCard(_lastUsedCardProfileId!);
-    }
-    // Repeat Last / Add Another logic
-    if (widget.repeatLast) {
-      final category = widget.repeatCategory ?? widget.lastExpense?.category;
-      final paymentKey = widget.repeatPaymentChipKey ??
-          (widget.lastExpense != null ? _paymentChipKeyForExpense(widget.lastExpense!) : null);
-      if (category != null) {
-        _selectedCategory = category;
-        _userSelectedCategory = true;
+
+    _applyTripPaymentDefault();
+    _loadPreferences();
+    _amountController.addListener(() {
+      if (mounted) {
+        setState(() {});
       }
-      if (paymentKey != null) {
-        _selectedPaymentChipKey = paymentKey;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _amountFocusNode.requestFocus();
       }
-      _lastUsedCardProfileId = widget.lastExpense?.cardProfileId;
-      _amountController.text = '';
-      _showRepeatHint = true;
-      _isPrefilledFromMemory = false;
-    } else {
-      _loadPreferences();
-    }
-  }
-
-  String _paymentChipKeyForExpense(Expense e) {
-    if (e.cardProfileId != null) {
-      return _paymentChipKeyForCard(e.cardProfileId!);
-    }
-    return e.paymentMethod;
-  }
-
-  void _activateRepeatLast() {
-    if (widget.expenses.isEmpty) {
-      return;
-    }
-
-    final lastExpense = widget.expenses.last;
-    final category = lastExpense.category;
-    final paymentKey = _paymentChipKeyForExpense(lastExpense);
-
-    setState(() {
-      if (category != null && category.isNotEmpty) {
-        _selectedCategory = category;
-        _userSelectedCategory = true;
-      }
-      _selectedPaymentChipKey = paymentKey;
-      _lastUsedCardProfileId = lastExpense.cardProfileId;
-      _amountController.clear();
-      _showRepeatHint = true;
-      _isPrefilledFromMemory = false;
     });
   }
 
-  int? _resolveLastUsedCardProfileId() {
-    for (final expense in widget.expenses) {
-      if (expense.cardProfileId == null) {
-        continue;
-      }
-      if (!isCardExpenseChannel(expense.paymentChannel)) {
-        continue;
-      }
-      return expense.cardProfileId;
+  void _activateRepeatLast() {
+    final lastExpense = mostRecentExpense(widget.expenses);
+    if (lastExpense == null) {
+      return;
     }
-    return null;
+
+    setState(() {
+      _applyRepeatFromExpense(lastExpense);
+    });
+  }
+
+  void _applyRepeatFromExpense(Expense expense) {
+    _userSelectedCategory = true;
+    final category = expense.category;
+    if (category != null && category.isNotEmpty) {
+      _selectedCategory = category;
+    }
+    _selectedPaymentChipKey = quickAddPaymentChipKeyFromExpense(expense);
+    _selectedCurrencyCode = expense.currencyCode.trim().toUpperCase();
+    _amountController.text = _formatAmountForField(expense.amount);
+    _merchantController.text = expense.title.trim();
+    _showRepeatHint = true;
+  }
+
+  void _applyTripPaymentDefault() {
+    final lastExpense = mostRecentExpense(widget.expenses);
+    if (lastExpense == null) {
+      return;
+    }
+    _selectedPaymentChipKey = quickAddPaymentChipKeyFromExpense(lastExpense);
+  }
+
+  String _formatAmountForField(double amount) {
+    if (amount == amount.roundToDouble()) {
+      return amount.toInt().toString();
+    }
+    return amount.toString();
   }
 
   String _amountRangeKey(double amount) {
@@ -216,19 +181,15 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
-    final lastAmount = prefs.getDouble(_prefsLastAmountKey);
-    final lastCategory = prefs.getString(_prefsLastCategoryKey);
-    final memoryData = prefs.getString(_prefsAmountMemoryKey);
+    final lastCategory = prefs.getString(_prefsLastCategoryKeyForTrip());
+    final memoryData = prefs.getString(_prefsAmountMemoryKeyForTrip());
     if (mounted) {
       setState(() {
-        if (lastAmount != null) {
-          _lastAmountSuggestion = lastAmount;
-          _selectedCategory = lastCategory ?? 'Other';
-          _isPrefilledFromMemory = true;
-        } else {
-          _lastAmountSuggestion = null;
-          _selectedCategory = lastCategory ?? 'Other';
-          _isPrefilledFromMemory = false;
+        if (lastCategory != null &&
+            lastCategory.isNotEmpty &&
+            !_userSelectedCategory &&
+            _amountController.text.trim().isEmpty) {
+          _selectedCategory = lastCategory;
         }
         if (memoryData != null) {
           _amountCategoryMemory = Map<String, String>.from(
@@ -241,350 +202,241 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
 
   @override
   void dispose() {
+    _amountFocusNode.dispose();
+    _merchantFocusNode.dispose();
     _amountController.dispose();
+    _merchantController.dispose();
     super.dispose();
+  }
+
+  bool get _canSaveAmount {
+    final amount = double.tryParse(_amountController.text.trim());
+    return amount != null && amount > 0;
+  }
+
+  String _resolvedExpenseTitle() {
+    return resolveQuickAddExpenseTitle(
+      merchantText: _merchantController.text,
+      category: _selectedCategory,
+    );
+  }
+
+  void _selectRecentMerchant(String merchant) {
+    setState(() {
+      _merchantController.text = merchant;
+      _merchantController.selection = TextSelection.collapsed(
+        offset: merchant.length,
+      );
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final theme = Theme.of(context);
-    final cardsState = ref.watch(cardsProvider);
-    final cards = cardsState.valueOrNull ?? const <CardProfile>[];
-    final keyboardInset = MediaQuery.viewInsetsOf(context).bottom;
-    final isKeyboardOpen = keyboardInset > 0;
-    final sheetHeight = MediaQuery.sizeOf(context).height * 0.42;
-    final amountText = _amountController.text.trim();
-    final amount = double.tryParse(amountText);
-    final canSave = amount != null && amount > 0;
-    final amountHint = _lastAmountSuggestion != null
-      ? _lastAmountSuggestion!.toStringAsFixed(2)
-      : '0.00';
-    final tripCurrency = widget.trip.baseCurrency.trim().toUpperCase();
-    final paymentOptions = _buildPaymentOptions(cards);
-
+    final canSave = _canSaveAmount;
+    const amountHint = '0.00';
+    final displayCurrency = _selectedCurrencyCode;
     final amountError = _showValidationError ? _validateAmount(l10n) : null;
+    const selectedChipColor = Color(0xFF334155);
 
-    return Align(
-      alignment: Alignment.bottomCenter,
-      child: Container(
-        height: sheetHeight,
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 24,
-              offset: const Offset(0, -8),
-            ),
-          ],
-        ),
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
         child: SingleChildScrollView(
-          physics: isKeyboardOpen
-              ? const ClampingScrollPhysics()
-              : const NeverScrollableScrollPhysics(),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-            Container(
-              width: 44,
-              height: 5,
-              decoration: BoxDecoration(
-                color: const Color(0xFFCBD5E1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            const SizedBox(height: 10),
-            if (_showRepeatHint)
-              _buildRepeatHintBanner(l10n, paymentOptions),
+            if (_showRepeatHint) _buildRepeatHintBanner(l10n),
             TextField(
               controller: _amountController,
-              autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              focusNode: _amountFocusNode,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               textDirection: TextDirection.ltr,
               textAlign: TextAlign.center,
               cursorColor: const Color(0xFF0F172A),
               textInputAction: TextInputAction.done,
               inputFormatters: [_amountFormatter],
-              onSubmitted: (_) => _save(),
-              onChanged: (value) {
-                setState(() {
-                  _isPrefilledFromMemory = false;
-                  final amount = double.tryParse(value);
-                  if (amount != null) {
-                    _applyCategorySuggestion(amount);
-                  }
-                });
-              },
-              style: TextStyle(
-                fontSize: 36,
+              onSubmitted: (_) => _onAmountSubmitted(),
+              onChanged: _onAmountChanged,
+              style: const TextStyle(
+                fontSize: 32,
                 fontWeight: FontWeight.w800,
-                color: _isPrefilledFromMemory
-                    ? const Color(0xFF64748B)
-                    : const Color(0xFF0F172A),
+                color: Color(0xFF0F172A),
               ),
               decoration: InputDecoration(
                 hintText: amountHint,
                 hintStyle: TextStyle(
-                  fontSize: 30,
+                  fontSize: 28,
                   fontWeight: FontWeight.w700,
                   color: Colors.blueGrey.shade200,
-                ),
-                helperText: l10n.quickAddAmountInCurrency(tripCurrency),
-                helperStyle: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF64748B),
                 ),
                 errorText: amountError,
                 border: InputBorder.none,
                 enabledBorder: InputBorder.none,
                 focusedBorder: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
+                isDense: true,
               ),
             ),
-            const SizedBox(height: 12),
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text(
+                l10n.quickAddAmountInCurrency(displayCurrency),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: const Color(0xFF94A3B8),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _merchantController,
+              focusNode: _merchantFocusNode,
+              textInputAction: TextInputAction.done,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: const Color(0xFF334155),
+                fontWeight: FontWeight.w500,
+              ),
+              decoration: InputDecoration(
+                hintText: l10n.quickAddMerchantPlaceholder,
+                hintStyle: theme.textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFFCBD5E1),
+                  fontWeight: FontWeight.w400,
+                ),
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 6),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: UnderlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blueGrey.shade200),
+                ),
+              ),
+            ),
+            if (_recentMerchants.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              SizedBox(
+                height: 30,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _recentMerchants.length,
+                  separatorBuilder: (context, index) => const SizedBox(width: 6),
+                  itemBuilder: (context, index) {
+                    final merchant = _recentMerchants[index];
+                    return ExcludeFocus(
+                      child: ActionChip(
+                        label: Text(
+                          merchant,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        visualDensity: VisualDensity.compact,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        labelStyle: theme.textTheme.labelSmall?.copyWith(
+                          color: const Color(0xFF475569),
+                          fontWeight: FontWeight.w500,
+                        ),
+                        backgroundColor: const Color(0xFFF8FAFC),
+                        side: const BorderSide(color: Color(0xFFE2E8F0)),
+                        onPressed: () => _selectRecentMerchant(merchant),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+            const SizedBox(height: 6),
             Wrap(
               alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 6,
+              runSpacing: 6,
               children: _quickCategories.map((category) {
                 final isSelected = _selectedCategory == category;
-                final isAnimating = _animatingCategory == category;
-                final selectedColor = _showRepeatHint
-                    ? const Color(0xFF6D28D9)
-                    : (_isPrefilledFromMemory && !_userSelectedCategory
-                        ? const Color(0xFFA78BFA)
-                        : const Color(0xFF7C3AED));
-                return AnimatedScale(
-                  scale: isAnimating ? 0.95 : 1.0,
-                  duration: const Duration(milliseconds: 120),
-                  curve: Curves.easeOut,
+                return ExcludeFocus(
                   child: GestureDetector(
                     onTap: () {
                       setState(() {
-                        _isPrefilledFromMemory = false;
                         _userSelectedCategory = true;
                         _selectedCategory = category;
-                        _animatingCategory = category;
-                      });
-                      Future<void>.delayed(const Duration(milliseconds: 120), () {
-                        if (!mounted) {
-                          return;
-                        }
-                        setState(() {
-                          if (_animatingCategory == category) {
-                            _animatingCategory = null;
-                          }
-                        });
                       });
                     },
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 160),
-                      curve: Curves.easeOut,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? selectedColor
-                            : Colors.grey.shade100,
-                        borderRadius: BorderRadius.circular(16),
-                        border: isSelected && _showRepeatHint
-                            ? Border.all(color: const Color(0xFF5B21B6), width: 1.5)
-                            : null,
-                        boxShadow: isSelected
-                            ? [
-                                BoxShadow(
-                                  color: selectedColor.withValues(
-                                    alpha: _showRepeatHint ? 0.35 : 0.25,
-                                  ),
-                                  blurRadius: _showRepeatHint ? 12 : 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : const [],
-                      ),
-                      child: Text(
-                        ExpenseOptionLabels.category(l10n, category),
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: isSelected ? Colors.white : Colors.black87,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? selectedChipColor
+                          : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      ExpenseOptionLabels.category(l10n, category),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: isSelected ? Colors.white : const Color(0xFF475569),
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                  ),
                   ),
                 );
               }).toList(),
             ),
-            const SizedBox(height: 8),
-            LayoutBuilder(
-                builder: (context, constraints) {
-                  final maxCards = constraints.maxWidth < 380 ? 2 : 3;
-                  final cashOption = paymentOptions.firstWhere(
-                    (option) => option.key == 'cash',
-                    orElse: () => paymentOptions.first,
-                  );
-                  final cardOptions = paymentOptions
-                      .where((option) => option.key != 'cash')
-                      .toList(growable: false)
-                    ..sort((a, b) {
-                      final rankA = a.label.startsWith('Visa')
-                          ? 0
-                          : (a.label.startsWith('MC') ? 1 : 2);
-                      final rankB = b.label.startsWith('Visa')
-                          ? 0
-                          : (b.label.startsWith('MC') ? 1 : 2);
-                      if (rankA != rankB) {
-                        return rankA.compareTo(rankB);
-                      }
-                      return a.label.compareTo(b.label);
-                    });
-                  final visibleOptions = <_QuickAddPaymentOption>[cashOption];
-                  for (final option in cardOptions) {
-                    if (visibleOptions.length - 1 >= maxCards) {
-                      break;
-                    }
-                    visibleOptions.add(option);
-                  }
-
-                  return Row(
-                    children: [
-                      ...visibleOptions.map((option) {
-                        final isSelected = _selectedPaymentChipKey == option.key;
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsetsDirectional.only(end: 6),
-                            child: SizedBox(
-                              height: 32,
-                              child: ChoiceChip(
-                                selected: isSelected,
-                                labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                                visualDensity: VisualDensity.compact,
-                                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                label: Text(
-                                  option.label,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  softWrap: false,
-                                  style: TextStyle(
-                                    color: isSelected
-                                        ? (_showRepeatHint
-                                            ? const Color(0xFF1E293B)
-                                            : const Color(0xFF334155))
-                                        : const Color(0xFF64748B),
-                                    fontWeight: isSelected && _showRepeatHint
-                                        ? FontWeight.w700
-                                        : FontWeight.w600,
-                                  ),
-                                ),
-                                backgroundColor: const Color(0xFFF8FAFC),
-                                selectedColor: _showRepeatHint && isSelected
-                                    ? const Color(0xFFE0E7FF)
-                                    : const Color(0xFFEFF3F7),
-                                side: BorderSide(
-                                  color: isSelected
-                                      ? (_showRepeatHint
-                                          ? const Color(0xFF475569)
-                                          : const Color(0xFF94A3B8))
-                                      : const Color(0xFFE2E8F0),
-                                  width: isSelected && _showRepeatHint ? 1.5 : 1,
-                                ),
-                                onSelected: (_) {
-                                  setState(() {
-                                    _selectedPaymentChipKey = option.key;
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                      SizedBox(
-                        height: 32,
-                        child: ActionChip(
-                          labelPadding: const EdgeInsets.symmetric(horizontal: 6),
-                          visualDensity: VisualDensity.compact,
-                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          label: const Text('...'),
-                          onPressed: _openMoreDetails,
-                        ),
-                      ),
-                    ],
-                  );
-                },
+            const SizedBox(height: 6),
+            _buildPaymentRow(l10n),
+            const SizedBox(height: 10),
+            FilledButton(
+              onPressed: canSave ? _save : null,
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48),
+                backgroundColor: const Color(0xFF2563EB),
+                disabledBackgroundColor: const Color(0xFFCBD5E1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
               ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Opacity(
-                    opacity: canSave ? 1.0 : 0.65,
-                    child: Material(
-                      color: Colors.transparent,
-                      borderRadius: BorderRadius.circular(18),
-                      child: InkWell(
-                        borderRadius: BorderRadius.circular(18),
-                        onTap: canSave ? _save : null,
-                        child: Ink(
-                          height: 58,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(18),
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF2563EB), Color(0xFF7C3AED)],
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF7C3AED).withValues(alpha: 0.25),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Center(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.auto_awesome, color: Colors.white, size: 20),
-                                const SizedBox(width: 9),
-                                Text(
-                                  AppLocalizations.of(context)!.quickAddQuickSave,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                    fontSize: 16,
-                                    letterSpacing: 0.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
+              child: Text(
+                l10n.tripDetailsQuickAddSave,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _openMoreDetails,
+              style: TextButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.symmetric(vertical: 4),
+              ),
+              child: Text(
+                l10n.quickAddAddDetails,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: const Color(0xFF64748B),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            if (widget.expenses.isNotEmpty && !_showRepeatHint)
+              TextButton(
+                onPressed: _activateRepeatLast,
+                style: TextButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.only(top: 0, bottom: 4),
+                ),
+                child: Text(
+                  l10n.tripDetailsRepeatLastExpense,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: const Color(0xFF94A3B8),
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ],
-            ),
-            if (widget.expenses.isNotEmpty && !_showRepeatHint) ...[
-              const SizedBox(height: 4),
-              TextButton.icon(
-                onPressed: _activateRepeatLast,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: Text(l10n.tripDetailsRepeatLastExpense),
               ),
-            ],
-            const SizedBox(height: 6),
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: _openMoreDetails,
-                icon: const Icon(Icons.edit_note_rounded),
-                label: Text(l10n.quickAddAddDetails),
-              ),
-            ),
             ],
           ),
         ),
@@ -592,37 +444,87 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     );
   }
 
-  Widget _buildRepeatHintBanner(
-    AppLocalizations l10n,
-    List<_QuickAddPaymentOption> paymentOptions,
-  ) {
-    final categoryLabel = ExpenseOptionLabels.category(l10n, _selectedCategory);
-    var paymentLabel = l10n.paymentMethodCash;
-    for (final option in paymentOptions) {
-      if (option.key == _selectedPaymentChipKey) {
-        paymentLabel = option.label;
-        break;
+  void _onAmountChanged(String value) {
+    setState(() {
+      final parsed = double.tryParse(value);
+      if (parsed != null) {
+        _applyCategorySuggestion(parsed);
       }
-    }
+    });
+  }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        children: [
-          Text(
-            l10n.tripDetailsRepeatHint,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
+  Widget _buildPaymentRow(AppLocalizations l10n) {
+    final options = <({String key, String label})>[
+      (key: kQuickAddPaymentCash, label: l10n.paymentMethodCash),
+      (key: kQuickAddPaymentCard, label: l10n.tripDetailsQuickAddPaymentCard),
+      (key: kQuickAddPaymentOther, label: l10n.paymentMethodOther),
+    ];
+
+    return Row(
+      children: options.map((option) {
+        final isSelected = _selectedPaymentChipKey == option.key;
+        return Expanded(
+          child: Padding(
+            padding: const EdgeInsetsDirectional.only(end: 6),
+            child: Semantics(
+              button: true,
+              selected: isSelected,
+              label: option.label,
+              child: SizedBox(
+                height: 34,
+                child: ExcludeFocus(
+                  child: ChoiceChip(
+                    selected: isSelected,
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                    visualDensity: VisualDensity.compact,
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    label: Text(
+                      option.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSelected
+                            ? const Color(0xFF334155)
+                            : const Color(0xFF64748B),
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                    backgroundColor: const Color(0xFFF8FAFC),
+                    selectedColor: const Color(0xFFE2E8F0),
+                    side: BorderSide(
+                      color: isSelected
+                          ? const Color(0xFF94A3B8)
+                          : const Color(0xFFE2E8F0),
+                    ),
+                    onSelected: (_) {
+                      setState(() {
+                        _selectedPaymentChipKey = option.key;
+                      });
+                    },
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 4),
-          _RepeatRestoredLine(label: categoryLabel),
-          const SizedBox(height: 2),
-          _RepeatRestoredLine(label: paymentLabel),
-        ],
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildRepeatHintBanner(AppLocalizations l10n) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Text(
+        l10n.tripDetailsRepeatHint,
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontSize: 11,
+          fontWeight: FontWeight.w500,
+        ),
       ),
     );
   }
@@ -642,11 +544,24 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     return null;
   }
 
+  void _onAmountSubmitted() {
+    if (!_canSaveAmount) {
+      setState(() {
+        _showValidationError = true;
+      });
+      return;
+    }
+    _save();
+  }
+
   void _save() {
+    if (_isSubmitting) {
+      return;
+    }
     _saveWithPayment(_selectedQuickPayment());
   }
 
-  void _saveWithPayment(_QuickAddPaymentData payment, {bool addAnother = false}) {
+  void _saveWithPayment(_QuickAddPaymentData payment) {
     final l10n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -658,6 +573,9 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       return;
     }
 
+    _isSubmitting = true;
+    FocusManager.instance.primaryFocus?.unfocus();
+
     final amount = double.parse(_amountController.text.trim());
     final now = DateTime.now();
 
@@ -665,212 +583,56 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     _savePreferences(amount);
 
     final submitPayload = _QuickAddSubmitPayload(
-      title: _selectedCategory,
+      title: _resolvedExpenseTitle(),
       amount: amount,
-      currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
+      currencyCode: _selectedCurrencyCode,
       category: _selectedCategory,
       spentAt: now,
       payment: payment,
     );
 
-    Navigator.of(context).pop(
-      addAnother
-          ? _QuickAddSheetResult.submitAndAddAnother(
-              submitPayload,
-              category: _selectedCategory,
-              paymentChipKey: _selectedPaymentChipKey,
-            )
-          : _QuickAddSheetResult.submit(submitPayload),
-    );
+    Navigator.of(context).pop(_QuickAddSheetResult.submit(submitPayload));
   }
 
   void _openMoreDetails() {
-    final selectedPayment = _selectedQuickPayment();
+    FocusManager.instance.primaryFocus?.unfocus();
     _savePreferences();
     Navigator.of(context).pop(
       _QuickAddSheetResult.moreDetails(
         _QuickAddDraftPayload(
-          title: _selectedCategory,
+          title: _resolvedExpenseTitle(),
           amountText: _amountController.text,
           category: _selectedCategory,
-          paymentMethod: selectedPayment.method,
-          currencyCode: widget.trip.baseCurrency.trim().toUpperCase(),
+          paymentMethod:
+              quickAddPaymentMethodForAddDetails(_selectedPaymentChipKey),
+          currencyCode: _selectedCurrencyCode,
           spentAt: DateTime.now(),
         ),
       ),
     );
   }
 
-  List<_QuickAddPaymentOption> _buildPaymentOptions(List<CardProfile> cards) {
-    final cardsById = <int, CardProfile>{for (final card in cards) card.id: card};
-    final options = <_QuickAddPaymentOption>[
-      _QuickAddPaymentOption(
-        key: 'cash',
-        label: AppLocalizations.of(context)!.paymentMethodCash,
-        payment: _defaultQuickPayment,
-      ),
-    ];
-
-    final seenCardIds = <int>{};
-    for (final expense in widget.expenses) {
-      final cardId = expense.cardProfileId;
-      if (cardId == null || seenCardIds.contains(cardId)) {
-        continue;
-      }
-      if (!isCardExpenseChannel(expense.paymentChannel)) {
-        continue;
-      }
-
-      final card = cardsById[cardId];
-      if (card == null) {
-        continue;
-      }
-
-      options.add(
-        _QuickAddPaymentOption(
-          key: _paymentChipKeyForCard(cardId),
-          label: _cardChipLabel(card, expense.paymentNetwork),
-          payment: _paymentForCard(card, expense),
-        ),
-      );
-      seenCardIds.add(cardId);
-      if (seenCardIds.length >= 3) {
-        break;
-      }
-    }
-
-    if (options.length == 1 && cards.isNotEmpty) {
-      final fallbackCard = _lastUsedCardProfileId == null
-          ? cards.first
-          : cards.firstWhere(
-              (card) => card.id == _lastUsedCardProfileId,
-              orElse: () => cards.first,
-            );
-      options.add(
-        _QuickAddPaymentOption(
-          key: _paymentChipKeyForCard(fallbackCard.id),
-          label: _cardChipLabel(fallbackCard, fallbackCard.cardNetwork),
-          payment: _paymentForCardFallback(fallbackCard),
-        ),
-      );
-    }
-
-    return options;
-  }
-
-  _QuickAddPaymentData _paymentForCardFallback(CardProfile card) {
-    final network =
-        _normalizedText(card.cardNetwork ?? card.customCardNetwork) ?? 'Other';
-    const channel = 'POS Purchase';
-    return _QuickAddPaymentData(
-      method: resolvePaymentMethodHint(network, channel),
-      network: network,
-      channel: channel,
-      cardProfileId: card.id,
-    );
-  }
-
   _QuickAddPaymentData _selectedQuickPayment() {
-    final cards = ref.read(cardsProvider).valueOrNull ?? const <CardProfile>[];
-    final options = _buildPaymentOptions(cards);
-    for (final option in options) {
-      if (option.key == _selectedPaymentChipKey) {
-        return option.payment;
-      }
-    }
-    return _defaultQuickPayment;
-  }
-
-  String _paymentChipKeyForCard(int cardId) => 'card:$cardId';
-
-  String _cardChipLabel(CardProfile card, String? fallbackNetwork) {
-    final network = _normalizedText(
-          fallbackNetwork ?? card.cardNetwork ?? card.customCardNetwork,
-        ) ??
-        'Card';
-    final compactNetwork = _compactNetworkLabel(network);
-    final last4 = _normalizedText(card.last4);
-    if (last4 != null) {
-      return '$compactNetwork ****$last4';
-    }
-    return compactNetwork;
-  }
-
-  String _compactNetworkLabel(String network) {
-    final normalized = network.trim().toLowerCase();
-    if (normalized == 'mastercard') {
-      return 'MC';
-    }
-    if (normalized == 'visa') {
-      return 'Visa';
-    }
-    if (normalized == 'apple pay') {
-      return 'Apple';
-    }
-    return network;
-  }
-
-  _QuickAddPaymentData _paymentForCard(CardProfile card, Expense recentExpense) {
-    final network = _normalizedText(
-          recentExpense.paymentNetwork ?? card.cardNetwork ?? card.customCardNetwork,
-        ) ??
-        'Other';
-    final recentChannel = _normalizedText(recentExpense.paymentChannel);
-    final channel = recentChannel == 'Online Purchase'
-        ? 'Online Purchase'
-        : 'POS Purchase';
-
+    final payload = quickAddPaymentPayloadForChip(_selectedPaymentChipKey);
     return _QuickAddPaymentData(
-      method: resolvePaymentMethodHint(network, channel),
-      network: network,
-      channel: channel,
-      cardProfileId: card.id,
+      method: payload.method,
+      network: payload.network,
+      channel: payload.channel ?? '',
+      cardProfileId: payload.cardProfileId,
     );
-  }
-
-  String? _normalizedText(String? value) {
-    final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
-    return trimmed;
   }
 
   Future<void> _savePreferences([double? amount]) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_prefsLastCategoryKey, _selectedCategory);
+    await prefs.setString(_prefsLastCategoryKeyForTrip(), _selectedCategory);
     if (amount != null) {
-      await prefs.setDouble(_prefsLastAmountKey, amount);
       final range = _amountRangeKey(amount);
       _amountCategoryMemory[range] = _selectedCategory;
-      await prefs.setString(_prefsAmountMemoryKey, jsonEncode(_amountCategoryMemory));
+      await prefs.setString(
+        _prefsAmountMemoryKeyForTrip(),
+        jsonEncode(_amountCategoryMemory),
+      );
     }
-  }
-  static const _QuickAddPaymentData _defaultQuickPayment = _QuickAddPaymentData(
-    method: 'Cash',
-    network: '',
-    channel: 'Cash',
-    cardProfileId: null,
-  );
-}
-
-class _RepeatRestoredLine extends StatelessWidget {
-  const _RepeatRestoredLine({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      '• $label',
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        color: Color(0xFF64748B),
-        fontSize: 12,
-        fontWeight: FontWeight.w500,
-        height: 1.35,
-      ),
-    );
   }
 }
 
@@ -886,18 +648,6 @@ class _QuickAddPaymentData {
   final String network;
   final String channel;
   final int? cardProfileId;
-}
-
-class _QuickAddPaymentOption {
-  const _QuickAddPaymentOption({
-    required this.key,
-    required this.label,
-    required this.payment,
-  });
-
-  final String key;
-  final String label;
-  final _QuickAddPaymentData payment;
 }
 
 class _QuickAddSubmitPayload {

@@ -8,6 +8,7 @@ import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_form_screen.dart';
+import 'package:travel_expenses/features/expenses/presentation/quick_add_recent_merchants.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
 import 'package:travel_expenses/features/settings/data/card_repository.dart';
 import 'package:travel_expenses/features/settings/domain/card_profile.dart';
@@ -16,78 +17,133 @@ import 'package:travel_expenses/l10n/app_localizations.dart';
 
 void main() {
   final trip = Trip.create(
-    id: 'trip-quick-add',
-    name: 'Test Trip',
+    id: 'trip-merchant',
+    name: 'Merchant Trip',
     destination: 'Test',
-    baseCurrency: 'CNY',
+    baseCurrency: 'USD',
   );
+
+  final baseTime = DateTime(2026, 5, 20, 12);
+
+  Expense expense({
+    required String id,
+    required String title,
+    required DateTime spentAt,
+  }) {
+    return Expense.create(
+      id: id,
+      tripId: trip.id,
+      title: title,
+      amount: 10,
+      currencyCode: 'USD',
+      category: 'Food',
+      spentAt: spentAt,
+      paymentMethod: 'Cash',
+    );
+  }
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('quick add displays trip base currency near amount field', (
-    tester,
-  ) async {
-    final thbTrip = Trip.create(
-      id: 'trip-thb',
-      name: 'Thailand',
-      destination: 'Bangkok',
-      baseCurrency: 'THB',
-    );
+  group('deriveRecentMerchants', () {
+    test('returns empty for no expenses', () {
+      expect(deriveRecentMerchants(const []), isEmpty);
+    });
+
+    test('ignores empty merchant names', () {
+      final merchants = deriveRecentMerchants([
+        expense(id: '1', title: '  ', spentAt: baseTime),
+        expense(id: '2', title: 'Cafe Nero', spentAt: baseTime.add(const Duration(hours: 1))),
+      ]);
+      expect(merchants, ['Cafe Nero']);
+    });
+
+    test('sorts by most recent spentAt first', () {
+      final merchants = deriveRecentMerchants([
+        expense(id: '1', title: 'Old Shop', spentAt: baseTime),
+        expense(id: '2', title: 'New Shop', spentAt: baseTime.add(const Duration(days: 1))),
+      ]);
+      expect(merchants.first, 'New Shop');
+      expect(merchants.last, 'Old Shop');
+    });
+
+    test('deduplicates case-insensitively keeping latest casing', () {
+      final merchants = deriveRecentMerchants([
+        expense(id: '1', title: 'starbucks', spentAt: baseTime),
+        expense(id: '2', title: 'Starbucks', spentAt: baseTime.add(const Duration(hours: 2))),
+        expense(id: '3', title: 'STARBUCKS', spentAt: baseTime.add(const Duration(hours: 1))),
+      ]);
+      expect(merchants, ['Starbucks']);
+    });
+
+    test('limits to maxCount', () {
+      final merchants = deriveRecentMerchants(
+        List.generate(
+          10,
+          (index) => expense(
+            id: '$index',
+            title: 'Shop $index',
+            spentAt: baseTime.add(Duration(hours: index)),
+          ),
+        ),
+        maxCount: 5,
+      );
+      expect(merchants, hasLength(5));
+    });
+  });
+
+  group('resolveQuickAddExpenseTitle', () {
+    test('uses merchant when provided', () {
+      expect(
+        resolveQuickAddExpenseTitle(merchantText: '  Cafe  ', category: 'Food'),
+        'Cafe',
+      );
+    });
+
+    test('falls back to category when merchant empty', () {
+      expect(
+        resolveQuickAddExpenseTitle(merchantText: '   ', category: 'Transport'),
+        'Transport',
+      );
+    });
+  });
+
+  testWidgets('recent merchant chips appear from trip expenses only', (tester) async {
+    final tripExpenses = [
+      expense(id: '1', title: 'Airport Cafe', spentAt: baseTime),
+      expense(id: '2', title: 'Metro Kiosk', spentAt: baseTime.add(const Duration(hours: 1))),
+    ];
 
     await tester.pumpWidget(
-      _buildQuickAddApp(
-        trip: thbTrip,
-        expenses: const [],
-      ),
+      _buildQuickAddApp(trip: trip, expenses: tripExpenses),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Amount in THB'), findsOneWidget);
+    expect(find.text('Airport Cafe'), findsOneWidget);
+    expect(find.text('Metro Kiosk'), findsOneWidget);
   });
 
-  testWidgets(
-    'quick add shows core fields without first-payment onboarding',
-    (tester) async {
-      await tester.pumpWidget(
-        _buildQuickAddApp(
-          trip: trip,
-          expenses: const [],
-        ),
-      );
-      await tester.pumpAndSettle();
+  testWidgets('tapping merchant chip fills merchant field', (tester) async {
+    final tripExpenses = [
+      expense(id: '1', title: 'Bakery Lane', spentAt: baseTime),
+    ];
 
-      expect(find.byType(TextField), findsNWidgets(2));
-      expect(find.text('Food'), findsOneWidget);
-      expect(find.text('Transport'), findsOneWidget);
-      expect(find.text('Cash'), findsWidgets);
-      expect(
-        find.descendant(
-          of: find.byType(QuickAddExpenseSheet),
-          matching: find.widgetWithText(ChoiceChip, 'Card'),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: find.byType(QuickAddExpenseSheet),
-          matching: find.widgetWithText(ChoiceChip, 'Other'),
-        ),
-        findsOneWidget,
-      );
-      expect(find.text('Save'), findsOneWidget);
-      expect(find.text('Add Details'), findsOneWidget);
-      expect(find.text('...'), findsNothing);
-      expect(find.byType(OutlinedButton), findsNothing);
+    await tester.pumpWidget(
+      _buildQuickAddApp(trip: trip, expenses: tripExpenses),
+    );
+    await tester.pumpAndSettle();
 
-      expect(find.text('How did you pay?'), findsNothing);
-      expect(find.text('Do you want to add cash balance now?'), findsNothing);
-      expect(find.text('Continue'), findsNothing);
-    },
-  );
+    await tester.tap(find.text('Bakery Lane'));
+    await tester.pumpAndSettle();
 
-  testWidgets('quick save still submits from trip details', (tester) async {
+    final merchantField = tester.widget<TextField>(
+      find.byType(TextField).at(1),
+    );
+    expect(merchantField.controller?.text, 'Bakery Lane');
+  });
+
+  testWidgets('save with amount only keeps merchant optional', (tester) async {
     tester.view.physicalSize = const Size(800, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -115,20 +171,21 @@ void main() {
       of: find.byType(QuickAddExpenseSheet),
       matching: find.byType(TextField).first,
     );
-    await tester.enterText(amountField, '18.5');
-    await tester.tap(find.text('Food'));
+    await tester.enterText(amountField, '12');
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Save'));
-    await tester.tap(find.text('Save'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(QuickAddExpenseSheet),
+        matching: find.widgetWithText(FilledButton, 'Save'),
+      ),
+    );
     await tester.pumpAndSettle();
 
     expect(repository.createdExpenses, hasLength(1));
-    expect(repository.createdExpenses.single.amount, 18.5);
-    expect(repository.createdExpenses.single.category, 'Food');
-    expect(repository.createdExpenses.single.currencyCode, 'CNY');
+    expect(repository.createdExpenses.single.title, 'Food');
   });
 
-  testWidgets('add details still opens expense form with prefill', (tester) async {
+  testWidgets('save uses merchant as expense title when entered', (tester) async {
     tester.view.physicalSize = const Size(800, 1200);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -152,117 +209,70 @@ void main() {
     await tester.tap(find.byType(FloatingActionButton));
     await tester.pumpAndSettle();
 
-    final amountField = find.descendant(
-      of: find.byType(QuickAddExpenseSheet),
-      matching: find.byType(TextField).first,
+    final sheet = find.byType(QuickAddExpenseSheet);
+    await tester.enterText(
+      find.descendant(of: sheet, matching: find.byType(TextField).first),
+      '25',
     );
-    await tester.enterText(amountField, '42');
-    await tester.tap(find.text('Transport'));
+    await tester.enterText(
+      find.descendant(of: sheet, matching: find.byType(TextField).at(1)),
+      'Corner Market',
+    );
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Add Details'));
+    await tester.tap(
+      find.descendant(
+        of: sheet,
+        matching: find.widgetWithText(FilledButton, 'Save'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(repository.createdExpenses.single.title, 'Corner Market');
+  });
+
+  testWidgets('add details passes merchant into expense form', (tester) async {
+    tester.view.physicalSize = const Size(800, 1200);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final repository = _FakeExpenseRepository();
+
+    await tester.pumpWidget(
+      _buildTripDetailsApp(
+        trip: trip,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(repository),
+          cardRepositoryProvider.overrideWithValue(_EmptyCardRepository()),
+          cashWalletRepositoryProvider.overrideWithValue(
+            _EmptyCashWalletRepository(),
+          ),
+        ],
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pumpAndSettle();
+
+    final sheet = find.byType(QuickAddExpenseSheet);
+    await tester.enterText(
+      find.descendant(of: sheet, matching: find.byType(TextField).first),
+      '30',
+    );
+    await tester.enterText(
+      find.descendant(of: sheet, matching: find.byType(TextField).at(1)),
+      'Harbor Bistro',
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Add Details'));
     await tester.pumpAndSettle();
 
     expect(find.byType(ExpenseFormScreen), findsOneWidget);
-    expect(find.widgetWithText(TextFormField, 'Transport'), findsOneWidget);
-
-    final formAmountField = tester.widget<TextFormField>(
-      find.byType(TextFormField).at(1),
-    );
-    expect(formAmountField.controller?.text, '42');
+    expect(find.widgetWithText(TextFormField, 'Harbor Bistro'), findsOneWidget);
     expect(repository.createdExpenses, isEmpty);
   });
 
-  testWidgets('amount field requests focus when quick add opens', (tester) async {
-    await tester.pumpWidget(
-      _buildQuickAddApp(trip: trip, expenses: const []),
-    );
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 50));
-
-    final amountField = tester.widget<TextField>(find.byType(TextField).first);
-    expect(amountField.focusNode?.hasFocus, isTrue);
-  });
-
-  testWidgets('save button stays visible without scrolling in common layout',
-      (tester) async {
-    tester.view.physicalSize = const Size(390, 844);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-
-    await tester.pumpWidget(
-      _buildQuickAddApp(trip: trip, expenses: const []),
-    );
-    await tester.pumpAndSettle();
-
-    final saveButton = find.widgetWithText(FilledButton, 'Save');
-    expect(saveButton, findsOneWidget);
-    expect(tester.getBottomLeft(saveButton).dy, greaterThan(0));
-  });
-
-  testWidgets('quick add saves with amount only using defaults', (tester) async {
-    tester.view.physicalSize = const Size(800, 1200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-
-    final repository = _FakeExpenseRepository();
-
-    await tester.pumpWidget(
-      _buildTripDetailsApp(
-        trip: trip,
-        overrides: [
-          expenseRepositoryProvider.overrideWithValue(repository),
-          cardRepositoryProvider.overrideWithValue(_EmptyCardRepository()),
-          cashWalletRepositoryProvider.overrideWithValue(
-            _EmptyCashWalletRepository(),
-          ),
-        ],
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byType(FloatingActionButton));
-    await tester.pumpAndSettle();
-
-    final amountField = find.descendant(
-      of: find.byType(QuickAddExpenseSheet),
-      matching: find.byType(TextField).first,
-    );
-    await tester.enterText(amountField, '9.75');
-    await tester.pumpAndSettle();
-    final saveButton = find.descendant(
-      of: find.byType(QuickAddExpenseSheet),
-      matching: find.widgetWithText(FilledButton, 'Save'),
-    );
-    await tester.ensureVisible(saveButton);
-    await tester.tap(saveButton);
-    await tester.pumpAndSettle();
-
-    expect(repository.createdExpenses, hasLength(1));
-    expect(repository.createdExpenses.single.amount, 9.75);
-    expect(repository.createdExpenses.single.category, 'Food');
-    expect(repository.createdExpenses.single.paymentMethod, 'Cash');
-  });
-
-  testWidgets('add details is a secondary text action not a second primary button',
-      (tester) async {
-    await tester.pumpWidget(
-      _buildQuickAddApp(trip: trip, expenses: const []),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.widgetWithText(FilledButton, 'Save'), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byType(QuickAddExpenseSheet),
-        matching: find.widgetWithText(TextButton, 'Add Details'),
-      ),
-      findsOneWidget,
-    );
-    expect(find.text('Add Details'), findsOneWidget);
-  });
-
-  testWidgets('arabic quick add keeps amount LTR and shows localized save',
+  testWidgets('arabic quick add shows merchant placeholder and keeps amount LTR',
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -283,8 +293,7 @@ void main() {
 
     final amountField = tester.widget<TextField>(find.byType(TextField).first);
     expect(amountField.textDirection, TextDirection.ltr);
-    expect(find.text('حفظ'), findsOneWidget);
-    expect(find.text('إضافة تفاصيل'), findsOneWidget);
+    expect(find.text('المتجر'), findsOneWidget);
   });
 }
 

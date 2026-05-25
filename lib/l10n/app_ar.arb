@@ -127,6 +127,7 @@
   "cashWalletQuickAtmShort": "ATM",
   "quickAddQuickSave": "حفظ سريع",
   "quickAddAddDetails": "إضافة تفاصيل",
+  "quickAddMerchantPlaceholder": "المتجر",
   "quickAddAmountInCurrency": "المبلغ بعملة {currency}",
   "@quickAddAmountInCurrency": {"placeholders": {"currency": {}}},
   "cashWalletTripStatusDaysLeft": "متبقي {days} أيام",

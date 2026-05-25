@@ -16,8 +16,6 @@ import '../../export/presentation/export_menu.dart';
 import '../../cash_wallet/presentation/trip_cash_wallet_screen.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../reports/presentation/trip_reports_screen.dart';
-import '../../settings/domain/card_profile.dart';
-import '../../settings/presentation/cards_provider.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_timeline_status.dart';
 import '../../trips/domain/trip_title_resolver.dart';
@@ -27,6 +25,8 @@ import '../domain/expense_payment.dart';
 import 'expense_controller.dart';
 import 'expense_form_screen.dart';
 import 'expense_option_labels.dart';
+import 'quick_add_payment.dart';
+import 'quick_add_recent_merchants.dart';
 
 part 'quick_add_expense_sheet.dart';
 
@@ -212,13 +212,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     }
   }
 
-  Future<void> _openQuickAddSheet(
-    List<Expense> expenses, {
-    bool repeat = false,
-    Expense? lastExpense,
-    String? repeatCategory,
-    String? repeatPaymentChipKey,
-  }) async {
+  Future<void> _openQuickAddSheet(List<Expense> expenses) async {
     CalmSnackBar.clear(context);
     final result = await showModalBottomSheet<_QuickAddSheetResult>(
       context: context,
@@ -234,10 +228,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           child: QuickAddExpenseSheet(
             trip: _trip,
             expenses: expenses,
-            repeatLast: repeat,
-            lastExpense: lastExpense,
-            repeatCategory: repeatCategory,
-            repeatPaymentChipKey: repeatPaymentChipKey,
           ),
         );
       },
@@ -269,17 +259,6 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
     unawaited(_createQuickExpense(payload));
     HapticFeedback.lightImpact();
-    if (result.addAnother) {
-      await Future.delayed(const Duration(milliseconds: 120));
-      if (mounted) {
-        await _openQuickAddSheet(
-          expenses,
-          repeat: true,
-          repeatCategory: result.repeatCategory,
-          repeatPaymentChipKey: result.repeatPaymentChipKey,
-        );
-      }
-    }
   }
 
   Future<void> _createQuickExpense(_QuickAddSubmitPayload payload) async {

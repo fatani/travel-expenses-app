@@ -127,6 +127,7 @@
   "cashWalletQuickAtmShort": "ATM",
   "quickAddQuickSave": "Quick Save",
   "quickAddAddDetails": "Add Details",
+  "quickAddMerchantPlaceholder": "Merchant",
   "quickAddAmountInCurrency": "Amount in {currency}",
   "@quickAddAmountInCurrency": {"placeholders": {"currency": {}}},
   "cashWalletTripStatusDaysLeft": "{days} days left",

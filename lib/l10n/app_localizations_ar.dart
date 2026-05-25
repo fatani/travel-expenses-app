@@ -361,6 +361,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get quickAddAddDetails => 'إضافة تفاصيل';
 
   @override
+  String get quickAddMerchantPlaceholder => 'المتجر';
+
+  @override
   String quickAddAmountInCurrency(Object currency) {
     return 'المبلغ بعملة $currency';
   }

@@ -78,13 +78,18 @@ void main() {
 
     final amountField = find.descendant(
       of: find.byType(QuickAddExpenseSheet),
-      matching: find.byType(TextField),
+      matching: find.byType(TextField).first,
     );
     await tester.enterText(amountField, '40');
-    await tester.tap(find.text('Visa ****1234'));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(QuickAddExpenseSheet),
+        matching: find.widgetWithText(ChoiceChip, 'Card'),
+      ),
+    );
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Quick Save'));
-    await tester.tap(find.text('Quick Save'));
+    await tester.ensureVisible(find.text('Save'));
+    await tester.tap(find.text('Save'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -186,13 +191,13 @@ Future<void> _quickSave(WidgetTester tester) async {
 
   final amountField = find.descendant(
     of: find.byType(QuickAddExpenseSheet),
-    matching: find.byType(TextField),
+    matching: find.byType(TextField).first,
   );
   await tester.enterText(amountField, '25');
   await tester.tap(find.text('Cash'));
   await tester.pumpAndSettle();
-  await tester.ensureVisible(find.text('Quick Save'));
-  await tester.tap(find.text('Quick Save'));
+  await tester.ensureVisible(find.text('Save'));
+  await tester.tap(find.text('Save'));
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 100));
 }

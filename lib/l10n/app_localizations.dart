@@ -767,6 +767,12 @@ abstract class AppLocalizations {
   /// **'Add Details'**
   String get quickAddAddDetails;
 
+  /// No description provided for @quickAddMerchantPlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Merchant'**
+  String get quickAddMerchantPlaceholder;
+
   /// No description provided for @quickAddAmountInCurrency.
   ///
   /// In en, this message translates to:
