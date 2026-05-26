@@ -90,8 +90,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get exportSuccess => 'تم التصدير';
 
   @override
-  String exportFailed(Object format, Object error) {
-    return 'تعذر تصدير $format: $error';
+  String exportFailed(Object format) {
+    return 'تعذر تصدير $format. حاول مرة أخرى.';
   }
 
   @override
@@ -136,9 +136,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String tripsDeleteError(Object error) {
-    return 'فشل حذف الرحلة: $error';
-  }
+  String get tripsDeleteError => 'تعذر حذف الرحلة. حاول مرة أخرى.';
 
   @override
   String get tripsEmptyTitle => 'لا توجد رحلات بعد';
@@ -229,6 +227,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String tripFormSaveError(Object error) {
     return 'فشل حفظ الرحلة: $error';
   }
+
+  @override
+  String get tripFormSaveFailed => 'تعذّر حفظ الرحلة. حاول مرة أخرى.';
 
   @override
   String get tripDetailsLoadError => 'تعذّر تحميل المصاريف.';
@@ -335,6 +336,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cashWalletNoTransactions => 'لا توجد حركات كاش بعد.';
+
+  @override
+  String get cashWalletLoadError => 'تعذر تحميل محفظة الكاش.';
 
   @override
   String get cashWalletAddCash => 'إضافة كاش';
@@ -640,9 +644,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String tripDetailsDeleteExpenseError(Object error) {
-    return 'فشل حذف المصروف: $error';
-  }
+  String get tripDetailsDeleteExpenseError => 'تعذر حذف المصروف. حاول مرة أخرى.';
 
   @override
   String get tripDetailsExcludedCurrenciesWarning => 'بعض المصاريف بعملات أخرى غير مشمولة في الإجماليات أعلاه';
@@ -873,6 +875,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get expenseFormSaveFailed => 'تعذّر حفظ المصروف. حاول مرة أخرى.';
+
+  @override
   String get expenseConversionContextCash => 'مقدّر باستخدام قيمة الكاش في الرحلة';
 
   @override
@@ -972,6 +977,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get financialProfileMissing => 'الملف المالي غير موجود.';
 
   @override
+  String get financialProfileLoadError => 'تعذر تحميل ملفك المالي.';
+
+  @override
   String get financialOnboardingQuestion => 'أين تقيم؟';
 
   @override
@@ -1005,9 +1013,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get languageEnglish => 'الإنجليزية';
 
   @override
-  String settingsLanguageSaveError(Object error) {
-    return 'فشل حفظ اللغة: $error';
-  }
+  String get settingsLanguageSaveError => 'تعذر حفظ اللغة. حاول مرة أخرى.';
 
   @override
   String get smsScreenTitle => 'إضافة عبر رسالة البنك';
@@ -1051,9 +1057,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get smsTripMissingError => 'بيانات الرحلة غير متوفرة. أعد فتح هذه الشاشة.';
 
   @override
-  String smsSaveError(Object error) {
-    return 'فشل حفظ مصروف الرسالة: $error';
-  }
+  String get smsSaveError => 'تعذر حفظ المصروف. حاول مرة أخرى.';
 
   @override
   String get intlBreakdownTitle => 'تفاصيل الدفع الدولي';
@@ -1096,12 +1100,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsSummarySubtitle => 'ملخص التقرير';
 
   @override
-  String tripReportsLoadError(Object error) {
-    return 'تعذر تحميل التقرير: $error';
-  }
+  String get tripReportsLoadError => 'تعذر تحميل التقرير.';
 
   @override
-  String get tripReportsTotalBilled => 'إجمالي المبلغ المخصوم';
+  String get tripReportsTotalBilled => 'الإنفاق حسب العملة';
 
   @override
   String get tripReportsTotalFees => 'إجمالي رسوم العمليات الدولية';
@@ -1240,9 +1242,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get globalReportsTooltip => 'التقرير الشامل';
 
   @override
-  String globalReportsLoadError(Object error) {
-    return 'تعذر تحميل التقرير الشامل: $error';
-  }
+  String get globalReportsLoadError => 'تعذر تحميل التقرير الشامل.';
 
   @override
   String get globalReportsEmptyTitle => 'لا توجد رحلات بعد';
@@ -1281,7 +1281,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get globalReportsTrackedDays => 'عدد أيام الرحلات المحتسبة';
 
   @override
-  String get globalReportsTotalBilled => 'إجمالي المبلغ المخصوم';
+  String get globalReportsTotalBilled => 'الإنفاق حسب العملة';
 
   @override
   String get globalReportsAveragePerTrip => 'متوسط الصرف لكل رحلة';

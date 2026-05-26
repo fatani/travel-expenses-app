@@ -136,8 +136,8 @@ void main() {
       expect(summary.totalBilledByCurrency[1].totalAmount, 100.0);
       expect(summary.totalBilledByCurrency[2].totalAmount, 60.0);
       expect(summary.topCategory, isNull);
-      expect(summary.mostUsedPaymentChannel, 'Online Purchase');
-      expect(summary.mostUsedPaymentNetwork, 'Visa');
+      expect(summary.mostUsedPaymentChannel, isNull);
+      expect(summary.mostUsedPaymentNetwork, isNull);
       expect(summary.internationalRatioPercentage, 50);
       expect(summary.domesticRatioPercentage, 50);
       expect(summary.trackedTripDays, 8);

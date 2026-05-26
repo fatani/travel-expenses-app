@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../../core/design_system/calm_snackbar.dart';
+import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../../core/extensions/rtl_extension.dart';
 import '../../../core/formatting/bidi_format.dart';
 import '../../../core/formatting/trip_date_phrase.dart';
@@ -32,6 +33,9 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
       'trips_has_ever_had_at_least_one_trip';
 
   bool? _hasEverHadTrips;
+  final Set<String> _deletingTripIds = <String>{};
+  bool _isOpeningTripForm = false;
+  final Set<String> _openingTripDetailIds = <String>{};
 
   @override
   void initState() {
@@ -170,33 +174,46 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.error_outline_rounded, size: 40),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.tripsLoadError,
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '$error',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: () =>
+          final staleTrips = tripsState.valueOrNull;
+          if (staleTrips != null && staleTrips.isNotEmpty) {
+            return Column(
+              children: [
+                StaleLoadErrorBanner(
+                  message: l10n.tripsLoadError,
+                  retryLabel: l10n.commonTryAgain,
+                  onRetry: () =>
+                      ref.read(tripsControllerProvider.notifier).reload(),
+                ),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: () =>
                         ref.read(tripsControllerProvider.notifier).reload(),
-                    child: Text(l10n.commonTryAgain),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 104),
+                      itemCount: staleTrips.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 10),
+                      itemBuilder: (context, index) {
+                        final trip = staleTrips[index];
+                        return _TripCard(
+                          trip: trip,
+                          onTap: () => _openTripDetails(context, trip),
+                          onEdit: () => _openTripForm(context, trip: trip),
+                          onDelete: () => _confirmDelete(context, ref, trip),
+                        );
+                      },
+                    ),
                   ),
-                ],
-              ),
-            ),
+                ),
+              ],
+            );
+          }
+
+          return CalmLoadErrorPanel(
+            title: l10n.tripsLoadError,
+            retryLabel: l10n.commonTryAgain,
+            onRetry: () =>
+                ref.read(tripsControllerProvider.notifier).reload(),
           );
         },
       ),
@@ -210,21 +227,39 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
   }
 
   Future<void> _openTripForm(BuildContext context, {Trip? trip}) async {
-    final createdTrip = await Navigator.of(context).push<Trip?>(
-      MaterialPageRoute<Trip?>(builder: (_) => TripFormScreen(trip: trip)),
-    );
-
-    if (!context.mounted || trip != null || createdTrip == null) {
+    if (_isOpeningTripForm) {
       return;
     }
+    _isOpeningTripForm = true;
 
-    await _openTripDetails(context, createdTrip);
+    try {
+      final createdTrip = await Navigator.of(context).push<Trip?>(
+        MaterialPageRoute<Trip?>(builder: (_) => TripFormScreen(trip: trip)),
+      );
+
+      if (!context.mounted || trip != null || createdTrip == null) {
+        return;
+      }
+
+      await _openTripDetails(context, createdTrip);
+    } finally {
+      _isOpeningTripForm = false;
+    }
   }
 
   Future<void> _openTripDetails(BuildContext context, Trip trip) async {
-    await Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(builder: (_) => TripDetailsScreen(trip: trip)),
-    );
+    if (_openingTripDetailIds.contains(trip.id)) {
+      return;
+    }
+    _openingTripDetailIds.add(trip.id);
+
+    try {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => TripDetailsScreen(trip: trip)),
+      );
+    } finally {
+      _openingTripDetailIds.remove(trip.id);
+    }
   }
 
   Future<void> _openGlobalReports(BuildContext context) async {
@@ -255,7 +290,10 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
         return;
       }
 
-      CalmSnackBar.showMessage(context, message: '$error');
+      CalmSnackBar.showMessage(
+        context,
+        message: AppLocalizations.of(context)!.settingsLanguageSaveError,
+      );
     }
   }
 
@@ -264,10 +302,15 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
     WidgetRef ref,
     Trip trip,
   ) async {
+    if (_deletingTripIds.contains(trip.id)) {
+      return;
+    }
+
     final l10n = AppLocalizations.of(context)!;
     final isArabic =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     final tripName = TripTitleResolver.resolve(trip, isArabic);
+    var confirmTapped = false;
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
@@ -376,7 +419,13 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                     borderRadius: BorderRadius.circular(18),
                     child: InkWell(
                       borderRadius: BorderRadius.circular(18),
-                      onTap: () => Navigator.of(context).pop(true),
+                      onTap: () {
+                        if (confirmTapped) {
+                          return;
+                        }
+                        confirmTapped = true;
+                        Navigator.of(context).pop(true);
+                      },
                       child: Ink(
                         height: 52,
                         width: double.infinity,
@@ -438,6 +487,11 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
       return;
     }
 
+    if (_deletingTripIds.contains(trip.id)) {
+      return;
+    }
+
+    _deletingTripIds.add(trip.id);
     try {
       await ref.read(tripsControllerProvider.notifier).deleteTrip(trip.id);
     } catch (error) {
@@ -447,8 +501,10 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
 
       CalmSnackBar.showMessage(
         context,
-        message: l10n.tripsDeleteError('$error'),
+        message: l10n.tripsDeleteError,
       );
+    } finally {
+      _deletingTripIds.remove(trip.id);
     }
   }
 }

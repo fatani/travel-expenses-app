@@ -954,7 +954,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.smsSaveError('$error'))));
+      ).showSnackBar(SnackBar(content: Text(l10n.smsSaveError)));
     }
   }
 

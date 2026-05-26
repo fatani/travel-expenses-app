@@ -102,7 +102,7 @@ void main() {
     expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
-    expect(find.text('Total billed'), findsOneWidget);
+    expect(find.text('Spending by currency'), findsOneWidget);
     expect(find.text('By category'), findsNothing);
     expect(find.textContaining('transaction currency'), findsNothing);
     expect(find.text('By payment network'), findsNothing);
@@ -138,7 +138,7 @@ void main() {
     expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
-    expect(find.text('Total billed'), findsOneWidget);
+    expect(find.text('Spending by currency'), findsOneWidget);
     expect(find.text('By category'), findsNothing);
     expect(find.textContaining('transaction currency'), findsNothing);
     expect(find.text('By payment network'), findsNothing);
@@ -180,7 +180,7 @@ void main() {
     expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
-    expect(find.text('Total billed'), findsOneWidget);
+    expect(find.text('Spending by currency'), findsOneWidget);
     expect(find.text('By category'), findsNothing);
     expect(find.textContaining('transaction currency'), findsNothing);
     expect(find.text('By payment network'), findsNothing);
@@ -237,7 +237,7 @@ void main() {
 
     expect(find.text('Overview'), findsOneWidget);
     expect(find.text('Total expenses'), findsOneWidget);
-    expect(find.text('Total billed'), findsOneWidget);
+    expect(find.text('Spending by currency'), findsOneWidget);
     expect(find.text('Overall spending'), findsNothing);
     expect(find.textContaining('only'), findsWidgets);
 

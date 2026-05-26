@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/async/async_notifier_reload.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../global_reports/data/global_report_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
@@ -42,13 +43,12 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
   }
 
   Future<void> reload() async {
-    state = const AsyncLoading();
+    state = AsyncNotifierReload.loadingPreserving(state);
 
     try {
       state = AsyncData(await _loadExpenses());
     } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-      rethrow;
+      state = AsyncNotifierReload.errorPreserving(error, stackTrace, state);
     }
   }
 
@@ -228,7 +228,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
   }
 
   Future<T> _runMutation<T>(Future<T> Function() mutation) async {
-    state = const AsyncLoading();
+    state = AsyncNotifierReload.loadingPreserving(state);
 
     try {
       final result = await mutation();
@@ -237,7 +237,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       state = AsyncData(await _loadExpenses());
       return result;
     } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      state = AsyncNotifierReload.errorPreserving(error, stackTrace, state);
       rethrow;
     }
   }

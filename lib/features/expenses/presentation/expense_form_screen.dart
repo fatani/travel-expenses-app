@@ -63,6 +63,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   int? _preferredCardProfileId;
   DateTime? _spentAt;
   bool _showValidationErrors = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -190,9 +191,8 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final isSaving = ref
-        .watch(expenseControllerProvider(widget.trip.id))
-        .isLoading;
+    final isSaving = _isSubmitting ||
+        ref.watch(expenseControllerProvider(widget.trip.id)).isLoading;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -611,6 +611,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting ||
+        ref.read(expenseControllerProvider(widget.trip.id)).isLoading) {
+      return;
+    }
+
     if (!_showValidationErrors) {
       setState(() {
         _showValidationErrors = true;
@@ -620,6 +625,10 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
+
+    setState(() {
+      _isSubmitting = true;
+    });
 
     final title = _titleController.text.trim().isEmpty
         ? _selectedCategory!
@@ -652,6 +661,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
 
     if (_isCardPayment && chargedHomeAmountRaw.isNotEmpty) {
       if (chargedHomeAmount == null || chargedHomeAmount <= 0) {
+        setState(() {
+          _isSubmitting = false;
+        });
         return;
       }
     }
@@ -660,6 +672,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
       final shouldKeepAsIs = await _confirmCurrencyMismatch(currencyCode);
       if (shouldKeepAsIs != true) {
+        if (mounted) {
+          setState(() {
+            _isSubmitting = false;
+          });
+        }
         return;
       }
     }
@@ -668,6 +685,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       expenseControllerProvider(widget.trip.id).notifier,
     );
 
+    var didPop = false;
     try {
       if (widget.expense == null) {
         final outcome = await controller.createExpense(
@@ -694,6 +712,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           return;
         }
 
+        didPop = true;
         Navigator.of(context).pop(outcome);
         return;
       } else {
@@ -723,6 +742,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         return;
       }
 
+      didPop = true;
       Navigator.of(context).pop(null);
     } catch (error) {
       if (!mounted) {
@@ -731,8 +751,14 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
 
       CalmSnackBar.showMessage(
         context,
-        message: AppLocalizations.of(context)!.expenseFormSaveError('$error'),
+        message: AppLocalizations.of(context)!.expenseFormSaveFailed,
       );
+    } finally {
+      if (!didPop && mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
     }
   }
 

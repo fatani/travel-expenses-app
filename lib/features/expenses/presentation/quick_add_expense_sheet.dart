@@ -3,16 +3,16 @@
 class _QuickAddSheetResult {
   const _QuickAddSheetResult.moreDetails(_QuickAddDraftPayload value)
     : openMoreDetails = true,
-      payload = null,
+      savedOutcome = null,
       draft = value;
 
-  const _QuickAddSheetResult.submit(_QuickAddSubmitPayload value)
+  const _QuickAddSheetResult.saved(ExpenseCreateOutcome value)
     : openMoreDetails = false,
-      payload = value,
+      savedOutcome = value,
       draft = null;
 
   final bool openMoreDetails;
-  final _QuickAddSubmitPayload? payload;
+  final ExpenseCreateOutcome? savedOutcome;
   final _QuickAddDraftPayload? draft;
 }
 
@@ -34,6 +34,7 @@ class QuickAddExpenseSheet extends ConsumerStatefulWidget {
 class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   bool _showRepeatHint = false;
   bool _isSubmitting = false;
+  bool _isOpeningMoreDetails = false;
   late String _selectedCurrencyCode;
   final FocusNode _amountFocusNode = FocusNode();
   final FocusNode _merchantFocusNode = FocusNode();
@@ -236,7 +237,7 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     final theme = Theme.of(context);
     final isArabic =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-    final canSave = _canSaveAmount;
+    final canSave = _canSaveAmount && !_isSubmitting;
     const amountHint = '0.00';
     final displayCurrency = _selectedCurrencyCode;
     final amountError = _showValidationError ? _validateAmount(l10n) : null;
@@ -406,16 +407,27 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              child: Text(
-                l10n.tripDetailsQuickAddSave,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16,
-                ),
-              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      l10n.tripDetailsQuickAddSave,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                      ),
+                    ),
             ),
             TextButton(
-              onPressed: _openMoreDetails,
+              onPressed: _isSubmitting || _isOpeningMoreDetails
+                  ? null
+                  : _openMoreDetails,
               style: TextButton.styleFrom(
                 visualDensity: VisualDensity.compact,
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -564,14 +576,14 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     _save();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (_isSubmitting) {
       return;
     }
-    _saveWithPayment(_selectedQuickPayment());
+    await _saveWithPayment(_selectedQuickPayment());
   }
 
-  void _saveWithPayment(_QuickAddPaymentData payment) {
+  Future<void> _saveWithPayment(_QuickAddPaymentData payment) async {
     final l10n = AppLocalizations.of(context)!;
 
     setState(() {
@@ -583,30 +595,72 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
       return;
     }
 
-    _isSubmitting = true;
+    setState(() {
+      _isSubmitting = true;
+    });
     FocusManager.instance.primaryFocus?.unfocus();
 
     final amount = double.parse(_amountController.text.trim());
     final now = DateTime.now();
-
-    // Save category memory for next time
-    _savePreferences(amount);
-
-    final submitPayload = _QuickAddSubmitPayload(
-      title: _resolvedExpenseTitle(),
-      amount: amount,
-      currencyCode: _selectedCurrencyCode,
-      category: _selectedCategory,
-      spentAt: now,
-      payment: payment,
+    final isCashQuickExpense = isCashExpensePayment(
+      paymentMethod: payment.method,
+      paymentChannel: payment.channel,
     );
 
-    Navigator.of(context).pop(_QuickAddSheetResult.submit(submitPayload));
+    var didPop = false;
+    try {
+      final outcome = await ref
+          .read(expenseControllerProvider(widget.trip.id).notifier)
+          .createExpense(
+            title: _resolvedExpenseTitle(),
+            amount: amount,
+            currencyCode: _selectedCurrencyCode,
+            category: _selectedCategory,
+            spentAt: now,
+            paymentMethod: payment.method,
+            paymentNetwork: isCashQuickExpense ? null : payment.network,
+            paymentChannel: payment.channel,
+            cardProfileId: payment.cardProfileId,
+            tripHomeCurrency: widget.trip.homeCurrencySnapshot,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      await _savePreferences(amount);
+
+      if (!mounted) {
+        return;
+      }
+
+      didPop = true;
+      Navigator.of(context).pop(_QuickAddSheetResult.saved(outcome));
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      CalmSnackBar.showMessage(
+        context,
+        message: l10n.expenseFormSaveFailed,
+      );
+    } finally {
+      if (!didPop && mounted) {
+        setState(() {
+          _isSubmitting = false;
+        });
+      }
+    }
   }
 
   void _openMoreDetails() {
+    if (_isSubmitting || _isOpeningMoreDetails) {
+      return;
+    }
+    _isOpeningMoreDetails = true;
     FocusManager.instance.primaryFocus?.unfocus();
-    _savePreferences();
+    unawaited(_savePreferences());
     Navigator.of(context).pop(
       _QuickAddSheetResult.moreDetails(
         _QuickAddDraftPayload(
@@ -658,24 +712,6 @@ class _QuickAddPaymentData {
   final String network;
   final String channel;
   final int? cardProfileId;
-}
-
-class _QuickAddSubmitPayload {
-  const _QuickAddSubmitPayload({
-    required this.title,
-    required this.amount,
-    required this.currencyCode,
-    required this.category,
-    required this.spentAt,
-    required this.payment,
-  });
-
-  final String title;
-  final double amount;
-  final String currencyCode;
-  final String category;
-  final DateTime spentAt;
-  final _QuickAddPaymentData payment;
 }
 
 class _QuickAddDraftPayload {

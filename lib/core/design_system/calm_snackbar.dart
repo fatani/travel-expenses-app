@@ -5,7 +5,13 @@ abstract final class CalmSnackBar {
   static const Duration undoDuration = Duration(seconds: 4);
   static const Duration briefDuration = Duration(seconds: 3);
 
+  static bool _undoSessionActive = false;
+
+  /// True while an undo snackbar is visible and must not be replaced casually.
+  static bool get isUndoSessionActive => _undoSessionActive;
+
   static void clear(BuildContext context) {
+    _undoSessionActive = false;
     final messenger = ScaffoldMessenger.maybeOf(context);
     if (messenger == null) {
       return;
@@ -15,11 +21,20 @@ abstract final class CalmSnackBar {
       ..clearSnackBars();
   }
 
-  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> show(
+  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> _showSnackBar(
     BuildContext context,
-    SnackBar snackBar,
-  ) {
-    clear(context);
+    SnackBar snackBar, {
+    bool replaceActiveUndo = false,
+  }) {
+    if (!replaceActiveUndo) {
+      clear(context);
+    } else {
+      final messenger = ScaffoldMessenger.maybeOf(context);
+      messenger
+        ?..hideCurrentSnackBar()
+        ..clearSnackBars();
+    }
+
     return ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
@@ -37,13 +52,17 @@ abstract final class CalmSnackBar {
     );
   }
 
-  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showMessage(
+  static void showMessage(
     BuildContext context, {
     required String message,
     Duration duration = briefDuration,
     SnackBarAction? action,
   }) {
-    return show(
+    if (_undoSessionActive) {
+      return;
+    }
+
+    _showSnackBar(
       context,
       SnackBar(
         duration: duration,
@@ -60,7 +79,7 @@ abstract final class CalmSnackBar {
     required VoidCallback onUndo,
     Duration duration = undoDuration,
   }) {
-    final controller = show(
+    final controller = _showSnackBar(
       context,
       SnackBar(
         duration: duration,
@@ -70,7 +89,12 @@ abstract final class CalmSnackBar {
           onPressed: onUndo,
         ),
       ),
+      replaceActiveUndo: true,
     );
-    return controller.closed;
+    _undoSessionActive = true;
+    return controller.closed.then((reason) {
+      _undoSessionActive = false;
+      return reason;
+    });
   }
 }

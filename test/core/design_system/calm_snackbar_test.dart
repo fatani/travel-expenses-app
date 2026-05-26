@@ -64,4 +64,49 @@ void main() {
     expect(find.text('Expense deleted'), findsOneWidget);
     expect(find.text('Undo'), findsOneWidget);
   });
+
+  testWidgets('CalmSnackBar.showMessage skips while undo session is active',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) {
+            return Scaffold(
+              body: Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: () {
+                      unawaited(
+                        CalmSnackBar.showUndo(
+                          context,
+                          message: 'Expense deleted',
+                          undoLabel: 'Undo',
+                          onUndo: () {},
+                        ),
+                      );
+                    },
+                    child: const Text('Undo snack'),
+                  ),
+                  ElevatedButton(
+                    onPressed: () {
+                      CalmSnackBar.showMessage(context, message: 'Brief note');
+                    },
+                    child: const Text('Brief snack'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Undo snack'));
+    await tester.pump();
+    await tester.tap(find.text('Brief snack'));
+    await tester.pump();
+
+    expect(find.text('Expense deleted'), findsOneWidget);
+    expect(find.text('Brief note'), findsNothing);
+  });
 }

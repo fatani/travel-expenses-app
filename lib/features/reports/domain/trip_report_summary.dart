@@ -62,7 +62,7 @@ class TripReportSummary {
   /// Number of domestic expenses.
   final int domesticExpenseCount;
 
-  /// Total billed (SAR-equivalent) grouped by billing currency.
+  /// Transaction totals grouped by transaction currency.
   /// Currencies are intentionally kept separate — never merged.
   final List<ReportBucket> totalBilledByCurrency;
 

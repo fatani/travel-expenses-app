@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 import '../../../core/design_system/app_confirmation_dialog.dart';
 import '../../../core/design_system/calm_snackbar.dart';
+import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../../core/formatting/bidi_format.dart';
 import '../../../core/formatting/expense_date_format.dart';
 import '../../../core/formatting/trip_date_phrase.dart';
@@ -45,6 +46,12 @@ class TripDetailsScreen extends ConsumerStatefulWidget {
 class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   late Trip _trip;
   final Set<String> _pendingDeletionExpenseIds = <String>{};
+  final Set<String> _undoingCreatedExpenseIds = <String>{};
+  final Set<String> _undoingEditExpenseIds = <String>{};
+  final Set<String> _committingDeletionExpenseIds = <String>{};
+  Object? _activeExpenseDeleteSession;
+  bool _isOpeningQuickAdd = false;
+  bool _isOpeningExpenseForm = false;
 
   @override
   void initState() {
@@ -109,34 +116,47 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+        error: (error, _) {
+          final staleExpenses = expensesState.valueOrNull;
+          if (staleExpenses != null) {
+            final visibleExpenses = staleExpenses
+                .where(
+                  (expense) =>
+                      !_pendingDeletionExpenseIds.contains(expense.id),
+                )
+                .toList(growable: false);
+            return Column(
               children: [
-                const Icon(Icons.error_outline_rounded, size: 40),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  l10n.tripDetailsLoadError,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  l10n.tripDetailsExpensesLoadError,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                FilledButton(
-                  onPressed: () => ref
+                StaleLoadErrorBanner(
+                  message: l10n.tripDetailsLoadError,
+                  retryLabel: l10n.commonTryAgain,
+                  onRetry: () => ref
                       .read(expenseControllerProvider(_trip.id).notifier)
                       .reload(),
-                  child: Text(l10n.commonTryAgain),
+                ),
+                Expanded(
+                  child: _TripDetailsContent(
+                    trip: _trip,
+                    expenses: visibleExpenses,
+                    onFixDates: _openTripEditor,
+                    onEditExpense: (expense) =>
+                        _openExpenseForm(expense: expense),
+                    onDeleteExpense: (expense) => _confirmDelete(expense),
+                  ),
                 ),
               ],
-            ),
-          ),
-        ),
+            );
+          }
+
+          return CalmLoadErrorPanel(
+            title: l10n.tripDetailsLoadError,
+            message: l10n.tripDetailsExpensesLoadError,
+            retryLabel: l10n.commonTryAgain,
+            onRetry: () => ref
+                .read(expenseControllerProvider(_trip.id).notifier)
+                .reload(),
+          );
+        },
       ),
     );
   }
@@ -174,6 +194,39 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     String? initialCurrency,
     DateTime? initialSpentAt,
   }) async {
+    if (_isOpeningExpenseForm) {
+      return;
+    }
+    _isOpeningExpenseForm = true;
+
+    try {
+      await _openExpenseFormInner(
+        expense: expense,
+        initialTitle: initialTitle,
+        initialAmount: initialAmount,
+        initialCategory: initialCategory,
+        initialPaymentMethod: initialPaymentMethod,
+        initialCurrency: initialCurrency,
+        initialSpentAt: initialSpentAt,
+      );
+    } finally {
+      _isOpeningExpenseForm = false;
+    }
+  }
+
+  Future<void> _openExpenseFormInner({
+    Expense? expense,
+    String? initialTitle,
+    String? initialAmount,
+    String? initialCategory,
+    String? initialPaymentMethod,
+    String? initialCurrency,
+    DateTime? initialSpentAt,
+  }) async {
+    if (!mounted) {
+      return;
+    }
+
     CalmSnackBar.clear(context);
     final outcome = await Navigator.of(context).push<ExpenseCreateOutcome?>(
       MaterialPageRoute<ExpenseCreateOutcome?>(
@@ -190,6 +243,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       ),
     );
 
+    if (!mounted) {
+      return;
+    }
+
     if (outcome != null) {
       _showSaveConfirmationWithUndo(outcome);
       return;
@@ -200,6 +257,23 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _openQuickAddSheet(List<Expense> expenses) async {
+    if (_isOpeningQuickAdd) {
+      return;
+    }
+    _isOpeningQuickAdd = true;
+
+    try {
+      await _openQuickAddSheetInner(expenses);
+    } finally {
+      _isOpeningQuickAdd = false;
+    }
+  }
+
+  Future<void> _openQuickAddSheetInner(List<Expense> expenses) async {
+    if (!mounted) {
+      return;
+    }
+
     CalmSnackBar.clear(context);
     final result = await showModalBottomSheet<_QuickAddSheetResult>(
       context: context,
@@ -239,53 +313,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       return;
     }
 
-    final payload = result.payload;
-    if (payload == null) {
+    final outcome = result.savedOutcome;
+    if (outcome == null) {
       return;
     }
 
-    unawaited(_createQuickExpense(payload));
     HapticFeedback.lightImpact();
-  }
-
-  Future<void> _createQuickExpense(_QuickAddSubmitPayload payload) async {
-    final l10n = AppLocalizations.of(context)!;
-
-    try {
-      final isCashQuickExpense = isCashExpensePayment(
-        paymentMethod: payload.payment.method,
-        paymentChannel: payload.payment.channel,
-      );
-      final outcome = await ref
-          .read(expenseControllerProvider(_trip.id).notifier)
-          .createExpense(
-            title: payload.title,
-            amount: payload.amount,
-            currencyCode: payload.currencyCode,
-            category: payload.category,
-            spentAt: payload.spentAt,
-            paymentMethod: payload.payment.method,
-            paymentNetwork: isCashQuickExpense ? null : payload.payment.network,
-            paymentChannel: payload.payment.channel,
-            cardProfileId: payload.payment.cardProfileId,
-            tripHomeCurrency: _trip.homeCurrencySnapshot,
-          );
-
-      if (!mounted) {
-        return;
-      }
-
-      _showSaveConfirmationWithUndo(outcome);
-    } catch (error) {
-      if (!mounted) {
-        return;
-      }
-
-      CalmSnackBar.showMessage(
-        context,
-        message: l10n.expenseFormSaveError('$error'),
-      );
-    }
+    _showSaveConfirmationWithUndo(outcome);
   }
 
   Future<void> _openSmsExpenseScreen() async {
@@ -331,6 +365,11 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _undoCreatedExpense(String expenseId) async {
+    if (_undoingCreatedExpenseIds.contains(expenseId)) {
+      return;
+    }
+
+    _undoingCreatedExpenseIds.add(expenseId);
     final l10n = AppLocalizations.of(context)!;
 
     try {
@@ -341,8 +380,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       }
       CalmSnackBar.showMessage(
         context,
-        message: l10n.tripDetailsDeleteExpenseError('$error'),
+        message: l10n.tripDetailsDeleteExpenseError,
       );
+    } finally {
+      _undoingCreatedExpenseIds.remove(expenseId);
     }
   }
 
@@ -366,6 +407,11 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _restorePreviousExpense(Expense previousExpense) async {
+    if (_undoingEditExpenseIds.contains(previousExpense.id)) {
+      return;
+    }
+
+    _undoingEditExpenseIds.add(previousExpense.id);
     final l10n = AppLocalizations.of(context)!;
 
     try {
@@ -404,8 +450,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       }
       CalmSnackBar.showMessage(
         context,
-        message: l10n.expenseFormSaveError('$error'),
+        message: l10n.expenseFormSaveFailed,
       );
+    } finally {
+      _undoingEditExpenseIds.remove(previousExpense.id);
     }
   }
 
@@ -419,7 +467,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   }
 
   Future<void> _confirmDelete(Expense expense) async {
+    if (_pendingDeletionExpenseIds.contains(expense.id) ||
+        _committingDeletionExpenseIds.contains(expense.id)) {
+      return;
+    }
+
     final l10n = AppLocalizations.of(context)!;
+    var confirmTapped = false;
     final shouldDelete = await showModalBottomSheet<bool>(
       context: context,
       useRootNavigator: true,
@@ -444,7 +498,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
               cancelLabel: l10n.commonCancel,
               confirmLabel: l10n.commonDelete,
               onCancel: () => Navigator.of(sheetContext).pop(false),
-              onConfirm: () => Navigator.of(sheetContext).pop(true),
+              onConfirm: () {
+                if (confirmTapped) {
+                  return;
+                }
+                confirmTapped = true;
+                Navigator.of(sheetContext).pop(true);
+              },
             ),
           ),
         );
@@ -459,30 +519,52 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       return;
     }
 
+    final deleteSession = Object();
+    _activeExpenseDeleteSession = deleteSession;
+
     setState(() {
       _pendingDeletionExpenseIds.add(expense.id);
     });
 
-    var undone = false;
+    var undoHandled = false;
+    void handleUndo() {
+      if (undoHandled || !mounted || _activeExpenseDeleteSession != deleteSession) {
+        return;
+      }
+      undoHandled = true;
+      setState(() {
+        _pendingDeletionExpenseIds.remove(expense.id);
+      });
+    }
+
     await CalmSnackBar.showUndo(
       context,
       message: l10n.tripDetailsExpenseDeleted,
       undoLabel: l10n.commonUndo,
-      onUndo: () {
-        undone = true;
-        if (!mounted) {
-          return;
-        }
-        setState(() {
-          _pendingDeletionExpenseIds.remove(expense.id);
-        });
-      },
+      onUndo: handleUndo,
     );
 
-    if (undone || !mounted) {
+    if (!mounted) {
       return;
     }
 
+    if (undoHandled) {
+      return;
+    }
+
+    if (_activeExpenseDeleteSession != deleteSession ||
+        !_pendingDeletionExpenseIds.contains(expense.id)) {
+      setState(() {
+        _pendingDeletionExpenseIds.remove(expense.id);
+      });
+      return;
+    }
+
+    if (_committingDeletionExpenseIds.contains(expense.id)) {
+      return;
+    }
+
+    _committingDeletionExpenseIds.add(expense.id);
     try {
       await ref
           .read(expenseControllerProvider(_trip.id).notifier)
@@ -503,10 +585,22 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         _pendingDeletionExpenseIds.remove(expense.id);
       });
 
+      try {
+        await ref.read(expenseControllerProvider(_trip.id).notifier).reload();
+      } catch (_) {
+        // Keep the calm snackbar even if reload fails.
+      }
+
+      if (!mounted) {
+        return;
+      }
+
       CalmSnackBar.showMessage(
         context,
-        message: l10n.tripDetailsDeleteExpenseError('$error'),
+        message: l10n.tripDetailsDeleteExpenseError,
       );
+    } finally {
+      _committingDeletionExpenseIds.remove(expense.id);
     }
   }
 }
@@ -554,7 +648,8 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     final l10n = AppLocalizations.of(context)!;
     final hasExpenses = widget.expenses.isNotEmpty;
     final filteredExpenses = hasExpenses ? _filteredAndSortedExpenses() : const <Expense>[];
-    final subtleTotalLine = hasExpenses ? _buildSubtleTotalLine(l10n) : null;
+    final subtleTotalLine =
+        hasExpenses ? _buildSubtleTotalLine(l10n) : null;
     final listBottomPadding = MediaQuery.of(context).padding.bottom + 96;
     final showSearch = widget.expenses.length >= 5;
 
@@ -649,40 +744,51 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   }
 
   String? _buildSubtleTotalLine(AppLocalizations l10n) {
-    if (_hasMultipleTransactionCurrencies(widget.expenses)) {
+    // Filtered/search results must not read like a full-trip total.
+    if (_hasActiveFilters) {
       return null;
     }
 
-    final totalableExpenses = _totalableExpenses(widget.expenses);
-    if (totalableExpenses.isEmpty) {
+    final soleCurrency = _soleTransactionCurrency(widget.expenses);
+    if (soleCurrency == null) {
       return null;
     }
 
-    final total = totalableExpenses.fold<double>(
+    final total = widget.expenses.fold<double>(
       0,
       (sum, expense) => sum + expense.transactionAmount,
     );
-    final baseCurrency = widget.trip.baseCurrency.trim().toUpperCase();
     if (total <= 0) {
       return null;
     }
 
-    return '${l10n.tripDetailsTotalInCurrencyOnly(baseCurrency)}: ${_formatCurrency(total, baseCurrency)}';
+    return '${l10n.tripDetailsTotalInCurrencyOnly(soleCurrency)}: ${_formatCurrency(total, soleCurrency)}';
   }
+
+  bool get _hasActiveFilters =>
+      _searchQuery.isNotEmpty ||
+      _selectedCategory != null ||
+      _selectedPaymentMethod != null;
 
   String _formatCurrency(double amount, String currencyCode) {
     return BidiAmountFormat.ltrIsolate(amount, currencyCode);
   }
 
-  List<Expense> _totalableExpenses(List<Expense> expenses) {
-    final baseCurrency = widget.trip.baseCurrency.trim().toUpperCase();
-
-    return expenses
-        .where(
-          (expense) =>
-              expense.transactionCurrency.trim().toUpperCase() == baseCurrency,
-        )
-        .toList();
+  /// Returns the single transaction currency when all expenses share one, else null.
+  String? _soleTransactionCurrency(List<Expense> expenses) {
+    String? sole;
+    for (final expense in expenses) {
+      final currency = expense.transactionCurrency.trim().toUpperCase();
+      if (currency.isEmpty) {
+        continue;
+      }
+      if (sole == null) {
+        sole = currency;
+      } else if (sole != currency) {
+        return null;
+      }
+    }
+    return sole;
   }
 
   List<Expense> _filteredAndSortedExpenses() {
@@ -718,21 +824,6 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     });
 
     return filtered;
-  }
-
-  bool _hasMultipleTransactionCurrencies(List<Expense> expenses) {
-    final currencies = <String>{};
-    for (final expense in expenses) {
-      final currency = expense.transactionCurrency.trim().toUpperCase();
-      if (currency.isEmpty) {
-        continue;
-      }
-      currencies.add(currency);
-      if (currencies.length > 1) {
-        return true;
-      }
-    }
-    return false;
   }
 
   void _clearFilters() {

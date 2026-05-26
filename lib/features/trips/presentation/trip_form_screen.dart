@@ -9,6 +9,7 @@ import 'package:intl/intl.dart' hide TextDirection;
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 import '../../../core/design_system/app_confirmation_dialog.dart';
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../domain/country_database.dart';
@@ -68,6 +69,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   String? _lastLocaleTag;
   bool _isDatePickerOpen = false;
   bool _isTripCurrencyLocked = false;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -184,6 +186,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final textDirection = isArabic ? TextDirection.rtl : TextDirection.ltr;
     final canSave = !_hasInvalidDateRange &&
         !_isDatePickerOpen &&
+        !_isSubmitting &&
         !ref.watch(tripsControllerProvider).isLoading;
 
     return Directionality(
@@ -490,7 +493,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       }
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('$error')));
+      ).showSnackBar(
+        SnackBar(
+          content: Text(AppLocalizations.of(context)!.settingsLanguageSaveError),
+        ),
+      );
     }
   }
 
@@ -668,7 +675,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   Future<void> _submit() async {
-    if (ref.read(tripsControllerProvider).isLoading) {
+    if (_isSubmitting || ref.read(tripsControllerProvider).isLoading) {
       return;
     }
 
@@ -676,6 +683,10 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       return;
     }
 
+    _isSubmitting = true;
+    var didPop = false;
+
+    try {
     final locale = Localizations.localeOf(context);
     final isArabic = locale.languageCode.toLowerCase() == 'ar';
     final isCreateMode = widget.trip == null;
@@ -683,13 +694,12 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final customDestination = _destinationController.text.trim();
 
     if (isCreateMode && selectedDestination == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.tripFormDestinationRequired,
-          ),
-        ),
-      );
+      if (mounted) {
+        CalmSnackBar.showMessage(
+          context,
+          message: AppLocalizations.of(context)!.tripFormDestinationRequired,
+        );
+      }
       return;
     }
 
@@ -782,6 +792,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           return;
         }
 
+        didPop = true;
         Navigator.of(context).pop(createdTrip);
       } else {
         final resolvedBaseCurrency = isCurrencyLockedForSubmit
@@ -804,13 +815,12 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           isCustomTitle: isCustomTitle,
           destinationCountryCode: destinationCountryCode,
         );
-      }
 
-      if (!mounted) {
-        return;
-      }
+        if (!mounted) {
+          return;
+        }
 
-      if (widget.trip != null) {
+        didPop = true;
         Navigator.of(context).pop();
       }
     } catch (error) {
@@ -818,13 +828,15 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.tripFormSaveError('$error'),
-          ),
-        ),
+      CalmSnackBar.showMessage(
+        context,
+        message: AppLocalizations.of(context)!.tripFormSaveFailed,
       );
+    }
+    } finally {
+      if (!didPop) {
+        _isSubmitting = false;
+      }
     }
   }
 

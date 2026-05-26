@@ -71,9 +71,13 @@ class GlobalReportCalculator {
         ? null
         : _topAccumulatorKey(categoryTotals);
     final mostUsedPaymentChannel =
-      isSingleTrip ? null : _topUsageKey(paymentChannelUsage);
+        isSingleTrip || hasMultipleTransactionCurrencies
+            ? null
+            : _topUsageKey(paymentChannelUsage);
     final mostUsedPaymentNetwork =
-      isSingleTrip ? null : _topUsageKey(paymentNetworkUsage);
+        isSingleTrip || hasMultipleTransactionCurrencies
+            ? null
+            : _topUsageKey(paymentNetworkUsage);
     final dominantCurrency =
         totalBilledByCurrency.isEmpty ? null : totalBilledByCurrency.first.currency;
     final trackedTripDays = trips.fold<int>(

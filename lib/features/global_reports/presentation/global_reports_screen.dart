@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../l10n/l10n_extension.dart';
+import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../../shared/widgets/insight_card.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
 import '../../insights/domain/insight.dart';
@@ -18,6 +19,9 @@ class GlobalReportsScreen extends ConsumerWidget {
     await Navigator.of(context).push<Trip?>(
       MaterialPageRoute<Trip?>(builder: (_) => const TripFormScreen()),
     );
+    if (!context.mounted) {
+      return;
+    }
     ref.invalidate(globalReportProvider);
   }
 
@@ -45,8 +49,10 @@ class GlobalReportsScreen extends ConsumerWidget {
       ),
       body: summaryAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Text(context.l10n.globalReportsLoadError('$error')),
+        error: (error, _) => CalmLoadErrorPanel(
+          title: context.l10n.globalReportsLoadError,
+          retryLabel: context.l10n.commonTryAgain,
+          onRetry: () => ref.invalidate(globalReportProvider),
         ),
         data: (summary) {
           if (!summary.hasTrips) {

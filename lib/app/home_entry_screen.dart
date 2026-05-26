@@ -8,6 +8,7 @@ import '../features/financial_profile/presentation/user_financial_profile_contro
 import '../features/trips/domain/trip_timeline_status.dart';
 import '../features/trips/presentation/trip_controller.dart';
 import '../features/trips/presentation/trips_list_screen.dart';
+import '../shared/widgets/calm_load_error_panel.dart';
 
 class HomeEntryScreen extends ConsumerStatefulWidget {
   const HomeEntryScreen({super.key});
@@ -29,28 +30,12 @@ class _HomeEntryScreenState extends ConsumerState<HomeEntryScreen> {
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => Scaffold(
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.error_outline_rounded, size: 40),
-                const SizedBox(height: 12),
-                Text(
-                  '$error',
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                FilledButton(
-                  onPressed: () {
-                    ref.invalidate(userFinancialProfileControllerProvider);
-                  },
-                  child: Text(context.l10n.commonTryAgain),
-                ),
-              ],
-            ),
-          ),
+        body: CalmLoadErrorPanel(
+          title: context.l10n.financialProfileLoadError,
+          retryLabel: context.l10n.commonTryAgain,
+          onRetry: () {
+            ref.invalidate(userFinancialProfileControllerProvider);
+          },
         ),
       ),
       data: (profile) {

@@ -13,12 +13,19 @@ import '../data/trip_pdf_exporter.dart';
 
 enum TripExportFormat { csv, pdf }
 
+bool _tripExportInFlight = false;
+
 Future<void> handleTripExport(
   BuildContext context,
   WidgetRef ref, {
   required Trip trip,
   required TripExportFormat format,
 }) async {
+  if (_tripExportInFlight) {
+    return;
+  }
+  _tripExportInFlight = true;
+
   final l10n = AppLocalizations.of(context)!;
   CalmSnackBar.clear(context);
 
@@ -67,8 +74,10 @@ Future<void> handleTripExport(
     final label = format == TripExportFormat.csv ? 'CSV' : 'PDF';
     CalmSnackBar.showMessage(
       context,
-      message: l10n.exportFailed(label, '$error'),
+      message: l10n.exportFailed(label),
     );
+  } finally {
+    _tripExportInFlight = false;
   }
 }
 

@@ -90,8 +90,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get exportSuccess => 'Exported';
 
   @override
-  String exportFailed(Object format, Object error) {
-    return 'Could not export $format: $error';
+  String exportFailed(Object format) {
+    return 'Couldn\'t export $format. Try again.';
   }
 
   @override
@@ -136,9 +136,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String tripsDeleteError(Object error) {
-    return 'Failed to delete trip: $error';
-  }
+  String get tripsDeleteError => 'Couldn\'t delete this trip. Try again.';
 
   @override
   String get tripsEmptyTitle => 'No trips yet';
@@ -229,6 +227,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String tripFormSaveError(Object error) {
     return 'Failed to save trip: $error';
   }
+
+  @override
+  String get tripFormSaveFailed => 'Couldn\'t save this trip. Please try again.';
 
   @override
   String get tripDetailsLoadError => 'Couldn\'t load expenses.';
@@ -335,6 +336,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cashWalletNoTransactions => 'No cash transactions yet.';
+
+  @override
+  String get cashWalletLoadError => 'Couldn\'t load cash wallet.';
 
   @override
   String get cashWalletAddCash => 'Add Cash';
@@ -640,9 +644,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String tripDetailsDeleteExpenseError(Object error) {
-    return 'Failed to delete expense: $error';
-  }
+  String get tripDetailsDeleteExpenseError => 'Couldn\'t delete this expense. Try again.';
 
   @override
   String get tripDetailsExcludedCurrenciesWarning => 'Some expenses in other currencies are not included in the totals above';
@@ -873,6 +875,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get expenseFormSaveFailed => 'Couldn\'t save this expense. Please try again.';
+
+  @override
   String get expenseConversionContextCash => 'Estimated using trip cash value';
 
   @override
@@ -972,6 +977,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financialProfileMissing => 'Financial profile not found.';
 
   @override
+  String get financialProfileLoadError => 'Couldn\'t load your financial profile.';
+
+  @override
   String get financialOnboardingQuestion => 'Where do you live?';
 
   @override
@@ -1005,9 +1013,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageEnglish => 'English';
 
   @override
-  String settingsLanguageSaveError(Object error) {
-    return 'Failed to save language: $error';
-  }
+  String get settingsLanguageSaveError => 'Couldn\'t save language. Try again.';
 
   @override
   String get smsScreenTitle => 'Add via Bank SMS';
@@ -1051,9 +1057,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get smsTripMissingError => 'Trip is missing. Reopen this screen.';
 
   @override
-  String smsSaveError(Object error) {
-    return 'Failed to save SMS expense: $error';
-  }
+  String get smsSaveError => 'Couldn\'t save this expense. Try again.';
 
   @override
   String get intlBreakdownTitle => 'International breakdown';
@@ -1096,12 +1100,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsSummarySubtitle => 'Report Summary';
 
   @override
-  String tripReportsLoadError(Object error) {
-    return 'Failed to load report: $error';
-  }
+  String get tripReportsLoadError => 'Couldn\'t load this report.';
 
   @override
-  String get tripReportsTotalBilled => 'Total billed';
+  String get tripReportsTotalBilled => 'Spending by currency';
 
   @override
   String get tripReportsTotalFees => 'Total international transaction fees';
@@ -1233,9 +1235,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get globalReportsTooltip => 'Global reports';
 
   @override
-  String globalReportsLoadError(Object error) {
-    return 'Failed to load global report: $error';
-  }
+  String get globalReportsLoadError => 'Couldn\'t load the summary report.';
 
   @override
   String get globalReportsEmptyTitle => 'No trips yet';
@@ -1274,7 +1274,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get globalReportsTrackedDays => 'Tracked trip days';
 
   @override
-  String get globalReportsTotalBilled => 'Total billed';
+  String get globalReportsTotalBilled => 'Spending by currency';
 
   @override
   String get globalReportsAveragePerTrip => 'Average spending per trip';

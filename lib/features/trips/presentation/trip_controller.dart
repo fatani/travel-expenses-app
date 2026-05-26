@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/async/async_notifier_reload.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../global_reports/data/global_report_provider.dart';
 import '../domain/trip.dart';
@@ -14,13 +15,12 @@ class TripsController extends AsyncNotifier<List<Trip>> {
   }
 
   Future<void> reload() async {
-    state = const AsyncLoading();
+    state = AsyncNotifierReload.loadingPreserving(state);
 
     try {
       state = AsyncData(await _loadTrips());
     } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
-      rethrow;
+      state = AsyncNotifierReload.errorPreserving(error, stackTrace, state);
     }
   }
 
@@ -51,7 +51,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
       destinationCountryCode: destinationCountryCode,
     );
 
-    state = const AsyncLoading();
+    state = AsyncNotifierReload.loadingPreserving(state);
 
     try {
       final createdTrip = await ref.read(tripRepositoryProvider).createTrip(trip);
@@ -59,7 +59,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
       state = AsyncData(await _loadTrips());
       return createdTrip;
     } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      state = AsyncNotifierReload.errorPreserving(error, stackTrace, state);
       rethrow;
     }
   }
@@ -108,14 +108,14 @@ class TripsController extends AsyncNotifier<List<Trip>> {
   }
 
   Future<void> _runMutation(Future<void> Function() mutation) async {
-    state = const AsyncLoading();
+    state = AsyncNotifierReload.loadingPreserving(state);
 
     try {
       await mutation();
       ref.invalidate(globalReportProvider);
       state = AsyncData(await _loadTrips());
     } catch (error, stackTrace) {
-      state = AsyncValue.error(error, stackTrace);
+      state = AsyncNotifierReload.errorPreserving(error, stackTrace, state);
       rethrow;
     }
   }

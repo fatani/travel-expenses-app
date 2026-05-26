@@ -4,6 +4,7 @@ import 'package:travel_expenses/l10n/l10n_extension.dart';
 
 import '../../trips/domain/country_database.dart';
 import '../../trips/domain/country_info.dart';
+import '../../../shared/widgets/calm_load_error_panel.dart';
 import 'user_financial_profile_controller.dart';
 
 class FinancialSettingsScreen extends ConsumerStatefulWidget {
@@ -32,7 +33,13 @@ class _FinancialSettingsScreenState extends ConsumerState<FinancialSettingsScree
       ),
       body: profileAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('$error')),
+        error: (error, _) => CalmLoadErrorPanel(
+          title: context.l10n.financialProfileLoadError,
+          retryLabel: context.l10n.commonTryAgain,
+          onRetry: () {
+            ref.invalidate(userFinancialProfileControllerProvider);
+          },
+        ),
         data: (profile) {
           if (profile == null) {
             return Center(

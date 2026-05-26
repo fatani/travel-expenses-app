@@ -11,6 +11,7 @@ import '../../../core/finance/manual_exchange_rate.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../expenses/presentation/expense_form_screen.dart';
 import '../../trips/domain/country_database.dart';
 import '../../trips/domain/country_info.dart';
@@ -32,6 +33,8 @@ class TripCashWalletScreen extends ConsumerStatefulWidget {
 
 class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   bool _isLoading = true;
+  bool _hasLoadError = false;
+  bool _isCashSheetOpen = false;
   List<TripCashBalance> _balances = const [];
   List<CashTransaction> _transactions = const [];
 
@@ -42,16 +45,42 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   }
 
   Future<void> _load() async {
-    setState(() => _isLoading = true);
-    // Replace with your actual data loading logic
-    final balances = await ref.read(cashWalletRepositoryProvider).getBalancesByTrip(widget.trip.id);
-    final transactions = await ref.read(cashWalletRepositoryProvider).getRecentTransactionsByTrip(widget.trip.id);
-    if (!mounted) return;
-    setState(() {
-      _balances = balances;
-      _transactions = transactions;
-      _isLoading = false;
-    });
+    final hasExistingData =
+        _balances.isNotEmpty || _transactions.isNotEmpty;
+    if (!hasExistingData) {
+      setState(() {
+        _isLoading = true;
+        _hasLoadError = false;
+      });
+    } else {
+      setState(() => _hasLoadError = false);
+    }
+
+    try {
+      final balances = await ref
+          .read(cashWalletRepositoryProvider)
+          .getBalancesByTrip(widget.trip.id);
+      final transactions = await ref
+          .read(cashWalletRepositoryProvider)
+          .getRecentTransactionsByTrip(widget.trip.id);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _balances = balances;
+        _transactions = transactions;
+        _isLoading = false;
+        _hasLoadError = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoading = false;
+        _hasLoadError = true;
+      });
+    }
   }
 
   _PrimaryCashBalance get _primaryCashBalance {
@@ -74,6 +103,10 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       currencyCode: primaryCurrency,
       amount: 0,
     );
+  }
+
+  bool get _hasExistingWalletData {
+    return _balances.isNotEmpty || _transactions.isNotEmpty;
   }
 
   bool get _hasCashSetup {
@@ -191,13 +224,25 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       appBar: AppBar(
         title: Text(l10n.tripDetailsCashWalletAction),
       ),
-      body: _isLoading
+      body: _isLoading && !_hasExistingWalletData
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
+          : _hasLoadError && !_hasExistingWalletData
+              ? CalmLoadErrorPanel(
+                  title: l10n.cashWalletLoadError,
+                  retryLabel: l10n.commonTryAgain,
+                  onRetry: _load,
+                )
+              : RefreshIndicator(
               onRefresh: _load,
               child: ListView(
                 padding: EdgeInsets.fromLTRB(16, 12, 16, MediaQuery.of(context).padding.bottom + 20),
                 children: [
+                  if (_hasLoadError && _hasExistingWalletData)
+                    StaleLoadErrorBanner(
+                      message: l10n.cashWalletLoadError,
+                      retryLabel: l10n.commonTryAgain,
+                      onRetry: _load,
+                    ),
                   _TripContextCard(trip: widget.trip),
                   const SizedBox(height: 14),
                   _CashHeroCard(
@@ -291,30 +336,42 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     CashTransaction? editingTransaction,
     bool isOnboarding = false,
   }) async {
-    debugPrint('Opening Add Cash Sheet: $initialType');
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.45),
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
-          ),
-          child: _AddCashSheet(
-            trip: widget.trip,
-            initialType: initialType,
-            editingTransaction: editingTransaction,
-            isOnboarding: isOnboarding,
-          ),
-        );
-      },
-    );
+    if (_isCashSheetOpen) {
+      return;
+    }
+    _isCashSheetOpen = true;
 
-    if (result == true) {
-      await _load();
+    try {
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (sheetContext) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: _AddCashSheet(
+              trip: widget.trip,
+              initialType: initialType,
+              editingTransaction: editingTransaction,
+              isOnboarding: isOnboarding,
+            ),
+          );
+        },
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (result == true) {
+        await _load();
+      }
+    } finally {
+      _isCashSheetOpen = false;
     }
   }
 
@@ -391,7 +448,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       }
       CalmSnackBar.showMessage(
         context,
-        message: l10n.expenseFormSaveError('$error'),
+        message: l10n.expenseFormSaveFailed,
       );
     }
   }
@@ -581,6 +638,9 @@ class _AddManualRateSheetState extends ConsumerState<_AddManualRateSheet> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) {
+      return;
+    }
     final l10n = AppLocalizations.of(context)!;
     final fromCurrency = _fromCurrencyController.text.trim().toUpperCase();
     final toCurrency = _toCurrencyController.text.trim().toUpperCase();
@@ -991,6 +1051,9 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   }
 
   Future<void> _save() async {
+    if (_isSaving) {
+      return;
+    }
     final l10n = AppLocalizations.of(context)!;
     final amount = double.tryParse(_amountController.text.trim());
     final homeValueText = _homeValueController.text.trim();
@@ -1066,7 +1129,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
 
       CalmSnackBar.showMessage(
         context,
-        message: l10n.expenseFormSaveError('$error'),
+        message: l10n.expenseFormSaveFailed,
       );
       setState(() {
         _isSaving = false;

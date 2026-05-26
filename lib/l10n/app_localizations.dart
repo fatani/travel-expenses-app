@@ -260,8 +260,8 @@ abstract class AppLocalizations {
   /// No description provided for @exportFailed.
   ///
   /// In en, this message translates to:
-  /// **'Could not export {format}: {error}'**
-  String exportFailed(Object format, Object error);
+  /// **'Couldn\'t export {format}. Try again.'**
+  String exportFailed(Object format);
 
   /// No description provided for @settingsToggleLanguageTooltip.
   ///
@@ -344,8 +344,8 @@ abstract class AppLocalizations {
   /// No description provided for @tripsDeleteError.
   ///
   /// In en, this message translates to:
-  /// **'Failed to delete trip: {error}'**
-  String tripsDeleteError(Object error);
+  /// **'Couldn\'t delete this trip. Try again.'**
+  String get tripsDeleteError;
 
   /// No description provided for @tripsEmptyTitle.
   ///
@@ -514,6 +514,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to save trip: {error}'**
   String tripFormSaveError(Object error);
+
+  /// No description provided for @tripFormSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save this trip. Please try again.'**
+  String get tripFormSaveFailed;
 
   /// No description provided for @tripDetailsLoadError.
   ///
@@ -718,6 +724,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No cash transactions yet.'**
   String get cashWalletNoTransactions;
+
+  /// No description provided for @cashWalletLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load cash wallet.'**
+  String get cashWalletLoadError;
 
   /// No description provided for @cashWalletAddCash.
   ///
@@ -1280,8 +1292,8 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsDeleteExpenseError.
   ///
   /// In en, this message translates to:
-  /// **'Failed to delete expense: {error}'**
-  String tripDetailsDeleteExpenseError(Object error);
+  /// **'Couldn\'t delete this expense. Try again.'**
+  String get tripDetailsDeleteExpenseError;
 
   /// No description provided for @tripDetailsExcludedCurrenciesWarning.
   ///
@@ -1727,6 +1739,12 @@ abstract class AppLocalizations {
   /// **'Failed to save expense: {error}'**
   String expenseFormSaveError(Object error);
 
+  /// No description provided for @expenseFormSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save this expense. Please try again.'**
+  String get expenseFormSaveFailed;
+
   /// No description provided for @expenseConversionContextCash.
   ///
   /// In en, this message translates to:
@@ -1925,6 +1943,12 @@ abstract class AppLocalizations {
   /// **'Financial profile not found.'**
   String get financialProfileMissing;
 
+  /// No description provided for @financialProfileLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your financial profile.'**
+  String get financialProfileLoadError;
+
   /// No description provided for @financialOnboardingQuestion.
   ///
   /// In en, this message translates to:
@@ -1994,8 +2018,8 @@ abstract class AppLocalizations {
   /// No description provided for @settingsLanguageSaveError.
   ///
   /// In en, this message translates to:
-  /// **'Failed to save language: {error}'**
-  String settingsLanguageSaveError(Object error);
+  /// **'Couldn\'t save language. Try again.'**
+  String get settingsLanguageSaveError;
 
   /// No description provided for @smsScreenTitle.
   ///
@@ -2078,8 +2102,8 @@ abstract class AppLocalizations {
   /// No description provided for @smsSaveError.
   ///
   /// In en, this message translates to:
-  /// **'Failed to save SMS expense: {error}'**
-  String smsSaveError(Object error);
+  /// **'Couldn\'t save this expense. Try again.'**
+  String get smsSaveError;
 
   /// No description provided for @intlBreakdownTitle.
   ///
@@ -2156,13 +2180,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripReportsLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load report: {error}'**
-  String tripReportsLoadError(Object error);
+  /// **'Couldn\'t load this report.'**
+  String get tripReportsLoadError;
 
   /// No description provided for @tripReportsTotalBilled.
   ///
   /// In en, this message translates to:
-  /// **'Total billed'**
+  /// **'Spending by currency'**
   String get tripReportsTotalBilled;
 
   /// No description provided for @tripReportsTotalFees.
@@ -2366,8 +2390,8 @@ abstract class AppLocalizations {
   /// No description provided for @globalReportsLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Failed to load global report: {error}'**
-  String globalReportsLoadError(Object error);
+  /// **'Couldn\'t load the summary report.'**
+  String get globalReportsLoadError;
 
   /// No description provided for @globalReportsEmptyTitle.
   ///
@@ -2444,7 +2468,7 @@ abstract class AppLocalizations {
   /// No description provided for @globalReportsTotalBilled.
   ///
   /// In en, this message translates to:
-  /// **'Total billed'**
+  /// **'Spending by currency'**
   String get globalReportsTotalBilled;
 
   /// No description provided for @globalReportsAveragePerTrip.

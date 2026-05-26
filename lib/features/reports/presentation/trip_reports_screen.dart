@@ -5,6 +5,7 @@ import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/rtl_typography.dart';
 import '../../../l10n/l10n_extension.dart';
+import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../../shared/widgets/insight_card.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
 import '../../predictions/data/trip_prediction_provider.dart';
@@ -51,8 +52,10 @@ class TripReportsScreen extends ConsumerWidget {
       ),
       body: summaryAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
-          child: Text(context.l10n.tripReportsLoadError('$e')),
+        error: (e, _) => CalmLoadErrorPanel(
+          title: context.l10n.tripReportsLoadError,
+          retryLabel: context.l10n.commonTryAgain,
+          onRetry: () => ref.invalidate(tripReportProvider(trip)),
         ),
         data: (summary) => _ReportBody(
           summary: summary,

@@ -7,6 +7,7 @@ import '../../../core/finance/manual_exchange_rate.dart';
 import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../trips/domain/trip.dart';
 
 class TripExchangeRatesScreen extends ConsumerStatefulWidget {
@@ -22,11 +23,30 @@ class TripExchangeRatesScreen extends ConsumerStatefulWidget {
 class _TripExchangeRatesScreenState
     extends ConsumerState<TripExchangeRatesScreen> {
   late Future<List<ManualExchangeRate>> _ratesFuture;
+  List<ManualExchangeRate>? _cachedRates;
+  bool _hasLoadError = false;
 
   @override
   void initState() {
     super.initState();
-    _ratesFuture = _loadRates();
+    final initial = _loadRates();
+    _ratesFuture = initial;
+    initial
+        .then((rates) {
+          if (!mounted) {
+            return;
+          }
+          setState(() {
+            _cachedRates = rates;
+            _hasLoadError = false;
+          });
+        })
+        .catchError((_) {
+          if (!mounted) {
+            return;
+          }
+          setState(() => _hasLoadError = true);
+        });
   }
 
   Future<List<ManualExchangeRate>> _loadRates() {
@@ -39,8 +59,23 @@ class _TripExchangeRatesScreenState
     final refreshed = _loadRates();
     setState(() {
       _ratesFuture = refreshed;
+      _hasLoadError = false;
     });
-    await refreshed;
+    try {
+      final rates = await refreshed;
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _cachedRates = rates;
+        _hasLoadError = false;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() => _hasLoadError = true);
+    }
   }
 
   Future<void> _openEditor({ManualExchangeRate? existing}) async {
@@ -149,6 +184,10 @@ class _TripExchangeRatesScreenState
                             onPressed: isSaving
                                 ? null
                                 : () async {
+                              if (isSaving) {
+                                return;
+                              }
+
                               final from = fromController.text.trim().toUpperCase();
                               final to = toController.text.trim().toUpperCase();
                               final parsedRate = double.tryParse(
@@ -256,15 +295,22 @@ class _TripExchangeRatesScreenState
       body: FutureBuilder<List<ManualExchangeRate>>(
         future: _ratesFuture,
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              _cachedRates == null) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text(l10n.tripExchangeRatesLoadError));
+          if (snapshot.hasError && _cachedRates == null) {
+            return CalmLoadErrorPanel(
+              title: l10n.tripExchangeRatesLoadError,
+              retryLabel: l10n.commonTryAgain,
+              onRetry: _refreshRates,
+            );
           }
 
-          final rates = snapshot.data ?? const <ManualExchangeRate>[];
+          final rates = snapshot.hasError
+              ? (_cachedRates ?? const <ManualExchangeRate>[])
+              : (snapshot.data ?? _cachedRates ?? const <ManualExchangeRate>[]);
           if (rates.isEmpty) {
             return ListView(
               padding: const EdgeInsets.all(16),
@@ -296,6 +342,12 @@ class _TripExchangeRatesScreenState
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
               children: [
+                if (_hasLoadError || snapshot.hasError)
+                  StaleLoadErrorBanner(
+                    message: l10n.tripExchangeRatesLoadError,
+                    retryLabel: l10n.commonTryAgain,
+                    onRetry: _refreshRates,
+                  ),
                 AppCard(
                   child: Text(
                     l10n.tripExchangeRatesSubtitle,
