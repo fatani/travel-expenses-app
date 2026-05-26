@@ -10,10 +10,9 @@ import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../data/trip_csv_exporter.dart';
 import '../data/trip_pdf_exporter.dart';
+import 'trip_export_guard.dart';
 
 enum TripExportFormat { csv, pdf }
-
-bool _tripExportInFlight = false;
 
 Future<void> handleTripExport(
   BuildContext context,
@@ -21,10 +20,10 @@ Future<void> handleTripExport(
   required Trip trip,
   required TripExportFormat format,
 }) async {
-  if (_tripExportInFlight) {
+  final formatKey = format == TripExportFormat.csv ? 'csv' : 'pdf';
+  if (!TripExportGuard.tryAcquire(tripId: trip.id, formatKey: formatKey)) {
     return;
   }
-  _tripExportInFlight = true;
 
   final l10n = AppLocalizations.of(context)!;
   CalmSnackBar.clear(context);
@@ -77,7 +76,7 @@ Future<void> handleTripExport(
       message: l10n.exportFailed(label),
     );
   } finally {
-    _tripExportInFlight = false;
+    TripExportGuard.release(tripId: trip.id, formatKey: formatKey);
   }
 }
 

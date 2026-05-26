@@ -67,6 +67,17 @@ Widget _app({
   );
 }
 
+class _StubTripRepository extends TripRepository {
+  _StubTripRepository(this._trip) : super(AppDatabase());
+
+  final Trip _trip;
+
+  @override
+  Future<Trip?> getTripById(String id) async {
+    return id == _trip.id ? _trip : null;
+  }
+}
+
 class _ThrowingTripRepository extends TripRepository {
   _ThrowingTripRepository() : super(AppDatabase());
 
@@ -268,7 +279,7 @@ void main() {
 
     expect(find.text('Lunch'), findsOneWidget);
 
-    await tester.drag(find.byType(ListView), const Offset(0, 300));
+    await tester.drag(find.byType(CustomScrollView), const Offset(0, 300));
     await tester.pump();
     await tester.pump(const Duration(seconds: 1));
 
@@ -332,6 +343,7 @@ void main() {
           expenseRepositoryProvider.overrideWithValue(
             _ThrowingExpenseRepository(),
           ),
+          tripRepositoryProvider.overrideWithValue(_StubTripRepository(trip)),
         ],
       ),
     );

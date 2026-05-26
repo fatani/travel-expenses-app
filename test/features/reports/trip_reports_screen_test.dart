@@ -7,6 +7,7 @@ import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/reports/presentation/trip_reports_screen.dart';
+import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
@@ -18,6 +19,17 @@ class _FakeExpenseRepository extends ExpenseRepository {
   @override
   Future<List<Expense>> getExpensesByTrip(String tripId) async {
     return _expenses.where((expense) => expense.tripId == tripId).toList();
+  }
+}
+
+class _FakeTripRepository extends TripRepository {
+  _FakeTripRepository(this._trip) : super(AppDatabase());
+
+  final Trip _trip;
+
+  @override
+  Future<Trip?> getTripById(String id) async {
+    return id == _trip.id ? _trip : null;
   }
 }
 
@@ -63,6 +75,7 @@ Future<void> _pumpReport(
         expenseRepositoryProvider.overrideWithValue(
           _FakeExpenseRepository(expenses),
         ),
+        tripRepositoryProvider.overrideWithValue(_FakeTripRepository(trip)),
       ],
       child: MaterialApp(
         locale: const Locale('en'),
@@ -294,6 +307,7 @@ void main() {
           expenseRepositoryProvider.overrideWithValue(
             _FakeExpenseRepository(expenses),
           ),
+          tripRepositoryProvider.overrideWithValue(_FakeTripRepository(trip)),
         ],
         child: MaterialApp(
           locale: const Locale('ar'),

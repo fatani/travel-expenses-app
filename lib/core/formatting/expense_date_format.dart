@@ -1,4 +1,4 @@
-import 'package:intl/intl.dart';
+import 'date_format_cache.dart';
 
 /// Compact expense dates for card surfaces.
 class ExpenseDateFormat {
@@ -9,13 +9,14 @@ class ExpenseDateFormat {
     final local = spentAt.toLocal();
     final pattern =
         local.year == reference.year ? 'd MMM' : 'd MMM yyyy';
-    return DateFormat(pattern, localeTag).format(local);
+    return DateFormatCache.get(pattern, localeTag).format(local);
   }
 
   static String cardTime(DateTime spentAt, String localeTag, {bool isArabic = false}) {
     if (spentAt.hour == 0 && spentAt.minute == 0) {
       return '';
     }
-    return DateFormat(isArabic ? 'h:mm a' : 'HH:mm', localeTag).format(spentAt.toLocal());
+    final pattern = isArabic ? 'h:mm a' : 'HH:mm';
+    return DateFormatCache.get(pattern, localeTag).format(spentAt.toLocal());
   }
 }

@@ -1,21 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/database_providers.dart';
-import '../../trips/domain/trip.dart';
 import '../domain/trip_report_summary.dart';
 import 'trip_report_calculator.dart';
 
 final tripReportProvider =
-    FutureProvider.autoDispose.family<TripReportSummary, Trip>((
+    FutureProvider.autoDispose.family<TripReportSummary, String>((
       ref,
-      trip,
+      tripId,
     ) async {
-      final repo = ref.watch(expenseRepositoryProvider);
-      final expenses = await repo.getExpensesByTrip(trip.id);
+      final expenseRepo = ref.watch(expenseRepositoryProvider);
+      final tripRepo = ref.watch(tripRepositoryProvider);
+      final trip = await tripRepo.getTripById(tripId);
+      final expenses = await expenseRepo.getExpensesByTrip(tripId);
       const calculator = TripReportCalculator();
       return calculator.calculate(
-        tripId: trip.id,
-        tripName: trip.name,
+        tripId: tripId,
+        tripName: trip?.name ?? tripId,
         expenses: expenses,
       );
     });

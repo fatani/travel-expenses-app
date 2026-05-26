@@ -71,8 +71,22 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final tripsState = ref.watch(tripsControllerProvider);
-    final settingsState = ref.watch(settingsControllerProvider);
-    final currentLocaleCode = settingsState.valueOrNull?.localeCode ?? 'ar';
+    final settingsLoading = ref.watch(
+      settingsControllerProvider.select((state) => state.isLoading),
+    );
+    final currentLocaleCode = ref.watch(
+      settingsControllerProvider.select(
+        (state) => state.valueOrNull?.localeCode ?? 'ar',
+      ),
+    );
+
+    ref.listen(tripsControllerProvider, (previous, next) {
+      next.whenData((trips) {
+        if (trips.isNotEmpty && _hasEverHadTrips != true) {
+          unawaited(_markHasEverHadTrips());
+        }
+      });
+    });
     final isArabic = context.isRTL;
     final showOnlyLanguageToggle = tripsState.maybeWhen(
       data: (trips) => trips.isEmpty,
@@ -93,7 +107,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
               title: null,
               actions: [
                 _SubtleLanguageToggle(
-                  isLoading: settingsState.isLoading,
+                  isLoading: settingsLoading,
                   onTap: () => _toggleLanguage(context, ref, currentLocaleCode),
                 ),
                 const SizedBox(width: 12),
@@ -122,7 +136,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
                   ),
                 ),
                 _TripsListOverflowMenu(
-                  isLoading: settingsState.isLoading,
+                  isLoading: settingsLoading,
                   onOpenGlobalReports: () => _openGlobalReports(context),
                   onToggleLanguage: () =>
                       _toggleLanguage(context, ref, currentLocaleCode),
@@ -132,10 +146,6 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
             ),
       body: tripsState.when(
         data: (trips) {
-          if (trips.isNotEmpty && _hasEverHadTrips != true) {
-            unawaited(_markHasEverHadTrips());
-          }
-
           if (trips.isEmpty) {
             if (_hasEverHadTrips == null) {
               return const Center(child: CircularProgressIndicator());
@@ -152,6 +162,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
             );
           }
 
+          final referenceNow = DateTime.now();
           return RefreshIndicator(
             onRefresh: () =>
                 ref.read(tripsControllerProvider.notifier).reload(),
@@ -164,6 +175,7 @@ class _TripsListScreenState extends ConsumerState<TripsListScreen> {
 
                 return _TripCard(
                   trip: trip,
+                  referenceNow: referenceNow,
                   onTap: () => _openTripDetails(context, trip),
                   onEdit: () => _openTripForm(context, trip: trip),
                   onDelete: () => _confirmDelete(context, ref, trip),
@@ -519,12 +531,14 @@ class _TripCard extends StatelessWidget {
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
+    this.referenceNow,
   });
 
   final Trip trip;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final DateTime? referenceNow;
 
   @override
   Widget build(BuildContext context) {
@@ -532,7 +546,7 @@ class _TripCard extends StatelessWidget {
     final isArabic =
         Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
     final localeName = Localizations.localeOf(context).toLanguageTag();
-    final status = resolveTripTimelineStatus(trip);
+    final status = resolveTripTimelineStatus(trip, now: referenceNow);
     final hasDates = status != TripTimelineStatus.datesPending;
     final hasCurrency = trip.baseCurrency.trim().isNotEmpty;
     final title = TripTitleResolver.resolve(trip, isArabic);
@@ -586,6 +600,7 @@ class _TripCard extends StatelessWidget {
                           localeName: localeName,
                           l10n: l10n,
                           isArabic: isArabic,
+                          now: referenceNow,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

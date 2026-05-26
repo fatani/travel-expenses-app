@@ -78,17 +78,13 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
   @override
   void initState() {
     super.initState();
-    _recentMerchants = deriveRecentMerchants(widget.expenses);
+    final snapshot = deriveQuickAddSnapshot(widget.expenses);
+    _recentMerchants = snapshot.recentMerchants;
     _selectedCurrencyCode = widget.trip.baseCurrency.trim().toUpperCase();
     _userSelectedCategory = false;
 
     _applyTripPaymentDefault();
     _loadPreferences();
-    _amountController.addListener(() {
-      if (mounted) {
-        setState(() {});
-      }
-    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _amountFocusNode.requestFocus();

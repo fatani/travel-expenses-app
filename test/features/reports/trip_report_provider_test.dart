@@ -142,7 +142,7 @@ void main() {
       paymentChannel: 'POS Purchase',
     );
 
-    final beforeDelete = await container.read(tripReportProvider(trip).future);
+    final beforeDelete = await container.read(tripReportProvider(trip.id).future);
     expect(beforeDelete.totalExpenseCount, 1);
     expect(beforeDelete.totalBilledByCurrency, isNotEmpty);
     expect(beforeDelete.byCategory, isNotEmpty);
@@ -150,7 +150,7 @@ void main() {
     final expenses = await container.read(expenseControllerProvider(trip.id).future);
     await expenseController.deleteExpense(expenses.single.id);
 
-    final afterDelete = await container.read(tripReportProvider(trip).future);
+    final afterDelete = await container.read(tripReportProvider(trip.id).future);
     expect(afterDelete.totalExpenseCount, 0);
     expect(afterDelete.internationalExpenseCount, 0);
     expect(afterDelete.domesticExpenseCount, 0);

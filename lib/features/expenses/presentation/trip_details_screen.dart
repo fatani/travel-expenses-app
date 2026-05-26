@@ -28,6 +28,7 @@ import '../domain/expense.dart';
 import '../domain/expense_payment.dart';
 import 'expense_controller.dart';
 import 'expense_form_screen.dart';
+import 'expense_list_display.dart';
 import 'expense_option_labels.dart';
 import 'quick_add_payment.dart';
 import 'quick_add_recent_merchants.dart';
@@ -629,7 +630,12 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   String _searchQuery = '';
   String? _selectedCategory;
   String? _selectedPaymentMethod;
-  _ExpenseSort _selectedSort = _ExpenseSort.newestFirst;
+  ExpenseListSort _selectedSort = ExpenseListSort.newestFirst;
+
+  List<Expense>? _cachedFilteredExpenses;
+  String? _cachedSoleCurrency;
+  double? _cachedSoleCurrencyTotal;
+  int _cachedSourceExpenseCount = -1;
 
   @override
   void initState() {
@@ -638,16 +644,67 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
   }
 
   @override
+  void didUpdateWidget(covariant _TripDetailsContent oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.expenses, widget.expenses)) {
+      _invalidateDisplayCache();
+    }
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  void _invalidateDisplayCache() {
+    _cachedFilteredExpenses = null;
+    _cachedSoleCurrency = null;
+    _cachedSoleCurrencyTotal = null;
+    _cachedSourceExpenseCount = -1;
+  }
+
+  List<Expense> _filteredExpensesForDisplay() {
+    if (widget.expenses.isEmpty) {
+      return const [];
+    }
+
+    final needsRebuild =
+        _cachedFilteredExpenses == null ||
+        _cachedSourceExpenseCount != widget.expenses.length;
+    if (!needsRebuild) {
+      return _cachedFilteredExpenses!;
+    }
+
+    _cachedFilteredExpenses = _filteredAndSortedExpenses();
+    _cachedSourceExpenseCount = widget.expenses.length;
+
+    if (!_hasActiveFilters) {
+      _cachedSoleCurrency = ExpenseListDisplay.soleTransactionCurrency(
+        widget.expenses,
+      );
+      if (_cachedSoleCurrency != null) {
+        _cachedSoleCurrencyTotal = ExpenseListDisplay.soleCurrencyTotal(
+          widget.expenses,
+          _cachedSoleCurrency!,
+        );
+      } else {
+        _cachedSoleCurrencyTotal = null;
+      }
+    } else {
+      _cachedSoleCurrency = null;
+      _cachedSoleCurrencyTotal = null;
+    }
+
+    return _cachedFilteredExpenses!;
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final hasExpenses = widget.expenses.isNotEmpty;
-    final filteredExpenses = hasExpenses ? _filteredAndSortedExpenses() : const <Expense>[];
+    final filteredExpenses =
+        hasExpenses ? _filteredExpensesForDisplay() : const <Expense>[];
     final subtleTotalLine =
         hasExpenses ? _buildSubtleTotalLine(l10n) : null;
     final listBottomPadding = MediaQuery.of(context).padding.bottom + 96;
@@ -657,87 +714,125 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       onRefresh: () => ProviderScope.containerOf(
         context,
       ).read(expenseControllerProvider(widget.trip.id).notifier).reload(),
-      child: ListView(
-        cacheExtent: 10000,
-        padding: EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.sm,
-          AppSpacing.md,
-          listBottomPadding,
-        ),
-        children: [
-          _TripContextStrip(
-            trip: widget.trip,
-            subtleTotalLine: subtleTotalLine,
-            onFixDates: widget.onFixDates,
-          ),
-          if (!hasExpenses) ...[
-            const SizedBox(height: AppSpacing.lg),
-            _TripDetailsEmptyState(title: l10n.tripDetailsEmptyExpensesTitle),
-          ] else ...[
-            if (showSearch) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      onChanged: (value) {
-                        setState(() {
-                          _searchQuery = value.trim().toLowerCase();
-                        });
-                      },
-                      decoration: InputDecoration(
-                        hintText: l10n.tripDetailsSearchHint,
-                        prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                        isDense: true,
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide.none,
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs + 2,
-                        ),
-                      ),
-                    ),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                _TripContextStrip(
+                  trip: widget.trip,
+                  subtleTotalLine: subtleTotalLine,
+                  onFixDates: widget.onFixDates,
+                ),
+                if (!hasExpenses) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _TripDetailsEmptyState(
+                    title: l10n.tripDetailsEmptyExpensesTitle,
                   ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Badge(
-                    isLabelVisible: _activeFilterCount > 0,
-                    label: Text('$_activeFilterCount'),
-                    child: IconButton(
-                      visualDensity: VisualDensity.compact,
-                      tooltip: l10n.tripDetailsFiltersAndSort,
-                      onPressed: () => _showFiltersBottomSheet(context),
-                      icon: const Icon(Icons.tune_rounded, size: 20),
+                ] else ...[
+                  if (showSearch) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value.trim().toLowerCase();
+                                _invalidateDisplayCache();
+                              });
+                            },
+                            decoration: InputDecoration(
+                              hintText: l10n.tripDetailsSearchHint,
+                              prefixIcon: const Icon(
+                                Icons.search_rounded,
+                                size: 20,
+                              ),
+                              isDense: true,
+                              filled: true,
+                              fillColor: Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHighest,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                                vertical: AppSpacing.xs + 2,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        Badge(
+                          isLabelVisible: _activeFilterCount > 0,
+                          label: Text('$_activeFilterCount'),
+                          child: IconButton(
+                            visualDensity: VisualDensity.compact,
+                            tooltip: l10n.tripDetailsFiltersAndSort,
+                            onPressed: () => _showFiltersBottomSheet(context),
+                            icon: const Icon(Icons.tune_rounded, size: 20),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                  ],
+                  const SizedBox(height: AppSpacing.sm),
+                  if (filteredExpenses.isEmpty)
+                    _EmptyFilteredState(
+                      message: l10n.tripDetailsNoMatchingExpenses,
+                      clearLabel: l10n.tripDetailsClearFilters,
+                      onClear: _clearFilters,
+                    ),
                 ],
+              ]),
+            ),
+          ),
+          if (filteredExpenses.isNotEmpty)
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                listBottomPadding,
               ),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            if (filteredExpenses.isEmpty)
-              _EmptyFilteredState(
-                message: l10n.tripDetailsNoMatchingExpenses,
-                clearLabel: l10n.tripDetailsClearFilters,
-                onClear: _clearFilters,
-              )
-            else
-              ...filteredExpenses.map(
-                (expense) => Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: _ExpenseCard(
-                    expense: expense,
-                    tripHomeCurrency: widget.trip.homeCurrencySnapshot,
-                    onEdit: () => widget.onEditExpense(expense),
-                    onDelete: () => widget.onDeleteExpense(expense),
-                  ),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final expense = filteredExpenses[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: _ExpenseCard(
+                        expense: expense,
+                        tripHomeCurrency: widget.trip.homeCurrencySnapshot,
+                        onEdit: () => widget.onEditExpense(expense),
+                        onDelete: () => widget.onDeleteExpense(expense),
+                      ),
+                    );
+                  },
+                  childCount: filteredExpenses.length,
                 ),
               ),
-          ],
+            )
+          else if (hasExpenses)
+            SliverPadding(
+              padding: EdgeInsets.only(bottom: listBottomPadding),
+              sliver: const SliverToBoxAdapter(child: SizedBox.shrink()),
+            )
+          else
+            SliverPadding(
+              padding: EdgeInsets.only(bottom: listBottomPadding),
+              sliver: const SliverToBoxAdapter(child: SizedBox.shrink()),
+            ),
         ],
       ),
     );
@@ -749,81 +844,35 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       return null;
     }
 
-    final soleCurrency = _soleTransactionCurrency(widget.expenses);
-    if (soleCurrency == null) {
-      return null;
-    }
+    _filteredExpensesForDisplay();
 
-    final total = widget.expenses.fold<double>(
-      0,
-      (sum, expense) => sum + expense.transactionAmount,
-    );
-    if (total <= 0) {
+    final soleCurrency = _cachedSoleCurrency;
+    final total = _cachedSoleCurrencyTotal;
+    if (soleCurrency == null || total == null || total <= 0) {
       return null;
     }
 
     return '${l10n.tripDetailsTotalInCurrencyOnly(soleCurrency)}: ${_formatCurrency(total, soleCurrency)}';
   }
 
-  bool get _hasActiveFilters =>
-      _searchQuery.isNotEmpty ||
-      _selectedCategory != null ||
-      _selectedPaymentMethod != null;
+  bool get _hasActiveFilters => ExpenseListDisplay.hidesContextTotal(
+    searchQuery: _searchQuery,
+    category: _selectedCategory,
+    paymentMethod: _selectedPaymentMethod,
+  );
 
   String _formatCurrency(double amount, String currencyCode) {
     return BidiAmountFormat.ltrIsolate(amount, currencyCode);
   }
 
-  /// Returns the single transaction currency when all expenses share one, else null.
-  String? _soleTransactionCurrency(List<Expense> expenses) {
-    String? sole;
-    for (final expense in expenses) {
-      final currency = expense.transactionCurrency.trim().toUpperCase();
-      if (currency.isEmpty) {
-        continue;
-      }
-      if (sole == null) {
-        sole = currency;
-      } else if (sole != currency) {
-        return null;
-      }
-    }
-    return sole;
-  }
-
   List<Expense> _filteredAndSortedExpenses() {
-    final filtered = widget.expenses.where((expense) {
-      if (_selectedCategory != null && expense.category != _selectedCategory) {
-        return false;
-      }
-      if (_selectedPaymentMethod != null &&
-          expense.paymentMethod != _selectedPaymentMethod) {
-        return false;
-      }
-      if (_searchQuery.isEmpty) {
-        return true;
-      }
-
-      final haystack =
-          '${expense.title} ${expense.note ?? ''} ${expense.rawSmsText ?? ''}'
-              .toLowerCase();
-      return haystack.contains(_searchQuery);
-    }).toList();
-
-    filtered.sort((a, b) {
-      switch (_selectedSort) {
-        case _ExpenseSort.newestFirst:
-          return b.spentAt.compareTo(a.spentAt);
-        case _ExpenseSort.oldestFirst:
-          return a.spentAt.compareTo(b.spentAt);
-        case _ExpenseSort.highestAmount:
-          return b.transactionAmount.compareTo(a.transactionAmount);
-        case _ExpenseSort.lowestAmount:
-          return a.transactionAmount.compareTo(b.transactionAmount);
-      }
-    });
-
-    return filtered;
+    return ExpenseListDisplay.filteredAndSorted(
+      expenses: widget.expenses,
+      searchQuery: _searchQuery,
+      category: _selectedCategory,
+      paymentMethod: _selectedPaymentMethod,
+      sort: _selectedSort,
+    );
   }
 
   void _clearFilters() {
@@ -832,7 +881,8 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
       _searchQuery = '';
       _selectedCategory = null;
       _selectedPaymentMethod = null;
-      _selectedSort = _ExpenseSort.newestFirst;
+      _selectedSort = ExpenseListSort.newestFirst;
+      _invalidateDisplayCache();
     });
   }
 
@@ -840,7 +890,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     int count = 0;
     if (_selectedCategory != null) count++;
     if (_selectedPaymentMethod != null) count++;
-    if (_selectedSort != _ExpenseSort.newestFirst) count++;
+    if (_selectedSort != ExpenseListSort.newestFirst) count++;
     return count;
   }
 
@@ -934,26 +984,26 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                     },
                   ),
                   const SizedBox(height: 12),
-                  DropdownButtonFormField<_ExpenseSort>(
+                  DropdownButtonFormField<ExpenseListSort>(
                     initialValue: localSort,
                     decoration: InputDecoration(
                       labelText: l10n.tripDetailsSortBy,
                     ),
                     items: [
                       DropdownMenuItem(
-                        value: _ExpenseSort.newestFirst,
+                        value: ExpenseListSort.newestFirst,
                         child: Text(l10n.tripDetailsSortNewest),
                       ),
                       DropdownMenuItem(
-                        value: _ExpenseSort.oldestFirst,
+                        value: ExpenseListSort.oldestFirst,
                         child: Text(l10n.tripDetailsSortOldest),
                       ),
                       DropdownMenuItem(
-                        value: _ExpenseSort.highestAmount,
+                        value: ExpenseListSort.highestAmount,
                         child: Text(l10n.tripDetailsSortHighestAmount),
                       ),
                       DropdownMenuItem(
-                        value: _ExpenseSort.lowestAmount,
+                        value: ExpenseListSort.lowestAmount,
                         child: Text(l10n.tripDetailsSortLowestAmount),
                       ),
                     ],
@@ -985,6 +1035,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                               _selectedCategory = localCategory;
                               _selectedPaymentMethod = localPaymentMethod;
                               _selectedSort = localSort;
+                              _invalidateDisplayCache();
                             });
                             Navigator.of(sheetContext).pop();
                           },
@@ -1002,8 +1053,6 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
     );
   }
 }
-
-enum _ExpenseSort { newestFirst, oldestFirst, highestAmount, lowestAmount }
 
 class _TripContextStrip extends StatelessWidget {
   const _TripContextStrip({

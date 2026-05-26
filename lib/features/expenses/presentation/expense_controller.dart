@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/async/async_notifier_reload.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../global_reports/data/global_report_provider.dart';
+import '../../predictions/data/trip_prediction_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
 import '../domain/expense_fx_snapshot_service.dart';
 import '../domain/expense.dart';
@@ -233,7 +234,8 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     try {
       final result = await mutation();
       ref.invalidate(globalReportProvider);
-      ref.invalidate(tripReportProvider);
+      ref.invalidate(tripReportProvider(_tripId));
+      ref.invalidate(tripPredictionProvider(_tripId));
       state = AsyncData(await _loadExpenses());
       return result;
     } catch (error, stackTrace) {

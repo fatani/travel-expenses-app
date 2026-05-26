@@ -1,5 +1,5 @@
-import 'package:intl/intl.dart';
 import 'package:travel_expenses/core/formatting/bidi_format.dart';
+import 'package:travel_expenses/core/formatting/date_format_cache.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/features/trips/domain/trip_timeline_status.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
@@ -22,9 +22,9 @@ class TripDatePhrase {
     final now = referenceNow ?? DateTime.now();
     final startLocal = start.toLocal();
     final endLocal = end.toLocal();
-    final dayFmt = DateFormat('d', localeName);
-    final monthFmt = DateFormat('MMM', localeName);
-    final yearFmt = DateFormat('yyyy', localeName);
+    final dayFmt = DateFormatCache.get('d', localeName);
+    final monthFmt = DateFormatCache.get('MMM', localeName);
+    final yearFmt = DateFormatCache.get('yyyy', localeName);
 
     String range;
     if (startLocal.year == endLocal.year && startLocal.month == endLocal.month) {
@@ -41,7 +41,7 @@ class TripDatePhrase {
         range = '$range ${yearFmt.format(startLocal)}';
       }
     } else {
-      final fullFmt = DateFormat('d MMM yyyy', localeName);
+      final fullFmt = DateFormatCache.get('d MMM yyyy', localeName);
       range = '${fullFmt.format(startLocal)} – ${fullFmt.format(endLocal)}';
     }
 
@@ -116,7 +116,7 @@ class TripDatePhrase {
     final today = DateTime(current.year, current.month, current.day);
     final startDay = DateTime(start.year, start.month, start.day);
     final endDay = DateTime(end.year, end.month, end.day);
-    final shortFmt = DateFormat('d MMM', localeName);
+    final shortFmt = DateFormatCache.get('d MMM', localeName);
 
     switch (status) {
       case TripTimelineStatus.active:

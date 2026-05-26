@@ -28,8 +28,8 @@ class TripReportsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(tripReportProvider(trip));
-    final predictionAsync = ref.watch(tripPredictionProvider(trip));
+    final summaryAsync = ref.watch(tripReportProvider(trip.id));
+    final predictionAsync = ref.watch(tripPredictionProvider(trip.id));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
@@ -55,7 +55,7 @@ class TripReportsScreen extends ConsumerWidget {
         error: (e, _) => CalmLoadErrorPanel(
           title: context.l10n.tripReportsLoadError,
           retryLabel: context.l10n.commonTryAgain,
-          onRetry: () => ref.invalidate(tripReportProvider(trip)),
+          onRetry: () => ref.invalidate(tripReportProvider(trip.id)),
         ),
         data: (summary) => _ReportBody(
           summary: summary,

@@ -38,9 +38,17 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   List<TripCashBalance> _balances = const [];
   List<CashTransaction> _transactions = const [];
 
+  late _PrimaryCashBalance _primaryCashBalance;
+  late _CashHealth _cashHealth;
+  late double _primaryCurrencyTotalCashIn;
+  late Map<String, double> _balanceAfterByTransactionId;
+  late Map<_TransactionTimeGroup, List<CashTransaction>> _groupedTransactions;
+  _LastAtmWithdrawalEvent? _lastAtmWithdrawalEvent;
+
   @override
   void initState() {
     super.initState();
+    _recomputeDerivedState();
     _load();
   }
 
@@ -71,6 +79,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         _transactions = transactions;
         _isLoading = false;
         _hasLoadError = false;
+        _recomputeDerivedState();
       });
     } catch (_) {
       if (!mounted) {
@@ -83,26 +92,109 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     }
   }
 
-  _PrimaryCashBalance get _primaryCashBalance {
-    final primaryCurrency = widget.trip.destinationCurrency.trim().toUpperCase();
-    for (final balance in _balances) {
-      if (balance.currencyCode == primaryCurrency) {
-        return _PrimaryCashBalance(
-          currencyCode: balance.currencyCode,
-          amount: balance.balanceAmount,
-        );
-      }
-    }
-    if (_balances.isNotEmpty) {
-      return _PrimaryCashBalance(
-        currencyCode: _balances.first.currencyCode,
-        amount: _balances.first.balanceAmount,
-      );
-    }
-    return _PrimaryCashBalance(
+  void _recomputeDerivedState() {
+    final primaryCurrency =
+        widget.trip.destinationCurrency.trim().toUpperCase();
+
+    _PrimaryCashBalance primaryBalance = _PrimaryCashBalance(
       currencyCode: primaryCurrency,
       amount: 0,
     );
+    var foundPrimary = false;
+    for (final balance in _balances) {
+      if (balance.currencyCode == primaryCurrency) {
+        primaryBalance = _PrimaryCashBalance(
+          currencyCode: balance.currencyCode,
+          amount: balance.balanceAmount,
+        );
+        foundPrimary = true;
+        break;
+      }
+    }
+    if (!foundPrimary && _balances.isNotEmpty) {
+      final first = _balances.first;
+      primaryBalance = _PrimaryCashBalance(
+        currencyCode: first.currencyCode,
+        amount: first.balanceAmount,
+      );
+    }
+    _primaryCashBalance = primaryBalance;
+
+    _primaryCurrencyTotalCashIn = _transactions.where((transaction) {
+      if (transaction.currencyCode != primaryBalance.currencyCode) {
+        return false;
+      }
+      return transaction.type == CashTransactionType.initialCash ||
+          transaction.type == CashTransactionType.atmWithdrawal ||
+          transaction.type == CashTransactionType.manualAdjustment ||
+          transaction.type == CashTransactionType.currencyExchangeIn;
+    }).fold<double>(0, (sum, transaction) => sum + transaction.amount);
+
+    final currentBalance = primaryBalance.amount;
+    if (currentBalance <= 0) {
+      _cashHealth = _CashHealth.critical;
+    } else if (_primaryCurrencyTotalCashIn <= 0) {
+      _cashHealth = _CashHealth.good;
+    } else {
+      final remainingRatio = currentBalance / _primaryCurrencyTotalCashIn;
+      if (remainingRatio >= 0.65) {
+        _cashHealth = _CashHealth.excellent;
+      } else if (remainingRatio >= 0.35) {
+        _cashHealth = _CashHealth.good;
+      } else if (remainingRatio >= 0.15) {
+        _cashHealth = _CashHealth.low;
+      } else {
+        _cashHealth = _CashHealth.critical;
+      }
+    }
+
+    final runningByCurrency = <String, double>{
+      for (final balance in _balances) balance.currencyCode: balance.balanceAmount,
+    };
+    final balanceAfter = <String, double>{};
+    for (final transaction in _transactions) {
+      final current = runningByCurrency[transaction.currencyCode] ?? 0;
+      balanceAfter[transaction.id] = current;
+      runningByCurrency[transaction.currencyCode] =
+          current - transaction.type.signedDelta(transaction.amount);
+    }
+    _balanceAfterByTransactionId = balanceAfter;
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final yesterday = today.subtract(const Duration(days: 1));
+    final grouped = <_TransactionTimeGroup, List<CashTransaction>>{
+      _TransactionTimeGroup.today: <CashTransaction>[],
+      _TransactionTimeGroup.yesterday: <CashTransaction>[],
+      _TransactionTimeGroup.earlier: <CashTransaction>[],
+    };
+    for (final transaction in _transactions) {
+      final transactionDay = DateTime(
+        transaction.createdAt.toLocal().year,
+        transaction.createdAt.toLocal().month,
+        transaction.createdAt.toLocal().day,
+      );
+      if (transactionDay == today) {
+        grouped[_TransactionTimeGroup.today]!.add(transaction);
+      } else if (transactionDay == yesterday) {
+        grouped[_TransactionTimeGroup.yesterday]!.add(transaction);
+      } else {
+        grouped[_TransactionTimeGroup.earlier]!.add(transaction);
+      }
+    }
+    _groupedTransactions = grouped;
+
+    _LastAtmWithdrawalEvent? lastAtm;
+    for (final transaction in _transactions) {
+      if (transaction.type == CashTransactionType.atmWithdrawal) {
+        lastAtm = _LastAtmWithdrawalEvent(
+          amount: transaction.amount,
+          currencyCode: transaction.currencyCode,
+        );
+        break;
+      }
+    }
+    _lastAtmWithdrawalEvent = lastAtm;
   }
 
   bool get _hasExistingWalletData {
@@ -115,105 +207,6 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
           (transaction) =>
               transaction.type != CashTransactionType.cashExpenseDeduction,
         );
-  }
-
-  double get _primaryCurrencyTotalCashIn {
-    final primaryCurrency = _primaryCashBalance.currencyCode;
-    return _transactions.where((transaction) {
-      if (transaction.currencyCode != primaryCurrency) {
-        return false;
-      }
-
-      return transaction.type == CashTransactionType.initialCash ||
-          transaction.type == CashTransactionType.atmWithdrawal ||
-          transaction.type == CashTransactionType.manualAdjustment ||
-          transaction.type == CashTransactionType.currencyExchangeIn;
-    }).fold<double>(0, (sum, transaction) => sum + transaction.amount);
-  }
-
-  _CashHealth get _cashHealth {
-    final currentBalance = _primaryCashBalance.amount;
-
-    if (currentBalance <= 0) {
-      return _CashHealth.critical;
-    }
-
-    final totalCashIn = _primaryCurrencyTotalCashIn;
-
-    if (totalCashIn <= 0) {
-      return _CashHealth.good;
-    }
-
-    final remainingRatio = currentBalance / totalCashIn;
-
-    if (remainingRatio >= 0.65) {
-      return _CashHealth.excellent;
-    }
-    if (remainingRatio >= 0.35) {
-      return _CashHealth.good;
-    }
-    if (remainingRatio >= 0.15) {
-      return _CashHealth.low;
-    }
-    return _CashHealth.critical;
-  }
-
-  Map<String, double> get _balanceAfterByTransactionId {
-    final runningByCurrency = <String, double>{
-      for (final balance in _balances) balance.currencyCode: balance.balanceAmount,
-    };
-    final result = <String, double>{};
-
-    for (final transaction in _transactions) {
-      final currentBalance = runningByCurrency[transaction.currencyCode] ?? 0;
-      result[transaction.id] = currentBalance;
-      runningByCurrency[transaction.currencyCode] =
-          currentBalance - transaction.type.signedDelta(transaction.amount);
-    }
-
-    return result;
-  }
-
-  Map<_TransactionTimeGroup, List<CashTransaction>> get _groupedTransactions {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-
-    final grouped = <_TransactionTimeGroup, List<CashTransaction>>{
-      _TransactionTimeGroup.today: <CashTransaction>[],
-      _TransactionTimeGroup.yesterday: <CashTransaction>[],
-      _TransactionTimeGroup.earlier: <CashTransaction>[],
-    };
-
-    for (final transaction in _transactions) {
-      final transactionDay = DateTime(
-        transaction.createdAt.toLocal().year,
-        transaction.createdAt.toLocal().month,
-        transaction.createdAt.toLocal().day,
-      );
-
-      if (transactionDay == today) {
-        grouped[_TransactionTimeGroup.today]!.add(transaction);
-      } else if (transactionDay == yesterday) {
-        grouped[_TransactionTimeGroup.yesterday]!.add(transaction);
-      } else {
-        grouped[_TransactionTimeGroup.earlier]!.add(transaction);
-      }
-    }
-
-    return grouped;
-  }
-
-  _LastAtmWithdrawalEvent? get _lastAtmWithdrawalEvent {
-    for (final transaction in _transactions) {
-      if (transaction.type == CashTransactionType.atmWithdrawal) {
-        return _LastAtmWithdrawalEvent(
-          amount: transaction.amount,
-          currencyCode: transaction.currencyCode,
-        );
-      }
-    }
-    return null;
   }
 
   @override
@@ -293,7 +286,8 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                             child: _TransactionTile(
                               transaction: transaction,
                               balanceAfterTransaction: _hasCashSetup
-                                  ? _balanceAfterByTransactionId[transaction.id]
+                                  ? _balanceAfterByTransactionId[
+                                      transaction.id]
                                   : null,
                               onEdit: _canEditManualTransaction(transaction)
                                   ? () => _showAddCashSheet(
