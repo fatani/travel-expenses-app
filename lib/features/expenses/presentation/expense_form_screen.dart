@@ -562,7 +562,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       lastDate: DateTime(2100),
     );
 
-    if (selectedDate == null) {
+    if (selectedDate == null || !mounted) {
       return;
     }
 
@@ -589,7 +589,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       initialTime: TimeOfDay.fromDateTime(initialDate),
     );
 
-    if (selectedTime == null) {
+    if (selectedTime == null || !mounted) {
       return;
     }
 
@@ -677,6 +677,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
             _isSubmitting = false;
           });
         }
+        return;
+      }
+      if (!mounted) {
         return;
       }
     }

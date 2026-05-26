@@ -47,7 +47,13 @@ class _LanguageToggleButtonState extends State<LanguageToggleButton>
   Future<void> _handleTap() async {
     if (widget.isLoading) return;
     await _controller.forward();
+    if (!mounted) {
+      return;
+    }
     await _controller.reverse();
+    if (!mounted) {
+      return;
+    }
     widget.onToggle();
   }
 

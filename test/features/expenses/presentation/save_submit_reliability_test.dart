@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/test_expense_repository.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/design_system/calm_snackbar.dart';
 import 'package:travel_expenses/core/finance/manual_exchange_rate.dart';
@@ -23,6 +26,10 @@ import 'package:travel_expenses/features/trips/presentation/trip_form_screen.dar
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+
   final trip = Trip.create(
     id: 'trip-save-reliability',
     name: 'Bangkok',
@@ -49,6 +56,7 @@ void main() {
     await tester.pumpWidget(_buildQuickAddHarness(trip: trip, repository: repository));
     await tester.pumpAndSettle();
 
+    await _selectQuickAddCardPayment(tester);
     await tester.enterText(quickAddAmountField(), '42');
     await tester.pump();
 
@@ -56,9 +64,10 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 80));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(repository.createCalls, 1);
+    expect(repository.savedExpenses, hasLength(1));
   });
 
   testWidgets('keyboard done and save race creates only one expense', (tester) async {
@@ -67,6 +76,7 @@ void main() {
     await tester.pumpWidget(_buildQuickAddHarness(trip: trip, repository: repository));
     await tester.pumpAndSettle();
 
+    await _selectQuickAddCardPayment(tester);
     await tester.enterText(quickAddAmountField(), '55');
     await tester.pump();
 
@@ -75,9 +85,10 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 80));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(repository.createCalls, 1);
+    expect(repository.savedExpenses, hasLength(1));
   });
 
   testWidgets('quick add save failure keeps sheet open and input intact',
@@ -87,11 +98,12 @@ void main() {
     await tester.pumpWidget(_buildQuickAddHarness(trip: trip, repository: repository));
     await tester.pumpAndSettle();
 
+    await _selectQuickAddCardPayment(tester);
     await tester.enterText(quickAddAmountField(), '99');
     await tester.pump();
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
     await tester.pump();
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(QuickAddExpenseSheet), findsOneWidget);
     expect(find.text('99'), findsOneWidget);
@@ -121,8 +133,9 @@ void main() {
     await tester.pumpAndSettle();
 
     final addDetails = find.text('Add Details');
-    await tester.tap(addDetails);
-    await tester.tap(addDetails);
+    await tester.ensureVisible(addDetails);
+    await tester.tap(addDetails, warnIfMissed: false);
+    await tester.tap(addDetails, warnIfMissed: false);
     await tester.pumpAndSettle();
 
     expect(find.byType(ExpenseFormScreen), findsOneWidget);
@@ -141,7 +154,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await _fillMinimalExpenseForm(tester);
+    await _fillMinimalExpenseForm(tester, paymentChannel: 'POS Purchase');
     await tester.ensureVisible(find.text('Add expense'));
     await tester.tap(find.text('Add expense'));
     await tester.tap(find.text('Add expense'));
@@ -165,7 +178,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await _fillMinimalExpenseForm(tester, title: 'Lunch');
+    await _fillMinimalExpenseForm(
+      tester,
+      title: 'Lunch',
+      paymentChannel: 'POS Purchase',
+    );
     await tester.ensureVisible(find.text('Add expense'));
     await tester.tap(find.text('Add expense'));
     await tester.pumpAndSettle();
@@ -306,6 +323,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await _selectQuickAddCardPayment(tester);
     await tester.enterText(quickAddAmountField(), '12');
     await tester.pump();
     await tester.tap(find.widgetWithText(FilledButton, 'Save'));
@@ -317,9 +335,20 @@ void main() {
   });
 }
 
+Future<void> _selectQuickAddCardPayment(WidgetTester tester) async {
+  await tester.tap(
+    find.descendant(
+      of: find.byType(QuickAddExpenseSheet),
+      matching: find.text('Card'),
+    ).first,
+  );
+  await tester.pump();
+}
+
 Future<void> _fillMinimalExpenseForm(
   WidgetTester tester, {
   String title = 'Snack',
+  String paymentChannel = 'Cash',
 }) async {
   await tester.enterText(find.byType(TextFormField).at(0), title);
   await tester.enterText(find.byType(TextFormField).at(1), '25');
@@ -332,7 +361,7 @@ Future<void> _fillMinimalExpenseForm(
 
   await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
   await tester.pumpAndSettle();
-  await tester.tap(find.text('Cash').last);
+  await tester.tap(find.text(paymentChannel).last);
   await tester.pumpAndSettle();
 }
 
@@ -354,6 +383,24 @@ Widget _buildQuickAddHarness({
   );
 }
 
+Widget _buildExpenseFormHarness({
+  required Trip trip,
+  required ExpenseRepository repository,
+}) {
+  return ProviderScope(
+    overrides: [
+      expenseRepositoryProvider.overrideWithValue(repository),
+      cardRepositoryProvider.overrideWithValue(_EmptyCardRepository()),
+      cashWalletRepositoryProvider.overrideWithValue(_NoOpCashWalletRepository()),
+    ],
+    child: MaterialApp(
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: ExpenseFormScreen(trip: trip),
+    ),
+  );
+}
+
 Widget _buildTripDetailsHarness({
   required Trip trip,
   ExpenseRepository? repository,
@@ -370,24 +417,6 @@ Widget _buildTripDetailsHarness({
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: TripDetailsScreen(trip: trip),
-    ),
-  );
-}
-
-Widget _buildExpenseFormHarness({
-  required Trip trip,
-  required ExpenseRepository repository,
-}) {
-  return ProviderScope(
-    overrides: [
-      expenseRepositoryProvider.overrideWithValue(repository),
-      cardRepositoryProvider.overrideWithValue(_EmptyCardRepository()),
-      cashWalletRepositoryProvider.overrideWithValue(_NoOpCashWalletRepository()),
-    ],
-    child: MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: ExpenseFormScreen(trip: trip),
     ),
   );
 }
@@ -430,12 +459,14 @@ Widget _buildCashWalletHarness({
   );
 }
 
-class _EmptyExpenseRepository extends ExpenseRepository {
+class _EmptyExpenseRepository extends TestExpenseRepository {
   _EmptyExpenseRepository({List<Expense>? initial})
       : _expenses = List<Expense>.from(initial ?? const []),
         super(AppDatabase());
 
   final List<Expense> _expenses;
+
+  List<Expense> get savedExpenses => List.unmodifiable(_expenses);
 
   @override
   Future<List<Expense>> getExpensesByTrip(String tripId) async {
@@ -443,7 +474,7 @@ class _EmptyExpenseRepository extends ExpenseRepository {
   }
 
   @override
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {
     _expenses.add(expense);
     return expense;
   }
@@ -453,10 +484,10 @@ class _DelayedCountingExpenseRepository extends _EmptyExpenseRepository {
   int createCalls = 0;
 
   @override
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {
     createCalls++;
     await Future<void>.delayed(const Duration(milliseconds: 60));
-    return super.createExpense(expense);
+    return super.createExpense(expense, txn: txn);
   }
 }
 
@@ -464,7 +495,7 @@ class _FailingCreateExpenseRepository extends _EmptyExpenseRepository {
   int createCalls = 0;
 
   @override
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {
     createCalls++;
     throw StateError('db unavailable');
   }
@@ -565,10 +596,35 @@ class _NoOpCashWalletRepository extends CashWalletRepository {
     bool includeReversed = false,
   }) async =>
       const [];
+
+  @override
+  Future<CashExpenseDeductionResult> recordCashExpenseDeduction({
+    required String tripId,
+    String? expenseId,
+    required double amount,
+    required String currencyCode,
+    String? note,
+    DatabaseExecutor? txn,
+  }) async {
+    if (txn != null) {
+      return const CashExpenseDeductionResult(
+        wasInsufficientBeforeDeduction: false,
+        balanceAfterDeduction: 0,
+      );
+    }
+
+    return super.recordCashExpenseDeduction(
+      tripId: tripId,
+      expenseId: expenseId,
+      amount: amount,
+      currencyCode: currencyCode,
+      note: note,
+    );
+  }
 }
 
 class _EmptyCardRepository extends CardRepository {
-  _EmptyCardRepository() : super(AppDatabase());
+  _EmptyCardRepository([AppDatabase? appDatabase]) : super(appDatabase ?? AppDatabase());
 
   @override
   Future<List<CardProfile>> getAllCards() async => const [];

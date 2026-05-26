@@ -35,6 +35,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   bool _isLoading = true;
   bool _hasLoadError = false;
   bool _isCashSheetOpen = false;
+  final Set<String> _deletingManualTransactionIds = <String>{};
   List<TripCashBalance> _balances = const [];
   List<CashTransaction> _transactions = const [];
 
@@ -52,7 +53,10 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     _load();
   }
 
+  int _loadGeneration = 0;
+
   Future<void> _load() async {
+    final generation = ++_loadGeneration;
     final hasExistingData =
         _balances.isNotEmpty || _transactions.isNotEmpty;
     if (!hasExistingData) {
@@ -71,7 +75,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       final transactions = await ref
           .read(cashWalletRepositoryProvider)
           .getRecentTransactionsByTrip(widget.trip.id);
-      if (!mounted) {
+      if (!mounted || generation != _loadGeneration) {
         return;
       }
       setState(() {
@@ -82,7 +86,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         _recomputeDerivedState();
       });
     } catch (_) {
-      if (!mounted) {
+      if (!mounted || generation != _loadGeneration) {
         return;
       }
       setState(() {
@@ -428,6 +432,12 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       return;
     }
 
+    if (_deletingManualTransactionIds.contains(transaction.id)) {
+      return;
+    }
+
+    _deletingManualTransactionIds.add(transaction.id);
+
     try {
       await ref
           .read(cashWalletRepositoryProvider)
@@ -444,6 +454,8 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         context,
         message: l10n.expenseFormSaveFailed,
       );
+    } finally {
+      _deletingManualTransactionIds.remove(transaction.id);
     }
   }
 

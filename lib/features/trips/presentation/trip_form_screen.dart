@@ -1,5 +1,3 @@
-// ignore_for_file: use_build_context_synchronously
-
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -386,12 +384,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
             alignment: isArabic ? Alignment.centerRight : Alignment.centerLeft,
             child: Text(
               _isTripCurrencyLocked
-                  ? (isArabic
-                        ? 'تم قفل عملة الرحلة بعد إضافة بيانات مالية للحفاظ على اتساق التقارير.'
-                        : 'Trip currency is locked after expenses, cash, or exchange records are added to keep reports consistent.')
-                  : (isArabic
-                        ? 'تغيير عملة الرحلة قد يؤثر على اتساق المصاريف.'
-                        : 'Changing trip currency may affect expense consistency.'),
+                  ? l10n.tripFormCurrencyLockedHint
+                  : l10n.tripFormCurrencyChangeWarning,
               style: const TextStyle(
                 fontSize: 12,
                 color: Color(0xFF64748B),
@@ -502,15 +496,11 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
   }
 
   String _notesLabel() {
-    final isArabic =
-        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-    return isArabic ? 'ملاحظات' : 'Notes';
+    return AppLocalizations.of(context)!.tripFormNotesLabel;
   }
 
   String _notesHint() {
-    final isArabic =
-        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-    return isArabic ? 'اكتب ملاحظة اختيارية' : 'Add an optional note';
+    return AppLocalizations.of(context)!.tripFormNotesHint;
   }
 
   InputDecoration _secondaryDetailsDecoration({
@@ -654,6 +644,10 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         });
         onUiRefresh?.call();
       }
+    }
+
+    if (!mounted) {
+      return;
     }
 
     if (selectedDate == null) {

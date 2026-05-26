@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/test_expense_repository.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
-import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
@@ -274,7 +275,7 @@ class _FakeTripsController extends TripsController {
   Future<List<Trip>> build() async => _trips;
 }
 
-class _FakeExpenseRepository extends ExpenseRepository {
+class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository(this._expenses)
       : super(AppDatabase());
 

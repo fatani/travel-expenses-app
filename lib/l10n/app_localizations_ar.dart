@@ -174,10 +174,22 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripFormCurrencyLabel => 'العملة الأساسية';
 
   @override
+  String get tripFormCurrencyLockedHint => 'تم قفل عملة الرحلة بعد إضافة بيانات مالية للحفاظ على اتساق التقارير.';
+
+  @override
+  String get tripFormCurrencyChangeWarning => 'تغيير عملة الرحلة قد يؤثر على اتساق المصاريف.';
+
+  @override
   String get tripFormBudgetLabel => 'الميزانية (اختياري)';
 
   @override
   String get tripFormBudgetHint => '2500';
+
+  @override
+  String get tripFormNotesLabel => 'ملاحظات';
+
+  @override
+  String get tripFormNotesHint => 'اكتب ملاحظة اختيارية';
 
   @override
   String get tripFormStartDateLabel => 'تاريخ البداية';

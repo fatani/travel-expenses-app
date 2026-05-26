@@ -1,8 +1,11 @@
+import 'package:sqflite/sqflite.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/test_expense_repository.dart';
+
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
-import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_controller.dart';
 import 'package:travel_expenses/features/reports/data/trip_report_provider.dart';
@@ -55,14 +58,14 @@ class _FakeTripRepository extends TripRepository {
   }
 }
 
-class _FakeExpenseRepository extends ExpenseRepository {
+class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository() : super(AppDatabase());
 
   final List<Expense> _expenses = [];
   int _idCounter = 0;
 
   @override
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {
     _idCounter++;
     final created = expense.copyWith(
       id: expense.id.isEmpty ? 'expense-$_idCounter' : expense.id,

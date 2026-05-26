@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/core/finance/manual_currency_conversion_service.dart';
@@ -10,6 +11,10 @@ import 'package:travel_expenses/features/settings/data/settings_repository.dart'
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  sqfliteFfiInit();
+  databaseFactory = databaseFactoryFfi;
+
   test('database-related providers are wired', () {
     final container = ProviderContainer();
     addTearDown(container.dispose);

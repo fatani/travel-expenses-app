@@ -801,7 +801,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       lastDate: DateTime(2100),
     );
 
-    if (selectedDate == null) {
+    if (selectedDate == null || !mounted) {
       return;
     }
 
@@ -828,7 +828,7 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
       initialTime: TimeOfDay.fromDateTime(initialDate),
     );
 
-    if (selectedTime == null) {
+    if (selectedTime == null || !mounted) {
       return;
     }
 
@@ -900,6 +900,9 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
     if (shouldWarnCurrencyMismatch) {
       final shouldKeepAsIs = await _confirmCurrencyMismatch(currencyCode);
       if (shouldKeepAsIs != true) {
+        return;
+      }
+      if (!mounted) {
         return;
       }
     }

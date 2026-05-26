@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/async/async_notifier_reload.dart';
 import '../../../core/providers/database_providers.dart';
+import '../../cash_wallet/data/cash_wallet_repository.dart';
 import '../../global_reports/data/global_report_provider.dart';
 import '../../predictions/data/trip_prediction_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
@@ -153,71 +154,28 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     );
 
     return _runMutation(() async {
-      final created = await ref.read(expenseRepositoryProvider).createExpense(expense);
-      if (!_isCashExpense(created)) {
-        return ExpenseCreateOutcome(
-          cashBalanceInsufficient: false,
-          noCashBalanceRecorded: false,
-          missingManualRate: conversionSnapshot.missingManualRate,
-          createdExpenseId: created.id,
-          missingFromCurrency:
-            conversionSnapshot.missingManualRate
-              ? conversionSnapshot.originalCurrency
-              : null,
-          missingToCurrency:
-            conversionSnapshot.missingManualRate
-              ? conversionSnapshot.homeCurrency
-              : null,
+      final expenseRepository = ref.read(expenseRepositoryProvider);
+      final cashWalletRepository = ref.read(cashWalletRepositoryProvider);
+
+      if (!_isCashExpense(expense)) {
+        final created = await expenseRepository.createExpense(expense);
+        return _buildCreateOutcome(
+          created: created,
+          conversionSnapshot: conversionSnapshot,
         );
       }
 
-      try {
-        final deductionResult = await ref
-            .read(cashWalletRepositoryProvider)
-            .recordCashExpenseDeduction(
-              tripId: _tripId,
-              expenseId: created.id,
-              amount: created.transactionAmount,
-              currencyCode: created.transactionCurrency,
-              note: created.note,
-            );
+      final cashCreateResult =
+          await expenseRepository.createCashExpenseWithWalletDeduction(
+        expense: expense,
+        cashWallet: cashWalletRepository,
+      );
 
-        return ExpenseCreateOutcome(
-          cashBalanceInsufficient:
-              deductionResult.wasInsufficientBeforeDeduction,
-          noCashBalanceRecorded:
-              deductionResult.wasInsufficientBeforeDeduction &&
-              (deductionResult.balanceAfterDeduction + created.transactionAmount)
-                      .abs() <
-                  0.0001,
-          missingManualRate: conversionSnapshot.missingManualRate,
-                createdExpenseId: created.id,
-          missingFromCurrency:
-              conversionSnapshot.missingManualRate
-                  ? conversionSnapshot.originalCurrency
-                  : null,
-          missingToCurrency:
-              conversionSnapshot.missingManualRate
-                  ? conversionSnapshot.homeCurrency
-                  : null,
-        );
-      } catch (_) {
-        // Wallet side-effects should not block core expense persistence.
-        return ExpenseCreateOutcome(
-          cashBalanceInsufficient: false,
-          noCashBalanceRecorded: false,
-          missingManualRate: conversionSnapshot.missingManualRate,
-          createdExpenseId: created.id,
-          missingFromCurrency:
-              conversionSnapshot.missingManualRate
-                  ? conversionSnapshot.originalCurrency
-                  : null,
-          missingToCurrency:
-              conversionSnapshot.missingManualRate
-                  ? conversionSnapshot.homeCurrency
-                  : null,
-        );
-      }
+      return _buildCreateOutcome(
+        created: cashCreateResult.expense,
+        conversionSnapshot: conversionSnapshot,
+        deductionResult: cashCreateResult.deduction,
+      );
     });
   }
 
@@ -225,6 +183,30 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     return isCashExpensePayment(
       paymentMethod: expense.paymentMethod,
       paymentChannel: expense.paymentChannel,
+    );
+  }
+
+  ExpenseCreateOutcome _buildCreateOutcome({
+    required Expense created,
+    required ExpenseConversionSnapshot conversionSnapshot,
+    CashExpenseDeductionResult? deductionResult,
+  }) {
+    final wasInsufficient = deductionResult?.wasInsufficientBeforeDeduction ?? false;
+    final balanceAfter = deductionResult?.balanceAfterDeduction;
+
+    return ExpenseCreateOutcome(
+      cashBalanceInsufficient: wasInsufficient,
+      noCashBalanceRecorded: wasInsufficient &&
+          balanceAfter != null &&
+          (balanceAfter + created.transactionAmount).abs() < 0.0001,
+      missingManualRate: conversionSnapshot.missingManualRate,
+      createdExpenseId: created.id,
+      missingFromCurrency: conversionSnapshot.missingManualRate
+          ? conversionSnapshot.originalCurrency
+          : null,
+      missingToCurrency: conversionSnapshot.missingManualRate
+          ? conversionSnapshot.homeCurrency
+          : null,
     );
   }
 

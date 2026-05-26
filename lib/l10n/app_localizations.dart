@@ -413,6 +413,18 @@ abstract class AppLocalizations {
   /// **'Base currency'**
   String get tripFormCurrencyLabel;
 
+  /// No description provided for @tripFormCurrencyLockedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Trip currency is locked after expenses, cash, or exchange records are added to keep reports consistent.'**
+  String get tripFormCurrencyLockedHint;
+
+  /// No description provided for @tripFormCurrencyChangeWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing trip currency may affect expense consistency.'**
+  String get tripFormCurrencyChangeWarning;
+
   /// No description provided for @tripFormBudgetLabel.
   ///
   /// In en, this message translates to:
@@ -424,6 +436,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'2500'**
   String get tripFormBudgetHint;
+
+  /// No description provided for @tripFormNotesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get tripFormNotesLabel;
+
+  /// No description provided for @tripFormNotesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add an optional note'**
+  String get tripFormNotesHint;
 
   /// No description provided for @tripFormStartDateLabel.
   ///

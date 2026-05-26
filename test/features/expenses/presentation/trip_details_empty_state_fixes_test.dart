@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/test_expense_repository.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/finance/manual_exchange_rate.dart';
@@ -82,7 +84,7 @@ Widget _buildApp({
   );
 }
 
-class _FakeExpenseRepository extends ExpenseRepository {
+class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository({List<Expense>? initialExpenses})
       : _expenses = List<Expense>.from(initialExpenses ?? const <Expense>[]),
         super(AppDatabase());
@@ -95,7 +97,7 @@ class _FakeExpenseRepository extends ExpenseRepository {
   }
 }
 
-class _ThrowingExpenseRepository extends ExpenseRepository {
+class _ThrowingExpenseRepository extends TestExpenseRepository {
   _ThrowingExpenseRepository(this.message) : super(AppDatabase());
 
   final String message;

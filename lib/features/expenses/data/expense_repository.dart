@@ -1,10 +1,21 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../cash_wallet/data/cash_wallet_repository.dart';
 import '../../../core/database/app_database.dart';
 import '../../../core/integrity/data_integrity.dart';
 import '../domain/expense.dart';
 import '../domain/money_model.dart';
+
+class CashExpenseCreateResult {
+  const CashExpenseCreateResult({
+    required this.expense,
+    required this.deduction,
+  });
+
+  final Expense expense;
+  final CashExpenseDeductionResult deduction;
+}
 
 class ExpenseRepository {
   ExpenseRepository(this._appDatabase, {Uuid? uuid})
@@ -13,25 +24,56 @@ class ExpenseRepository {
   final AppDatabase _appDatabase;
   final Uuid _uuid;
 
-  Future<Expense> createExpense(Expense expense) async {
-    final db = await _appDatabase.database;
+  AppDatabase get appDatabase => _appDatabase;
+
+  Future<Expense> createExpense(
+    Expense expense, {
+    DatabaseExecutor? txn,
+  }) async {
     final now = DateTime.now().toUtc();
     final entity = expense.copyWith(
       id: expense.id.isEmpty ? _uuid.v4() : expense.id,
       updatedAt: now,
     );
 
-    await db.transaction((txn) async {
-      await _assertTripExists(txn, entity.tripId);
+    Future<void> insert(DatabaseExecutor executor) async {
+      await _assertTripExists(executor, entity.tripId);
       DataIntegrity.requireExpense(entity);
-      await txn.insert(
+      await executor.insert(
         AppDatabase.expensesTable,
         entity.toMap(),
         conflictAlgorithm: ConflictAlgorithm.abort,
       );
-    });
+    }
+
+    if (txn != null) {
+      await insert(txn);
+    } else {
+      final db = await _appDatabase.database;
+      await db.transaction(insert);
+    }
 
     return entity;
+  }
+
+  Future<CashExpenseCreateResult> createCashExpenseWithWalletDeduction({
+    required Expense expense,
+    required CashWalletRepository cashWallet,
+  }) async {
+    final db = await _appDatabase.database;
+    return db.transaction((txn) async {
+      final created = await createExpense(expense, txn: txn);
+      final deduction = await cashWallet.recordCashExpenseDeduction(
+        tripId: created.tripId,
+        expenseId: created.id,
+        amount: created.transactionAmount,
+        currencyCode: created.transactionCurrency,
+        note: created.note,
+        txn: txn,
+      );
+
+      return CashExpenseCreateResult(expense: created, deduction: deduction);
+    });
   }
 
   Future<List<Expense>> getExpensesByTrip(String tripId) async {

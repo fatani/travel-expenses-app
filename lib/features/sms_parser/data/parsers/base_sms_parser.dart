@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import '../../domain/sms_parse_result.dart';
 
 abstract class BaseSmsParser {
@@ -341,7 +343,13 @@ abstract class BaseSmsParser {
   DateTime? safeDate(int year, int month, int day, int hour, int minute) {
     try {
       return DateTime(year, month, day, hour, minute);
-    } catch (_) {
+    } catch (error, stackTrace) {
+      developer.log(
+        'Invalid date fragments in SMS parser input.',
+        name: 'BaseSmsParser',
+        error: error,
+        stackTrace: stackTrace,
+      );
       return null;
     }
   }

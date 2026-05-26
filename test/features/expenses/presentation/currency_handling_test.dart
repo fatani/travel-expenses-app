@@ -1,12 +1,15 @@
+import 'package:sqflite/sqflite.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/test_expense_repository.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
-import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_form_screen.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
@@ -874,7 +877,7 @@ Widget _buildApp({
   );
 }
 
-class _FakeExpenseRepository extends ExpenseRepository {
+class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository({List<Expense>? initialExpenses})
       : _expenses = List<Expense>.from(initialExpenses ?? const <Expense>[]),
         super(AppDatabase());
@@ -883,7 +886,7 @@ class _FakeExpenseRepository extends ExpenseRepository {
   final List<Expense> createdExpenses = <Expense>[];
 
   @override
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {
     createdExpenses.add(expense);
     _expenses.add(expense);
     return expense;
@@ -945,6 +948,7 @@ class _FakeCashWalletRepository extends CashWalletRepository {
     required double amount,
     required String currencyCode,
     String? note,
+    DatabaseExecutor? txn,
   }) async {
     return const CashExpenseDeductionResult(
       wasInsufficientBeforeDeduction: false,

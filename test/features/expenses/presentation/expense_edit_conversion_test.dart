@@ -1,12 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/test_expense_repository.dart';
+
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/finance/manual_currency_conversion_service.dart';
 import 'package:travel_expenses/core/finance/manual_exchange_rate.dart';
 import 'package:travel_expenses/core/finance/manual_exchange_rate_repository.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
-import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_controller.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
@@ -615,7 +616,7 @@ void main() {
   });
 }
 
-class _FakeExpenseRepository extends ExpenseRepository {
+class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository({List<Expense>? initialExpenses})
       : _expenses = List<Expense>.from(initialExpenses ?? const <Expense>[]),
         super(AppDatabase());

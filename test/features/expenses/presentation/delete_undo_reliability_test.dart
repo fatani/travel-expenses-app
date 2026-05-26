@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/test_expense_repository.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
@@ -412,7 +414,7 @@ Widget _buildTripsList({
   );
 }
 
-class _TrackingExpenseRepository extends ExpenseRepository {
+class _TrackingExpenseRepository extends TestExpenseRepository {
   _TrackingExpenseRepository({required List<Expense> expenses})
       : _expenses = List<Expense>.from(expenses),
         super(AppDatabase());
@@ -471,7 +473,7 @@ class _TrackingTripsController extends TripsController {
   }
 }
 
-class _EmptyExpenseRepository extends ExpenseRepository {
+class _EmptyExpenseRepository extends TestExpenseRepository {
   _EmptyExpenseRepository() : super(AppDatabase());
 
   @override

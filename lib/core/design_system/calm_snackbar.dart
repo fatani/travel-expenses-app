@@ -21,11 +21,14 @@ abstract final class CalmSnackBar {
       ..clearSnackBars();
   }
 
-  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason> _showSnackBar(
+  static ScaffoldFeatureController<SnackBar, SnackBarClosedReason>? _showSnackBar(
     BuildContext context,
     SnackBar snackBar, {
     bool replaceActiveUndo = false,
   }) {
+    if (!context.mounted) {
+      return null;
+    }
     if (!replaceActiveUndo) {
       clear(context);
     } else {
@@ -58,7 +61,7 @@ abstract final class CalmSnackBar {
     Duration duration = briefDuration,
     SnackBarAction? action,
   }) {
-    if (_undoSessionActive) {
+    if (!context.mounted || _undoSessionActive) {
       return;
     }
 
@@ -79,6 +82,10 @@ abstract final class CalmSnackBar {
     required VoidCallback onUndo,
     Duration duration = undoDuration,
   }) {
+    if (!context.mounted) {
+      return Future.value(SnackBarClosedReason.remove);
+    }
+
     final controller = _showSnackBar(
       context,
       SnackBar(
@@ -91,6 +98,9 @@ abstract final class CalmSnackBar {
       ),
       replaceActiveUndo: true,
     );
+    if (controller == null) {
+      return Future.value(SnackBarClosedReason.remove);
+    }
     _undoSessionActive = true;
     return controller.closed.then((reason) {
       _undoSessionActive = false;

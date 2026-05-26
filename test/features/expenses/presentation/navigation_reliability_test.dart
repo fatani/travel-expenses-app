@@ -1,7 +1,11 @@
+import 'package:sqflite/sqflite.dart';
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/test_expense_repository.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
@@ -270,7 +274,7 @@ Widget _buildTripsListHarness({required List<Trip> trips}) {
   );
 }
 
-class _StaticExpenseRepository extends ExpenseRepository {
+class _StaticExpenseRepository extends TestExpenseRepository {
   _StaticExpenseRepository(this._expenses) : super(AppDatabase());
 
   final List<Expense> _expenses;
@@ -287,7 +291,7 @@ class _SlowCreateExpenseRepository extends _StaticExpenseRepository {
   int createCalls = 0;
 
   @override
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {
     createCalls++;
     await Future<void>.delayed(const Duration(milliseconds: 200));
     _expenses.add(expense);

@@ -1021,6 +1021,9 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: () {
+                            if (!mounted) {
+                              return;
+                            }
                             _clearFilters();
                             Navigator.of(sheetContext).pop();
                           },
@@ -1031,6 +1034,9 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                       Expanded(
                         child: FilledButton(
                           onPressed: () {
+                            if (!mounted) {
+                              return;
+                            }
                             setState(() {
                               _selectedCategory = localCategory;
                               _selectedPaymentMethod = localPaymentMethod;

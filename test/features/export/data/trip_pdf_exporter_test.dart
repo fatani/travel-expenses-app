@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:travel_expenses/features/export/data/trip_pdf_exporter.dart';
@@ -51,12 +52,19 @@ Expense _expense({
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('TripPdfExporter', () {
     late TripPdfExporter exporter;
+    late pw.Font arabicFont;
+
+    setUpAll(() async {
+      final data = await rootBundle.load('assets/fonts/NotoSansArabic-Regular.ttf');
+      arabicFont = pw.Font.ttf(data);
+    });
 
     setUp(() {
-      // Inject the built-in Helvetica font so tests don't require asset loading.
-      exporter = TripPdfExporter(arabicFont: pw.Font.helvetica());
+      exporter = TripPdfExporter(arabicFont: arabicFont);
     });
 
     test('generates non-empty PDF bytes for a single expense', () async {
@@ -147,7 +155,7 @@ void main() {
       try {
         final testExporter = TripPdfExporter(
           directoryProvider: () async => tempDir,
-          arabicFont: pw.Font.helvetica(),
+          arabicFont: arabicFont,
         );
 
         final result = await testExporter.exportTrip(

@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/test_expense_repository.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
@@ -10,7 +14,6 @@ import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/cash_wallet/presentation/trip_cash_wallet_screen.dart';
-import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
 import 'package:travel_expenses/features/export/presentation/export_menu.dart';
@@ -103,7 +106,7 @@ class _FailOnSecondTripsRepository extends TripRepository {
   }
 }
 
-class _ThrowingExpenseRepository extends ExpenseRepository {
+class _ThrowingExpenseRepository extends TestExpenseRepository {
   _ThrowingExpenseRepository() : super(AppDatabase());
 
   @override
@@ -112,7 +115,21 @@ class _ThrowingExpenseRepository extends ExpenseRepository {
   }
 }
 
-class _FailOnSecondExpenseRepository extends ExpenseRepository {
+class _DelayedThrowingExpenseRepository extends TestExpenseRepository {
+  _DelayedThrowingExpenseRepository() : super(AppDatabase());
+
+  final Completer<void> gate = Completer<void>();
+  int calls = 0;
+
+  @override
+  Future<List<Expense>> getExpensesByTrip(String tripId) async {
+    calls++;
+    await gate.future;
+    throw Exception('SqliteException(database is locked)');
+  }
+}
+
+class _FailOnSecondExpenseRepository extends TestExpenseRepository {
   _FailOnSecondExpenseRepository(this._expenses) : super(AppDatabase());
 
   final List<Expense> _expenses;
@@ -419,6 +436,62 @@ void main() {
 
     expect(find.textContaining("Couldn't export CSV"), findsOneWidget);
     expect(find.textContaining('SqliteException'), findsNothing);
+  });
+
+  testWidgets('rapid export taps trigger a single in-flight operation and recover',
+      (tester) async {
+    final trip = _trip();
+    final repository = _DelayedThrowingExpenseRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(repository),
+        ],
+        child: MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Consumer(
+            builder: (context, ref, _) {
+              return Scaffold(
+                body: Center(
+                  child: ElevatedButton(
+                    onPressed: () => handleTripExport(
+                      context,
+                      ref,
+                      trip: trip,
+                      format: TripExportFormat.csv,
+                    ),
+                    child: const Text('Export'),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Export'));
+    await tester.tap(find.text('Export'));
+    await tester.pump();
+
+    expect(repository.calls, 1);
+
+    repository.gate.complete();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Export'));
+    await tester.pump();
+
+    expect(repository.calls, 2);
   });
 
   testWidgets('arabic error panel has no overflow', (tester) async {

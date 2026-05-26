@@ -1,5 +1,9 @@
+import 'package:sqflite/sqflite.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/test_expense_repository.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
@@ -248,7 +252,7 @@ Widget _buildTripDetailsApp({
   );
 }
 
-class _FakeExpenseRepository extends ExpenseRepository {
+class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository({List<Expense>? initialExpenses})
       : _expenses = List<Expense>.from(initialExpenses ?? const <Expense>[]),
         super(AppDatabase());
@@ -256,7 +260,7 @@ class _FakeExpenseRepository extends ExpenseRepository {
   final List<Expense> _expenses;
 
   @override
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {
     _expenses.add(expense);
     return expense;
   }
@@ -277,6 +281,7 @@ class _InsufficientCashWalletRepository extends CashWalletRepository {
     required double amount,
     required String currencyCode,
     String? note,
+    DatabaseExecutor? txn,
   }) async {
     return CashExpenseDeductionResult(
       wasInsufficientBeforeDeduction: true,

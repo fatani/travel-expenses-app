@@ -176,13 +176,13 @@ class CashWalletRepository {
     required double amount,
     required String currencyCode,
     String? note,
+    DatabaseExecutor? txn,
   }) async {
     DataIntegrity.requireCashTransactionInput(
       tripId: tripId,
       amount: amount,
       currencyCode: currencyCode,
     );
-    await _assertTripExists(tripId);
 
     final normalizedCurrency = currencyCode.trim().toUpperCase();
     final transaction = CashTransaction.create(
@@ -195,19 +195,20 @@ class CashWalletRepository {
       note: note,
     );
 
-    final db = await _appDatabase.database;
-    return db.transaction((txn) async {
+    Future<CashExpenseDeductionResult> deduct(DatabaseExecutor executor) async {
+      await _assertTripExists(tripId, executor: executor);
+
       final currentBalance = await _getCurrentBalance(
-        txn,
+        executor,
         tripId: tripId,
         currencyCode: normalizedCurrency,
       );
       final wasInsufficient = currentBalance < amount;
       final nextBalance = currentBalance - amount;
 
-      await _insertTransaction(txn, transaction);
+      await _insertTransaction(executor, transaction);
       await _upsertBalance(
-        txn,
+        executor,
         tripId: tripId,
         currencyCode: normalizedCurrency,
         nextBalance: nextBalance,
@@ -218,7 +219,14 @@ class CashWalletRepository {
         wasInsufficientBeforeDeduction: wasInsufficient,
         balanceAfterDeduction: nextBalance,
       );
-    });
+    }
+
+    if (txn != null) {
+      return deduct(txn);
+    }
+
+    final db = await _appDatabase.database;
+    return db.transaction(deduct);
   }
 
   Future<void> syncExpenseCashImpact({
@@ -429,7 +437,7 @@ class CashWalletRepository {
   }
 
   Future<void> _insertTransaction(
-    Transaction txn,
+    DatabaseExecutor txn,
     CashTransaction transaction,
   ) {
     return txn.insert(
@@ -440,7 +448,7 @@ class CashWalletRepository {
   }
 
   Future<void> _applyBalanceDelta(
-    Transaction txn, {
+    DatabaseExecutor txn, {
     required String tripId,
     required String currencyCode,
     required double delta,
@@ -462,7 +470,7 @@ class CashWalletRepository {
   }
 
   Future<double> _getCurrentBalance(
-    Transaction txn, {
+    DatabaseExecutor txn, {
     required String tripId,
     required String currencyCode,
   }) async {
@@ -482,7 +490,7 @@ class CashWalletRepository {
   }
 
   Future<void> _upsertBalance(
-    Transaction txn, {
+    DatabaseExecutor txn, {
     required String tripId,
     required String currencyCode,
     required double nextBalance,
@@ -558,8 +566,11 @@ class CashWalletRepository {
     return CashEffectiveRateCalculator.calculate(rows);
   }
 
-  Future<void> _assertTripExists(String tripId) async {
-    final db = await _appDatabase.database;
+  Future<void> _assertTripExists(
+    String tripId, {
+    DatabaseExecutor? executor,
+  }) async {
+    final db = executor ?? await _appDatabase.database;
     final rows = await db.query(
       AppDatabase.tripsTable,
       columns: ['id'],

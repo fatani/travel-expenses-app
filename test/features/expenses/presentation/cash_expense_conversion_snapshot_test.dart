@@ -1,3 +1,5 @@
+import 'package:sqflite/sqflite.dart';
+
 // Tests for cash expense conversion snapshot stability.
 //
 // Guarantees:
@@ -13,13 +15,14 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/test_expense_repository.dart';
+
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/finance/manual_currency_conversion_service.dart';
 import 'package:travel_expenses/core/finance/manual_exchange_rate.dart';
 import 'package:travel_expenses/core/finance/manual_exchange_rate_repository.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
-import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_controller.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
@@ -387,7 +390,7 @@ void main() {
 
 // ─── Fakes ───────────────────────────────────────────────────────────────────
 
-class _FakeExpenseRepository extends ExpenseRepository {
+class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository({List<Expense>? initialExpenses})
       : _expenses = List<Expense>.from(initialExpenses ?? const <Expense>[]),
         super(AppDatabase());
@@ -409,7 +412,7 @@ class _FakeExpenseRepository extends ExpenseRepository {
   }
 
   @override
-  Future<Expense> createExpense(Expense expense) async {
+  Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {
     final withId = expense.id.isEmpty
         ? expense.copyWith(id: 'generated-${_expenses.length}')
         : expense;
@@ -451,6 +454,7 @@ class _FakeCashWalletRepository extends CashWalletRepository {
     required double amount,
     required String currencyCode,
     String? note,
+    DatabaseExecutor? txn,
   }) async =>
       const CashExpenseDeductionResult(
         wasInsufficientBeforeDeduction: false,

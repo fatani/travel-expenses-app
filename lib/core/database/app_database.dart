@@ -2,9 +2,12 @@ import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
 class AppDatabase {
-  AppDatabase();
+  AppDatabase({String? databaseFileName})
+      : _databaseFileName = databaseFileName ?? databaseName;
 
   static const String databaseName = 'travel_expenses.db';
+
+  final String _databaseFileName;
   static const int databaseVersion = 17;
 
   static const String tripsTable = 'trips';
@@ -17,24 +20,44 @@ class AppDatabase {
   static const String manualExchangeRatesTable = 'manual_exchange_rates';
 
   Database? _database;
+  Future<Database>? _opening;
 
   Future<Database> get database async {
-    if (_database != null) {
-      return _database!;
+    final existing = _database;
+    if (existing != null) {
+      return existing;
     }
 
-    _database = await _openDatabase();
-    return _database!;
+    final opening = _opening ??= _openDatabase();
+    try {
+      final opened = await opening;
+      _database ??= opened;
+      return _database!;
+    } catch (error) {
+      if (identical(_opening, opening)) {
+        _opening = null;
+      }
+      rethrow;
+    }
   }
 
   Future<void> close() async {
+    final opening = _opening;
+    if (opening != null) {
+      try {
+        await opening;
+      } catch (_) {
+        // Opening failed; still tear down any partial state below.
+      }
+    }
     await _database?.close();
     _database = null;
+    _opening = null;
   }
 
   Future<Database> _openDatabase() async {
     final databasesPath = await getDatabasesPath();
-    final databasePath = p.join(databasesPath, databaseName);
+    final databasePath = p.join(databasesPath, _databaseFileName);
 
     return openDatabase(
       databasePath,

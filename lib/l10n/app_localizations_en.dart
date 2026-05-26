@@ -174,10 +174,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormCurrencyLabel => 'Base currency';
 
   @override
+  String get tripFormCurrencyLockedHint => 'Trip currency is locked after expenses, cash, or exchange records are added to keep reports consistent.';
+
+  @override
+  String get tripFormCurrencyChangeWarning => 'Changing trip currency may affect expense consistency.';
+
+  @override
   String get tripFormBudgetLabel => 'Budget (optional)';
 
   @override
   String get tripFormBudgetHint => '2500';
+
+  @override
+  String get tripFormNotesLabel => 'Notes';
+
+  @override
+  String get tripFormNotesHint => 'Add an optional note';
 
   @override
   String get tripFormStartDateLabel => 'Start date';
