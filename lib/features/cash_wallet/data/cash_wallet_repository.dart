@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/integrity/data_integrity.dart';
 import '../../expenses/domain/expense.dart';
 import '../../expenses/domain/expense_payment.dart';
 import '../domain/cash_transaction.dart';
@@ -67,6 +68,14 @@ class CashWalletRepository {
     String? note,
     DateTime? createdAt,
   }) async {
+    DataIntegrity.requireCashTransactionInput(
+      tripId: tripId,
+      amount: amount,
+      currencyCode: currencyCode,
+      allowZeroAmount: type == CashTransactionType.initialCash,
+    );
+    await _assertTripExists(tripId);
+
     final normalizedCurrency = currencyCode.trim().toUpperCase();
     final transaction = CashTransaction.create(
       id: _uuid.v4(),
@@ -125,6 +134,12 @@ class CashWalletRepository {
       throw ArgumentError('Only manual cash transactions can be updated.');
     }
 
+    DataIntegrity.requireCashTransactionInput(
+      tripId: existingTransaction.tripId,
+      amount: nextAmount,
+      currencyCode: nextCurrencyCode,
+    );
+
     final normalizedCurrency = nextCurrencyCode.trim().toUpperCase();
     final replacementTransaction = CashTransaction.create(
       id: _uuid.v4(),
@@ -162,6 +177,13 @@ class CashWalletRepository {
     required String currencyCode,
     String? note,
   }) async {
+    DataIntegrity.requireCashTransactionInput(
+      tripId: tripId,
+      amount: amount,
+      currencyCode: currencyCode,
+    );
+    await _assertTripExists(tripId);
+
     final normalizedCurrency = currencyCode.trim().toUpperCase();
     final transaction = CashTransaction.create(
       id: _uuid.v4(),
@@ -534,6 +556,20 @@ class CashWalletRepository {
     );
 
     return CashEffectiveRateCalculator.calculate(rows);
+  }
+
+  Future<void> _assertTripExists(String tripId) async {
+    final db = await _appDatabase.database;
+    final rows = await db.query(
+      AppDatabase.tripsTable,
+      columns: ['id'],
+      where: 'id = ?',
+      whereArgs: [tripId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      throw const DataIntegrityException('tripNotFound');
+    }
   }
 
   bool _isEditableManualTransaction(CashTransaction transaction) {

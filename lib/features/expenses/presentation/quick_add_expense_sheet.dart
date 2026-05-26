@@ -193,9 +193,18 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
           _selectedCategory = lastCategory;
         }
         if (memoryData != null) {
-          _amountCategoryMemory = Map<String, String>.from(
-            jsonDecode(memoryData) as Map,
-          );
+          try {
+            final decoded = jsonDecode(memoryData);
+            if (decoded is Map) {
+              _amountCategoryMemory = Map<String, String>.from(
+                decoded.map(
+                  (key, value) => MapEntry(key.toString(), value.toString()),
+                ),
+              );
+            }
+          } on Object {
+            _amountCategoryMemory = const {};
+          }
         }
       });
     }

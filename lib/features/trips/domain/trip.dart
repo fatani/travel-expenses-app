@@ -1,3 +1,6 @@
+import '../../../core/integrity/data_integrity.dart';
+import '../../../core/integrity/defensive_parse.dart';
+
 class Trip {
   const Trip({
     required this.id,
@@ -16,6 +19,14 @@ class Trip {
     this.destinationCountryCode,
   });
 
+  static Trip? tryFromMap(Map<String, Object?> map) {
+    try {
+      return Trip.fromMap(map);
+    } on Object {
+      return null;
+    }
+  }
+
   factory Trip.create({
     String id = '',
     required String name,
@@ -30,6 +41,13 @@ class Trip {
     bool isCustomTitle = false,
     String? destinationCountryCode,
   }) {
+    DataIntegrity.requireTripCurrencies(
+      baseCurrency: baseCurrency,
+      destinationCurrency: destinationCurrency,
+      homeCurrencySnapshot: homeCurrencySnapshot,
+      budgetCurrency: budgetCurrency,
+    );
+
     final now = DateTime.now().toUtc();
 
     return Trip(
@@ -57,9 +75,21 @@ class Trip {
   }
 
   factory Trip.fromMap(Map<String, Object?> map) {
+    final id = DefensiveParse.readTrimmedString(map['id']);
+    final name = DefensiveParse.readTrimmedString(map['name']);
+    if (id == null || name == null) {
+      throw const FormatException('trip id/name missing');
+    }
+
+    final createdAt = DefensiveParse.readDateTime(map['created_at']);
+    final updatedAt = DefensiveParse.readDateTime(map['updated_at']);
+    if (createdAt == null || updatedAt == null) {
+      throw const FormatException('trip timestamps missing');
+    }
+
     return Trip(
-      id: map['id']! as String,
-      name: map['name']! as String,
+      id: id,
+      name: name,
       destination: (map['destination'] as String?) ?? '',
       baseCurrency: (map['base_currency'] as String?) ?? '',
         destinationCurrency:
@@ -78,8 +108,8 @@ class Trip {
       endDate: _readDate(map['end_date']),
       budget: _readBudget(map['budget']),
       budgetCurrency: _readBudgetCurrency(map),
-      createdAt: DateTime.parse(map['created_at']! as String),
-      updatedAt: DateTime.parse(map['updated_at']! as String),
+      createdAt: createdAt,
+      updatedAt: updatedAt,
       isCustomTitle: (map['is_custom_title'] as int? ?? 0) != 0,
       destinationCountryCode: map['destination_country_code'] as String?,
     );

@@ -5,7 +5,7 @@ class AppDatabase {
   AppDatabase();
 
   static const String databaseName = 'travel_expenses.db';
-  static const int databaseVersion = 16;
+  static const int databaseVersion = 17;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -58,6 +58,8 @@ class AppDatabase {
         await _ensureCashTransactionsTable(db);
         await _ensureCashTransactionsHomeValueColumns(db);
         await _ensureManualExchangeRatesTable(db);
+        await _ensureExpensesReferentialIntegrity(db);
+        await _purgeOrphanFinancialRows(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -305,6 +307,11 @@ class AppDatabase {
 
         if (oldVersion < 16) {
           await _ensureCashTransactionsHomeValueColumns(db);
+        }
+
+        if (oldVersion < 17) {
+          await _ensureExpensesReferentialIntegrity(db);
+          await _purgeOrphanFinancialRows(db);
         }
       },
     );
@@ -811,6 +818,109 @@ class AppDatabase {
       'CREATE INDEX IF NOT EXISTS idx_manual_exchange_rates_trip_pair_created '
       'ON $manualExchangeRatesTable (trip_id, from_currency, to_currency, created_at)',
     );
+  }
+
+  Future<bool> _tableHasForeignKey(
+    Database db,
+    String table,
+    String referencedTable,
+  ) async {
+    final foreignKeys = await db.rawQuery('PRAGMA foreign_key_list($table)');
+    return foreignKeys.any(
+      (row) => row['table'] == referencedTable && row['from'] == 'trip_id',
+    );
+  }
+
+  Future<void> _ensureExpensesReferentialIntegrity(Database db) async {
+    final hasForeignKey = await _tableHasForeignKey(db, expensesTable, tripsTable);
+    if (hasForeignKey) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE expenses_integrity_tmp (
+        id TEXT PRIMARY KEY,
+        trip_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        amount REAL NOT NULL,
+        currency_code TEXT NOT NULL,
+        transaction_amount REAL,
+        transaction_currency TEXT,
+        billed_amount REAL,
+        billed_currency TEXT,
+        fees_amount REAL,
+        fees_currency TEXT,
+        total_charged_amount REAL,
+        total_charged_currency TEXT,
+        original_amount REAL,
+        original_currency TEXT,
+        converted_home_amount REAL,
+        home_currency TEXT,
+        conversion_rate REAL,
+        is_international INTEGER NOT NULL DEFAULT 0,
+        spent_at TEXT NOT NULL,
+        payment_method TEXT NOT NULL,
+        payment_network TEXT,
+        payment_channel TEXT,
+        source TEXT NOT NULL,
+        category TEXT,
+        note TEXT,
+        raw_sms_text TEXT,
+        card_profile_id INTEGER,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      INSERT INTO expenses_integrity_tmp (
+        id, trip_id, title, amount, currency_code, transaction_amount,
+        transaction_currency, billed_amount, billed_currency, fees_amount,
+        fees_currency, total_charged_amount, total_charged_currency,
+        original_amount, original_currency, converted_home_amount, home_currency,
+        conversion_rate, is_international, spent_at, payment_method,
+        payment_network, payment_channel, source, category, note, raw_sms_text,
+        card_profile_id, created_at, updated_at
+      )
+      SELECT
+        e.id, e.trip_id, e.title, e.amount, e.currency_code, e.transaction_amount,
+        e.transaction_currency, e.billed_amount, e.billed_currency, e.fees_amount,
+        e.fees_currency, e.total_charged_amount, e.total_charged_currency,
+        e.original_amount, e.original_currency, e.converted_home_amount, e.home_currency,
+        e.conversion_rate, e.is_international, e.spent_at, e.payment_method,
+        e.payment_network, e.payment_channel, e.source, e.category, e.note, e.raw_sms_text,
+        e.card_profile_id, e.created_at, e.updated_at
+      FROM $expensesTable e
+      INNER JOIN $tripsTable t ON t.id = e.trip_id
+    ''');
+
+    await db.execute('DROP TABLE $expensesTable');
+    await db.execute('ALTER TABLE expenses_integrity_tmp RENAME TO $expensesTable');
+  }
+
+  Future<void> _purgeOrphanFinancialRows(Database db) async {
+    await db.execute('''
+      DELETE FROM $expensesTable
+      WHERE trip_id NOT IN (SELECT id FROM $tripsTable)
+    ''');
+
+    await db.execute('''
+      DELETE FROM $manualExchangeRatesTable
+      WHERE trip_id IS NOT NULL
+        AND TRIM(trip_id) != ''
+        AND trip_id NOT IN (SELECT id FROM $tripsTable)
+    ''');
+
+    await db.execute('''
+      DELETE FROM $tripCashBalancesTable
+      WHERE trip_id NOT IN (SELECT id FROM $tripsTable)
+    ''');
+
+    await db.execute('''
+      DELETE FROM $cashTransactionsTable
+      WHERE trip_id NOT IN (SELECT id FROM $tripsTable)
+    ''');
   }
 
   Future<void> _recomputeExpensesInternationalFlag(Database db) async {

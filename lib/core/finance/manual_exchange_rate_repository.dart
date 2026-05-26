@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 
 import '../database/app_database.dart';
+import '../integrity/data_integrity.dart';
 import 'manual_exchange_rate.dart';
 
 class ManualExchangeRateRepository {
@@ -9,7 +10,18 @@ class ManualExchangeRateRepository {
   final AppDatabase _appDatabase;
 
   Future<void> saveRate(ManualExchangeRate rate) async {
+    DataIntegrity.requireManualExchangeRate(
+      fromCurrency: rate.fromCurrency,
+      toCurrency: rate.toCurrency,
+      rate: rate.rate,
+    );
+
     final db = await _appDatabase.database;
+    final normalizedTripId = rate.tripId?.trim();
+    if (normalizedTripId != null && normalizedTripId.isNotEmpty) {
+      await _assertTripExists(db, normalizedTripId);
+    }
+
     await db.insert(
       AppDatabase.manualExchangeRatesTable,
       rate.toMap(),
@@ -37,7 +49,7 @@ class ManualExchangeRateRepository {
       );
 
       if (tripRows.isNotEmpty) {
-        return ManualExchangeRate.fromMap(tripRows.first);
+        return ManualExchangeRate.tryFromMap(tripRows.first);
       }
     }
 
@@ -53,10 +65,11 @@ class ManualExchangeRateRepository {
       return null;
     }
 
-    return ManualExchangeRate.fromMap(rows.first);
+    return ManualExchangeRate.tryFromMap(rows.first);
   }
 
   Future<List<ManualExchangeRate>> listLatestTripRates(String tripId) async {
+    DataIntegrity.requireNonEmptyTripId(tripId);
     final db = await _appDatabase.database;
     final rows = await db.rawQuery(
       'SELECT m.* '
@@ -75,6 +88,22 @@ class ManualExchangeRateRepository {
       [tripId, tripId],
     );
 
-    return rows.map(ManualExchangeRate.fromMap).toList(growable: false);
+    return rows
+        .map(ManualExchangeRate.tryFromMap)
+        .whereType<ManualExchangeRate>()
+        .toList(growable: false);
+  }
+
+  Future<void> _assertTripExists(DatabaseExecutor db, String tripId) async {
+    final rows = await db.query(
+      AppDatabase.tripsTable,
+      columns: ['id'],
+      where: 'id = ?',
+      whereArgs: [tripId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      throw const DataIntegrityException('tripNotFound');
+    }
   }
 }

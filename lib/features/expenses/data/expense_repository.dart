@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
+import '../../../core/integrity/data_integrity.dart';
 import '../domain/expense.dart';
 import '../domain/money_model.dart';
 
@@ -20,16 +21,21 @@ class ExpenseRepository {
       updatedAt: now,
     );
 
-    await db.insert(
-      AppDatabase.expensesTable,
-      entity.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.abort,
-    );
+    await db.transaction((txn) async {
+      await _assertTripExists(txn, entity.tripId);
+      DataIntegrity.requireExpense(entity);
+      await txn.insert(
+        AppDatabase.expensesTable,
+        entity.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
+    });
 
     return entity;
   }
 
   Future<List<Expense>> getExpensesByTrip(String tripId) async {
+    DataIntegrity.requireNonEmptyTripId(tripId);
     final db = await _appDatabase.database;
     final rows = await db.query(
       AppDatabase.expensesTable,
@@ -38,7 +44,7 @@ class ExpenseRepository {
       orderBy: 'spent_at DESC, created_at DESC',
     );
 
-    return rows.map(Expense.fromMap).toList();
+    return _parseExpenseRows(rows);
   }
 
   Future<List<MoneyModel>> getMoneyModelsByTrip(String tripId) async {
@@ -52,6 +58,10 @@ class ExpenseRepository {
   }
 
   Future<Expense?> getExpenseById(String id) async {
+    if (id.trim().isEmpty) {
+      return null;
+    }
+
     final db = await _appDatabase.database;
     final rows = await db.query(
       AppDatabase.expensesTable,
@@ -64,24 +74,32 @@ class ExpenseRepository {
       return null;
     }
 
-    return Expense.fromMap(rows.first);
+    return Expense.tryFromMap(rows.first);
   }
 
   Future<Expense> updateExpense(Expense expense) async {
     final db = await _appDatabase.database;
     final entity = expense.copyWith(updatedAt: DateTime.now().toUtc());
 
-    await db.update(
-      AppDatabase.expensesTable,
-      entity.toMap(),
-      where: 'id = ?',
-      whereArgs: [entity.id],
-    );
+    await db.transaction((txn) async {
+      await _assertTripExists(txn, entity.tripId);
+      DataIntegrity.requireExpense(entity);
+      final updated = await txn.update(
+        AppDatabase.expensesTable,
+        entity.toMap(),
+        where: 'id = ?',
+        whereArgs: [entity.id],
+      );
+      if (updated == 0) {
+        throw const DataIntegrityException('expenseNotFound');
+      }
+    });
 
     return entity;
   }
 
   Future<void> deleteExpense(String id) async {
+    DataIntegrity.requireNonEmptyId(id, field: 'expenseId');
     final db = await _appDatabase.database;
     await db.delete(
       AppDatabase.expensesTable,
@@ -112,6 +130,7 @@ class ExpenseRepository {
   /// trip, or null if no card expense exists. Only considers expenses whose
   /// payment_channel is a card channel (POS Purchase / Online Purchase).
   Future<int?> getLastCardExpenseCardId(String tripId) async {
+    DataIntegrity.requireNonEmptyTripId(tripId);
     final db = await _appDatabase.database;
     final rows = await db.query(
       AppDatabase.expensesTable,
@@ -125,5 +144,30 @@ class ExpenseRepository {
     );
     if (rows.isEmpty) return null;
     return rows.first['card_profile_id'] as int?;
+  }
+
+  Future<void> _assertTripExists(DatabaseExecutor db, String tripId) async {
+    DataIntegrity.requireNonEmptyTripId(tripId);
+    final rows = await db.query(
+      AppDatabase.tripsTable,
+      columns: ['id'],
+      where: 'id = ?',
+      whereArgs: [tripId],
+      limit: 1,
+    );
+    if (rows.isEmpty) {
+      throw const DataIntegrityException('tripNotFound');
+    }
+  }
+
+  List<Expense> _parseExpenseRows(List<Map<String, Object?>> rows) {
+    final expenses = <Expense>[];
+    for (final row in rows) {
+      final expense = Expense.tryFromMap(row);
+      if (expense != null) {
+        expenses.add(expense);
+      }
+    }
+    return expenses;
   }
 }

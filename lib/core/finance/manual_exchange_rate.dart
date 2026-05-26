@@ -1,3 +1,6 @@
+import '../integrity/data_integrity.dart';
+import '../integrity/defensive_parse.dart';
+
 class ManualExchangeRate {
   const ManualExchangeRate({
     required this.tripId,
@@ -15,6 +18,14 @@ class ManualExchangeRate {
   final String? sourceNote;
   final DateTime createdAt;
 
+  static ManualExchangeRate? tryFromMap(Map<String, Object?> map) {
+    try {
+      return ManualExchangeRate.fromMap(map);
+    } on Object {
+      return null;
+    }
+  }
+
   factory ManualExchangeRate.create({
     String? tripId,
     required String fromCurrency,
@@ -23,6 +34,12 @@ class ManualExchangeRate {
     String? sourceNote,
     DateTime? createdAt,
   }) {
+    DataIntegrity.requireManualExchangeRate(
+      fromCurrency: fromCurrency,
+      toCurrency: toCurrency,
+      rate: rate,
+    );
+
     return ManualExchangeRate(
       tripId: _normalizeText(tripId),
       fromCurrency: fromCurrency.trim().toUpperCase(),
@@ -34,13 +51,21 @@ class ManualExchangeRate {
   }
 
   factory ManualExchangeRate.fromMap(Map<String, Object?> map) {
+    final fromCurrency = DefensiveParse.readTrimmedString(map['from_currency']);
+    final toCurrency = DefensiveParse.readTrimmedString(map['to_currency']);
+    final rate = DefensiveParse.readPositiveDouble(map['rate']);
+    final createdAt = DefensiveParse.readDateTime(map['created_at']);
+    if (fromCurrency == null || toCurrency == null || rate == null || createdAt == null) {
+      throw const FormatException('manual exchange rate row invalid');
+    }
+
     return ManualExchangeRate(
       tripId: _normalizeText(map['trip_id'] as String?),
-      fromCurrency: (map['from_currency']! as String).trim().toUpperCase(),
-      toCurrency: (map['to_currency']! as String).trim().toUpperCase(),
-      rate: (map['rate'] as num).toDouble(),
+      fromCurrency: fromCurrency.toUpperCase(),
+      toCurrency: toCurrency.toUpperCase(),
+      rate: rate,
       sourceNote: map['source_note'] as String?,
-      createdAt: DateTime.parse(map['created_at']! as String),
+      createdAt: createdAt,
     );
   }
 

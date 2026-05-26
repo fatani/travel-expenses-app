@@ -16,7 +16,7 @@ import 'package:travel_expenses/features/trips/presentation/trips_list_screen.da
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
 void main() {
-  final now = DateTime(2026, 5, 25);
+  final now = DateTime.now();
 
   final activeTrip = Trip.create(
     id: 'trip-active',

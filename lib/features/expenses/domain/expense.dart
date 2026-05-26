@@ -1,6 +1,7 @@
+import '../../../core/integrity/data_integrity.dart';
 import 'money_model.dart';
 
-class Expense {
+class Expense implements ExpenseLike {
   const Expense({
     required this.id,
     required this.tripId,
@@ -110,9 +111,34 @@ class Expense {
     );
   }
 
+  /// Returns null when the row is too malformed to load safely.
+  static Expense? tryFromMap(Map<String, Object?> map) {
+    try {
+      return Expense.fromMap(map);
+    } on Object {
+      return null;
+    }
+  }
+
   factory Expense.fromMap(Map<String, Object?> map) {
-    final legacyAmount = (map['amount']! as num).toDouble();
-    final legacyCurrencyCode = map['currency_code']! as String;
+    final id = map['id'];
+    final tripId = map['trip_id'];
+    final title = map['title'];
+    if (id is! String || id.trim().isEmpty) {
+      throw const FormatException('expense id missing');
+    }
+    if (tripId is! String || tripId.trim().isEmpty) {
+      throw const FormatException('expense trip_id missing');
+    }
+    if (title is! String || title.trim().isEmpty) {
+      throw const FormatException('expense title missing');
+    }
+
+    final legacyAmount = (map['amount'] as num?)?.toDouble();
+    final legacyCurrencyCode = map['currency_code'] as String?;
+    if (legacyAmount == null || legacyCurrencyCode == null) {
+      throw const FormatException('expense amount/currency missing');
+    }
     final transactionAmount =
       (map['transaction_amount'] as num?)?.toDouble() ?? legacyAmount;
     final transactionCurrency =
@@ -127,10 +153,17 @@ class Expense {
     final totalChargedAmount = (map['total_charged_amount'] as num?)?.toDouble();
     final totalChargedCurrency = map['total_charged_currency'] as String?;
 
+    final spentAtRaw = map['spent_at'];
+    final createdAtRaw = map['created_at'];
+    final updatedAtRaw = map['updated_at'];
+    if (spentAtRaw is! String || createdAtRaw is! String || updatedAtRaw is! String) {
+      throw const FormatException('expense timestamps missing');
+    }
+
     return Expense(
-      id: map['id']! as String,
-      tripId: map['trip_id']! as String,
-      title: map['title']! as String,
+      id: id,
+      tripId: tripId,
+      title: title,
       amount: transactionAmount,
       currencyCode: transactionCurrency,
       transactionAmount: transactionAmount,
@@ -157,7 +190,7 @@ class Expense {
         totalChargedCurrency: totalChargedCurrency,
             feesAmount: feesAmount,
           ),
-      spentAt: DateTime.parse(map['spent_at']! as String),
+      spentAt: DateTime.parse(spentAtRaw),
       paymentMethod: (map['payment_method'] as String?) ?? '',
       paymentNetwork: map['payment_network'] as String?,
       paymentChannel: map['payment_channel'] as String?,
@@ -166,17 +199,22 @@ class Expense {
       note: map['note'] as String?,
       rawSmsText: map['raw_sms_text'] as String?,
       cardProfileId: map['card_profile_id'] as int?,
-      createdAt: DateTime.parse(map['created_at']! as String),
-      updatedAt: DateTime.parse(map['updated_at']! as String),
+      createdAt: DateTime.parse(createdAtRaw),
+      updatedAt: DateTime.parse(updatedAtRaw),
     );
   }
 
+  @override
   final String id;
+  @override
   final String tripId;
+  @override
   final String title;
   final double amount;
   final String currencyCode;
+  @override
   final double transactionAmount;
+  @override
   final String transactionCurrency;
   final double? originalAmount;
   final String? originalCurrency;
