@@ -1976,13 +1976,13 @@ abstract class AppLocalizations {
   /// No description provided for @financialOnboardingQuestion.
   ///
   /// In en, this message translates to:
-  /// **'Where do you live?'**
+  /// **'What\'s your home country?'**
   String get financialOnboardingQuestion;
 
   /// No description provided for @financialOnboardingSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Choose your home country so the app can set your home currency.'**
+  /// **'We use this for your home currency in reports and to compare spending while you travel.'**
   String get financialOnboardingSubtitle;
 
   /// No description provided for @financialCountrySearchHint.

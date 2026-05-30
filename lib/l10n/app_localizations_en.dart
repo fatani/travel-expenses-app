@@ -992,10 +992,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get financialProfileLoadError => 'Couldn\'t load your financial profile.';
 
   @override
-  String get financialOnboardingQuestion => 'Where do you live?';
+  String get financialOnboardingQuestion => 'What\'s your home country?';
 
   @override
-  String get financialOnboardingSubtitle => 'Choose your home country so the app can set your home currency.';
+  String get financialOnboardingSubtitle => 'We use this for your home currency in reports and to compare spending while you travel.';
 
   @override
   String get financialCountrySearchHint => 'Search country';

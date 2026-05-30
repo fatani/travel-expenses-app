@@ -9,6 +9,7 @@ import 'package:travel_expenses/features/financial_profile/presentation/financia
 import 'package:travel_expenses/features/financial_profile/presentation/user_financial_profile_controller.dart';
 import 'package:travel_expenses/features/settings/data/settings_repository.dart';
 import 'package:travel_expenses/features/settings/domain/app_settings.dart';
+import 'package:travel_expenses/features/settings/presentation/settings_controller.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 
@@ -26,6 +27,9 @@ void main() {
           userFinancialProfileControllerProvider.overrideWith(
             _FakeUserFinancialProfileController.new,
           ),
+          settingsControllerProvider.overrideWith(
+            _EnglishSettingsController.new,
+          ),
         ],
         child: const TravelExpensesApp(),
       ),
@@ -34,6 +38,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(FinancialProfileOnboardingScreen), findsOneWidget);
+    expect(find.text("What's your home country?"), findsOneWidget);
+    expect(
+      find.text(
+        'We use this for your home currency in reports and to compare spending while you travel.',
+      ),
+      findsOneWidget,
+    );
   });
 }
 
@@ -81,4 +92,12 @@ class _FakeSettingsRepository extends SettingsRepository {
 class _FakeUserFinancialProfileController extends UserFinancialProfileController {
   @override
   Future<UserFinancialProfile?> build() async => null;
+}
+
+class _EnglishSettingsController extends SettingsController {
+  @override
+  Future<AppSettings> build() async {
+    final defaults = AppSettings.defaults();
+    return defaults.copyWith(localeCode: 'en');
+  }
 }

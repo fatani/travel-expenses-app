@@ -992,10 +992,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get financialProfileLoadError => 'تعذر تحميل ملفك المالي.';
 
   @override
-  String get financialOnboardingQuestion => 'أين تقيم؟';
+  String get financialOnboardingQuestion => 'ما هو بلدك الأساسي؟';
 
   @override
-  String get financialOnboardingSubtitle => 'اختر بلد إقامتك ليتم ضبط عملتك الرئيسية تلقائيًا.';
+  String get financialOnboardingSubtitle => 'نستخدم هذا لتحديد عملتك الأساسية في التقارير وعرض مصاريف السفر بعملتك.';
 
   @override
   String get financialCountrySearchHint => 'ابحث عن بلد';
