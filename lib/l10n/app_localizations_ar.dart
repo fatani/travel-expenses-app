@@ -139,10 +139,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripsDeleteError => 'تعذر حذف الرحلة. حاول مرة أخرى.';
 
   @override
-  String get tripsEmptyTitle => 'لا توجد رحلات بعد';
+  String get tripsEmptyTitle => 'تابع مصاريفك أثناء السفر';
 
   @override
-  String get tripsEmptyMessage => 'أضف رحلة للبدء.';
+  String get tripsEmptyMessage => 'أنشئ رحلة لتتبّع النقد والبطاقات والمصاريف.';
 
   @override
   String get tripsDatesNeedAttention => 'التواريخ ناقصة';

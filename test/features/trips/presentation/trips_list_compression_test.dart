@@ -16,6 +16,7 @@ import 'package:travel_expenses/features/settings/domain/app_settings.dart';
 import 'package:travel_expenses/features/settings/presentation/settings_controller.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/features/trips/presentation/trip_controller.dart';
+import 'package:travel_expenses/features/trips/presentation/trip_form_screen.dart';
 import 'package:travel_expenses/features/trips/presentation/trips_list_screen.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
@@ -189,7 +190,8 @@ void main() {
     expect(find.byType(GlobalReportsScreen), findsOneWidget);
   });
 
-  testWidgets('empty state keeps one primary start trip CTA', (tester) async {
+  testWidgets('empty state explains travel spending and keeps one primary CTA',
+      (tester) async {
     SharedPreferences.setMockInitialValues({
       'trips_has_ever_had_at_least_one_trip': false,
     });
@@ -199,8 +201,54 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Track spending while you travel'), findsOneWidget);
+    expect(
+      find.text(
+        'Create a trip to track cash, cards, and expenses along the way.',
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Add trip'), findsOneWidget);
     expect(find.text('Global reports'), findsNothing);
+  });
+
+  testWidgets('empty state shows natural Arabic entry copy', (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'trips_has_ever_had_at_least_one_trip': false,
+    });
+
+    await tester.pumpWidget(
+      _buildTripsListApp(
+        trips: const [],
+        locale: const Locale('ar'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('تابع مصاريفك أثناء السفر'), findsOneWidget);
+    expect(
+      find.text('أنشئ رحلة لتتبّع النقد والبطاقات والمصاريف.'),
+      findsOneWidget,
+    );
+    expect(find.text('إضافة رحلة'), findsOneWidget);
+  });
+
+  testWidgets('empty state add trip CTA opens country selection flow',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({
+      'trips_has_ever_had_at_least_one_trip': false,
+    });
+
+    await tester.pumpWidget(
+      _buildTripsListApp(trips: const []),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add trip'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(TripFormScreen), findsOneWidget);
+    expect(find.text('Where are you going?'), findsOneWidget);
   });
 
   testWidgets('arabic trip list keeps currency in LTR isolate', (tester) async {

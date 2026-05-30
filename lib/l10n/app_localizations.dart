@@ -350,13 +350,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripsEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'No trips yet'**
+  /// **'Track spending while you travel'**
   String get tripsEmptyTitle;
 
   /// No description provided for @tripsEmptyMessage.
   ///
   /// In en, this message translates to:
-  /// **'Add a trip to get started.'**
+  /// **'Create a trip to track cash, cards, and expenses along the way.'**
   String get tripsEmptyMessage;
 
   /// No description provided for @tripsDatesNeedAttention.

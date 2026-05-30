@@ -139,10 +139,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripsDeleteError => 'Couldn\'t delete this trip. Try again.';
 
   @override
-  String get tripsEmptyTitle => 'No trips yet';
+  String get tripsEmptyTitle => 'Track spending while you travel';
 
   @override
-  String get tripsEmptyMessage => 'Add a trip to get started.';
+  String get tripsEmptyMessage => 'Create a trip to track cash, cards, and expenses along the way.';
 
   @override
   String get tripsDatesNeedAttention => 'Dates incomplete';

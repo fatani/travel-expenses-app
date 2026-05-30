@@ -37,6 +37,17 @@ class TripsEmptyStateScreen extends StatelessWidget {
                     height: isArabic ? 1.4 : 1.25,
                   ),
                 ),
+                const SizedBox(height: 10),
+                Text(
+                  l10n.tripsEmptyMessage,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                    color: const Color(0xFF475569),
+                    height: isArabic ? 1.5 : 1.45,
+                  ),
+                ),
                 const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
