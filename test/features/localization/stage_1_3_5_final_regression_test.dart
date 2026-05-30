@@ -25,16 +25,21 @@ import 'package:travel_expenses/features/trips/presentation/trip_controller.dart
 import 'package:travel_expenses/features/trips/presentation/trips_list_screen.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+DateTime _activeTripReferenceDay() {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
+}
+
 void main() {
-  final now = DateTime(2026, 5, 25);
+  final referenceDay = _activeTripReferenceDay();
 
   final longArabicTrip = Trip.create(
     id: 'trip-final-ar',
     name: 'رحلة عمل إلى المملكة العربية السعودية للمؤتمر السنوي',
     destination: 'الرياض',
     baseCurrency: 'SAR',
-    startDate: now.subtract(const Duration(days: 1)),
-    endDate: now.add(const Duration(days: 4)),
+    startDate: referenceDay.subtract(const Duration(days: 1)),
+    endDate: referenceDay.add(const Duration(days: 4)),
     budget: 8000,
   );
 

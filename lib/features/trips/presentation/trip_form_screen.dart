@@ -16,6 +16,7 @@ import '../domain/trip.dart';
 import '../../financial_profile/presentation/user_financial_profile_controller.dart';
 import '../../settings/presentation/settings_controller.dart';
 import 'trip_controller.dart';
+import 'trip_setup_screen.dart';
 import 'widgets/trip_form_backgrounds.dart';
 
 const List<String> _kSupportedCurrencies = [
@@ -165,7 +166,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               onDestinationCleared: _onDestinationCleared,
               onCustomDestinationSelected: _onCustomDestinationSelected,
                 onCreateTrip: _selectedDestination != null
-                  ? _submit
+                  ? _openSetupScreen
                   : null,
               onToggleLanguage: () => _toggleLanguage(isArabic: isArabic),
               onBack: () => Navigator.of(context).pop(),
@@ -474,6 +475,28 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _openSetupScreen() async {
+    final destination = _selectedDestination;
+    if (destination == null) {
+      return;
+    }
+
+    final createdTrip = await Navigator.of(context).push<Trip>(
+      MaterialPageRoute<Trip>(
+        builder: (_) => TripSetupScreen(
+          selectedDestination: destination,
+          customTripTitle: _nameController.text.trim(),
+        ),
+      ),
+    );
+
+    if (!mounted || createdTrip == null) {
+      return;
+    }
+
+    Navigator.of(context).pop(createdTrip);
   }
 
   Future<void> _toggleLanguage({required bool isArabic}) async {
