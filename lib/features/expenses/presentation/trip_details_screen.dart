@@ -114,6 +114,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
             onFixDates: _openTripEditor,
             onEditExpense: (expense) => _openExpenseForm(expense: expense),
             onDeleteExpense: (expense) => _confirmDelete(expense),
+            onOpenCashWallet: _openCashWallet,
+            onAddViaSms: _openSmsExpenseScreen,
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -143,6 +145,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                     onEditExpense: (expense) =>
                         _openExpenseForm(expense: expense),
                     onDeleteExpense: (expense) => _confirmDelete(expense),
+                    onOpenCashWallet: _openCashWallet,
+                    onAddViaSms: _openSmsExpenseScreen,
                   ),
                 ),
               ],
@@ -613,6 +617,8 @@ class _TripDetailsContent extends StatefulWidget {
     this.onFixDates,
     required this.onEditExpense,
     required this.onDeleteExpense,
+    required this.onOpenCashWallet,
+    required this.onAddViaSms,
   });
 
   final Trip trip;
@@ -620,6 +626,8 @@ class _TripDetailsContent extends StatefulWidget {
   final VoidCallback? onFixDates;
   final ValueChanged<Expense> onEditExpense;
   final ValueChanged<Expense> onDeleteExpense;
+  final VoidCallback onOpenCashWallet;
+  final VoidCallback onAddViaSms;
 
   @override
   State<_TripDetailsContent> createState() => _TripDetailsContentState();
@@ -734,7 +742,8 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                 if (!hasExpenses) ...[
                   const SizedBox(height: AppSpacing.lg),
                   _TripDetailsEmptyState(
-                    title: l10n.tripDetailsEmptyExpensesTitle,
+                    onOpenCashWallet: widget.onOpenCashWallet,
+                    onAddViaSms: widget.onAddViaSms,
                   ),
                 ] else ...[
                   if (showSearch) ...[
@@ -1229,20 +1238,123 @@ class _TripTimelineStatusChip extends StatelessWidget {
 }
 
 class _TripDetailsEmptyState extends StatelessWidget {
-  const _TripDetailsEmptyState({required this.title});
+  const _TripDetailsEmptyState({
+    required this.onOpenCashWallet,
+    required this.onAddViaSms,
+  });
 
-  final String title;
+  final VoidCallback onOpenCashWallet;
+  final VoidCallback onAddViaSms;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-      child: Text(
-        title,
-        textAlign: TextAlign.center,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+    final l10n = AppLocalizations.of(context)!;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final bodyStyle = theme.textTheme.bodyMedium?.copyWith(
+      color: scheme.onSurfaceVariant,
+      height: RtlTypography.bodyLineHeight(isArabic),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          l10n.tripDetailsEmptyExpensesTitle,
+          textAlign: TextAlign.center,
+          style: bodyStyle?.copyWith(fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          l10n.noExpensesSubtitle,
+          textAlign: TextAlign.center,
+          style: bodyStyle,
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _EmptyStateDiscoveryLink(
+          icon: Icons.account_balance_wallet_outlined,
+          title: l10n.noExpensesCashWallet,
+          subtitle: l10n.noExpensesCashWalletSubtitle,
+          onTap: onOpenCashWallet,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        _EmptyStateDiscoveryLink(
+          icon: Icons.sms_outlined,
+          title: l10n.noExpensesAddViaSms,
+          onTap: onAddViaSms,
+        ),
+      ],
+    );
+  }
+}
+
+class _EmptyStateDiscoveryLink extends StatelessWidget {
+  const _EmptyStateDiscoveryLink({
+    required this.icon,
+    required this.title,
+    this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
+    final titleStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: FontWeight.w500,
+      height: RtlTypography.bodyLineHeight(isArabic),
+    );
+    final subtitleStyle = theme.textTheme.bodySmall?.copyWith(
+      color: scheme.onSurfaceVariant,
+      height: RtlTypography.bodyLineHeight(isArabic),
+    );
+
+    return Material(
+      color: scheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm + 2,
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 20, color: scheme.onSurfaceVariant),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, style: titleStyle),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle!, style: subtitleStyle),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                isRtl
+                    ? Icons.chevron_left_rounded
+                    : Icons.chevron_right_rounded,
+                size: 20,
+                color: scheme.onSurfaceVariant.withValues(alpha: 0.72),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

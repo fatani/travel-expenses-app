@@ -426,7 +426,7 @@ void main() {
   );
 
   testWidgets(
-    'empty trip details state is compact and uses FAB only',
+    'empty trip details state keeps FAB primary and shows discovery links',
     (tester) async {
       final repository = _FakeExpenseRepository(initialExpenses: const []);
 
@@ -442,8 +442,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('No expenses yet'), findsOneWidget);
+      expect(find.text('Use the button below to add one.'), findsOneWidget);
+      expect(find.text('Cash Wallet'), findsOneWidget);
+      expect(find.text('Add via Bank SMS'), findsOneWidget);
       expect(find.text('Add your first expense now'), findsNothing);
-      expect(find.text('Add via Bank SMS'), findsNothing);
       expect(find.byType(FloatingActionButton), findsOneWidget);
     },
   );

@@ -8,6 +8,7 @@ import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
+import 'package:travel_expenses/features/cash_wallet/presentation/trip_cash_wallet_screen.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
 import 'package:travel_expenses/features/sms_parser/presentation/sms_expense_screen.dart';
@@ -246,7 +247,7 @@ void main() {
     expect(find.byType(SmsExpenseScreen), findsOneWidget);
   });
 
-  testWidgets('compact empty state has no inline SMS or cash wallet CTAs', (tester) async {
+  testWidgets('empty state surfaces cash wallet and SMS discovery links', (tester) async {
     await tester.pumpWidget(
       _buildTripDetailsApp(
         trip: trip,
@@ -255,9 +256,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Add via Bank SMS'), findsNothing);
-    expect(find.text('Cash Wallet'), findsNothing);
+    expect(find.text('No expenses yet'), findsOneWidget);
+    expect(find.text('Use the button below to add one.'), findsOneWidget);
+    expect(find.text('Cash Wallet'), findsOneWidget);
+    expect(find.text('See how much cash you have left'), findsOneWidget);
+    expect(find.text('Add via Bank SMS'), findsOneWidget);
     expect(find.text('Add First Expense'), findsNothing);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
+
+    await tester.tap(find.text('Cash Wallet'));
+    await tester.pumpAndSettle();
+    expect(find.byType(TripCashWalletScreen), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Add via Bank SMS'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SmsExpenseScreen), findsOneWidget);
   });
 
   testWidgets('overflow menu is present on empty trip details', (tester) async {
