@@ -1431,4 +1431,55 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripFormCustomDestinationFallback => 'لم تجد وجهتك؟ أضف وجهة مخصصة';
+
+  @override
+  String get tripSetupTitle => 'قبل الانطلاق';
+
+  @override
+  String get tripSetupSubtitle => 'كلها اختيارية — أضف ما تعرفه';
+
+  @override
+  String get tripSetupDatesTitle => 'التواريخ';
+
+  @override
+  String get tripSetupDatesHint => 'اختياري';
+
+  @override
+  String get tripSetupCashTitle => 'النقد المتوفر';
+
+  @override
+  String get tripSetupCashHint => 'اختياري · اتركه فارغاً للتخطي';
+
+  @override
+  String get tripSetupCardsTitle => 'البطاقات';
+
+  @override
+  String get tripSetupCardsHint => 'بطاقات الدفع المحفوظة';
+
+  @override
+  String get tripSetupCardsEmpty => 'لا توجد بطاقات محفوظة';
+
+  @override
+  String get tripSetupCardsError => 'تعذّر تحميل البطاقات';
+
+  @override
+  String get tripSetupAddCurrency => 'إضافة عملة';
+
+  @override
+  String get tripSetupAddCard => 'إضافة بطاقة';
+
+  @override
+  String get tripSetupAmountLabel => 'المبلغ';
+
+  @override
+  String get tripSetupSearchCurrency => 'بحث عن عملة';
+
+  @override
+  String get tripSetupCreateNow => 'إنشاء الرحلة الآن';
+
+  @override
+  String get tripSetupCreateNowHint => 'بدون تواريخ أو نقد أو بطاقات جديدة';
+
+  @override
+  String get tripSetupCashSaveFailed => 'تعذّر حفظ النقد. حاول مرة أخرى.';
 }

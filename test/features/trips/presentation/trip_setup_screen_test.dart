@@ -31,7 +31,7 @@ void main() {
   });
 
   group('Trip creation', () {
-    testWidgets('creates trip with no setup data via Skip setup', (tester) async {
+    testWidgets('creates trip with no setup data via Create trip now', (tester) async {
       final recording = _RecordingTripsController();
 
       await tester.pumpWidget(
@@ -47,7 +47,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.text('Skip setup'));
+      await tester.tap(find.text('Create trip now'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -134,8 +134,8 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(2), '1000');
       await tester.pump();
-      await tester.ensureVisible(find.text('Add another currency'));
-      await tester.tap(find.text('Add another currency'));
+      await tester.ensureVisible(find.text('Add currency'));
+      await tester.tap(find.text('Add currency'));
       await tester.pump();
 
       await tester.enterText(find.byType(TextField).last, '250');
@@ -207,7 +207,7 @@ void main() {
       await tester.pump();
 
       expect(find.textContaining('4242'), findsOneWidget);
-      expect(find.text('No cards yet. Add one now or skip.'), findsNothing);
+      expect(find.text('None saved yet'), findsNothing);
     });
 
     test('card profiles have no trip relationship field', () {
@@ -300,8 +300,8 @@ void main() {
       await tester.tap(find.text('Open setup flow'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
-      await tester.ensureVisible(find.text('Skip setup'));
-      await tester.tap(find.text('Skip setup'));
+      await tester.ensureVisible(find.text('Create trip now'));
+      await tester.tap(find.text('Create trip now'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -339,6 +339,7 @@ void main() {
       expect(find.text('Save changes'), findsOneWidget);
       expect(find.byType(TripSetupScreen), findsNothing);
       expect(find.text('Skip setup'), findsNothing);
+      expect(find.text('Create trip now'), findsNothing);
     });
   });
 
@@ -371,7 +372,7 @@ void main() {
       expect(recording.deleteCalls.first, 'created-trip');
       expect(find.byType(TripSetupScreen), findsOneWidget);
       expect(
-        find.textContaining("Couldn't save starting cash"),
+        find.textContaining("Couldn't save cash"),
         findsOneWidget,
       );
     });
@@ -396,8 +397,8 @@ void main() {
 
       await tester.enterText(find.byType(TextField).at(2), '1000');
       await tester.pump();
-      await tester.ensureVisible(find.text('Add another currency'));
-      await tester.tap(find.text('Add another currency'));
+      await tester.ensureVisible(find.text('Add currency'));
+      await tester.tap(find.text('Add currency'));
       await tester.pump();
       await tester.enterText(find.byType(TextField).last, '250');
       await tester.pump();
@@ -433,14 +434,14 @@ void main() {
       );
       await tester.pump();
 
-      await tester.ensureVisible(find.text('Add another currency'));
-      await tester.tap(find.text('Add another currency'));
+      await tester.ensureVisible(find.text('Add currency'));
+      await tester.tap(find.text('Add currency'));
       await tester.pump();
-      await tester.tap(find.text('Add another currency'));
+      await tester.tap(find.text('Add currency'));
       await tester.pump();
 
       await tester.ensureVisible(find.text('Create trip'));
-      await tester.ensureVisible(find.text('Skip setup'));
+      await tester.ensureVisible(find.text('Create trip now'));
       expect(find.byType(SingleChildScrollView), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -466,14 +467,14 @@ void main() {
       );
       await tester.pump();
 
-      await tester.ensureVisible(find.text('إضافة عملة أخرى'));
-      await tester.tap(find.text('إضافة عملة أخرى'));
+      await tester.ensureVisible(find.text('إضافة عملة'));
+      await tester.tap(find.text('إضافة عملة'));
       await tester.pump();
-      await tester.tap(find.text('إضافة عملة أخرى'));
+      await tester.tap(find.text('إضافة عملة'));
       await tester.pump();
 
       await tester.ensureVisible(find.text('إنشاء الرحلة'));
-      await tester.ensureVisible(find.text('تخطي الإعداد'));
+      await tester.ensureVisible(find.text('إنشاء الرحلة الآن'));
       expect(find.byType(SingleChildScrollView), findsOneWidget);
       expect(tester.takeException(), isNull);
     });

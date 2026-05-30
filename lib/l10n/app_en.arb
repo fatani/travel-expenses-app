@@ -517,5 +517,22 @@
     "tripFormEditCustomTitle": "Give your trip a custom name",
     "tripFormCreateWithoutCustomTitle": "We'll create \"{tripTitle}\" as your trip name",
     "@tripFormCreateWithoutCustomTitle": {"placeholders": {"tripTitle": {}}},
-    "tripFormCustomDestinationFallback": "Can't find your destination? Add custom destination"
+    "tripFormCustomDestinationFallback": "Can't find your destination? Add custom destination",
+    "tripSetupTitle": "Before you go",
+    "tripSetupSubtitle": "All optional — add what you know",
+    "tripSetupDatesTitle": "Dates",
+    "tripSetupDatesHint": "Optional",
+    "tripSetupCashTitle": "Cash on hand",
+    "tripSetupCashHint": "Optional · leave blank to skip",
+    "tripSetupCardsTitle": "Cards",
+    "tripSetupCardsHint": "Your saved payment cards",
+    "tripSetupCardsEmpty": "None saved yet",
+    "tripSetupCardsError": "Couldn't load cards",
+    "tripSetupAddCurrency": "Add currency",
+    "tripSetupAddCard": "Add card",
+    "tripSetupAmountLabel": "Amount",
+    "tripSetupSearchCurrency": "Search currency",
+    "tripSetupCreateNow": "Create trip now",
+    "tripSetupCreateNowHint": "Without dates, cash, or new cards",
+    "tripSetupCashSaveFailed": "Couldn't save cash. Try again."
 }

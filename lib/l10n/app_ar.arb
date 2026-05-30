@@ -518,5 +518,22 @@
     "tripFormEditCustomTitle": "أعط رحلتك اسماً مخصصاً",
   "tripFormCreateWithoutCustomTitle": "سننشئ \"{tripTitle}\" كاسم رحلتك",
   "@tripFormCreateWithoutCustomTitle": {"placeholders": {"tripTitle": {}}},
-  "tripFormCustomDestinationFallback": "لم تجد وجهتك؟ أضف وجهة مخصصة"
+  "tripFormCustomDestinationFallback": "لم تجد وجهتك؟ أضف وجهة مخصصة",
+  "tripSetupTitle": "قبل الانطلاق",
+  "tripSetupSubtitle": "كلها اختيارية — أضف ما تعرفه",
+  "tripSetupDatesTitle": "التواريخ",
+  "tripSetupDatesHint": "اختياري",
+  "tripSetupCashTitle": "النقد المتوفر",
+  "tripSetupCashHint": "اختياري · اتركه فارغاً للتخطي",
+  "tripSetupCardsTitle": "البطاقات",
+  "tripSetupCardsHint": "بطاقات الدفع المحفوظة",
+  "tripSetupCardsEmpty": "لا توجد بطاقات محفوظة",
+  "tripSetupCardsError": "تعذّر تحميل البطاقات",
+  "tripSetupAddCurrency": "إضافة عملة",
+  "tripSetupAddCard": "إضافة بطاقة",
+  "tripSetupAmountLabel": "المبلغ",
+  "tripSetupSearchCurrency": "بحث عن عملة",
+  "tripSetupCreateNow": "إنشاء الرحلة الآن",
+  "tripSetupCreateNowHint": "بدون تواريخ أو نقد أو بطاقات جديدة",
+  "tripSetupCashSaveFailed": "تعذّر حفظ النقد. حاول مرة أخرى."
 }

@@ -1424,4 +1424,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripFormCustomDestinationFallback => 'Can\'t find your destination? Add custom destination';
+
+  @override
+  String get tripSetupTitle => 'Before you go';
+
+  @override
+  String get tripSetupSubtitle => 'All optional — add what you know';
+
+  @override
+  String get tripSetupDatesTitle => 'Dates';
+
+  @override
+  String get tripSetupDatesHint => 'Optional';
+
+  @override
+  String get tripSetupCashTitle => 'Cash on hand';
+
+  @override
+  String get tripSetupCashHint => 'Optional · leave blank to skip';
+
+  @override
+  String get tripSetupCardsTitle => 'Cards';
+
+  @override
+  String get tripSetupCardsHint => 'Your saved payment cards';
+
+  @override
+  String get tripSetupCardsEmpty => 'None saved yet';
+
+  @override
+  String get tripSetupCardsError => 'Couldn\'t load cards';
+
+  @override
+  String get tripSetupAddCurrency => 'Add currency';
+
+  @override
+  String get tripSetupAddCard => 'Add card';
+
+  @override
+  String get tripSetupAmountLabel => 'Amount';
+
+  @override
+  String get tripSetupSearchCurrency => 'Search currency';
+
+  @override
+  String get tripSetupCreateNow => 'Create trip now';
+
+  @override
+  String get tripSetupCreateNowHint => 'Without dates, cash, or new cards';
+
+  @override
+  String get tripSetupCashSaveFailed => 'Couldn\'t save cash. Try again.';
 }

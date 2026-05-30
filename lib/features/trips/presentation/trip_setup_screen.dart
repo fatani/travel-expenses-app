@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:travel_expenses/l10n/app_localizations.dart';
@@ -90,19 +91,15 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
         _startDate!.isAfter(_endDate!);
   }
 
-  String _label({
-    required String en,
-    required String ar,
-  }) {
-    return _isArabic ? ar : en;
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final destination = widget.selectedDestination;
     final textDirection = _isArabic ? TextDirection.rtl : TextDirection.ltr;
     final cardsAsync = ref.watch(cardsProvider);
+    final viewInsetsBottom = MediaQuery.viewInsetsOf(context).bottom;
+    final isCompact = MediaQuery.sizeOf(context).width < 400;
+    final horizontalPadding = isCompact ? 16.0 : 20.0;
 
     return Directionality(
       textDirection: textDirection,
@@ -115,7 +112,12 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
               Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      horizontalPadding - 8,
+                      4,
+                      horizontalPadding - 8,
+                      0,
+                    ),
                     child: Row(
                       children: [
                         IconButton(
@@ -126,14 +128,11 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                         ),
                         Expanded(
                           child: Text(
-                            _label(
-                              en: 'Trip setup',
-                              ar: 'إعداد الرحلة',
-                            ),
+                            l10n.tripSetupTitle,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
                               color: Color(0xFF0F172A),
                             ),
                           ),
@@ -144,7 +143,14 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                   ),
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+                      padding: EdgeInsetsDirectional.fromSTEB(
+                        horizontalPadding,
+                        4,
+                        horizontalPadding,
+                        16 + viewInsetsBottom,
+                      ),
+                      keyboardDismissBehavior:
+                          ScrollViewKeyboardDismissBehavior.onDrag,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -152,29 +158,25 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                             '${destination.flagEmoji} ${destination.getLocalizedName(_isArabic)}',
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w900,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
                               color: Color(0xFF0F172A),
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
                           Text(
-                            _label(
-                              en: 'Optional details before you go',
-                              ar: 'تفاصيل اختيارية قبل الانطلاق',
-                            ),
+                            l10n.tripSetupSubtitle,
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                              fontSize: 14,
+                              fontSize: 13,
+                              height: 1.35,
                               color: Color(0xFF64748B),
                             ),
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: 20),
                           _SetupSectionCard(
-                            title: _label(
-                              en: 'Trip dates',
-                              ar: 'تواريخ الرحلة',
-                            ),
+                            title: l10n.tripSetupDatesTitle,
+                            hint: l10n.tripSetupDatesHint,
                             child: Column(
                               children: [
                                 _DateField(
@@ -184,7 +186,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                                       ? null
                                       : () => _selectDate(isStartDate: true),
                                 ),
-                                const SizedBox(height: 10),
+                                const SizedBox(height: 8),
                                 _DateField(
                                   controller: _endDateController,
                                   label: l10n.tripFormEndDateLabel,
@@ -193,14 +195,11 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                                       : () => _selectDate(isStartDate: false),
                                 ),
                                 if (_hasInvalidDateRange) ...[
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 6),
                                   Text(
-                                    _label(
-                                      en: 'End date must be after start date',
-                                      ar: 'تاريخ النهاية يجب أن يكون بعد تاريخ البداية',
-                                    ),
+                                    l10n.tripFormEndDateAfterStart,
                                     style: const TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       color: Color(0xFFDC2626),
                                     ),
                                   ),
@@ -208,94 +207,99 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           _SetupSectionCard(
-                            title: _label(
-                              en: 'Starting cash',
-                              ar: 'النقد الافتتاحي',
-                            ),
+                            title: l10n.tripSetupCashTitle,
+                            hint: l10n.tripSetupCashHint,
                             child: Column(
                               children: [
                                 for (var i = 0; i < _cashRows.length; i++) ...[
-                                  if (i > 0) const SizedBox(height: 10),
+                                  if (i > 0) const SizedBox(height: 8),
                                   _CashRowFields(
                                     row: _cashRows[i],
                                     enabled: !_isSubmitting,
+                                    amountLabel: l10n.tripSetupAmountLabel,
                                     onCurrencyTap: () =>
                                         _pickCurrencyForRow(_cashRows[i]),
                                   ),
                                 ],
-                                const SizedBox(height: 12),
+                                const SizedBox(height: 4),
                                 Align(
                                   alignment: AlignmentDirectional.centerStart,
                                   child: TextButton.icon(
                                     onPressed: _isSubmitting
                                         ? null
                                         : _addCashRow,
-                                    icon: const Icon(Icons.add_rounded),
-                                    label: Text(
-                                      _label(
-                                        en: 'Add another currency',
-                                        ar: 'إضافة عملة أخرى',
-                                      ),
+                                    style: TextButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
+                                      padding: EdgeInsetsDirectional.zero,
                                     ),
+                                    icon: const Icon(
+                                      Icons.add_rounded,
+                                      size: 20,
+                                    ),
+                                    label: Text(l10n.tripSetupAddCurrency),
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 12),
                           _SetupSectionCard(
-                            title: _label(
-                              en: 'Cards available for expenses',
-                              ar: 'بطاقات متاحة للمصاريف',
-                            ),
+                            title: l10n.tripSetupCardsTitle,
+                            hint: l10n.tripSetupCardsHint,
                             child: cardsAsync.when(
                               loading: () => const Center(
                                 child: Padding(
-                                  padding: EdgeInsets.all(12),
-                                  child: CircularProgressIndicator(),
+                                  padding: EdgeInsets.all(8),
+                                  child: SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  ),
                                 ),
                               ),
                               error: (error, _) => Text(
-                                _label(
-                                  en: 'Could not load cards',
-                                  ar: 'تعذر تحميل البطاقات',
+                                l10n.tripSetupCardsError,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF64748B),
                                 ),
-                                style: const TextStyle(color: Color(0xFF64748B)),
                               ),
                               data: (cards) => Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   if (cards.isEmpty)
                                     Text(
-                                      _label(
-                                        en:
-                                            'No cards yet. Add one now or skip.',
-                                        ar:
-                                            'لا توجد بطاقات بعد. أضف بطاقة الآن أو تخطَّ.',
-                                      ),
+                                      l10n.tripSetupCardsEmpty,
                                       style: const TextStyle(
-                                        fontSize: 14,
+                                        fontSize: 13,
                                         color: Color(0xFF64748B),
-                                        height: 1.4,
+                                        height: 1.35,
                                       ),
                                     )
                                   else
                                     ...cards.map(
                                       (card) => Padding(
-                                        padding: const EdgeInsets.only(bottom: 8),
+                                        padding:
+                                            const EdgeInsets.only(bottom: 6),
                                         child: _CardSummaryTile(card: card),
                                       ),
                                     ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 4),
                                   OutlinedButton.icon(
                                     onPressed:
                                         _isSubmitting ? null : _openAddCard,
-                                    icon: const Icon(Icons.add_card_rounded),
-                                    label: Text(
-                                      _label(en: 'Add card', ar: 'إضافة بطاقة'),
+                                    style: OutlinedButton.styleFrom(
+                                      visualDensity: VisualDensity.compact,
                                     ),
+                                    icon: const Icon(
+                                      Icons.add_card_rounded,
+                                      size: 20,
+                                    ),
+                                    label: Text(l10n.tripSetupAddCard),
                                   ),
                                 ],
                               ),
@@ -305,8 +309,15 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                  AnimatedPadding(
+                    duration: const Duration(milliseconds: 100),
+                    curve: Curves.easeOut,
+                    padding: EdgeInsetsDirectional.fromSTEB(
+                      horizontalPadding,
+                      0,
+                      horizontalPadding,
+                      16 + viewInsetsBottom,
+                    ),
                     child: Column(
                       children: [
                         _SetupGradientButton(
@@ -315,17 +326,29 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                               ? null
                               : () => _createTrip(skipOptionalData: false),
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 4),
                         TextButton(
                           onPressed: _isSubmitting
                               ? null
                               : () => _createTrip(skipOptionalData: true),
+                          style: TextButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                          ),
                           child: Text(
-                            _label(en: 'Skip setup', ar: 'تخطي الإعداد'),
+                            l10n.tripSetupCreateNow,
                             style: const TextStyle(
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF64748B),
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF475569),
                             ),
+                          ),
+                        ),
+                        Text(
+                          l10n.tripSetupCreateNowHint,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            height: 1.3,
+                            color: Color(0xFF94A3B8),
                           ),
                         ),
                       ],
@@ -351,7 +374,11 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => _SetupCurrencyPickerSheet(currentValue: row.currencyCode),
+      builder: (_) => _SetupCurrencyPickerSheet(
+        currentValue: row.currencyCode,
+        isArabic: _isArabic,
+        searchHint: AppLocalizations.of(context)!.tripSetupSearchCurrency,
+      ),
     );
     if (selected != null && mounted) {
       setState(() {
@@ -437,6 +464,10 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
     final localeCode = _isArabic ? 'ar' : 'en';
     final pattern = _isArabic ? 'd MMMM y' : 'd MMM y';
     return DateFormat(pattern, localeCode).format(date);
+  }
+
+  String _dateRangeSeparator() {
+    return _isArabic ? ' ← ' : ' → ';
   }
 
   Future<void> _createTrip({required bool skipOptionalData}) async {
@@ -531,10 +562,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
           }
           CalmSnackBar.showMessage(
             context,
-            message: _label(
-              en: "Couldn't save starting cash. Please try again.",
-              ar: 'تعذر حفظ النقد الافتتاحي. حاول مرة أخرى.',
-            ),
+            message: AppLocalizations.of(context)!.tripSetupCashSaveFailed,
           );
           return;
         }
@@ -660,7 +688,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
     final l10n = AppLocalizations.of(context)!;
     final first = overlaps.first;
     final formattedRange =
-        '${_formatDate(first.startDate)} → ${_formatDate(first.endDate)}';
+        '${_formatDate(first.startDate)}${_dateRangeSeparator()}${_formatDate(first.endDate)}';
     final extraTripsText = overlaps.length > 1
         ? '\n${l10n.tripFormOverlapMoreTrips((overlaps.length - 1).toString())}'
         : '';
@@ -740,39 +768,55 @@ class _SetupSectionCard extends StatelessWidget {
   const _SetupSectionCard({
     required this.title,
     required this.child,
+    this.hint,
   });
 
   final String title;
+  final String? hint;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      padding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF0F172A),
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF0F172A),
+                ),
+              ),
+              if (hint != null) ...[
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    hint!,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF94A3B8),
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           child,
         ],
       ),
@@ -799,11 +843,13 @@ class _DateField extends StatelessWidget {
       onTap: onTap,
       decoration: InputDecoration(
         labelText: label,
-        suffixIcon: const Icon(Icons.calendar_today_rounded),
+        isDense: true,
+        suffixIcon: const Icon(Icons.calendar_today_rounded, size: 20),
         filled: true,
         fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
       ),
@@ -816,11 +862,13 @@ class _CashRowFields extends StatelessWidget {
     required this.row,
     required this.onCurrencyTap,
     required this.enabled,
+    required this.amountLabel,
   });
 
   final _CashEntryRow row;
   final VoidCallback onCurrencyTap;
   final bool enabled;
+  final String amountLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -831,43 +879,57 @@ class _CashRowFields extends StatelessWidget {
           flex: 2,
           child: Material(
             color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             child: InkWell(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               onTap: enabled ? onCurrencyTap : null,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+                padding:
+                    const EdgeInsetsDirectional.fromSTEB(12, 14, 12, 14),
                 child: Row(
                   children: [
                     Expanded(
                       child: Text(
                         row.currencyCode,
+                        textDirection: TextDirection.ltr,
+                        textAlign: TextAlign.start,
                         style: const TextStyle(
                           fontWeight: FontWeight.w700,
                           color: Color(0xFF0F172A),
                         ),
                       ),
                     ),
-                    const Icon(Icons.expand_more_rounded, color: Color(0xFF64748B)),
+                    const Icon(
+                      Icons.expand_more_rounded,
+                      size: 20,
+                      color: Color(0xFF64748B),
+                    ),
                   ],
                 ),
               ),
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 8),
         Expanded(
           flex: 3,
           child: TextField(
             controller: row.amountController,
             enabled: enabled,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textInputAction: TextInputAction.done,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+            ],
             decoration: InputDecoration(
-              labelText: 'Amount',
+              labelText: amountLabel,
+              isDense: true,
               filled: true,
               fillColor: const Color(0xFFF8FAFC),
+              contentPadding:
+                  const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 borderSide: BorderSide.none,
               ),
             ),
@@ -887,20 +949,25 @@ class _CardSummaryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final display = CardDisplayHelper.getDisplayString(context, card);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsetsDirectional.fromSTEB(12, 10, 12, 10),
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
         children: [
-          const Icon(Icons.credit_card_rounded, color: Color(0xFF7C3AED)),
-          const SizedBox(width: 10),
+          const Icon(
+            Icons.credit_card_rounded,
+            size: 20,
+            color: Color(0xFF7C3AED),
+          ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               display,
               style: const TextStyle(
                 fontWeight: FontWeight.w600,
+                fontSize: 14,
                 color: Color(0xFF0F172A),
               ),
             ),
@@ -924,15 +991,15 @@ class _SetupGradientButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: Colors.transparent,
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Ink(
-          height: 58,
+          height: 52,
           width: double.infinity,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(18),
             gradient: LinearGradient(
               colors: onTap == null
                   ? [
@@ -947,8 +1014,8 @@ class _SetupGradientButton extends StatelessWidget {
               label,
               style: const TextStyle(
                 color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -959,9 +1026,15 @@ class _SetupGradientButton extends StatelessWidget {
 }
 
 class _SetupCurrencyPickerSheet extends StatefulWidget {
-  const _SetupCurrencyPickerSheet({required this.currentValue});
+  const _SetupCurrencyPickerSheet({
+    required this.currentValue,
+    required this.isArabic,
+    required this.searchHint,
+  });
 
   final String currentValue;
+  final bool isArabic;
+  final String searchHint;
 
   @override
   State<_SetupCurrencyPickerSheet> createState() =>
@@ -999,41 +1072,51 @@ class _SetupCurrencyPickerSheetState extends State<_SetupCurrencyPickerSheet> {
   @override
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
-    return Container(
-      height: mediaQuery.size.height * 0.55 + mediaQuery.viewInsets.bottom,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search currency',
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+    final textDirection =
+        widget.isArabic ? TextDirection.rtl : TextDirection.ltr;
+
+    return Directionality(
+      textDirection: textDirection,
+      child: Container(
+        height: mediaQuery.size.height * 0.55 + mediaQuery.viewInsets.bottom,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(16, 12, 16, 8),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: widget.searchHint,
+                  isDense: true,
+                  prefixIcon: const Icon(Icons.search, size: 22),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
               ),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filtered.length,
-              itemBuilder: (context, index) {
-                final currency = _filtered[index];
-                final code = currency.split(' - ').first;
-                return ListTile(
-                  title: Text(currency),
-                  onTap: () => Navigator.of(context).pop(code),
-                );
-              },
+            Expanded(
+              child: ListView.builder(
+                itemCount: _filtered.length,
+                itemBuilder: (context, index) {
+                  final currency = _filtered[index];
+                  final code = currency.split(' - ').first;
+                  return ListTile(
+                    title: Text(
+                      currency,
+                      textDirection: TextDirection.ltr,
+                    ),
+                    onTap: () => Navigator.of(context).pop(code),
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

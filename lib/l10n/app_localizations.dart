@@ -2728,6 +2728,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Can\'t find your destination? Add custom destination'**
   String get tripFormCustomDestinationFallback;
+
+  /// No description provided for @tripSetupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Before you go'**
+  String get tripSetupTitle;
+
+  /// No description provided for @tripSetupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'All optional — add what you know'**
+  String get tripSetupSubtitle;
+
+  /// No description provided for @tripSetupDatesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Dates'**
+  String get tripSetupDatesTitle;
+
+  /// No description provided for @tripSetupDatesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional'**
+  String get tripSetupDatesHint;
+
+  /// No description provided for @tripSetupCashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash on hand'**
+  String get tripSetupCashTitle;
+
+  /// No description provided for @tripSetupCashHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional · leave blank to skip'**
+  String get tripSetupCashHint;
+
+  /// No description provided for @tripSetupCardsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards'**
+  String get tripSetupCardsTitle;
+
+  /// No description provided for @tripSetupCardsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Your saved payment cards'**
+  String get tripSetupCardsHint;
+
+  /// No description provided for @tripSetupCardsEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'None saved yet'**
+  String get tripSetupCardsEmpty;
+
+  /// No description provided for @tripSetupCardsError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load cards'**
+  String get tripSetupCardsError;
+
+  /// No description provided for @tripSetupAddCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Add currency'**
+  String get tripSetupAddCurrency;
+
+  /// No description provided for @tripSetupAddCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Add card'**
+  String get tripSetupAddCard;
+
+  /// No description provided for @tripSetupAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get tripSetupAmountLabel;
+
+  /// No description provided for @tripSetupSearchCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Search currency'**
+  String get tripSetupSearchCurrency;
+
+  /// No description provided for @tripSetupCreateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Create trip now'**
+  String get tripSetupCreateNow;
+
+  /// No description provided for @tripSetupCreateNowHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Without dates, cash, or new cards'**
+  String get tripSetupCreateNowHint;
+
+  /// No description provided for @tripSetupCashSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save cash. Try again.'**
+  String get tripSetupCashSaveFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
