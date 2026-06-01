@@ -1313,6 +1313,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get globalReportsZeroTripsSubtitle => 'Add a trip to see reports across trips.';
 
   @override
+  String get globalReportsNoExpensesMessage => 'Add expenses to see your global report.';
+
+  @override
   String get globalReportsSingleTripNote => 'Add more trips to compare across trips.';
 
   @override

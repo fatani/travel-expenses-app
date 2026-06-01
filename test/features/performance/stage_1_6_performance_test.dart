@@ -178,7 +178,7 @@ void main() {
       expect(summary.totalTrips, 50);
       expect(summary.totalExpenseCount, 50 * 30);
       expect(summary.totalBilledByCurrency.length, greaterThan(1));
-      expect(summary.topCategory, isNull);
+      expect(summary.dominantCategory, isNull);
       expect(summary.uniqueTransactionCurrencyCount, greaterThan(1));
     });
 

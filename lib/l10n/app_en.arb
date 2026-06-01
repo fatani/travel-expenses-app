@@ -478,6 +478,7 @@
   "globalReportsEmptyMessage": "Add a trip to see reports.",
   "globalReportsZeroTripsTitle": "No trips yet",
   "globalReportsZeroTripsSubtitle": "Add a trip to see reports across trips.",
+  "globalReportsNoExpensesMessage": "Add expenses to see your global report.",
   "globalReportsSingleTripNote": "Add more trips to compare across trips.",
   "globalReportsSmartSummary": "Summary",
   "globalReportsOverview": "Overview",

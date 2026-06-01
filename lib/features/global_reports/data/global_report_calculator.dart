@@ -66,10 +66,10 @@ class GlobalReportCalculator {
     final totalBilledByCurrency = _toBuckets(billedByCurrency);
     final hasMultipleTransactionCurrencies = totalBilledByCurrency.length > 1;
     final isSingleTrip = totalTrips == 1;
-    final topCategory =
-      isSingleTrip || hasMultipleTransactionCurrencies
-        ? null
-        : _topAccumulatorKey(categoryTotals);
+    final dominantCategory =
+        isSingleTrip || hasMultipleTransactionCurrencies
+            ? null
+            : _topAccumulatorKey(categoryTotals);
     final mostUsedPaymentChannel =
         isSingleTrip || hasMultipleTransactionCurrencies
             ? null
@@ -118,11 +118,10 @@ class GlobalReportCalculator {
       totalBilledByCurrency: totalBilledByCurrency,
       averageSpendPerTripByCurrency: averageSpendPerTripByCurrency,
       averageDailySpendByCurrency: averageDailySpendByCurrency,
-      topCategory: topCategory,
       mostUsedPaymentChannel: mostUsedPaymentChannel,
       mostUsedPaymentNetwork: mostUsedPaymentNetwork,
       dominantCurrency: dominantCurrency,
-      dominantCategory: topCategory,
+      dominantCategory: dominantCategory,
       uniqueCategoryCount: categoryTotals.length,
       uniquePaymentChannelCount: paymentChannelUsage.length,
       uniquePaymentNetworkCount: paymentNetworkUsage.length,

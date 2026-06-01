@@ -135,7 +135,7 @@ void main() {
       expect(summary.totalBilledByCurrency[0].totalAmount, 200.0);
       expect(summary.totalBilledByCurrency[1].totalAmount, 100.0);
       expect(summary.totalBilledByCurrency[2].totalAmount, 60.0);
-      expect(summary.topCategory, isNull);
+      expect(summary.dominantCategory, isNull);
       expect(summary.mostUsedPaymentChannel, isNull);
       expect(summary.mostUsedPaymentNetwork, isNull);
       expect(summary.internationalRatioPercentage, 50);
@@ -388,6 +388,75 @@ void main() {
       expect(summary.smartInsights.first.type, GlobalReportInsightType.currencyDistribution);
     });
 
+    test('exposes dominantCategory without duplicate topCategory field', () {
+      final trips = [
+        _trip(
+          id: 'trip-1',
+          name: 'One',
+          startDate: DateTime(2026, 7, 1),
+          endDate: DateTime(2026, 7, 2),
+        ),
+        _trip(
+          id: 'trip-2',
+          name: 'Two',
+          startDate: DateTime(2026, 7, 5),
+          endDate: DateTime(2026, 7, 6),
+        ),
+      ];
+      final expenses = [
+        _expense(
+          tripId: 'trip-1',
+          amount: 300,
+          currency: 'SAR',
+          category: 'Food',
+          paymentNetwork: 'Visa',
+          paymentChannel: 'POS Purchase',
+        ),
+        _expense(
+          tripId: 'trip-1',
+          amount: 50,
+          currency: 'SAR',
+          category: 'Transport',
+          paymentNetwork: 'Visa',
+          paymentChannel: 'POS Purchase',
+        ),
+        _expense(
+          tripId: 'trip-2',
+          amount: 120,
+          currency: 'SAR',
+          category: 'Food',
+          paymentNetwork: 'Visa',
+          paymentChannel: 'POS Purchase',
+        ),
+      ];
+
+      final summary = _calculator.calculate(trips: trips, expenses: expenses);
+
+      expect(summary.dominantCategory, 'Food');
+      expect(summary, isA<GlobalReportSummary>());
+    });
+
+    test('trips without expenses have no expense-backed metrics', () {
+      final trips = [
+        _trip(
+          id: 'trip-1',
+          name: 'Empty',
+          startDate: DateTime(2026, 8, 1),
+          endDate: DateTime(2026, 8, 3),
+        ),
+      ];
+
+      final summary = _calculator.calculate(trips: trips, expenses: const []);
+
+      expect(summary.hasTrips, isTrue);
+      expect(summary.hasExpenses, isFalse);
+      expect(summary.totalTrips, 1);
+      expect(summary.activeTrips, 0);
+      expect(summary.smartInsights, isEmpty);
+      expect(summary.behavioralInsights, isEmpty);
+      expect(summary.dominantCategory, isNull);
+    });
+
     test('counts total trips separately from active trips', () {
       final trips = [
         _trip(
@@ -478,7 +547,7 @@ void main() {
 
       expect(summary.totalExpenseCount, 1);
       expect(summary.totalBilledByCurrency.single.totalAmount, 100.0);
-      expect(summary.topCategory, isNull);
+      expect(summary.dominantCategory, isNull);
       expect(summary.mostUsedPaymentChannel, isNull);
       expect(summary.mostUsedPaymentNetwork, isNull);
       expect(summary.smartInsights, isEmpty);

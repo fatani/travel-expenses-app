@@ -255,11 +255,6 @@ class TripReportCalculator {
           subject: insight.category,
           percentage: insight.percentage,
         );
-      case InsightType.fees:
-        return TripReportInsight(
-          type: TripReportInsightType.feesPercentage,
-          percentage: insight.percentage,
-        );
     }
   }
 }

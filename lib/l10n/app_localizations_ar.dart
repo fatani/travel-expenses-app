@@ -1320,6 +1320,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get globalReportsZeroTripsSubtitle => 'أضف رحلة لعرض التقارير عبر الرحلات.';
 
   @override
+  String get globalReportsNoExpensesMessage => 'أضف مصاريف لعرض التقرير الشامل.';
+
+  @override
   String get globalReportsSingleTripNote => 'أضف رحلات أكثر للمقارنة بينها.';
 
   @override

@@ -12,12 +12,7 @@ class GlobalCurrencyMetric {
 }
 
 enum GlobalReportInsightType {
-  dominantPaymentChannel,
-  dominantCategory,
-  averageSpendPerTrip,
-  dominantCurrency,
   currencyDistribution,
-  internationalDomesticRatio,
   categoryVariation,
   paymentVariation,
 }
@@ -49,7 +44,6 @@ class GlobalReportSummary {
     required this.totalBilledByCurrency,
     required this.averageSpendPerTripByCurrency,
     required this.averageDailySpendByCurrency,
-    required this.topCategory,
     required this.mostUsedPaymentChannel,
     required this.mostUsedPaymentNetwork,
     required this.dominantCurrency,
@@ -71,7 +65,6 @@ class GlobalReportSummary {
   final List<ReportBucket> totalBilledByCurrency;
   final List<GlobalCurrencyMetric> averageSpendPerTripByCurrency;
   final List<GlobalCurrencyMetric> averageDailySpendByCurrency;
-  final String? topCategory;
   final String? mostUsedPaymentChannel;
   final String? mostUsedPaymentNetwork;
   final String? dominantCurrency;

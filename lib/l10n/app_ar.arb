@@ -478,6 +478,7 @@
   "globalReportsEmptyMessage": "أضف رحلة لعرض التقارير.",
   "globalReportsZeroTripsTitle": "لا توجد رحلات بعد",
   "globalReportsZeroTripsSubtitle": "أضف رحلة لعرض التقارير عبر الرحلات.",
+  "globalReportsNoExpensesMessage": "أضف مصاريف لعرض التقرير الشامل.",
   "globalReportsSingleTripNote": "أضف رحلات أكثر للمقارنة بينها.",
   "globalReportsSmartSummary": "ملخص",
   "globalReportsOverview": "نظرة عامة",

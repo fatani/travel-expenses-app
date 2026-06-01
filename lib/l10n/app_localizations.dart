@@ -2531,6 +2531,12 @@ abstract class AppLocalizations {
   /// **'Add a trip to see reports across trips.'**
   String get globalReportsZeroTripsSubtitle;
 
+  /// No description provided for @globalReportsNoExpensesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add expenses to see your global report.'**
+  String get globalReportsNoExpensesMessage;
+
   /// No description provided for @globalReportsSingleTripNote.
   ///
   /// In en, this message translates to:

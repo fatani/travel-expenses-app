@@ -216,7 +216,6 @@ const _emptyGlobalReportSummary = GlobalReportSummary(
   totalBilledByCurrency: [],
   averageSpendPerTripByCurrency: [],
   averageDailySpendByCurrency: [],
-  topCategory: null,
   mostUsedPaymentChannel: null,
   mostUsedPaymentNetwork: null,
   dominantCurrency: null,

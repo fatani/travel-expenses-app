@@ -76,6 +76,8 @@ class _GlobalReportBody extends StatelessWidget {
   Widget build(BuildContext context) {
     const sectionGap = SizedBox(height: 16);
 
+    final hasExpenses = summary.hasExpenses;
+
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
@@ -83,24 +85,30 @@ class _GlobalReportBody extends StatelessWidget {
           const _SingleTripNoteCard(),
           sectionGap,
         ],
-        if (summary.totalExpenseCount >= 3 && summary.smartInsights.isNotEmpty) ...[
+        if (!hasExpenses) ...[
+          const _NoExpensesGuidanceCard(),
+          sectionGap,
+        ],
+        if (hasExpenses && summary.totalExpenseCount >= 3 && summary.smartInsights.isNotEmpty) ...[
           _SmartSummaryHeroCard(summary: summary),
           sectionGap,
         ],
-        if (summary.behavioralInsights.isNotEmpty) ...[
+        if (hasExpenses && summary.behavioralInsights.isNotEmpty) ...[
           _BehavioralInsightsSection(
             insights: summary.behavioralInsights.take(2).toList(growable: false),
           ),
           sectionGap,
         ],
         _SummaryCards(summary: summary),
-        sectionGap,
-        _OverviewCard(summary: summary),
-        sectionGap,
-        if (summary.totalBilledByCurrency.isNotEmpty) ...[
-          _SectionHeader(title: context.l10n.globalReportsTotalBilled),
-          _CurrencyBucketList(buckets: summary.totalBilledByCurrency),
+        if (hasExpenses) ...[
           sectionGap,
+          _OverviewCard(summary: summary),
+          sectionGap,
+          if (summary.totalBilledByCurrency.isNotEmpty) ...[
+            _SectionHeader(title: context.l10n.globalReportsTotalBilled),
+            _CurrencyBucketList(buckets: summary.totalBilledByCurrency),
+            sectionGap,
+          ],
         ],
         const SizedBox(height: 24),
       ],
@@ -136,6 +144,28 @@ class _EmptyGlobalReportsState extends StatelessWidget {
               child: Text(context.l10n.tripsAddButton),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NoExpensesGuidanceCard extends StatelessWidget {
+  const _NoExpensesGuidanceCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          context.l10n.globalReportsNoExpensesMessage,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -574,37 +604,14 @@ class _AmountText extends StatelessWidget {
 }
 
 String _localizeInsight(BuildContext context, GlobalReportInsight insight) {
-  switch (insight.type) {
-    case GlobalReportInsightType.dominantPaymentChannel:
-      return context.l10n.globalReportsInsightDominantPaymentChannel(
-        ExpenseOptionLabels.paymentChannel(context.l10n, insight.subject ?? 'Other'),
-      );
-    case GlobalReportInsightType.dominantCategory:
-      return context.l10n.globalReportsInsightDominantCategory(
-        ExpenseOptionLabels.category(context.l10n, insight.subject ?? 'Other'),
-      );
-    case GlobalReportInsightType.averageSpendPerTrip:
-      return context.l10n.globalReportsInsightAverageSpendPerTrip(
-        '${_formatAmount(insight.amount ?? 0)} ${insight.currency ?? ''}',
-      );
-    case GlobalReportInsightType.dominantCurrency:
-      return context.l10n.globalReportsInsightDominantCurrency(
-        insight.subject ?? '',
-      );
-    case GlobalReportInsightType.currencyDistribution:
-      return context.l10n.globalReportsInsightCurrencyDistribution;
-    case GlobalReportInsightType.internationalDomesticRatio:
-      final internationalPct = insight.percentage ?? 0;
-      final domesticPct = 100 - internationalPct;
-      return context.l10n.globalReportsInsightIntlDomesticRatio(
-        internationalPct,
-        domesticPct,
-      );
-    case GlobalReportInsightType.categoryVariation:
-      return context.l10n.globalReportsInsightCategoryVariation;
-    case GlobalReportInsightType.paymentVariation:
-      return context.l10n.globalReportsInsightPaymentVariation;
-  }
+  return switch (insight.type) {
+    GlobalReportInsightType.currencyDistribution =>
+      context.l10n.globalReportsInsightCurrencyDistribution,
+    GlobalReportInsightType.categoryVariation =>
+      context.l10n.globalReportsInsightCategoryVariation,
+    GlobalReportInsightType.paymentVariation =>
+      context.l10n.globalReportsInsightPaymentVariation,
+  };
 }
 
 String _formatAmount(double amount) {
@@ -619,7 +626,6 @@ String _behavioralInsightTitle(BuildContext context, Insight insight) {
     InsightType.spike => context.l10n.globalReportsBehavioralInsightTitleSpike,
     InsightType.categoryDrift =>
       context.l10n.globalReportsBehavioralInsightTitleCategoryDrift,
-    InsightType.fees => context.l10n.globalReportsBehavioralInsightTitleFees,
   };
 }
 
@@ -631,9 +637,6 @@ String _behavioralInsightDescription(BuildContext context, Insight insight) {
         insight.percentage ?? 0,
         ExpenseOptionLabels.category(context.l10n, insight.category ?? 'Other'),
       ),
-    InsightType.fees => context.l10n.globalReportsBehavioralInsightFees(
-      insight.percentage ?? 0,
-    ),
   };
 }
 

@@ -1,7 +1,6 @@
 enum InsightType {
   spike,
   categoryDrift,
-  fees,
 }
 
 class Insight {
