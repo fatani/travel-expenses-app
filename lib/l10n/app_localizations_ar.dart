@@ -1536,4 +1536,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripSetupCashSaveFailed => 'تعذّر حفظ النقد. حاول مرة أخرى.';
+
+  @override
+  String get backupRestoreTitle => 'النسخ الاحتياطي والاستعادة';
+
+  @override
+  String get backupRestoreCardSubtitle => 'احفظ بياناتك في ملف';
+
+  @override
+  String get backupLocalDataNotice => 'بياناتك تبقى على هذا الجهاز.';
+
+  @override
+  String get backupCreatesFileNotice => 'أنشئ ملف نسخ احتياطي يمكنك حفظه في مكان آخر.';
+
+  @override
+  String get backupNoCloudSyncNotice => 'CalmLedger لا يزامن تلقائياً مع السحابة.';
+
+  @override
+  String get backupCreateButton => 'إنشاء نسخة احتياطية';
+
+  @override
+  String get backupExportFailed => 'تعذّر إنشاء النسخة الاحتياطية. حاول مرة أخرى.';
 }

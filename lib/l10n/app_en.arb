@@ -553,5 +553,12 @@
     "tripSetupSearchCurrency": "Search currency",
     "tripSetupCreateNow": "Create trip now",
     "tripSetupCreateNowHint": "Without dates, cash, or new cards",
-    "tripSetupCashSaveFailed": "Couldn't save cash. Try again."
+    "tripSetupCashSaveFailed": "Couldn't save cash. Try again.",
+    "backupRestoreTitle": "Backup & Restore",
+    "backupRestoreCardSubtitle": "Save your data to a file",
+    "backupLocalDataNotice": "Your data stays on this device.",
+    "backupCreatesFileNotice": "Create a backup file you can save elsewhere.",
+    "backupNoCloudSyncNotice": "CalmLedger does not sync to the cloud automatically.",
+    "backupCreateButton": "Create backup",
+    "backupExportFailed": "Couldn't create backup. Try again."
 }

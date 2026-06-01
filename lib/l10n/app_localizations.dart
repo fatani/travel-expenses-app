@@ -2926,6 +2926,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t save cash. Try again.'**
   String get tripSetupCashSaveFailed;
+
+  /// No description provided for @backupRestoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup & Restore'**
+  String get backupRestoreTitle;
+
+  /// No description provided for @backupRestoreCardSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your data to a file'**
+  String get backupRestoreCardSubtitle;
+
+  /// No description provided for @backupLocalDataNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data stays on this device.'**
+  String get backupLocalDataNotice;
+
+  /// No description provided for @backupCreatesFileNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a backup file you can save elsewhere.'**
+  String get backupCreatesFileNotice;
+
+  /// No description provided for @backupNoCloudSyncNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'CalmLedger does not sync to the cloud automatically.'**
+  String get backupNoCloudSyncNotice;
+
+  /// No description provided for @backupCreateButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Create backup'**
+  String get backupCreateButton;
+
+  /// No description provided for @backupExportFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create backup. Try again.'**
+  String get backupExportFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

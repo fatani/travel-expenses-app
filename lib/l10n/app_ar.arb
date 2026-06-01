@@ -554,5 +554,12 @@
   "tripSetupSearchCurrency": "بحث عن عملة",
   "tripSetupCreateNow": "إنشاء الرحلة الآن",
   "tripSetupCreateNowHint": "بدون تواريخ أو نقد أو بطاقات جديدة",
-  "tripSetupCashSaveFailed": "تعذّر حفظ النقد. حاول مرة أخرى."
+  "tripSetupCashSaveFailed": "تعذّر حفظ النقد. حاول مرة أخرى.",
+  "backupRestoreTitle": "النسخ الاحتياطي والاستعادة",
+  "backupRestoreCardSubtitle": "احفظ بياناتك في ملف",
+  "backupLocalDataNotice": "بياناتك تبقى على هذا الجهاز.",
+  "backupCreatesFileNotice": "أنشئ ملف نسخ احتياطي يمكنك حفظه في مكان آخر.",
+  "backupNoCloudSyncNotice": "CalmLedger لا يزامن تلقائياً مع السحابة.",
+  "backupCreateButton": "إنشاء نسخة احتياطية",
+  "backupExportFailed": "تعذّر إنشاء النسخة الاحتياطية. حاول مرة أخرى."
 }

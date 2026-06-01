@@ -1529,4 +1529,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripSetupCashSaveFailed => 'Couldn\'t save cash. Try again.';
+
+  @override
+  String get backupRestoreTitle => 'Backup & Restore';
+
+  @override
+  String get backupRestoreCardSubtitle => 'Save your data to a file';
+
+  @override
+  String get backupLocalDataNotice => 'Your data stays on this device.';
+
+  @override
+  String get backupCreatesFileNotice => 'Create a backup file you can save elsewhere.';
+
+  @override
+  String get backupNoCloudSyncNotice => 'CalmLedger does not sync to the cloud automatically.';
+
+  @override
+  String get backupCreateButton => 'Create backup';
+
+  @override
+  String get backupExportFailed => 'Couldn\'t create backup. Try again.';
 }
