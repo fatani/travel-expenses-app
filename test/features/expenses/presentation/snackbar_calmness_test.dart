@@ -7,6 +7,7 @@ import '../../../support/test_expense_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
+import 'package:travel_expenses/core/design_system/calm_snackbar.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
@@ -59,6 +60,18 @@ void main() {
     expect(find.text('No cash added yet'), findsNothing);
     expect(find.text('Cash balance may need adjustment'), findsNothing);
     expect(find.byType(SnackBar), findsOneWidget);
+
+    final snackBar = tester.widget<SnackBar>(find.byType(SnackBar));
+    expect(snackBar.persist, isFalse);
+    expect(snackBar.duration, CalmSnackBar.undoDuration);
+
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(CalmSnackBar.undoDuration);
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text('Expense added'), findsNothing);
+    expect(find.text('Undo'), findsNothing);
+    expect(find.byType(SnackBar), findsNothing);
   });
 
   testWidgets('card quick save does not show cash guidance snackbar',

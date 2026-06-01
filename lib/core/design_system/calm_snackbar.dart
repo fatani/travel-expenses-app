@@ -42,6 +42,7 @@ abstract final class CalmSnackBar {
       SnackBar(
         behavior: SnackBarBehavior.floating,
         duration: snackBar.duration,
+        persist: snackBar.persist,
         content: snackBar.content,
         action: snackBar.action,
         backgroundColor: snackBar.backgroundColor,
@@ -58,17 +59,21 @@ abstract final class CalmSnackBar {
   static void showMessage(
     BuildContext context, {
     required String message,
-    Duration duration = briefDuration,
+    Duration? duration,
     SnackBarAction? action,
   }) {
     if (!context.mounted || _undoSessionActive) {
       return;
     }
 
+    final resolvedDuration = duration ??
+        (action == null ? briefDuration : undoDuration);
+
     _showSnackBar(
       context,
       SnackBar(
-        duration: duration,
+        duration: resolvedDuration,
+        persist: false,
         content: Text(message),
         action: action,
       ),
@@ -90,6 +95,7 @@ abstract final class CalmSnackBar {
       context,
       SnackBar(
         duration: duration,
+        persist: false,
         content: Text(message),
         action: SnackBarAction(
           label: undoLabel,
