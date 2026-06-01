@@ -131,7 +131,7 @@ QuickAddPaymentPayload quickAddPaymentPayloadForChip(String chipKey) {
       );
     case kQuickAddPaymentCard:
       return const QuickAddPaymentPayload(
-        method: 'Credit Card',
+        method: 'Card',
         network: '',
         channel: 'POS Purchase',
         cardProfileId: null,

@@ -72,6 +72,33 @@ void main() {
       );
       expect(quickAddPaymentChipKeyFromExpense(transfer), kQuickAddPaymentOther);
     });
+
+    test('maps stored Card payment method to card chip', () {
+      final card = expense(
+        id: 'card-generic',
+        paymentMethod: 'Card',
+        paymentChannel: 'POS Purchase',
+      );
+      expect(quickAddPaymentChipKeyFromExpense(card), kQuickAddPaymentCard);
+    });
+
+    test('maps legacy Credit Card to card chip', () {
+      final card = expense(
+        id: 'card-credit',
+        paymentMethod: 'Credit Card',
+        paymentChannel: 'POS Purchase',
+      );
+      expect(quickAddPaymentChipKeyFromExpense(card), kQuickAddPaymentCard);
+    });
+
+    test('maps legacy Debit Card to card chip', () {
+      final card = expense(
+        id: 'card-debit',
+        paymentMethod: 'Debit Card',
+        paymentChannel: 'POS Purchase',
+      );
+      expect(quickAddPaymentChipKeyFromExpense(card), kQuickAddPaymentCard);
+    });
   });
 
   group('normalizeQuickAddPaymentChipKey', () {
@@ -94,10 +121,20 @@ void main() {
   group('quickAddPaymentPayloadForChip', () {
     test('card chip saves generic card without profile', () {
       final payload = quickAddPaymentPayloadForChip(kQuickAddPaymentCard);
-      expect(payload.method, 'Credit Card');
+      expect(payload.method, 'Card');
       expect(payload.channel, 'POS Purchase');
       expect(payload.cardProfileId, isNull);
       expect(payload.network, '');
+    });
+
+    test('saved Card expense round-trips to card chip', () {
+      final payload = quickAddPaymentPayloadForChip(kQuickAddPaymentCard);
+      final saved = expense(
+        id: 'saved-card',
+        paymentMethod: payload.method,
+        paymentChannel: payload.channel,
+      );
+      expect(quickAddPaymentChipKeyFromExpense(saved), kQuickAddPaymentCard);
     });
 
     test('other chip saves other payment', () {
