@@ -100,6 +100,12 @@ class _GlobalReportBody extends StatelessWidget {
           sectionGap,
         ],
         _SummaryCards(summary: summary),
+        if (_showsAverageSpendPerTrip(summary)) ...[
+          sectionGap,
+          _AverageSpendPerTripSection(
+            metrics: summary.averageSpendPerTripByCurrency,
+          ),
+        ],
         if (hasExpenses) ...[
           sectionGap,
           _OverviewCard(summary: summary),
@@ -114,6 +120,12 @@ class _GlobalReportBody extends StatelessWidget {
       ],
     );
   }
+}
+
+bool _showsAverageSpendPerTrip(GlobalReportSummary summary) {
+  return summary.hasExpenses &&
+      summary.totalTrips >= 2 &&
+      summary.averageSpendPerTripByCurrency.isNotEmpty;
 }
 
 class _EmptyGlobalReportsState extends StatelessWidget {
@@ -406,6 +418,43 @@ class _SummaryCountCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AverageSpendPerTripSection extends StatelessWidget {
+  const _AverageSpendPerTripSection({required this.metrics});
+
+  final List<GlobalCurrencyMetric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _SectionHeader(title: context.l10n.globalReportsAveragePerTrip),
+        Card(
+          child: Column(
+            children: [
+              for (int index = 0; index < metrics.length; index++) ...[
+                if (index > 0) const Divider(height: 1, indent: 16, endIndent: 16),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _AmountText(
+                        amount: metrics[index].amount,
+                        currency: metrics[index].currency,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
