@@ -12,28 +12,30 @@ class BackupDataCollector {
   Future<BackupCollectedData> collect() async {
     final db = await _appDatabase.database;
 
-    return BackupCollectedData(
-      userFinancialProfile: await _queryTable(
-        db,
-        AppDatabase.userFinancialProfileTable,
-      ),
-      settings: await _queryTable(db, AppDatabase.settingsTable),
-      cards: await _queryTable(db, AppDatabase.cardsTable),
-      trips: await _queryTable(db, AppDatabase.tripsTable),
-      manualExchangeRates: await _queryTable(
-        db,
-        AppDatabase.manualExchangeRatesTable,
-      ),
-      expenses: await _queryTable(db, AppDatabase.expensesTable),
-      cashTransactions: await _queryTable(
-        db,
-        AppDatabase.cashTransactionsTable,
-      ),
-    );
+    return db.transaction((txn) async {
+      return BackupCollectedData(
+        userFinancialProfile: await _queryTable(
+          txn,
+          AppDatabase.userFinancialProfileTable,
+        ),
+        settings: await _queryTable(txn, AppDatabase.settingsTable),
+        cards: await _queryTable(txn, AppDatabase.cardsTable),
+        trips: await _queryTable(txn, AppDatabase.tripsTable),
+        manualExchangeRates: await _queryTable(
+          txn,
+          AppDatabase.manualExchangeRatesTable,
+        ),
+        expenses: await _queryTable(txn, AppDatabase.expensesTable),
+        cashTransactions: await _queryTable(
+          txn,
+          AppDatabase.cashTransactionsTable,
+        ),
+      );
+    });
   }
 
   Future<List<Map<String, dynamic>>> _queryTable(
-    Database db,
+    DatabaseExecutor db,
     String table,
   ) async {
     final rows = await db.query(table);

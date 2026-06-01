@@ -13,6 +13,7 @@ import 'package:travel_expenses/features/backup/data/backup_file_writer.dart';
 import 'package:travel_expenses/features/backup/data/backup_manifest_builder.dart';
 import 'package:travel_expenses/features/backup/domain/backup_constants.dart';
 import 'package:travel_expenses/features/backup/domain/backup_envelope.dart';
+import 'package:travel_expenses/features/backup/domain/backup_restore_validator.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
@@ -187,5 +188,16 @@ void main() {
     expect(manifest.backupFormatVersion, 1);
     expect(manifest.schemaVersion, 17);
     expect(manifest.sourceApp, BackupConstants.sourceApp);
+  });
+
+  test('exported JSON passes restore validation gates', () async {
+    final raw = jsonDecode(
+      await File((await exportService.export(exportedAt: exportedAt)).filePath)
+          .readAsString(),
+    ) as Map<String, dynamic>;
+
+    final result = const BackupRestoreValidator().validateJson(raw);
+
+    expect(result.isValid, isTrue, reason: result.issues.join('; '));
   });
 }
