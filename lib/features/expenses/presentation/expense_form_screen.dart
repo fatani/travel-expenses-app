@@ -190,7 +190,6 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final isSaving = _isSubmitting ||
         ref.watch(expenseControllerProvider(widget.trip.id)).isLoading;
 
@@ -230,9 +229,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                        _SectionLabel(
-                          title: isArabic ? 'البيانات الأساسية' : 'Basic expense',
-                        ),
+                        _SectionLabel(title: l10n.expenseFormSectionBasic),
                         TextFormField(
                           controller: _titleController,
                           textInputAction: TextInputAction.next,
@@ -277,9 +274,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           validator: _validateRequired,
                         ),
                         const SizedBox(height: 18),
-                        _SectionLabel(
-                          title: isArabic ? 'التصنيف' : 'Classification',
-                        ),
+                        _SectionLabel(title: l10n.expenseFormSectionClassification),
                         DropdownButtonFormField<String>(
                           isExpanded: true,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -357,6 +352,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _chargedHomeAmountController,
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
                             textInputAction: TextInputAction.next,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
@@ -375,9 +371,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           ),
                         ],
                         const SizedBox(height: 18),
-                        _SectionLabel(
-                          title: isArabic ? 'التاريخ والملاحظات' : 'Date & Notes',
-                        ),
+                        _SectionLabel(title: l10n.expenseFormSectionDateNotes),
                         Row(
                           children: [
                             Expanded(
@@ -400,7 +394,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                                 readOnly: true,
                                 decoration: _premiumInputDecoration(
                                   context,
-                                  labelText: _requiredLabel(l10n.expenseFormTimeLabel),
+                                  labelText: l10n.expenseFormTimeLabel,
                                   suffixIcon: const Icon(Icons.access_time_rounded),
                                 ),
                                 onTap: _selectTime,
@@ -452,7 +446,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           child: Center(
                             child: Text(
                               widget.isEditMode
-                                  ? (isArabic ? 'حفظ التغييرات' : 'Save changes')
+                                  ? l10n.expenseFormSaveEdit
                                   : l10n.expenseFormSaveCreate,
                               style: const TextStyle(
                                 color: Colors.white,
@@ -659,17 +653,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     final shouldAttachCardChargedAmount =
         isCardExpenseChannel(normalizedPayment.paymentChannel);
 
-    if (_isCardPayment && chargedHomeAmountRaw.isNotEmpty) {
-      if (chargedHomeAmount == null || chargedHomeAmount <= 0) {
-        setState(() {
-          _isSubmitting = false;
-        });
-        return;
-      }
-    }
-
-    if (widget.expense == null &&
-        currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
+    if (currencyCode != widget.trip.baseCurrency.trim().toUpperCase()) {
       final shouldKeepAsIs = await _confirmCurrencyMismatch(currencyCode);
       if (shouldKeepAsIs != true) {
         if (mounted) {
@@ -940,9 +924,9 @@ class _CardDropdownState extends ConsumerState<_CardDropdown> {
     if (!widget.isCardPayment) return const SizedBox.shrink();
 
     final cardsAsync = ref.watch(cardsProvider);
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final label = isArabic ? 'البطاقة' : 'Card';
-    final noneLabel = isArabic ? 'بدون بطاقة' : 'No card';
+    final l10n = AppLocalizations.of(context)!;
+    final label = l10n.expenseFormCardLabel;
+    final noneLabel = l10n.expenseFormNoCard;
 
     return cardsAsync.when(
       loading: () => const SizedBox.shrink(),
@@ -972,7 +956,7 @@ class _CardDropdownState extends ConsumerState<_CardDropdown> {
                 },
                 icon: const Icon(Icons.add_circle_outline_rounded, size: 16),
                 label: Text(
-                  isArabic ? '+ إضافة بطاقة (اختياري)' : '+ Add card (optional)',
+                  l10n.expenseFormAddCardOptional,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

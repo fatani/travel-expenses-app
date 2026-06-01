@@ -874,6 +874,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormNoteHint => 'تفاصيل اختيارية';
 
   @override
+  String get expenseFormSectionBasic => 'البيانات الأساسية';
+
+  @override
+  String get expenseFormSectionClassification => 'التصنيف';
+
+  @override
+  String get expenseFormSectionDateNotes => 'التاريخ والملاحظات';
+
+  @override
+  String get expenseFormCardLabel => 'البطاقة';
+
+  @override
+  String get expenseFormNoCard => 'بدون بطاقة';
+
+  @override
+  String get expenseFormAddCardOptional => '+ إضافة بطاقة (اختياري)';
+
+  @override
   String get expenseFormSaveCreate => 'إنشاء المصروف';
 
   @override

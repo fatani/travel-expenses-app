@@ -11,6 +11,8 @@ import 'package:travel_expenses/features/expenses/presentation/expense_controlle
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 
+import '../../../support/isolated_app_database.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   sqfliteFfiInit();
@@ -22,7 +24,7 @@ void main() {
   late CashWalletRepository cashWalletRepository;
 
   setUp(() async {
-    appDatabase = AppDatabase();
+    appDatabase = createIsolatedAppDatabase(prefix: 'cash_expense_atomic');
     final tripRepository = TripRepository(appDatabase);
     expenseRepository = ExpenseRepository(appDatabase);
     cashWalletRepository = CashWalletRepository(appDatabase);

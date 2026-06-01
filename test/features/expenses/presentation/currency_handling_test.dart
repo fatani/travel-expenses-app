@@ -565,7 +565,8 @@ void main() {
       expect(find.text('Category *'), findsOneWidget);
       expect(find.text('How you paid *'), findsOneWidget);
       expect(find.text('Expense date *'), findsOneWidget);
-      expect(find.text('Expense time *'), findsOneWidget);
+      expect(find.text('Expense time'), findsOneWidget);
+      expect(find.text('Expense time *'), findsNothing);
       expect(find.text('This field is required.'), findsNothing);
     },
   );

@@ -1745,6 +1745,42 @@ abstract class AppLocalizations {
   /// **'Optional details'**
   String get expenseFormNoteHint;
 
+  /// No description provided for @expenseFormSectionBasic.
+  ///
+  /// In en, this message translates to:
+  /// **'Basic expense'**
+  String get expenseFormSectionBasic;
+
+  /// No description provided for @expenseFormSectionClassification.
+  ///
+  /// In en, this message translates to:
+  /// **'Classification'**
+  String get expenseFormSectionClassification;
+
+  /// No description provided for @expenseFormSectionDateNotes.
+  ///
+  /// In en, this message translates to:
+  /// **'Date & Notes'**
+  String get expenseFormSectionDateNotes;
+
+  /// No description provided for @expenseFormCardLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get expenseFormCardLabel;
+
+  /// No description provided for @expenseFormNoCard.
+  ///
+  /// In en, this message translates to:
+  /// **'No card'**
+  String get expenseFormNoCard;
+
+  /// No description provided for @expenseFormAddCardOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Add card (optional)'**
+  String get expenseFormAddCardOptional;
+
   /// No description provided for @expenseFormSaveCreate.
   ///
   /// In en, this message translates to:

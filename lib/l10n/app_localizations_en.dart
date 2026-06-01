@@ -874,6 +874,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormNoteHint => 'Optional details';
 
   @override
+  String get expenseFormSectionBasic => 'Basic expense';
+
+  @override
+  String get expenseFormSectionClassification => 'Classification';
+
+  @override
+  String get expenseFormSectionDateNotes => 'Date & Notes';
+
+  @override
+  String get expenseFormCardLabel => 'Card';
+
+  @override
+  String get expenseFormNoCard => 'No card';
+
+  @override
+  String get expenseFormAddCardOptional => '+ Add card (optional)';
+
+  @override
   String get expenseFormSaveCreate => 'Add expense';
 
   @override

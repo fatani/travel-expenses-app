@@ -7,6 +7,8 @@ import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 
+import '../../../support/isolated_app_database.dart';
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   sqfliteFfiInit();
@@ -17,7 +19,7 @@ void main() {
   late CashWalletRepository repository;
 
   setUp(() async {
-    appDatabase = AppDatabase();
+    appDatabase = createIsolatedAppDatabase(prefix: 'cash_wallet_repo');
     final tripRepository = TripRepository(appDatabase);
     repository = CashWalletRepository(appDatabase);
     trip = await tripRepository.createTrip(
