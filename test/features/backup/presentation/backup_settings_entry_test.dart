@@ -33,13 +33,14 @@ void main() {
 
     expect(find.text('Backup & Restore'), findsOneWidget);
     expect(find.text('Save your data to a file'), findsOneWidget);
-    expect(find.text('Restore'), findsNothing);
+    expect(find.text('Restore from backup'), findsNothing);
 
     await tester.tap(find.text('Backup & Restore'));
     await tester.pumpAndSettle();
 
     expect(find.byType(BackupRestoreScreen), findsOneWidget);
     expect(find.text('Create backup'), findsOneWidget);
+    expect(find.text('Restore from backup'), findsOneWidget);
     expect(
       find.text('Your data stays on this device.'),
       findsOneWidget,
@@ -52,6 +53,6 @@ void main() {
       find.text('CalmLedger does not sync to the cloud automatically.'),
       findsOneWidget,
     );
-    expect(find.text('Restore'), findsNothing);
+    expect(find.text('Replace all data'), findsNothing);
   });
 }

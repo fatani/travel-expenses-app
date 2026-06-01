@@ -1557,4 +1557,81 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get backupExportFailed => 'تعذّر إنشاء النسخة الاحتياطية. حاول مرة أخرى.';
+
+  @override
+  String get backupRestoreButton => 'استعادة من نسخة احتياطية';
+
+  @override
+  String get backupRestoreSelectFailed => 'تعذّر فتح ملف النسخة الاحتياطية. حاول مرة أخرى.';
+
+  @override
+  String get backupRestorePreviewTitle => 'معاينة النسخة الاحتياطية';
+
+  @override
+  String backupRestorePreviewExportedAt(String date) {
+    return 'تاريخ التصدير: $date';
+  }
+
+  @override
+  String backupRestorePreviewSchemaVersion(int version) {
+    return 'إصدار المخطط: $version';
+  }
+
+  @override
+  String backupRestorePreviewTripCount(int count) {
+    return 'الرحلات: $count';
+  }
+
+  @override
+  String backupRestorePreviewExpenseCount(int count) {
+    return 'المصروفات: $count';
+  }
+
+  @override
+  String backupRestorePreviewCashTransactionCount(int count) {
+    return 'معاملات النقد: $count';
+  }
+
+  @override
+  String backupRestorePreviewCardCount(int count) {
+    return 'البطاقات: $count';
+  }
+
+  @override
+  String backupRestorePreviewManualExchangeRateCount(int count) {
+    return 'أسعار الصرف اليدوية: $count';
+  }
+
+  @override
+  String get backupRestoreConfirmTitle => 'استبدال كل البيانات؟';
+
+  @override
+  String get backupRestoreConfirmMessage => 'ستؤدي الاستعادة إلى استبدال جميع بيانات CalmLedger الحالية على هذا الجهاز. لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get backupRestoreConfirmButton => 'استبدال كل البيانات';
+
+  @override
+  String get backupRestoreCancelButton => 'إلغاء';
+
+  @override
+  String get backupRestoreInProgress => 'جارٍ الاستعادة…';
+
+  @override
+  String get backupRestoreSuccess => 'اكتملت الاستعادة بنجاح.';
+
+  @override
+  String get backupRestoreInvalidFile => 'ملف نسخة احتياطية غير صالح. اختر ملف CalmLedger بامتداد .clbackup.';
+
+  @override
+  String get backupRestoreUnsupportedBackupVersion => 'إصدار النسخة الاحتياطية غير مدعوم. حدّث CalmLedger وحاول مرة أخرى.';
+
+  @override
+  String get backupRestoreUnsupportedSchemaVersion => 'إصدار المخطط غير مدعوم. حدّث CalmLedger وحاول مرة أخرى.';
+
+  @override
+  String get backupRestoreCorruptBackup => 'يبدو أن ملف النسخة الاحتياطية تالف. جرّب ملفاً آخر.';
+
+  @override
+  String get backupRestoreFailed => 'فشلت الاستعادة. لم تتغيّر بياناتك الحالية.';
 }

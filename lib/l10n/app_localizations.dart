@@ -2968,6 +2968,132 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t create backup. Try again.'**
   String get backupExportFailed;
+
+  /// No description provided for @backupRestoreButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from backup'**
+  String get backupRestoreButton;
+
+  /// No description provided for @backupRestoreSelectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the backup file. Try again.'**
+  String get backupRestoreSelectFailed;
+
+  /// No description provided for @backupRestorePreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup preview'**
+  String get backupRestorePreviewTitle;
+
+  /// No description provided for @backupRestorePreviewExportedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Exported: {date}'**
+  String backupRestorePreviewExportedAt(String date);
+
+  /// No description provided for @backupRestorePreviewSchemaVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Schema version: {version}'**
+  String backupRestorePreviewSchemaVersion(int version);
+
+  /// No description provided for @backupRestorePreviewTripCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Trips: {count}'**
+  String backupRestorePreviewTripCount(int count);
+
+  /// No description provided for @backupRestorePreviewExpenseCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Expenses: {count}'**
+  String backupRestorePreviewExpenseCount(int count);
+
+  /// No description provided for @backupRestorePreviewCashTransactionCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash transactions: {count}'**
+  String backupRestorePreviewCashTransactionCount(int count);
+
+  /// No description provided for @backupRestorePreviewCardCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Cards: {count}'**
+  String backupRestorePreviewCardCount(int count);
+
+  /// No description provided for @backupRestorePreviewManualExchangeRateCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual exchange rates: {count}'**
+  String backupRestorePreviewManualExchangeRateCount(int count);
+
+  /// No description provided for @backupRestoreConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace all data?'**
+  String get backupRestoreConfirmTitle;
+
+  /// No description provided for @backupRestoreConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring will replace all current CalmLedger data on this device. This cannot be undone.'**
+  String get backupRestoreConfirmMessage;
+
+  /// No description provided for @backupRestoreConfirmButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace all data'**
+  String get backupRestoreConfirmButton;
+
+  /// No description provided for @backupRestoreCancelButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get backupRestoreCancelButton;
+
+  /// No description provided for @backupRestoreInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring…'**
+  String get backupRestoreInProgress;
+
+  /// No description provided for @backupRestoreSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore completed successfully.'**
+  String get backupRestoreSuccess;
+
+  /// No description provided for @backupRestoreInvalidFile.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid backup file. Choose a CalmLedger .clbackup file.'**
+  String get backupRestoreInvalidFile;
+
+  /// No description provided for @backupRestoreUnsupportedBackupVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported backup version. Update CalmLedger and try again.'**
+  String get backupRestoreUnsupportedBackupVersion;
+
+  /// No description provided for @backupRestoreUnsupportedSchemaVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported schema version. Update CalmLedger and try again.'**
+  String get backupRestoreUnsupportedSchemaVersion;
+
+  /// No description provided for @backupRestoreCorruptBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'This backup file looks corrupt. Try another file.'**
+  String get backupRestoreCorruptBackup;
+
+  /// No description provided for @backupRestoreFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore failed. Your current data was not changed.'**
+  String get backupRestoreFailed;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

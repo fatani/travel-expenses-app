@@ -1550,4 +1550,81 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupExportFailed => 'Couldn\'t create backup. Try again.';
+
+  @override
+  String get backupRestoreButton => 'Restore from backup';
+
+  @override
+  String get backupRestoreSelectFailed => 'Couldn\'t open the backup file. Try again.';
+
+  @override
+  String get backupRestorePreviewTitle => 'Backup preview';
+
+  @override
+  String backupRestorePreviewExportedAt(String date) {
+    return 'Exported: $date';
+  }
+
+  @override
+  String backupRestorePreviewSchemaVersion(int version) {
+    return 'Schema version: $version';
+  }
+
+  @override
+  String backupRestorePreviewTripCount(int count) {
+    return 'Trips: $count';
+  }
+
+  @override
+  String backupRestorePreviewExpenseCount(int count) {
+    return 'Expenses: $count';
+  }
+
+  @override
+  String backupRestorePreviewCashTransactionCount(int count) {
+    return 'Cash transactions: $count';
+  }
+
+  @override
+  String backupRestorePreviewCardCount(int count) {
+    return 'Cards: $count';
+  }
+
+  @override
+  String backupRestorePreviewManualExchangeRateCount(int count) {
+    return 'Manual exchange rates: $count';
+  }
+
+  @override
+  String get backupRestoreConfirmTitle => 'Replace all data?';
+
+  @override
+  String get backupRestoreConfirmMessage => 'Restoring will replace all current CalmLedger data on this device. This cannot be undone.';
+
+  @override
+  String get backupRestoreConfirmButton => 'Replace all data';
+
+  @override
+  String get backupRestoreCancelButton => 'Cancel';
+
+  @override
+  String get backupRestoreInProgress => 'Restoring…';
+
+  @override
+  String get backupRestoreSuccess => 'Restore completed successfully.';
+
+  @override
+  String get backupRestoreInvalidFile => 'Invalid backup file. Choose a CalmLedger .clbackup file.';
+
+  @override
+  String get backupRestoreUnsupportedBackupVersion => 'Unsupported backup version. Update CalmLedger and try again.';
+
+  @override
+  String get backupRestoreUnsupportedSchemaVersion => 'Unsupported schema version. Update CalmLedger and try again.';
+
+  @override
+  String get backupRestoreCorruptBackup => 'This backup file looks corrupt. Try another file.';
+
+  @override
+  String get backupRestoreFailed => 'Restore failed. Your current data was not changed.';
 }

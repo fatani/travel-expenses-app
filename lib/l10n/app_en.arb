@@ -560,5 +560,75 @@
     "backupCreatesFileNotice": "Create a backup file you can save elsewhere.",
     "backupNoCloudSyncNotice": "CalmLedger does not sync to the cloud automatically.",
     "backupCreateButton": "Create backup",
-    "backupExportFailed": "Couldn't create backup. Try again."
+    "backupExportFailed": "Couldn't create backup. Try again.",
+    "backupRestoreButton": "Restore from backup",
+    "backupRestoreSelectFailed": "Couldn't open the backup file. Try again.",
+    "backupRestorePreviewTitle": "Backup preview",
+    "backupRestorePreviewExportedAt": "Exported: {date}",
+    "@backupRestorePreviewExportedAt": {
+        "placeholders": {
+            "date": {
+                "type": "String"
+            }
+        }
+    },
+    "backupRestorePreviewSchemaVersion": "Schema version: {version}",
+    "@backupRestorePreviewSchemaVersion": {
+        "placeholders": {
+            "version": {
+                "type": "int"
+            }
+        }
+    },
+    "backupRestorePreviewTripCount": "Trips: {count}",
+    "@backupRestorePreviewTripCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "backupRestorePreviewExpenseCount": "Expenses: {count}",
+    "@backupRestorePreviewExpenseCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "backupRestorePreviewCashTransactionCount": "Cash transactions: {count}",
+    "@backupRestorePreviewCashTransactionCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "backupRestorePreviewCardCount": "Cards: {count}",
+    "@backupRestorePreviewCardCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "backupRestorePreviewManualExchangeRateCount": "Manual exchange rates: {count}",
+    "@backupRestorePreviewManualExchangeRateCount": {
+        "placeholders": {
+            "count": {
+                "type": "int"
+            }
+        }
+    },
+    "backupRestoreConfirmTitle": "Replace all data?",
+    "backupRestoreConfirmMessage": "Restoring will replace all current CalmLedger data on this device. This cannot be undone.",
+    "backupRestoreConfirmButton": "Replace all data",
+    "backupRestoreCancelButton": "Cancel",
+    "backupRestoreInProgress": "Restoring…",
+    "backupRestoreSuccess": "Restore completed successfully.",
+    "backupRestoreInvalidFile": "Invalid backup file. Choose a CalmLedger .clbackup file.",
+    "backupRestoreUnsupportedBackupVersion": "Unsupported backup version. Update CalmLedger and try again.",
+    "backupRestoreUnsupportedSchemaVersion": "Unsupported schema version. Update CalmLedger and try again.",
+    "backupRestoreCorruptBackup": "This backup file looks corrupt. Try another file.",
+    "backupRestoreFailed": "Restore failed. Your current data was not changed."
 }

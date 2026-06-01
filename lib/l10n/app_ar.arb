@@ -561,5 +561,75 @@
   "backupCreatesFileNotice": "أنشئ ملف نسخ احتياطي يمكنك حفظه في مكان آخر.",
   "backupNoCloudSyncNotice": "CalmLedger لا يزامن تلقائياً مع السحابة.",
   "backupCreateButton": "إنشاء نسخة احتياطية",
-  "backupExportFailed": "تعذّر إنشاء النسخة الاحتياطية. حاول مرة أخرى."
+  "backupExportFailed": "تعذّر إنشاء النسخة الاحتياطية. حاول مرة أخرى.",
+  "backupRestoreButton": "استعادة من نسخة احتياطية",
+  "backupRestoreSelectFailed": "تعذّر فتح ملف النسخة الاحتياطية. حاول مرة أخرى.",
+  "backupRestorePreviewTitle": "معاينة النسخة الاحتياطية",
+  "backupRestorePreviewExportedAt": "تاريخ التصدير: {date}",
+  "@backupRestorePreviewExportedAt": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "backupRestorePreviewSchemaVersion": "إصدار المخطط: {version}",
+  "@backupRestorePreviewSchemaVersion": {
+    "placeholders": {
+      "version": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestorePreviewTripCount": "الرحلات: {count}",
+  "@backupRestorePreviewTripCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestorePreviewExpenseCount": "المصروفات: {count}",
+  "@backupRestorePreviewExpenseCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestorePreviewCashTransactionCount": "معاملات النقد: {count}",
+  "@backupRestorePreviewCashTransactionCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestorePreviewCardCount": "البطاقات: {count}",
+  "@backupRestorePreviewCardCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestorePreviewManualExchangeRateCount": "أسعار الصرف اليدوية: {count}",
+  "@backupRestorePreviewManualExchangeRateCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "backupRestoreConfirmTitle": "استبدال كل البيانات؟",
+  "backupRestoreConfirmMessage": "ستؤدي الاستعادة إلى استبدال جميع بيانات CalmLedger الحالية على هذا الجهاز. لا يمكن التراجع عن ذلك.",
+  "backupRestoreConfirmButton": "استبدال كل البيانات",
+  "backupRestoreCancelButton": "إلغاء",
+  "backupRestoreInProgress": "جارٍ الاستعادة…",
+  "backupRestoreSuccess": "اكتملت الاستعادة بنجاح.",
+  "backupRestoreInvalidFile": "ملف نسخة احتياطية غير صالح. اختر ملف CalmLedger بامتداد .clbackup.",
+  "backupRestoreUnsupportedBackupVersion": "إصدار النسخة الاحتياطية غير مدعوم. حدّث CalmLedger وحاول مرة أخرى.",
+  "backupRestoreUnsupportedSchemaVersion": "إصدار المخطط غير مدعوم. حدّث CalmLedger وحاول مرة أخرى.",
+  "backupRestoreCorruptBackup": "يبدو أن ملف النسخة الاحتياطية تالف. جرّب ملفاً آخر.",
+  "backupRestoreFailed": "فشلت الاستعادة. لم تتغيّر بياناتك الحالية."
 }
