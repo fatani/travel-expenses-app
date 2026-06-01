@@ -385,6 +385,21 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get quickAddCurrencyPickerOther => 'عملة أخرى...';
+
+  @override
+  String get quickAddOtherCurrencyTitle => 'عملة أخرى';
+
+  @override
+  String get quickAddOtherCurrencyHint => 'مثال: USD';
+
+  @override
+  String get quickAddOtherCurrencyInvalid => 'أدخل رمز عملة من 3 أحرف.';
+
+  @override
+  String get quickAddOtherCurrencyUse => 'استخدام';
+
+  @override
   String cashWalletTripStatusDaysLeft(int days) {
     return 'متبقي $days أيام';
   }

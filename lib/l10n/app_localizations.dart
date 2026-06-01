@@ -815,6 +815,36 @@ abstract class AppLocalizations {
   /// **'{currency}'**
   String quickAddAmountInCurrency(Object currency);
 
+  /// No description provided for @quickAddCurrencyPickerOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Other currency...'**
+  String get quickAddCurrencyPickerOther;
+
+  /// No description provided for @quickAddOtherCurrencyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Other currency'**
+  String get quickAddOtherCurrencyTitle;
+
+  /// No description provided for @quickAddOtherCurrencyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. USD'**
+  String get quickAddOtherCurrencyHint;
+
+  /// No description provided for @quickAddOtherCurrencyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a 3-letter currency code.'**
+  String get quickAddOtherCurrencyInvalid;
+
+  /// No description provided for @quickAddOtherCurrencyUse.
+  ///
+  /// In en, this message translates to:
+  /// **'Use'**
+  String get quickAddOtherCurrencyUse;
+
   /// No description provided for @cashWalletTripStatusDaysLeft.
   ///
   /// In en, this message translates to:

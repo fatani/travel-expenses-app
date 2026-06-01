@@ -236,6 +236,43 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
     });
   }
 
+  Future<void> _openCurrencyPicker() async {
+    if (_isSubmitting || _isOpeningMoreDetails) {
+      return;
+    }
+
+    FocusManager.instance.primaryFocus?.unfocus();
+    final options = buildQuickAddCurrencyPickerOptions(
+      widget.trip,
+      widget.expenses,
+    );
+
+    final picked = await showQuickAddCurrencyPicker(
+      context: context,
+      options: options,
+      selectedCode: _selectedCurrencyCode,
+    );
+
+    if (!mounted || picked == null) {
+      return;
+    }
+
+    if (picked == kQuickAddCurrencyPickerOther) {
+      final otherCode = await showQuickAddOtherCurrencyDialog(context);
+      if (!mounted || otherCode == null) {
+        return;
+      }
+      setState(() {
+        _selectedCurrencyCode = otherCode;
+      });
+      return;
+    }
+
+    setState(() {
+      _selectedCurrencyCode = picked;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -292,13 +329,23 @@ class _QuickAddExpenseSheetState extends ConsumerState<QuickAddExpenseSheet> {
                 isDense: true,
               ),
             ),
-            LtrText(
-              data: l10n.quickAddAmountInCurrency(displayCurrency),
-              textAlign: TextAlign.center,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: const Color(0xFF94A3B8),
-                fontWeight: FontWeight.w500,
-                height: RtlTypography.bodyLineHeight(isArabic),
+            Semantics(
+              button: true,
+              label: displayCurrency,
+              child: ExcludeFocus(
+                child: InkWell(
+                  key: const Key('quick_add_currency_label'),
+                  onTap: _openCurrencyPicker,
+                  child: LtrText(
+                    data: '$displayCurrency ▼',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: const Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w500,
+                      height: RtlTypography.bodyLineHeight(isArabic),
+                    ),
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 6),

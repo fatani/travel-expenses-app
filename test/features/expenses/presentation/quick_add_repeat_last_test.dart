@@ -111,14 +111,14 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(QuickAddExpenseSheet),
-        matching: find.text('CNY'),
+        matching: find.text('CNY ▼'),
       ),
       findsOneWidget,
     );
     expect(
       find.descendant(
         of: find.byType(QuickAddExpenseSheet),
-        matching: find.text('USD'),
+        matching: find.text('USD ▼'),
       ),
       findsNothing,
     );
@@ -162,7 +162,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(QuickAddExpenseSheet),
-        matching: find.text('USD'),
+        matching: find.text('USD ▼'),
       ),
       findsOneWidget,
     );

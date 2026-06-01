@@ -211,7 +211,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(QuickAddExpenseSheet),
-        matching: find.text('JPY'),
+        matching: find.text('JPY ▼'),
       ),
       findsOneWidget,
     );

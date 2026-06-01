@@ -50,7 +50,7 @@ void main() {
     expect(
       find.descendant(
         of: find.byType(QuickAddExpenseSheet),
-        matching: find.text('THB'),
+        matching: find.text('THB ▼'),
       ),
       findsOneWidget,
     );

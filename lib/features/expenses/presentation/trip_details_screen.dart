@@ -30,6 +30,8 @@ import 'expense_controller.dart';
 import 'expense_form_screen.dart';
 import 'expense_list_display.dart';
 import 'expense_option_labels.dart';
+import 'quick_add_currency.dart';
+import 'quick_add_currency_picker.dart';
 import 'quick_add_payment.dart';
 import 'quick_add_recent_merchants.dart';
 

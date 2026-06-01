@@ -385,6 +385,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get quickAddCurrencyPickerOther => 'Other currency...';
+
+  @override
+  String get quickAddOtherCurrencyTitle => 'Other currency';
+
+  @override
+  String get quickAddOtherCurrencyHint => 'e.g. USD';
+
+  @override
+  String get quickAddOtherCurrencyInvalid => 'Enter a 3-letter currency code.';
+
+  @override
+  String get quickAddOtherCurrencyUse => 'Use';
+
+  @override
   String cashWalletTripStatusDaysLeft(int days) {
     return '$days days left';
   }
