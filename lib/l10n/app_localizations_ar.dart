@@ -1193,6 +1193,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripPredictionForecastTitle => 'التوقع الإجمالي حتى نهاية الرحلة';
 
   @override
+  String tripPredictionRemainingDays(int days) {
+    return 'الأيام المتبقية: $days';
+  }
+
+  @override
+  String get tripPredictionBudgetWarning => 'من المتوقع أن تتجاوز ميزانيتك الحالية. قد تصل إلى حد الميزانية قبل نهاية الرحلة';
+
+  @override
+  String tripReportsHeroCategoryCount(int count) {
+    return '$count فئات';
+  }
+
+  @override
+  String tripReportsCategoryMultiCurrency(int count) {
+    return 'متعدد العملات ($count)';
+  }
+
+  @override
   String tripReportsExpenseCountLabel(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

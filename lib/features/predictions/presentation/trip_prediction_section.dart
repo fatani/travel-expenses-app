@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n_extension.dart';
 import '../domain/trip_prediction_summary.dart';
 
 class TripPredictionSection extends StatelessWidget {
@@ -19,6 +20,7 @@ class TripPredictionSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final currencies = summary.forecastTotalByCurrency.keys.toList()..sort();
 
     return Column(
@@ -50,7 +52,8 @@ class TripPredictionSection extends StatelessWidget {
                 for (final currency in currencies)
                   _PredictionRow(
                     label: '$currency/day',
-                    value: '${_formatAmount(summary.burnRateByCurrency[currency] ?? 0)} $currency',
+                    value:
+                        '${_formatAmount(summary.burnRateByCurrency[currency] ?? 0)} $currency',
                   ),
                 const SizedBox(height: 12),
                 Text(
@@ -60,23 +63,31 @@ class TripPredictionSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 8),
+                Text(
+                  l10n.tripPredictionRemainingDays(summary.remainingDays),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
                 for (final currency in currencies)
                   _PredictionRow(
                     label: currency,
-                    value: '${_formatAmount(summary.forecastTotalByCurrency[currency] ?? 0)} $currency',
+                    value:
+                        '${_formatAmount(summary.forecastTotalByCurrency[currency] ?? 0)} $currency',
                   ),
               ],
             ),
           ),
         ),
-        if (summary.hasBudgetWarning && summary.budgetWarningMessage != null) ...[
+        if (summary.hasBudgetWarning) ...[
           const SizedBox(height: 10),
           Card(
             color: theme.colorScheme.errorContainer,
             child: Padding(
               padding: const EdgeInsets.all(14),
               child: Text(
-                summary.budgetWarningMessage!,
+                l10n.tripPredictionBudgetWarning,
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onErrorContainer,
                   fontWeight: FontWeight.w600,

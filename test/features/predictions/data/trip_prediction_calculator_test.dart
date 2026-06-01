@@ -201,7 +201,6 @@ void main() {
 
     expect(warningSummary, isNotNull);
     expect(warningSummary!.hasBudgetWarning, isTrue);
-    expect(warningSummary.budgetWarningMessage, isNotNull);
 
     final safeSummary = calculator.calculate(
       trip: _trip(
@@ -220,7 +219,6 @@ void main() {
 
     expect(safeSummary, isNotNull);
     expect(safeSummary!.hasBudgetWarning, isFalse);
-    expect(safeSummary.budgetWarningMessage, isNull);
   });
 
   test('Increasing trend -> weighted burn rate higher than simple average', () {

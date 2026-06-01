@@ -71,7 +71,7 @@ class TripPredictionCalculator {
           currentSpent + (burnRate * remainingDays);
     });
 
-    final budgetWarning = _buildBudgetWarning(
+    final hasBudgetWarning = _hasBudgetWarning(
       trip: trip,
       forecastTotalByCurrency: forecastTotalByCurrency,
     );
@@ -81,35 +81,30 @@ class TripPredictionCalculator {
       remainingDays: remainingDays,
       burnRateByCurrency: burnRateByCurrency,
       forecastTotalByCurrency: forecastTotalByCurrency,
-      hasBudgetWarning: budgetWarning != null,
-      budgetWarningMessage: budgetWarning,
+      hasBudgetWarning: hasBudgetWarning,
     );
   }
 
-  String? _buildBudgetWarning({
+  bool _hasBudgetWarning({
     required Trip trip,
     required Map<String, double> forecastTotalByCurrency,
   }) {
     final budget = trip.budget;
     if (budget == null || budget <= 0) {
-      return null;
+      return false;
     }
 
     final budgetCurrency = trip.baseCurrency.trim().toUpperCase();
     if (budgetCurrency.isEmpty) {
-      return null;
+      return false;
     }
 
     final forecastInBudgetCurrency = forecastTotalByCurrency[budgetCurrency];
     if (forecastInBudgetCurrency == null) {
-      return null;
+      return false;
     }
 
-    if (forecastInBudgetCurrency > budget) {
-      return 'من المتوقع أن تتجاوز ميزانيتك الحالية. قد تصل إلى حد الميزانية قبل نهاية الرحلة';
-    }
-
-    return null;
+    return forecastInBudgetCurrency > budget;
   }
 
   DateTime _dateOnly(DateTime date) {

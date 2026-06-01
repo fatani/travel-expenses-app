@@ -2363,6 +2363,30 @@ abstract class AppLocalizations {
   /// **'Forecast total until trip end'**
   String get tripPredictionForecastTitle;
 
+  /// No description provided for @tripPredictionRemainingDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining days: {days}'**
+  String tripPredictionRemainingDays(int days);
+
+  /// No description provided for @tripPredictionBudgetWarning.
+  ///
+  /// In en, this message translates to:
+  /// **'You are expected to exceed your current budget. You may reach your budget limit before the end of the trip'**
+  String get tripPredictionBudgetWarning;
+
+  /// No description provided for @tripReportsHeroCategoryCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} categories'**
+  String tripReportsHeroCategoryCount(int count);
+
+  /// No description provided for @tripReportsCategoryMultiCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Multi-currency ({count})'**
+  String tripReportsCategoryMultiCurrency(int count);
+
   /// No description provided for @tripReportsExpenseCountLabel.
   ///
   /// In en, this message translates to:

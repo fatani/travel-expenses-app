@@ -5,7 +5,6 @@ class TripPredictionSummary {
     required this.burnRateByCurrency,
     required this.forecastTotalByCurrency,
     required this.hasBudgetWarning,
-    required this.budgetWarningMessage,
   });
 
   final int elapsedDays;
@@ -13,5 +12,4 @@ class TripPredictionSummary {
   final Map<String, double> burnRateByCurrency;
   final Map<String, double> forecastTotalByCurrency;
   final bool hasBudgetWarning;
-  final String? budgetWarningMessage;
 }

@@ -1193,6 +1193,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripPredictionForecastTitle => 'Forecast total until trip end';
 
   @override
+  String tripPredictionRemainingDays(int days) {
+    return 'Remaining days: $days';
+  }
+
+  @override
+  String get tripPredictionBudgetWarning => 'You are expected to exceed your current budget. You may reach your budget limit before the end of the trip';
+
+  @override
+  String tripReportsHeroCategoryCount(int count) {
+    return '$count categories';
+  }
+
+  @override
+  String tripReportsCategoryMultiCurrency(int count) {
+    return 'Multi-currency ($count)';
+  }
+
+  @override
   String tripReportsExpenseCountLabel(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

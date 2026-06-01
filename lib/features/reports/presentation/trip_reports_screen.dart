@@ -324,8 +324,6 @@ class _ReportHeroSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
     final hasMultipleTransactionCurrencies =
         summary.byTransactionCurrency.length > 1;
     final totalBucket =
@@ -341,7 +339,7 @@ class _ReportHeroSummaryCard extends StatelessWidget {
               )
             : context.l10n.tripReportsOverallSpending;
     final topCategoryLabel = summary.topCategory == null
-        ? (isArabic ? 'غير متوفر' : 'N/A')
+        ? null
         : ExpenseOptionLabels.category(context.l10n, summary.topCategory!);
 
     return Card(
@@ -407,36 +405,38 @@ class _ReportHeroSummaryCard extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _HeroMetricChip(
-                        value: isArabic
-                            ? '$categoryCount فئات'
-                            : '$categoryCount categories',
+                        value: context.l10n.tripReportsHeroCategoryCount(
+                          categoryCount,
+                        ),
                       ),
                     ),
                   ],
                 ],
               ),
-              const SizedBox(height: 10),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F5FF),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+              if (topCategoryLabel != null) ...[
+                const SizedBox(height: 10),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F5FF),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                    ),
+                  ),
+                  child: Text(
+                    '${context.l10n.tripReportsTopCategory}: $topCategoryLabel',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: colorScheme.onSurface,
+                    ),
                   ),
                 ),
-                child: Text(
-                  '${context.l10n.tripReportsTopCategory}: $topCategoryLabel',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
+              ],
             ],
           ),
         ),
@@ -526,6 +526,13 @@ class _LightweightSummaryCard extends StatelessWidget {
               ),
             ),
           ],
+          const SizedBox(height: 12),
+          Text(
+            context.l10n.tripReportsEarlyAddMoreHint,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
         ],
       ),
     );
@@ -848,7 +855,6 @@ class _CategoryInsightsCard extends StatelessWidget {
 
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Column(
       children: [
@@ -931,9 +937,9 @@ class _CategoryInsightsCard extends StatelessWidget {
                       if (categoryBuckets.length > 1) ...[
                         const SizedBox(height: 6),
                         Text(
-                          isArabic
-                              ? 'متعدد العملات (${categoryBuckets.length})'
-                              : 'Multi-currency (${categoryBuckets.length})',
+                          context.l10n.tripReportsCategoryMultiCurrency(
+                            categoryBuckets.length,
+                          ),
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                           ),

@@ -113,7 +113,7 @@ void main() {
     await _pumpReport(tester, trip: trip, expenses: expenses);
 
     expect(find.textContaining('1 expense recorded'), findsOneWidget);
-    expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
+    expect(find.text('Add more expenses for a fuller report.'), findsOneWidget);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
     expect(find.text('Spending by currency'), findsOneWidget);
@@ -149,7 +149,7 @@ void main() {
     await _pumpReport(tester, trip: trip, expenses: expenses);
 
     expect(find.textContaining('2 expenses recorded'), findsOneWidget);
-    expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
+    expect(find.text('Add more expenses for a fuller report.'), findsOneWidget);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
     expect(find.text('Spending by currency'), findsOneWidget);
@@ -191,7 +191,7 @@ void main() {
     await _pumpReport(tester, trip: trip, expenses: expenses);
 
     expect(find.textContaining('3 expenses recorded'), findsOneWidget);
-    expect(find.text('Add more expenses to see clearer spending patterns.'), findsNothing);
+    expect(find.text('Add more expenses for a fuller report.'), findsOneWidget);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
     expect(find.text('Spending by currency'), findsOneWidget);
@@ -254,6 +254,7 @@ void main() {
     expect(find.text('Spending by currency'), findsOneWidget);
     expect(find.text('Overall spending'), findsNothing);
     expect(find.textContaining('only'), findsWidgets);
+    expect(find.text('3 categories'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -300));
     await tester.pumpAndSettle();
@@ -265,6 +266,60 @@ void main() {
 
     expect(find.textContaining('transaction currency'), findsOneWidget);
     expect(find.text('By payment network'), findsOneWidget);
+  });
+
+  testWidgets('hero card hides top category when suppressed for multi-currency', (
+    tester,
+  ) async {
+    final trip = _trip();
+    final expenses = [
+      _expense(
+        tripId: trip.id,
+        amount: 100,
+        currency: 'SAR',
+        category: 'Food',
+        paymentNetwork: 'Visa',
+        paymentChannel: 'POS Purchase',
+      ),
+      _expense(
+        tripId: trip.id,
+        amount: 80,
+        currency: 'USD',
+        category: 'Transport',
+        paymentNetwork: 'Mada',
+        paymentChannel: 'Online Purchase',
+      ),
+      _expense(
+        tripId: trip.id,
+        amount: 40,
+        currency: 'SAR',
+        category: 'Shopping',
+        paymentNetwork: 'Visa',
+        paymentChannel: 'POS Purchase',
+      ),
+      _expense(
+        tripId: trip.id,
+        amount: 35,
+        currency: 'EUR',
+        category: 'Food',
+        paymentNetwork: 'Mastercard',
+        paymentChannel: 'Online Purchase',
+      ),
+      _expense(
+        tripId: trip.id,
+        amount: 25,
+        currency: 'SAR',
+        category: 'Transport',
+        paymentNetwork: 'Mada',
+        paymentChannel: 'ATM Withdrawal',
+      ),
+    ];
+
+    await _pumpReport(tester, trip: trip, expenses: expenses);
+
+    expect(find.textContaining('Top category'), findsNothing);
+    expect(find.text('N/A'), findsNothing);
+    expect(find.textContaining('غير متوفر'), findsNothing);
   });
 
   testWidgets('Trip report never shows behavioral smart summary', (
