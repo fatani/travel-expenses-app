@@ -16,6 +16,7 @@ import '../../trips/domain/trip_title_resolver.dart';
 import '../data/trip_report_provider.dart';
 import '../domain/report_bucket.dart';
 import '../domain/trip_report_summary.dart';
+import 'trip_report_cash_wallet_snapshot_slot.dart';
 
 // ---------------------------------------------------------------------------
 // Screen
@@ -88,7 +89,7 @@ _ReportDataTier _dataTier(int count) {
   return _ReportDataTier.sufficient;
 }
 
-class _ReportBody extends StatelessWidget {
+class _ReportBody extends ConsumerWidget {
   const _ReportBody({
     required this.summary,
     required this.predictionSummary,
@@ -98,7 +99,7 @@ class _ReportBody extends StatelessWidget {
   final TripPredictionSummary? predictionSummary;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     const sectionGap = SizedBox(height: 20);
     const listPadding = EdgeInsets.symmetric(
       horizontal: AppSpacing.md,
@@ -124,6 +125,10 @@ class _ReportBody extends StatelessWidget {
         children: [
           _LightweightSummaryCard(summary: summary),
           sectionGap,
+          TripReportCashWalletSnapshotSlot(
+            tripId: summary.tripId,
+            sectionGap: sectionGap,
+          ),
           if (summary.totalBilledByCurrency.isNotEmpty) ...[
             _SectionHeader(title: context.l10n.tripReportsTotalBilled),
             _BucketList(
@@ -160,6 +165,10 @@ class _ReportBody extends StatelessWidget {
           categoryCount: categoryCount,
         ),
         sectionGap,
+        TripReportCashWalletSnapshotSlot(
+          tripId: summary.tripId,
+          sectionGap: sectionGap,
+        ),
         if (summary.smartInsights.isNotEmpty) ...[
           _TripInsightsSection(
             insights: summary.smartInsights.take(1).toList(growable: false),
