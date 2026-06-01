@@ -508,12 +508,9 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(
+      CalmSnackBar.showMessage(
         context,
-      ).showSnackBar(
-        SnackBar(
-          content: Text(AppLocalizations.of(context)!.settingsLanguageSaveError),
-        ),
+        message: AppLocalizations.of(context)!.settingsLanguageSaveError,
       );
     }
   }

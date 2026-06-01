@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../expenses/domain/expense_payment.dart';
 import '../../expenses/presentation/expense_controller.dart';
@@ -852,9 +853,10 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
   Future<void> _saveExpense() async {
     final l10n = AppLocalizations.of(context)!;
     if (widget.trip.id.isEmpty) {
-      ScaffoldMessenger.of(
+      CalmSnackBar.showMessage(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.smsTripMissingError)));
+        message: l10n.smsTripMissingError,
+      );
       return;
     }
 
@@ -955,9 +957,10 @@ class _SmsExpenseScreenState extends ConsumerState<SmsExpenseScreen> {
         return;
       }
 
-      ScaffoldMessenger.of(
+      CalmSnackBar.showMessage(
         context,
-      ).showSnackBar(SnackBar(content: Text(l10n.smsSaveError)));
+        message: l10n.smsSaveError,
+      );
     }
   }
 

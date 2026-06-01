@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/design_system/calm_snackbar.dart';
 import '../../../l10n/app_localizations.dart';
 import '../domain/card_profile_enums.dart';
 import '../domain/card_profile_exceptions.dart';
@@ -484,8 +485,9 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.cardFormDuplicate)),
+      CalmSnackBar.showMessage(
+        context,
+        message: AppLocalizations.of(context)!.cardFormDuplicate,
       );
     }
   }

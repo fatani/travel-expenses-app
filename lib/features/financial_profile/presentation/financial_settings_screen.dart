@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_expenses/l10n/l10n_extension.dart';
 
+import '../../../core/design_system/calm_snackbar.dart';
+
 import '../../trips/domain/country_database.dart';
 import '../../trips/domain/country_info.dart';
 import '../../../shared/widgets/calm_load_error_panel.dart';
@@ -164,8 +166,9 @@ class _FinancialSettingsScreenState extends ConsumerState<FinancialSettingsScree
       if (!mounted) {
         return;
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.l10n.financialProfileSaveError)),
+      CalmSnackBar.showMessage(
+        context,
+        message: context.l10n.financialProfileSaveError,
       );
     } finally {
       if (mounted) {
