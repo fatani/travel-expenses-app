@@ -11,10 +11,11 @@ import '../domain/backup_export_result.dart';
 
 typedef BackupDirectoryProvider = Future<Directory> Function();
 
-/// Writes a UTF-8 JSON [BackupEnvelope] to a temporary `.clbackup` file.
+/// Writes a UTF-8 JSON [BackupEnvelope] to a `.clbackup` file in app documents.
 class BackupFileWriter {
   BackupFileWriter({BackupDirectoryProvider? directoryProvider})
-    : _directoryProvider = directoryProvider ?? getTemporaryDirectory;
+    : _directoryProvider =
+          directoryProvider ?? getApplicationDocumentsDirectory;
 
   final BackupDirectoryProvider _directoryProvider;
 

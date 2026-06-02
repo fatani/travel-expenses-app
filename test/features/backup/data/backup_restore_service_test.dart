@@ -20,6 +20,8 @@ import 'package:travel_expenses/features/cash_wallet/domain/cash_balance_recompu
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
+import 'package:travel_expenses/features/global_reports/data/global_report_calculator.dart';
+import 'package:travel_expenses/features/reports/data/trip_report_calculator.dart';
 import 'package:travel_expenses/features/settings/data/card_repository.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
@@ -75,10 +77,12 @@ void main() {
         baseCurrency: 'JPY',
         destinationCurrency: 'JPY',
         homeCurrencySnapshot: 'SAR',
+        startDate: DateTime(2026, 6, 1),
+        endDate: DateTime(2026, 6, 5),
       ),
     );
 
-    await cardRepository.addCard(name: 'Travel Visa');
+    final card = await cardRepository.addCard(name: 'Travel Visa');
 
     await expenseRepository.createExpense(
       Expense.create(
@@ -91,6 +95,23 @@ void main() {
         transactionCurrency: 'JPY',
         paymentMethod: 'Cash',
         paymentChannel: 'Cash',
+      ),
+    );
+
+    await expenseRepository.createExpense(
+      Expense.create(
+        id: 'exp-restore-2',
+        tripId: trip.id,
+        title: 'Hotel',
+        amount: 24000,
+        currencyCode: 'JPY',
+        transactionAmount: 24000,
+        transactionCurrency: 'JPY',
+        paymentMethod: 'Credit Card',
+        paymentNetwork: 'Visa',
+        paymentChannel: 'POS Purchase',
+        category: 'Accommodation',
+        cardProfileId: card.id,
       ),
     );
 
@@ -167,6 +188,84 @@ void main() {
       collectedDataToComparableMap(after.manualExchangeRates),
       collectedDataToComparableMap(before.manualExchangeRates),
     );
+  });
+
+  test('backup file restores onto a fresh database with reports intact', () async {
+    await seedSampleData();
+    final backupContents = await exportBackupContents();
+    final preview = restoreService.loadPreview(
+      fileName: 'calmledger-backup-2026-06-01-143045.clbackup',
+      contents: backupContents,
+    );
+
+    final freshDatabase = createIsolatedAppDatabase(
+      prefix: 'backup_restore_transfer_target',
+    );
+    try {
+      await BackupRestoreService(appDatabase: freshDatabase)
+          .restore(preview.envelope);
+
+      final tripRepository = TripRepository(freshDatabase);
+      final expenseRepository = ExpenseRepository(freshDatabase);
+      final cashWalletRepository = CashWalletRepository(freshDatabase);
+      final cardRepository = CardRepository(freshDatabase);
+      final restoredTrips = await tripRepository.getTrips();
+      final restoredCards = await cardRepository.getAllCards();
+
+      expect(restoredTrips, hasLength(1));
+      expect(restoredTrips.single.id, 'trip-restore-1');
+      expect(restoredTrips.single.name, 'Osaka');
+      expect(restoredCards, hasLength(1));
+      expect(restoredCards.single.name, 'Travel Visa');
+
+      final restoredExpenses =
+          await expenseRepository.getExpensesByTrip(restoredTrips.single.id);
+      final restoredCashTransactions = await cashWalletRepository
+          .getRecentTransactionsByTrip(restoredTrips.single.id);
+      final restoredCashBalances =
+          await cashWalletRepository.getBalancesByTrip(restoredTrips.single.id);
+
+      expect(restoredExpenses, hasLength(2));
+      expect(
+        restoredExpenses.map((expense) => expense.title),
+        containsAll(['Ramen', 'Hotel']),
+      );
+      expect(
+        restoredExpenses.singleWhere((expense) => expense.title == 'Hotel')
+            .cardProfileId,
+        restoredCards.single.id,
+      );
+      expect(restoredCashTransactions, hasLength(1));
+      expect(restoredCashTransactions.single.amount, 5000);
+      expect(restoredCashBalances, hasLength(1));
+      expect(restoredCashBalances.single.balanceAmount, 5000);
+
+      final tripReport = const TripReportCalculator().calculate(
+        tripId: restoredTrips.single.id,
+        tripName: restoredTrips.single.name,
+        expenses: restoredExpenses,
+      );
+      expect(tripReport.totalExpenseCount, 2);
+      expect(tripReport.totalBilledByCurrency.single.currency, 'JPY');
+      expect(tripReport.totalBilledByCurrency.single.totalAmount, 25200);
+      expect(
+        tripReport.byPaymentChannel.map((bucket) => bucket.key),
+        containsAll(['Cash', 'POS Purchase']),
+      );
+
+      final globalReport = const GlobalReportCalculator().calculate(
+        trips: restoredTrips,
+        expenses: restoredExpenses,
+      );
+      expect(globalReport.totalTrips, 1);
+      expect(globalReport.activeTrips, 1);
+      expect(globalReport.totalExpenseCount, 2);
+      expect(globalReport.totalBilledByCurrency.single.currency, 'JPY');
+      expect(globalReport.totalBilledByCurrency.single.totalAmount, 25200);
+      expect(globalReport.trackedTripDays, 5);
+    } finally {
+      await freshDatabase.close();
+    }
   });
 
   test('empty backup restore', () async {
