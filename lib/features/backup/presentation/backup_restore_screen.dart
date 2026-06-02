@@ -11,6 +11,7 @@ import '../domain/backup_restore_failure.dart';
 import '../domain/backup_restore_preview.dart';
 import 'backup_providers.dart';
 import 'backup_restore_messages.dart';
+import 'backup_restore_picked_file.dart';
 import 'backup_restore_provider_refresh.dart';
 
 class BackupRestoreScreen extends ConsumerStatefulWidget {
@@ -90,8 +91,24 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
 
       final file = result.files.single;
       final fileName = file.name;
-      final bytes = file.bytes;
+
+      List<int>? bytes;
+      try {
+        bytes = await readRestorePickedFileBytes(file);
+      } catch (error, stackTrace) {
+        debugPrint('backup restore pick failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+        if (!mounted) {
+          return;
+        }
+        CalmSnackBar.showMessage(context, message: l10n.backupRestoreSelectFailed);
+        return;
+      }
+
       if (bytes == null) {
+        if (!mounted) {
+          return;
+        }
         CalmSnackBar.showMessage(context, message: l10n.backupRestoreSelectFailed);
         return;
       }
@@ -111,7 +128,9 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         context,
         message: backupRestoreFailureMessage(l10n, error),
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('backup restore pick failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
       if (!mounted) {
         return;
       }
