@@ -7,6 +7,7 @@ import 'package:travel_expenses/l10n/l10n_extension.dart';
 
 import '../../../app/app_router.dart';
 import '../../../core/design_system/calm_snackbar.dart';
+import '../domain/backup_constants.dart';
 import '../domain/backup_restore_failure.dart';
 import '../domain/backup_restore_preview.dart';
 import 'backup_providers.dart';
@@ -76,8 +77,7 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
 
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: const ['clbackup'],
+        type: FileType.any,
         withData: true,
       );
 
@@ -91,6 +91,14 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
 
       final file = result.files.single;
       final fileName = file.name;
+      if (!isSupportedRestorePickedFile(file)) {
+        debugPrint(
+          'backup restore pick rejected invalid extension: '
+          'name=${file.name}, path=${file.path}',
+        );
+        CalmSnackBar.showMessage(context, message: l10n.backupRestoreSelectFailed);
+        return;
+      }
 
       List<int>? bytes;
       try {
@@ -389,6 +397,22 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
     height: 1.45,
     color: Color(0xFF475569),
   );
+}
+
+@visibleForTesting
+bool isSupportedRestorePickedFile(PlatformFile file) {
+  final expectedSuffix = BackupConstants.fileExtension;
+  final name = file.name.toLowerCase();
+  if (name.endsWith(expectedSuffix)) {
+    return true;
+  }
+
+  final path = file.path?.toLowerCase();
+  if (path != null && path.endsWith(expectedSuffix)) {
+    return true;
+  }
+
+  return false;
 }
 
 class _InfoCard extends StatelessWidget {
