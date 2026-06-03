@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="سياسة الخصوصية لتطبيق CalmTrip — رفيقك الهادئ لتتبع مصاريف السفر.">
+  <title>سياسة الخصوصية — CalmTrip</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --text: #1a2332;
+      --text-muted: #5a6b7d;
+      --accent: #2d6a9f;
+      --accent-soft: #e8f1f8;
+      --border: #dde5ee;
+      --radius: 12px;
+      --shadow: 0 4px 24px rgba(26, 35, 50, 0.06);
+      --max-width: 720px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Tahoma", "Arial", sans-serif;
+      font-size: 1.0625rem;
+      line-height: 1.75;
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      min-height: 100vh;
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    .container {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e4d72 0%, #2d6a9f 55%, #3d8bc4 100%);
+      color: #fff;
+      border-radius: var(--radius);
+      padding: 2.25rem 2rem;
+      margin-bottom: 1.75rem;
+      box-shadow: var(--shadow);
+    }
+
+    header h1 {
+      margin: 0 0 0.35rem;
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    header .tagline {
+      margin: 0 0 1.25rem;
+      font-size: 1rem;
+      opacity: 0.92;
+    }
+
+    header .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1.25rem;
+      font-size: 0.875rem;
+      opacity: 0.88;
+    }
+
+    header .meta span::before {
+      content: "• ";
+      opacity: 0.6;
+    }
+
+    header .meta span:first-child::before {
+      content: "";
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.85rem;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+    }
+
+    .card.highlight {
+      background: var(--accent-soft);
+      border-color: #c5d9ea;
+    }
+
+    h2 {
+      margin: 0 0 1rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent-soft);
+    }
+
+    h3 {
+      margin: 1.25rem 0 0.5rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    p {
+      margin: 0 0 1rem;
+    }
+
+    p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul {
+      margin: 0 0 1rem;
+      padding-right: 1.35rem;
+      padding-left: 0;
+    }
+
+    li {
+      margin-bottom: 0.45rem;
+    }
+
+    li:last-child {
+      margin-bottom: 0;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .toc {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .toc li {
+      margin-bottom: 0.35rem;
+    }
+
+    .toc a {
+      display: inline-block;
+      padding: 0.15rem 0;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-top: 2rem;
+      padding-top: 1rem;
+    }
+
+    @media (max-width: 480px) {
+      .page {
+        padding: 1.25rem 1rem 2rem;
+      }
+
+      header {
+        padding: 1.65rem 1.35rem;
+      }
+
+      header h1 {
+        font-size: 1.5rem;
+      }
+
+      .card {
+        padding: 1.35rem 1.2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="container">
+      <header>
+        <h1>CalmTrip</h1>
+        <p class="tagline">رفيقك الهادئ لتتبع مصاريف السفر</p>
+        <div class="meta">
+          <span>سياسة الخصوصية</span>
+          <span>آخر تحديث: ٣ يونيو ٢٠٢٦</span>
+          <span>المطوّر: Adel F.</span>
+          <span>المنصة: Android (Google Play)</span>
+        </div>
+      </header>
+
+      <section class="card highlight" aria-labelledby="summary-heading">
+        <h2 id="summary-heading">ملخص سريع</h2>
+        <p>
+          <strong>CalmTrip</strong> تطبيق لتتبع مصاريف السفر يعمل محليًا على جهازك أولًا.
+          لا يتطلب إنشاء حساب، ولا يجمع معلوماتك الشخصية، ولا يبيع بياناتك ولا يشاركها مع أطراف ثالثة.
+          تبقى بياناتك على جهازك ما لم تقرر أنت تصديرها أو مشاركتها.
+        </p>
+      </section>
+
+      <nav class="card" aria-label="جدول المحتويات">
+        <h2>المحتويات</h2>
+        <ul class="toc">
+          <li><a href="#introduction">١. المقدمة</a></li>
+          <li><a href="#scope">٢. نطاق السياسة</a></li>
+          <li><a href="#data-collection">٣. البيانات التي نجمعها</a></li>
+          <li><a href="#data-storage">٤. تخزين البيانات</a></li>
+          <li><a href="#data-use">٥. كيفية استخدام البيانات</a></li>
+          <li><a href="#sharing">٦. مشاركة البيانات</a></li>
+          <li><a href="#permissions">٧. الأذونات</a></li>
+          <li><a href="#backup-export">٨. النسخ الاحتياطي والتصدير</a></li>
+          <li><a href="#user-rights">٩. حقوق المستخدم</a></li>
+          <li><a href="#children">١٠. خصوصية الأطفال</a></li>
+          <li><a href="#security">١١. الأمان</a></li>
+          <li><a href="#changes">١٢. التغييرات على السياسة</a></li>
+          <li><a href="#contact">١٣. معلومات التواصل</a></li>
+        </ul>
+      </nav>
+
+      <section class="card" id="introduction">
+        <h2>١. المقدمة</h2>
+        <p>
+          مرحبًا بك في <strong>CalmTrip</strong> («التطبيق»، «نحن»). نحن نحترم خصوصيتك ونلتزم بالشفافية
+          في كيفية تعامل التطبيق مع معلوماتك. توضّح سياسة الخصوصية هذه («السياسة») ممارساتنا
+          المتعلقة بالبيانات عند استخدامك لتطبيق CalmTrip على أجهزة Android عبر متجر Google Play.
+        </p>
+        <p>
+          باستخدامك للتطبيق، فإنك تقر بأنك قرأت هذه السياسة وفهمتها. إذا لم توافق على أي جزء منها،
+          يُرجى عدم استخدام التطبيق.
+        </p>
+      </section>
+
+      <section class="card" id="scope">
+        <h2>٢. نطاق السياسة</h2>
+        <p>تنطبق هذه السياسة على:</p>
+        <ul>
+          <li>تطبيق CalmTrip للأجهزة المحمولة (Android).</li>
+          <li>البيانات التي تُنشأ أو تُخزَّن محليًا على جهازك أثناء استخدام التطبيق.</li>
+          <li>الملفات التي تُنشئها أنت اختياريًا عبر ميزات التصدير أو النسخ الاحتياطي.</li>
+        </ul>
+        <p>
+          لا تشمل هذه السياسة مواقع أو خدمات تابعة لأطراف ثالثة قد تصل إليها من خلال روابط أو
+          تطبيقات خارجية بعد مشاركة ملفاتك بمحض إرادتك.
+        </p>
+      </section>
+
+      <section class="card" id="data-collection">
+        <h2>٣. البيانات التي نجمعها</h2>
+        <p>
+          <strong>لا يجمع CalmTrip معلومات شخصية عنك</strong> ولا يرسل بياناتك إلى خوادمنا أو إلى
+          خوادم مطوّر التطبيق. لا يتطلب التطبيق تسجيل حساب أو تسجيل دخول.
+        </p>
+        <p>البيانات التي تدخلها أنت (مثلًا على جهازك فقط) قد تشمل:</p>
+        <ul>
+          <li>تفاصيل الرحلات والمصاريف والميزانيات.</li>
+          <li>إعدادات التطبيق (مثل العملة الافتراضية واللغة).</li>
+          <li>معلومات مالية تختار إدخالها لأغراض التتبع الشخصي (مثل بطاقات أو أرصدة نقدية).</li>
+        </ul>
+        <p>
+          تُنشأ هذه البيانات وتُخزَّن <strong>محليًا على جهازك</strong> لتمكين وظائف التطبيق.
+          لا نصل إليها عن بُعد ولا نستطيع الاطلاع عليها من جانبنا.
+        </p>
+        <p>نؤكد صراحةً أن CalmTrip:</p>
+        <ul>
+          <li>لا يجمع معلومات تعريف شخصية لأغراض تسويقية أو تحليلية.</li>
+          <li>لا يستخدم خدمات تحليلات أو إعلانات أو تتبع من أطراف ثالثة داخل التطبيق.</li>
+          <li>لا يبيع بيانات المستخدمين.</li>
+        </ul>
+      </section>
+
+      <section class="card" id="data-storage">
+        <h2>٤. تخزين البيانات</h2>
+        <p>
+          CalmTrip تطبيق <strong>محلي أولًا (local-first)</strong>: تُخزَّن بياناتك على جهازك
+          (مثلًا في قاعدة بيانات محلية وإعدادات الجهاز) ولا تُزامَن تلقائيًا مع السحابة.
+        </p>
+        <p>
+          قد تُستخدم خدمات النسخ الاحتياطي الخاصة بنظام Android إذا قام المستخدم بتمكينها على جهازه، وتخضع هذه الخدمات لسياسات Google أو مزود النظام المستخدم.
+        </p>
+        <ul>
+          <li>لا يتطلب التطبيق مزامنة سحابية أو اتصالًا دائمًا بالإنترنت ليعمل.</li>
+          <li>لا نحتفظ بنسخة من بياناتك على خوادم خارجية.</li>
+          <li>عند حذف التطبيق من جهازك، تُحذف عادةً البيانات المخزنة محليًا ضمن التطبيق وفق آلية نظام Android، ما لم تكن قد صدّرت نسخًا منفصلة.</li>
+        </ul>
+        <p>
+          أنت مسؤول عن أمان جهازك (قفل الشاشة، النسخ الاحتياطي للجهاز، وغيرها). نوصي بحماية
+          جهازك بكلمة مرور أو مصادقة بيومترية إن أمكن.
+        </p>
+      </section>
+
+      <section class="card" id="data-use">
+        <h2>٥. كيفية استخدام البيانات</h2>
+        <p>
+          تُستخدم البيانات المخزنة على جهازك <strong>حصريًا</strong> لتقديم وظائف التطبيق لك،
+          بما في ذلك:
+        </p>
+        <ul>
+          <li>تسجيل وتصنيف مصاريف السفر.</li>
+          <li>عرض التقارير والملخصات داخل التطبيق.</li>
+          <li>تذكّر تفضيلاتك وإعداداتك المحلية.</li>
+        </ul>
+        <p>
+          لا نستخدم بياناتك لأغراض إعلانية، ولا لإنشاء ملفات تعريف تسويقية، ولا لبيعها أو
+          تأجيرها لأي طرف.
+        </p>
+      </section>
+
+      <section class="card" id="sharing">
+        <h2>٦. مشاركة البيانات</h2>
+        <p>
+          <strong>لا نشارك بياناتك مع أطراف ثالثة.</strong> لا نبيع بيانات المستخدمين ولا نؤجرها
+          ولا نفصح عنها لشركات إعلانات أو وسطاء بيانات أو شبكات اجتماعية.
+        </p>
+        <p>
+          أي مشاركة لبياناتك تحدث فقط إذا <strong>أنت</strong> اخترت ذلك صراحةً — على سبيل المثال
+          عند استخدام ميزة المشاركة في نظام Android أو عند إرسال ملف تصدير أنشأته بنفسك إلى
+          تطبيق آخر (بريد، تخزين سحابي، رسائل، وغيرها). في هذه الحالة تخضع بياناتك لسياسة
+          الخصوصية الخاصة بالخدمة التي تختارها.
+        </p>
+      </section>
+
+      <section class="card" id="permissions">
+        <h2>٧. الأذونات</h2>
+        <p>صُمم CalmTrip لتقليل طلب الأذونات الحساسة. على وجه التحديد، التطبيق:</p>
+        <ul>
+          <li><strong>لا يستخدم</strong> أذونات الموقع الجغرافي.</li>
+          <li><strong>لا يستخدم</strong> أذونات الرسائل القصيرة (SMS).</li>
+          <li><strong>لا يصل</strong> إلى جهات الاتصال على جهازك.</li>
+        </ul>
+        <p>
+          قد يطلب النظام أو مكتبات النظام أذونات محدودة عند اختيارك ملفًا من الجهاز أو مشاركة
+          محتوى عبر واجهات نظام التشغيل؛ تبقى هذه الإجراءات تحت سيطرتك ولا تعني جمعًا تلقائيًا
+          لبياناتك من قبلنا.
+        </p>
+      </section>
+
+      <section class="card" id="backup-export">
+        <h2>٨. النسخ الاحتياطي والتصدير</h2>
+        <p>
+          قد يوفر التطبيق خيارات <strong>اختيارية</strong> لإنشاء ملفات نسخ احتياطي أو تصدير
+          (مثل تقارير أو ملفات بيانات). <strong>لا تُنشأ هذه الملفات إلا بفعل صريح منك.</strong>
+        </p>
+        <ul>
+          <li>أنت من يقرر متى وأين تُخزَّن أو تُشارَك هذه الملفات.</li>
+          <li>أنت مسؤول عن حماية الملفات التي تصدّرها أو تشاركها وعن من تمنحه الوصول إليها.</li>
+          <li>إذا شاركت ملفًا يحتوي على معلومات مالية، تأكد من ثقة المستلم والقناة المستخدمة.</li>
+        </ul>
+        <p>
+          لا نتحكم في كيفية تعامل الأطراف الثالثة مع الملفات التي تختار مشاركتها خارج التطبيق.
+        </p>
+      </section>
+
+      <section class="card" id="user-rights">
+        <h2>٩. حقوق المستخدم</h2>
+        <p>بما أن بياناتك مخزنة على جهازك وتحت سيطرتك المباشرة، يمكنك عادةً:</p>
+        <ul>
+          <li><strong>الاطلاع</strong> على بياناتك ومراجعتها داخل التطبيق في أي وقت.</li>
+          <li><strong>التعديل</strong> أو <strong>الحذف</strong> للسجلات والإعدادات من واجهة التطبيق.</li>
+          <li><strong>التصدير</strong> نسخة من بياناتك عند توفر ميزة التصدير، وفق اختيارك.</li>
+          <li><strong>إنهاء الاستخدام</strong> بحذف التطبيق من جهازك، مما يزيل البيانات المحلية المرتبطة بالتطبيق وفق سلوك النظام.</li>
+        </ul>
+        <p>
+          إذا كانت لديك أسئلة حول بياناتك أو كيفية إدارتها داخل التطبيق، يمكنك التواصل معنا
+          عبر البريد الإلكتروني المذكور أدناه. نظرًا لأننا لا نخزن بياناتك على خوادمنا، لا يمكننا
+          حذف بيانات من جهازك عن بُعد — يجب عليك تنفيذ ذلك من التطبيق أو من إعدادات الجهاز.
+        </p>
+        <p>
+          إذا كنت مقيمًا في منطقة تخضع فيها لقوانين حماية بيانات محددة (مثل GDPR)، فإن حقوقك
+          القانونية تنطبق في حدود ما يسمح به نموذج التخزين المحلي هذا؛ لا نعالج بياناتك كمتحكم
+          بيانات عن بُعد لأننا لا نستقبلها على خوادمنا.
+        </p>
+      </section>
+
+      <section class="card" id="children">
+        <h2>١٠. خصوصية الأطفال</h2>
+        <p>
+          CalmTrip غير موجّه عمدًا للأطفال دون سن ١٣ عامًا، ولا نجمع عن قصد معلومات شخصية من
+          الأطفال. لا يتطلب التطبيق تسجيل حساب، ولا نتلقى بيانات الأطفال على خوادمنا.
+          التطبيق موجّه للمستخدمين البالغين أو للمستخدمين الذين يبلغون 13 عامًا أو أكثر.
+        </p>
+        <p>
+          إذا كنت ولي أمر أو وصيًا وتعتقد أن طفلًا قد زوّد التطبيق بمعلومات على جهاز مشترك،
+          يمكنك حذف هذه البيانات من داخل التطبيق أو إزالة التطبيق من الجهاز. للاستفسارات،
+          راسلنا على العنوان أدناه.
+        </p>
+      </section>
+
+      <section class="card" id="security">
+        <h2>١١. الأمان</h2>
+        <p>
+          نحرص على تصميم التطبيق بحيث تبقى بياناتك على جهازك. مع ذلك، لا يمكن لأي نظام
+          ضمان أمان مطلق بنسبة ١٠٠٪. ننصحك بـ:
+        </p>
+        <ul>
+          <li>تحديث نظام Android والتطبيق عند توفر التحديثات.</li>
+          <li>عدم مشاركة ملفات التصدير مع أطراف غير موثوقة.</li>
+          <li>استخدام قفل شاشة قوي على جهازك.</li>
+        </ul>
+      </section>
+
+      <section class="card" id="changes">
+        <h2>١٢. التغييرات على السياسة</h2>
+        <p>
+          قد نُحدّث هذه السياسة من وقت لآخر لتعكس تغييرات في التطبيق أو المتطلبات القانونية
+          أو إرشادات Google Play. عند إجراء تغييرات جوهرية، سنُحدّث تاريخ «آخر تحديث» في أعلى
+          هذه الصفحة.
+        </p>
+        <p>
+          ننصحك بمراجعة هذه السياسة دوريًا. استمرارك في استخدام التطبيق بعد نشر التحديثات
+          يعني قبولك للسياسة المحدّثة، ما لم ينص القانون المعمول به على خلاف ذلك.
+        </p>
+        <p>
+          للإصدارات السابقة أو لطلب نسخة من صياغة محددة، يمكنك التواصل معنا عبر البريد أدناه.
+        </p>
+      </section>
+
+      <section class="card" id="contact">
+        <h2>١٣. معلومات التواصل</h2>
+        <p>
+          لمطوّر التطبيق <strong>Adel F.</strong> — لأي استفسار متعلق بالخصوصية أو هذه السياسة:
+        </p>
+        <p>
+          <strong>البريد الإلكتروني:</strong>
+          <a href="mailto:calmtrip.app@gmail.com">calmtrip.app@gmail.com</a>
+        </p>
+        <p>
+          <strong>اسم التطبيق:</strong> CalmTrip<br>
+          <strong>الشعار:</strong> Your Calm Travel Expense Companion / رفيقك الهادئ لتتبع مصاريف السفر<br>
+          <strong>المنصة:</strong> Android (Google Play)
+        </p>
+        <p>
+          نسعى للرد على الاستفسارات المتعلقة بالخصوصية في غضون فترة زمنية معقولة.
+        </p>
+      </section>
+
+      <footer>
+        <p>© ٢٠٢٦ CalmTrip — Adel F. جميع الحقوق محفوظة.</p>
+        <p>سياسة الخصوصية — آخر تحديث: ٣ يونيو ٢٠٢٦</p>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>
