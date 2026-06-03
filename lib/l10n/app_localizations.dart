@@ -98,7 +98,7 @@ abstract class AppLocalizations {
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'CalmLedger'**
+  /// **'CalmTrip'**
   String get appName;
 
   /// No description provided for @commonTryAgain.

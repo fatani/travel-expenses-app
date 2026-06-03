@@ -1,0 +1,35 @@
+# CalmTrip Release Information
+
+Application Name:
+CalmTrip
+
+Application ID:
+com.calmtrip.app
+
+Developer:
+Adel F.
+
+Release Keystore:
+upload-keystore.jks
+
+Key Alias:
+upload
+
+SHA256:
+CC5A5470CFDE8357EC1A2FDC0835D66798D616DF5702555AC96F9EAE4A33E3AF
+
+Google Play:
+Closed Testing (Pending)
+
+Important:
+Never lose:
+
+* upload-keystore.jks
+* Store Password
+* Key Password
+
+Backups stored in:
+
+* Goofle Drive
+* USB Backup
+* Password Manager
