@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -1347,9 +1349,12 @@ class _CashHeroCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  _HeroSecondaryActionButton(
-                    label: l10n.cashWalletQuickAtmShort,
-                    onPressed: onAtmWithdrawal,
+                  Flexible(
+                    fit: FlexFit.loose,
+                    child: _HeroSecondaryActionButton(
+                      label: l10n.cashWalletQuickAtmShort,
+                      onPressed: onAtmWithdrawal,
+                    ),
                   ),
                 ],
               ),
@@ -1450,6 +1455,9 @@ class _HeroSecondaryActionButton extends StatelessWidget {
       icon: const Icon(Icons.local_atm_outlined, size: 18),
       label: Text(
         label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        softWrap: false,
         style: Theme.of(context).textTheme.labelLarge?.copyWith(
               fontWeight: FontWeight.w700,
             ),
@@ -1519,6 +1527,7 @@ class _TripContextCard extends StatelessWidget {
     final tripStatus = _formatTripStatus(context, trip);
 
     return Container(
+      key: const Key('cash_wallet_trip_context_card'),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1558,29 +1567,54 @@ class _TripContextCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF0F172A),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final statusLabel = tripStatus;
+                    final maxChipWidth = constraints.maxWidth * 0.52;
+                    final chipReserve = statusLabel == null
+                        ? 0.0
+                        : math.min(
+                            _statusChipLayoutWidth(context, statusLabel) + 8,
+                            maxChipWidth + 8,
+                          );
+                    return SizedBox(
+                      width: double.infinity,
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Padding(
+                            padding: EdgeInsetsDirectional.only(end: chipReserve),
+                            child: Text(
+                              title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: const Color(0xFF0F172A),
+                                  ),
                             ),
+                          ),
+                          if (statusLabel != null)
+                            PositionedDirectional(
+                              top: 0,
+                              end: 0,
+                              child: ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth: maxChipWidth,
+                                ),
+                                child: _InfoChip(
+                                  icon: Icons.schedule,
+                                  label: statusLabel,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                    if (tripStatus != null) ...[
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: _InfoChip(
-                          icon: Icons.schedule,
-                          label: tripStatus,
-                        ),
-                      ),
-                    ],
-                  ],
+                    );
+                  },
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -1623,28 +1657,54 @@ class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;
 
+  static const double _leadingWidth = 41;
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F2FF),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 15, color: const Color(0xFF6D28D9)),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: const Color(0xFF4C1D95),
-                  fontWeight: FontWeight.w700,
-                ),
+    final labelStyle = Theme.of(context).textTheme.labelLarge?.copyWith(
+          color: const Color(0xFF4C1D95),
+          fontWeight: FontWeight.w700,
+        );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final hasBoundedWidth = constraints.maxWidth.isFinite;
+        final labelMaxWidth = hasBoundedWidth
+            ? math.max(0.0, constraints.maxWidth - _leadingWidth)
+            : null;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF7F2FF),
+            borderRadius: BorderRadius.circular(999),
           ),
-        ],
-      ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 15, color: const Color(0xFF6D28D9)),
+              const SizedBox(width: 6),
+              if (labelMaxWidth != null)
+                SizedBox(
+                  width: labelMaxWidth,
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: labelStyle,
+                  ),
+                )
+              else
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: labelStyle,
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -1921,6 +1981,19 @@ class _ExpenseLinkActionButton extends StatelessWidget {
       ),
     );
   }
+}
+
+double _statusChipLayoutWidth(BuildContext context, String label) {
+  final style = Theme.of(context).textTheme.labelLarge?.copyWith(
+        fontWeight: FontWeight.w700,
+      );
+  final painter = TextPainter(
+    text: TextSpan(text: label, style: style),
+    textDirection: Directionality.of(context),
+    maxLines: 1,
+  )..layout();
+  // icon(15) + gap(6) + horizontal padding(20)
+  return painter.width + 41;
 }
 
 String? _formatTripStatus(BuildContext context, Trip trip) {
