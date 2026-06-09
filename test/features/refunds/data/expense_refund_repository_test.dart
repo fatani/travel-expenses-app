@@ -169,6 +169,35 @@ void main() {
     expect(await cashBalance('JPY'), 0.0);
   });
 
+  test('reverseCardRefund throws StateError when refund is already reversed', () async {
+    final refund = await refundRepository.createCardRefund(
+      tripId: trip.id,
+      amount: 100.0,
+      currencyCode: 'JPY',
+    );
+
+    await refundRepository.reverseCardRefund(refund);
+    final alreadyReversed = refund.copyWith(isReversed: false);
+
+    await expectLater(
+      refundRepository.reverseCardRefund(alreadyReversed),
+      throwsA(isA<StateError>()),
+    );
+  });
+
+  test('reverseCardRefund throws StateError when called on already-reversed instance', () async {
+    final refund = await refundRepository.createCardRefund(
+      tripId: trip.id,
+      amount: 100.0,
+      currencyCode: 'JPY',
+    );
+
+    await expectLater(
+      refundRepository.reverseCardRefund(refund.copyWith(isReversed: true)),
+      throwsA(isA<StateError>()),
+    );
+  });
+
   // ---------------------------------------------------------------------------
   // Multiple partial refunds
   // ---------------------------------------------------------------------------

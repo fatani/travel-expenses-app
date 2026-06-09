@@ -172,7 +172,7 @@ class ExpenseRefundRepository {
 
     final db = await _appDatabase.database;
     final now = DateTime.now().toUtc();
-    await db.update(
+    final affected = await db.update(
       AppDatabase.expenseRefundsTable,
       {
         'is_reversed': 1,
@@ -181,6 +181,9 @@ class ExpenseRefundRepository {
       where: 'id = ? AND is_reversed = 0',
       whereArgs: [refund.id],
     );
+    if (affected == 0) {
+      throw StateError('Refund not found or already reversed: ${refund.id}');
+    }
   }
 
   Future<void> reverseCashRefund(ExpenseRefund refund) async {
