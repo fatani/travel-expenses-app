@@ -96,5 +96,42 @@ void main() {
       );
       expect(refund.currencyCode, 'USD');
     });
+
+    group('fromMap homeCurrency normalization', () {
+      Map<String, Object?> baseMap({Object? homeCurrency}) => {
+            'id': 'r5',
+            'trip_id': 'trip1',
+            'expense_id': null,
+            'amount': 50.0,
+            'currency_code': 'JPY',
+            'home_amount': 12.5,
+            'home_currency': homeCurrency,
+            'destination': 'card',
+            'note': null,
+            'is_reversed': 0,
+            'reversed_at': null,
+            'created_at': '2026-06-09T10:00:00.000Z',
+          };
+
+      test('lowercase homeCurrency is uppercased', () {
+        final refund = ExpenseRefund.fromMap(baseMap(homeCurrency: 'sar'));
+        expect(refund.homeCurrency, 'SAR');
+      });
+
+      test('homeCurrency with surrounding whitespace is trimmed and uppercased', () {
+        final refund = ExpenseRefund.fromMap(baseMap(homeCurrency: ' sar '));
+        expect(refund.homeCurrency, 'SAR');
+      });
+
+      test('null homeCurrency remains null', () {
+        final refund = ExpenseRefund.fromMap(baseMap(homeCurrency: null));
+        expect(refund.homeCurrency, isNull);
+      });
+
+      test('already-uppercase homeCurrency is unchanged', () {
+        final refund = ExpenseRefund.fromMap(baseMap(homeCurrency: 'USD'));
+        expect(refund.homeCurrency, 'USD');
+      });
+    });
   });
 }

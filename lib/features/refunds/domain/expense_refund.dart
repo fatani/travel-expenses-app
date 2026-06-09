@@ -52,7 +52,7 @@ class ExpenseRefund {
       amount: (map['amount'] as num).toDouble(),
       currencyCode: (map['currency_code']! as String).trim().toUpperCase(),
       homeAmount: (map['home_amount'] as num?)?.toDouble(),
-      homeCurrency: map['home_currency'] as String?,
+      homeCurrency: (map['home_currency'] as String?)?.trim().toUpperCase(),
       destination: RefundDestinationCodec.fromValue(map['destination']! as String),
       note: map['note'] as String?,
       isReversed: ((map['is_reversed'] as num?)?.toInt() ?? 0) == 1,
