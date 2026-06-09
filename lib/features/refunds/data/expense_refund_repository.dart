@@ -280,7 +280,16 @@ class ExpenseRefundRepository {
     required Expense? linkedExpense,
   }) {
     if (callerHomeAmount != null) {
-      return (homeAmount: callerHomeAmount, homeCurrency: callerHomeCurrency);
+      if (callerHomeCurrency == null || callerHomeCurrency.trim().isEmpty) {
+        throw const DataIntegrityException(
+          'missingHomeCurrency',
+          details: 'homeAmount requires homeCurrency',
+        );
+      }
+      return (
+        homeAmount: callerHomeAmount,
+        homeCurrency: DataIntegrity.normalizeCurrencyCode(callerHomeCurrency),
+      );
     }
 
     if (linkedExpense == null) {

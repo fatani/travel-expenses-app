@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
+import 'package:travel_expenses/core/integrity/data_integrity.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
@@ -374,5 +375,76 @@ void main() {
 
     // Must store 18.0, not the derived 12.5
     expect(refund.homeAmount, 18.0);
+  });
+
+  // ---------------------------------------------------------------------------
+  // homeAmount + homeCurrency coupling guard
+  // ---------------------------------------------------------------------------
+
+  test('createCardRefund throws DataIntegrityException when homeAmount is provided without homeCurrency', () async {
+    await expectLater(
+      refundRepository.createCardRefund(
+        tripId: trip.id,
+        amount: 100.0,
+        currencyCode: 'JPY',
+        homeAmount: 25.0,
+        homeCurrency: null,
+      ),
+      throwsA(isA<DataIntegrityException>()),
+    );
+  });
+
+  test('createCardRefund throws DataIntegrityException when homeAmount is provided with blank homeCurrency', () async {
+    await expectLater(
+      refundRepository.createCardRefund(
+        tripId: trip.id,
+        amount: 100.0,
+        currencyCode: 'JPY',
+        homeAmount: 25.0,
+        homeCurrency: '   ',
+      ),
+      throwsA(isA<DataIntegrityException>()),
+    );
+  });
+
+  test('createCashRefund throws DataIntegrityException when homeAmount is provided without homeCurrency', () async {
+    await expectLater(
+      refundRepository.createCashRefund(
+        tripId: trip.id,
+        amount: 100.0,
+        currencyCode: 'JPY',
+        homeAmount: 25.0,
+        homeCurrency: null,
+      ),
+      throwsA(isA<DataIntegrityException>()),
+    );
+  });
+
+  test('no refund row is inserted when homeAmount is provided without homeCurrency', () async {
+    try {
+      await refundRepository.createCardRefund(
+        tripId: trip.id,
+        amount: 100.0,
+        currencyCode: 'JPY',
+        homeAmount: 25.0,
+        homeCurrency: null,
+      );
+    } on DataIntegrityException {
+      // expected
+    }
+
+    expect(await refundRowCount(), 0);
+  });
+
+  test('caller-supplied homeCurrency is normalized to uppercase', () async {
+    final refund = await refundRepository.createCardRefund(
+      tripId: trip.id,
+      amount: 100.0,
+      currencyCode: 'JPY',
+      homeAmount: 25.0,
+      homeCurrency: ' sar ',
+    );
+
+    expect(refund.homeCurrency, 'SAR');
   });
 }
