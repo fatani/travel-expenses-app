@@ -30,6 +30,10 @@ class BackupDataCollector {
           txn,
           AppDatabase.cashTransactionsTable,
         ),
+        expenseRefunds: await _queryTable(
+          txn,
+          AppDatabase.expenseRefundsTable,
+        ),
       );
     });
   }

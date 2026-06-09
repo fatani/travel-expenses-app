@@ -27,6 +27,7 @@ class BackupManifestBuilder {
       cashTransactionCount: data.cashTransactions.length,
       cardCount: data.cards.length,
       manualExchangeRateCount: data.manualExchangeRates.length,
+      refundCount: data.expenseRefunds.length,
     );
   }
 }

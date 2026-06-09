@@ -29,7 +29,7 @@ void main() {
   test('includes all required source-of-truth tables', () async {
     final data = await collector.collect();
 
-    expect(BackupCollectedData.exportedTableNames, hasLength(7));
+    expect(BackupCollectedData.exportedTableNames, hasLength(8));
     expect(BackupCollectedData.exportedTableNames, containsAll([
       AppDatabase.userFinancialProfileTable,
       AppDatabase.settingsTable,
@@ -38,6 +38,7 @@ void main() {
       AppDatabase.manualExchangeRatesTable,
       AppDatabase.expensesTable,
       AppDatabase.cashTransactionsTable,
+      AppDatabase.expenseRefundsTable,
     ]));
 
     expect(data.userFinancialProfile, isA<List<Map<String, dynamic>>>());

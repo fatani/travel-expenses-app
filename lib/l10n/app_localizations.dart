@@ -989,6 +989,12 @@ abstract class AppLocalizations {
   /// **'Cash expense'**
   String get cashWalletTypeCashExpense;
 
+  /// No description provided for @cashWalletTypeCashRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash refund'**
+  String get cashWalletTypeCashRefund;
+
   /// No description provided for @cashWalletEditExpenseAction.
   ///
   /// In en, this message translates to:

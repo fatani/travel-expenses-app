@@ -44,6 +44,7 @@ class BackupRestoreVerifier {
           envelope.manualExchangeRates.length,
       AppDatabase.expensesTable: envelope.expenses.length,
       AppDatabase.cashTransactionsTable: envelope.cashTransactions.length,
+      AppDatabase.expenseRefundsTable: envelope.expenseRefunds.length,
     };
 
     for (final entry in expected.entries) {
@@ -83,6 +84,11 @@ class BackupRestoreVerifier {
       SELECT COUNT(*) AS c FROM ${AppDatabase.cashTransactionsTable} ct
       WHERE ct.expense_id IS NOT NULL
         AND ct.expense_id NOT IN (SELECT id FROM ${AppDatabase.expensesTable})
+      ''',
+      '''
+      SELECT COUNT(*) AS c FROM ${AppDatabase.expenseRefundsTable} r
+      LEFT JOIN ${AppDatabase.tripsTable} t ON r.trip_id = t.id
+      WHERE t.id IS NULL
       ''',
       '''
       SELECT COUNT(*) AS c FROM ${AppDatabase.tripCashBalancesTable} b

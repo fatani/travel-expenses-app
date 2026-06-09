@@ -136,6 +136,12 @@ class BackupRestoreValidator {
       expected: manifest.manualExchangeRateCount,
       actual: envelope.manualExchangeRates.length,
     );
+    _expectCount(
+      issues,
+      field: 'refund_count',
+      expected: manifest.refundCount,
+      actual: envelope.expenseRefunds.length,
+    );
   }
 
   void _expectCount(
@@ -185,6 +191,12 @@ class BackupRestoreValidator {
     _expectUniqueManualExchangeRateKeys(
       issues,
       rows: envelope.manualExchangeRates,
+    );
+    _expectUniqueStringIds(
+      issues,
+      collection: 'expense_refunds',
+      rows: envelope.expenseRefunds,
+      idKey: 'id',
     );
   }
 
@@ -344,6 +356,30 @@ class BackupRestoreValidator {
         );
       }
     }
+
+    for (final refund in envelope.expenseRefunds) {
+      final tripId = refund['trip_id'] as String?;
+      if (tripId == null || !tripIds.contains(tripId)) {
+        issues.add(
+          BackupRestoreValidationIssue(
+            code: 'missing_trip_reference',
+            message:
+                'expense_refunds row ${refund['id']} references missing trip_id $tripId',
+          ),
+        );
+      }
+
+      final expenseId = refund['expense_id'];
+      if (expenseId != null && !expenseIds.contains(expenseId as String)) {
+        issues.add(
+          BackupRestoreValidationIssue(
+            code: 'missing_expense_reference',
+            message:
+                'expense_refunds row ${refund['id']} references missing expense_id $expenseId',
+          ),
+        );
+      }
+    }
   }
 
   void _validatePersistedEnums(
@@ -415,6 +451,30 @@ class BackupRestoreValidator {
             code: 'unknown_enum',
             message:
                 'Unsupported expenses.source: $source (id=${expense['id']})',
+          ),
+        );
+      }
+    }
+
+    for (final refund in envelope.expenseRefunds) {
+      final destination = refund['destination'] as String?;
+      if (!BackupPersistedEnums.isKnownRefundDestination(destination)) {
+        issues.add(
+          BackupRestoreValidationIssue(
+            code: 'unknown_enum',
+            message:
+                'Unsupported expense_refunds.destination: $destination (id=${refund['id']})',
+          ),
+        );
+      }
+
+      final isReversed = refund['is_reversed'];
+      if (isReversed != 0 && isReversed != 1) {
+        issues.add(
+          BackupRestoreValidationIssue(
+            code: 'invalid_field',
+            message:
+                'expense_refunds.is_reversed must be 0 or 1 (id=${refund['id']}, got=$isReversed)',
           ),
         );
       }

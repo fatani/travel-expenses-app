@@ -10,6 +10,7 @@ class BackupCollectedData {
     this.manualExchangeRates = const [],
     this.expenses = const [],
     this.cashTransactions = const [],
+    this.expenseRefunds = const [],
   });
 
   static const List<String> exportedTableNames = [
@@ -20,6 +21,7 @@ class BackupCollectedData {
     AppDatabase.manualExchangeRatesTable,
     AppDatabase.expensesTable,
     AppDatabase.cashTransactionsTable,
+    AppDatabase.expenseRefundsTable,
   ];
 
   static const String excludedTableName = AppDatabase.tripCashBalancesTable;
@@ -31,4 +33,5 @@ class BackupCollectedData {
   final List<Map<String, dynamic>> manualExchangeRates;
   final List<Map<String, dynamic>> expenses;
   final List<Map<String, dynamic>> cashTransactions;
+  final List<Map<String, dynamic>> expenseRefunds;
 }

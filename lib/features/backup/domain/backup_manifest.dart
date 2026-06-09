@@ -14,6 +14,7 @@ class BackupManifest {
     required this.cashTransactionCount,
     required this.cardCount,
     required this.manualExchangeRateCount,
+    this.refundCount = 0,
   });
 
   final int backupFormatVersion;
@@ -27,6 +28,7 @@ class BackupManifest {
   final int cashTransactionCount;
   final int cardCount;
   final int manualExchangeRateCount;
+  final int refundCount;
 
   Map<String, dynamic> toJson() {
     return {
@@ -41,6 +43,7 @@ class BackupManifest {
       'cash_transaction_count': cashTransactionCount,
       'card_count': cardCount,
       'manual_exchange_rate_count': manualExchangeRateCount,
+      'refund_count': refundCount,
     };
   }
 
@@ -57,6 +60,7 @@ class BackupManifest {
       cashTransactionCount: _readInt(json, 'cash_transaction_count'),
       cardCount: _readInt(json, 'card_count'),
       manualExchangeRateCount: _readInt(json, 'manual_exchange_rate_count'),
+      refundCount: _readOptionalInt(json, 'refund_count'),
     );
   }
 
@@ -69,5 +73,13 @@ class BackupManifest {
       return value.toInt();
     }
     throw FormatException('Expected int for $key');
+  }
+
+  static int _readOptionalInt(Map<String, dynamic> json, String key, {int defaultValue = 0}) {
+    final value = json[key];
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return defaultValue;
   }
 }

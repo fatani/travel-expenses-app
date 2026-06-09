@@ -5,6 +5,7 @@ enum CashTransactionType {
   currencyExchangeOut,
   manualAdjustment,
   cashExpenseDeduction,
+  cashRefund,
 }
 
 extension CashTransactionTypeCodec on CashTransactionType {
@@ -22,6 +23,8 @@ extension CashTransactionTypeCodec on CashTransactionType {
         return 'manual_adjustment';
       case CashTransactionType.cashExpenseDeduction:
         return 'cash_expense_deduction';
+      case CashTransactionType.cashRefund:
+        return 'cash_refund';
     }
   }
 
@@ -37,6 +40,8 @@ extension CashTransactionTypeCodec on CashTransactionType {
         return CashTransactionType.currencyExchangeOut;
       case 'manual_adjustment':
         return CashTransactionType.manualAdjustment;
+      case 'cash_refund':
+        return CashTransactionType.cashRefund;
       case 'cash_expense_deduction':
       default:
         return CashTransactionType.cashExpenseDeduction;
@@ -51,6 +56,7 @@ extension CashTransactionTypeDelta on CashTransactionType {
       case CashTransactionType.atmWithdrawal:
       case CashTransactionType.currencyExchangeIn:
       case CashTransactionType.manualAdjustment:
+      case CashTransactionType.cashRefund:
         return amount;
       case CashTransactionType.currencyExchangeOut:
       case CashTransactionType.cashExpenseDeduction:

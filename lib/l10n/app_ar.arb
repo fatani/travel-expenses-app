@@ -166,6 +166,7 @@
   "cashWalletSearchHint": "بحث...",
   "cashWalletTypeCashExpenseDeduction": "خصم مصروف كاش",
   "cashWalletTypeCashExpense": "مصروف كاش",
+  "cashWalletTypeCashRefund": "استرجاع نقدي",
   "cashWalletEditExpenseAction": "تعديل المصروف",
   "cashWalletDeleteTransactionTitle": "حذف حركة الكاش؟",
   "cashWalletDeleteTransactionTitleForType": "حذف {transactionType}؟",

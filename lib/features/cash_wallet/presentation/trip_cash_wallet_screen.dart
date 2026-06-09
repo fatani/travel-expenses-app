@@ -475,6 +475,8 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         return l10n.cashWalletTypeManualAdjustment;
       case CashTransactionType.cashExpenseDeduction:
         return l10n.cashWalletTypeCashExpense;
+      case CashTransactionType.cashRefund:
+        return l10n.cashWalletTypeCashRefund;
     }
   }
 
@@ -490,6 +492,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       case CashTransactionType.currencyExchangeOut:
         return Icons.currency_exchange_outlined;
       case CashTransactionType.cashExpenseDeduction:
+      case CashTransactionType.cashRefund:
         return Icons.receipt_long_outlined;
     }
   }
@@ -1902,6 +1905,8 @@ class _TransactionTile extends StatelessWidget {
         return l10n.cashWalletTypeManualAdjustment;
       case CashTransactionType.cashExpenseDeduction:
         return l10n.cashWalletTypeCashExpense;
+      case CashTransactionType.cashRefund:
+        return l10n.cashWalletTypeCashRefund;
     }
   }
 }

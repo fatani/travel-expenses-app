@@ -17,6 +17,7 @@ class BackupEnvelope {
     this.manualExchangeRates = const [],
     this.expenses = const [],
     this.cashTransactions = const [],
+    this.expenseRefunds = const [],
   });
 
   static const String userFinancialProfileKey = 'user_financial_profile';
@@ -26,6 +27,7 @@ class BackupEnvelope {
   static const String manualExchangeRatesKey = 'manual_exchange_rates';
   static const String expensesKey = 'expenses';
   static const String cashTransactionsKey = 'cash_transactions';
+  static const String expenseRefundsKey = 'expense_refunds';
 
   /// Table name excluded from backup payloads (derived state).
   static const String excludedTripCashBalancesKey = 'trip_cash_balances';
@@ -38,6 +40,7 @@ class BackupEnvelope {
   final List<Map<String, dynamic>> manualExchangeRates;
   final List<Map<String, dynamic>> expenses;
   final List<Map<String, dynamic>> cashTransactions;
+  final List<Map<String, dynamic>> expenseRefunds;
 
   Map<String, dynamic> toJson() {
     return {
@@ -49,6 +52,7 @@ class BackupEnvelope {
       manualExchangeRatesKey: manualExchangeRates,
       expensesKey: expenses,
       cashTransactionsKey: cashTransactions,
+      expenseRefundsKey: expenseRefunds,
     };
   }
 
@@ -64,10 +68,13 @@ class BackupEnvelope {
       manualExchangeRates: _readRowListLenient(json, manualExchangeRatesKey),
       expenses: _readRowListLenient(json, expensesKey),
       cashTransactions: _readRowListLenient(json, cashTransactionsKey),
+      expenseRefunds: _readRowListLenient(json, expenseRefundsKey),
     );
   }
 
   /// Restore-only parser: every payload array must be present and typed as a list.
+  /// [expenseRefunds] is read leniently — old backups without this key restore
+  /// successfully with an empty refund list.
   factory BackupEnvelope.fromJsonStrict(Map<String, dynamic> json) {
     return BackupEnvelope(
       manifest: BackupManifest.fromJson(
@@ -86,6 +93,7 @@ class BackupEnvelope {
       ),
       expenses: _readRowListStrict(json, expensesKey),
       cashTransactions: _readRowListStrict(json, cashTransactionsKey),
+      expenseRefunds: _readRowListLenient(json, expenseRefundsKey),
     );
   }
 

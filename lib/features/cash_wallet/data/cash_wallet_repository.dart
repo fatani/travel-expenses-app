@@ -596,6 +596,7 @@ class CashWalletRepository {
         return true;
       case CashTransactionType.currencyExchangeOut:
       case CashTransactionType.cashExpenseDeduction:
+      case CashTransactionType.cashRefund:
         return false;
     }
   }

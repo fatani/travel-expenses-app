@@ -8,7 +8,7 @@ class AppDatabase {
   static const String databaseName = 'travel_expenses.db';
 
   final String _databaseFileName;
-  static const int databaseVersion = 17;
+  static const int databaseVersion = 18;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -18,6 +18,7 @@ class AppDatabase {
   static const String tripCashBalancesTable = 'trip_cash_balances';
   static const String cashTransactionsTable = 'cash_transactions';
   static const String manualExchangeRatesTable = 'manual_exchange_rates';
+  static const String expenseRefundsTable = 'expense_refunds';
 
   Database? _database;
   Future<Database>? _opening;
@@ -83,6 +84,7 @@ class AppDatabase {
         await _ensureManualExchangeRatesTable(db);
         await _ensureExpensesReferentialIntegrity(db);
         await _purgeOrphanFinancialRows(db);
+        await _ensureExpenseRefundsTable(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -217,6 +219,29 @@ class AppDatabase {
           'CREATE INDEX IF NOT EXISTS idx_manual_exchange_rates_trip_pair_created '
           'ON $manualExchangeRatesTable (trip_id, from_currency, to_currency, created_at)',
         );
+
+        await db.execute('''
+          CREATE TABLE $expenseRefundsTable (
+            id            TEXT    PRIMARY KEY,
+            trip_id       TEXT    NOT NULL,
+            expense_id    TEXT,
+            amount        REAL    NOT NULL,
+            currency_code TEXT    NOT NULL,
+            home_amount   REAL,
+            home_currency TEXT,
+            destination   TEXT    NOT NULL,
+            note          TEXT,
+            is_reversed   INTEGER NOT NULL DEFAULT 0,
+            reversed_at   TEXT,
+            created_at    TEXT    NOT NULL,
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+          )
+        ''');
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_expense_refunds_trip_expense '
+          'ON $expenseRefundsTable (trip_id, expense_id, destination, is_reversed, created_at)',
+        );
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -335,6 +360,10 @@ class AppDatabase {
         if (oldVersion < 17) {
           await _ensureExpensesReferentialIntegrity(db);
           await _purgeOrphanFinancialRows(db);
+        }
+
+        if (oldVersion < 18) {
+          await _ensureExpenseRefundsTable(db);
         }
       },
     );
@@ -944,6 +973,39 @@ class AppDatabase {
       DELETE FROM $cashTransactionsTable
       WHERE trip_id NOT IN (SELECT id FROM $tripsTable)
     ''');
+  }
+
+  Future<void> _ensureExpenseRefundsTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [expenseRefundsTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $expenseRefundsTable (
+        id            TEXT    PRIMARY KEY,
+        trip_id       TEXT    NOT NULL,
+        expense_id    TEXT,
+        amount        REAL    NOT NULL,
+        currency_code TEXT    NOT NULL,
+        home_amount   REAL,
+        home_currency TEXT,
+        destination   TEXT    NOT NULL,
+        note          TEXT,
+        is_reversed   INTEGER NOT NULL DEFAULT 0,
+        reversed_at   TEXT,
+        created_at    TEXT    NOT NULL,
+        FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expense_refunds_trip_expense '
+      'ON $expenseRefundsTable (trip_id, expense_id, destination, is_reversed, created_at)',
+    );
   }
 
   Future<void> _recomputeExpensesInternationalFlag(Database db) async {

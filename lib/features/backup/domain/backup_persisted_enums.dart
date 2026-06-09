@@ -14,6 +14,12 @@ abstract final class BackupPersistedEnums {
     'currency_exchange_out',
     'manual_adjustment',
     'cash_expense_deduction',
+    'cash_refund',
+  };
+
+  static const Set<String> refundDestinations = {
+    'cash',
+    'card',
   };
 
   static final Set<String> expensePaymentMethods =
@@ -36,6 +42,10 @@ abstract final class BackupPersistedEnums {
 
   static bool isKnownCashTransactionType(String? raw) {
     return raw != null && cashTransactionTypes.contains(raw);
+  }
+
+  static bool isKnownRefundDestination(String? raw) {
+    return raw != null && refundDestinations.contains(raw);
   }
 
   static bool isKnownExpensePaymentMethod(String? raw) {

@@ -476,6 +476,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletTypeCashExpense => 'Cash expense';
 
   @override
+  String get cashWalletTypeCashRefund => 'Cash refund';
+
+  @override
   String get cashWalletEditExpenseAction => 'Edit expense';
 
   @override

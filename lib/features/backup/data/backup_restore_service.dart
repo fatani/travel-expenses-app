@@ -72,6 +72,7 @@ class BackupRestoreService {
   Future<void> _wipeAllTables(Transaction txn) async {
     const wipeOrder = [
       AppDatabase.cashTransactionsTable,
+      AppDatabase.expenseRefundsTable,
       AppDatabase.tripCashBalancesTable,
       AppDatabase.expensesTable,
       AppDatabase.manualExchangeRatesTable,
@@ -108,6 +109,11 @@ class BackupRestoreService {
       txn,
       AppDatabase.cashTransactionsTable,
       envelope.cashTransactions,
+    );
+    await _insertRows(
+      txn,
+      AppDatabase.expenseRefundsTable,
+      envelope.expenseRefunds,
     );
   }
 

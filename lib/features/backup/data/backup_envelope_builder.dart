@@ -19,6 +19,7 @@ class BackupEnvelopeBuilder {
       manualExchangeRates: data.manualExchangeRates,
       expenses: data.expenses,
       cashTransactions: data.cashTransactions,
+      expenseRefunds: data.expenseRefunds,
     );
   }
 }

@@ -166,6 +166,7 @@
   "cashWalletSearchHint": "Search...",
   "cashWalletTypeCashExpenseDeduction": "Cash expense deduction",
   "cashWalletTypeCashExpense": "Cash expense",
+  "cashWalletTypeCashRefund": "Cash refund",
   "cashWalletEditExpenseAction": "Edit expense",
   "cashWalletDeleteTransactionTitle": "Delete cash transaction?",
   "cashWalletDeleteTransactionTitleForType": "Delete {transactionType}?",

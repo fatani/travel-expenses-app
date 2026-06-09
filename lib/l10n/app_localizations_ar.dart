@@ -476,6 +476,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletTypeCashExpense => 'مصروف كاش';
 
   @override
+  String get cashWalletTypeCashRefund => 'استرجاع نقدي';
+
+  @override
   String get cashWalletEditExpenseAction => 'تعديل المصروف';
 
   @override
