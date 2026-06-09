@@ -6,12 +6,30 @@ import '../../support/test_expense_repository.dart';
 
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
+import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
+import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_controller.dart';
 import 'package:travel_expenses/features/reports/data/trip_report_provider.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/features/trips/presentation/trip_controller.dart';
+
+/// Stub with no balances — this test does not exercise cost-basis.
+class _FakeCashWalletRepository extends CashWalletRepository {
+  _FakeCashWalletRepository() : super(AppDatabase());
+
+  @override
+  Future<List<TripCashBalance>> getBalancesByTrip(String tripId) async =>
+      const [];
+
+  @override
+  Future<double?> getEffectiveCashRate({
+    required String tripId,
+    required String transactionCurrencyCode,
+    required String homeCurrencyCode,
+  }) async => null;
+}
 
 class _FakeTripRepository extends TripRepository {
   _FakeTripRepository() : super(AppDatabase());
@@ -114,6 +132,9 @@ void main() {
       overrides: [
         tripRepositoryProvider.overrideWithValue(tripRepository),
         expenseRepositoryProvider.overrideWithValue(expenseRepository),
+        cashWalletRepositoryProvider.overrideWithValue(
+          _FakeCashWalletRepository(),
+        ),
       ],
     );
     addTearDown(container.dispose);

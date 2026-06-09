@@ -1,5 +1,6 @@
 import '../../expenses/domain/expense.dart';
 import '../../refunds/domain/expense_refund.dart';
+import '../domain/remaining_cash_value.dart';
 import '../../insights/data/insight_engine.dart';
 import '../../insights/domain/insight.dart';
 import '../domain/report_bucket.dart';
@@ -21,6 +22,7 @@ class TripReportCalculator {
     required String tripName,
     required List<Expense> expenses,
     List<ExpenseRefund> refunds = const [],
+    List<CashBalanceRateInput> cashBalanceRates = const [],
   }) {
     if (expenses.isEmpty) {
       return TripReportSummary(
@@ -44,6 +46,7 @@ class TripReportCalculator {
         grossSpendingHomeCurrency: null,
         refundHomeAmount: null,
         netSpendingHomeAmount: null,
+        remainingCashValues: _buildRemainingCashValues(cashBalanceRates),
       );
     }
 
@@ -229,6 +232,7 @@ class TripReportCalculator {
       grossSpendingHomeCurrency: grossCurrency,
       refundHomeAmount: refundHomeAmount,
       netSpendingHomeAmount: netSpendingHomeAmount,
+      remainingCashValues: _buildRemainingCashValues(cashBalanceRates),
     );
   }
 
@@ -302,6 +306,30 @@ class TripReportCalculator {
           percentage: insight.percentage,
         );
     }
+  }
+
+  /// Filters [inputs] and produces a [RemainingCashValue] for each entry that
+  /// has a positive balance, a non-null effective rate, and a non-null home
+  /// currency.
+  static List<RemainingCashValue> _buildRemainingCashValues(
+    List<CashBalanceRateInput> inputs,
+  ) {
+    final result = <RemainingCashValue>[];
+    for (final input in inputs) {
+      final rate = input.effectiveRate;
+      final homeCurrency = input.homeCurrency;
+      if (rate == null) continue;
+      if (homeCurrency == null) continue;
+      if (input.balance.balanceAmount <= 0) continue;
+      result.add(RemainingCashValue(
+        currencyCode: input.balance.currencyCode,
+        balanceAmount: input.balance.balanceAmount,
+        effectiveRate: rate,
+        homeAmount: input.balance.balanceAmount * rate,
+        homeCurrency: homeCurrency,
+      ));
+    }
+    return result;
   }
 }
 

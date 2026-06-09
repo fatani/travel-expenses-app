@@ -48,6 +48,17 @@ class _FakeCashWalletRepository extends CashWalletRepository {
   Future<List<TripCashBalance>> getBalancesByTrip(String tripId) async {
     return _balances.where((balance) => balance.tripId == tripId).toList();
   }
+
+  @override
+  Future<double?> getEffectiveCashRate({
+    required String tripId,
+    required String transactionCurrencyCode,
+    required String homeCurrencyCode,
+  }) async {
+    // These widget tests do not exercise cost-basis; return null so
+    // TripReportCalculator skips every balance entry.
+    return null;
+  }
 }
 
 Trip _trip({DateTime? startDate, DateTime? endDate}) {

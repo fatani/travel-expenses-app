@@ -1,3 +1,4 @@
+import 'remaining_cash_value.dart';
 import 'report_bucket.dart';
 import 'reporting_money_preview.dart';
 
@@ -52,6 +53,7 @@ class TripReportSummary {
     this.grossSpendingHomeCurrency,
     this.refundHomeAmount,
     this.netSpendingHomeAmount,
+    this.remainingCashValues = const [],
   });
 
   final String tripId;
@@ -118,6 +120,12 @@ class TripReportSummary {
   /// Null when [grossSpendingHomeAmount] is null (no home-currency data).
   /// Equals [grossSpendingHomeAmount] when [refundHomeAmount] is null.
   final double? netSpendingHomeAmount;
+
+  /// Cost-basis value of every remaining cash balance, one entry per currency.
+  ///
+  /// Empty when no balance has a usable effective rate. Each entry satisfies:
+  /// `homeAmount = balanceAmount × effectiveRate`.
+  final List<RemainingCashValue> remainingCashValues;
 
   /// Convenience: true when the trip has at least one international expense.
   bool get hasInternational => internationalExpenseCount > 0;
