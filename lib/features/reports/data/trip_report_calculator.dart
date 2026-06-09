@@ -38,6 +38,8 @@ class TripReportCalculator {
         byPaymentChannel: const [],
         smartInsights: const [],
         reportingMoneyPreviews: const [],
+        grossSpendingHomeAmount: null,
+        grossSpendingHomeCurrency: null,
       );
     }
 
@@ -166,6 +168,23 @@ class TripReportCalculator {
         )
         .toList(growable: false);
 
+    // --- gross spending in home currency ------------------------------------
+    // Only expenses whose homeCurrency matches the first non-null homeCurrency
+    // are summed. Expenses with a different homeCurrency are skipped to avoid
+    // silently merging amounts denominated in different currencies.
+    double grossTotal = 0;
+    String? grossCurrency;
+    for (final e in expenses) {
+      if (e.convertedHomeAmount == null) continue;
+      final currency = e.homeCurrency;
+      if (currency == null) continue;
+      grossCurrency ??= currency;
+      if (currency != grossCurrency) continue;
+      grossTotal += e.convertedHomeAmount!;
+    }
+    final double? grossSpendingHomeAmount =
+        grossCurrency != null ? grossTotal : null;
+
     return TripReportSummary(
       tripId: tripId,
       tripName: tripName,
@@ -183,6 +202,8 @@ class TripReportCalculator {
       byPaymentChannel: byPaymentChannelBuckets,
       smartInsights: smartInsights,
       reportingMoneyPreviews: reportingMoneyPreviews,
+      grossSpendingHomeAmount: grossSpendingHomeAmount,
+      grossSpendingHomeCurrency: grossCurrency,
     );
   }
 

@@ -48,6 +48,8 @@ class TripReportSummary {
     required this.byPaymentChannel,
     required this.smartInsights,
     this.reportingMoneyPreviews = const [],
+    this.grossSpendingHomeAmount,
+    this.grossSpendingHomeCurrency,
   });
 
   final String tripId;
@@ -95,6 +97,14 @@ class TripReportSummary {
 
     /// Foundation data for later UI: original amount + optional home equivalent.
     final List<ReportingMoneyPreview> reportingMoneyPreviews;
+
+  /// Sum of convertedHomeAmount for all real expenses that have a home-currency
+  /// conversion. Null when no expense has a convertedHomeAmount.
+  final double? grossSpendingHomeAmount;
+
+  /// The home currency used for [grossSpendingHomeAmount]. Null when no expense
+  /// has a convertedHomeAmount.
+  final String? grossSpendingHomeCurrency;
 
   /// Convenience: true when the trip has at least one international expense.
   bool get hasInternational => internationalExpenseCount > 0;
