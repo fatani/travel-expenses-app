@@ -9,10 +9,20 @@ import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
+import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
+import 'package:travel_expenses/features/refunds/domain/expense_refund.dart';
 import 'package:travel_expenses/features/reports/presentation/trip_reports_screen.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
+
+class _FakeRefundRepository extends ExpenseRefundRepository {
+  _FakeRefundRepository() : super(AppDatabase());
+
+  @override
+  Future<List<ExpenseRefund>> getActiveRefundsByTrip(String tripId) async =>
+      const [];
+}
 
 class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository(this._expenses) : super(AppDatabase());
@@ -97,6 +107,9 @@ Future<void> _pumpReport(
         tripRepositoryProvider.overrideWithValue(_FakeTripRepository(trip)),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(),
+        ),
+        expenseRefundRepositoryProvider.overrideWithValue(
+          _FakeRefundRepository(),
         ),
       ],
       child: MaterialApp(
@@ -387,6 +400,9 @@ void main() {
           tripRepositoryProvider.overrideWithValue(_FakeTripRepository(trip)),
           cashWalletRepositoryProvider.overrideWithValue(
             _FakeCashWalletRepository(),
+          ),
+          expenseRefundRepositoryProvider.overrideWithValue(
+            _FakeRefundRepository(),
           ),
         ],
         child: MaterialApp(

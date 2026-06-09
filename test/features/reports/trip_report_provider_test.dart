@@ -10,10 +10,24 @@ import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_controller.dart';
+import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
+import 'package:travel_expenses/features/refunds/domain/expense_refund.dart';
+import 'package:travel_expenses/features/refunds/domain/refund_destination.dart';
 import 'package:travel_expenses/features/reports/data/trip_report_provider.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/features/trips/presentation/trip_controller.dart';
+
+/// Stub that returns a fixed list of refunds.
+class _FakeRefundRepository extends ExpenseRefundRepository {
+  _FakeRefundRepository(this._refunds) : super(AppDatabase());
+
+  final List<ExpenseRefund> _refunds;
+
+  @override
+  Future<List<ExpenseRefund>> getActiveRefundsByTrip(String tripId) async =>
+      _refunds.where((r) => r.tripId == tripId).toList();
+}
 
 /// Stub with no balances — this test does not exercise cost-basis.
 class _FakeCashWalletRepository extends CashWalletRepository {
@@ -135,6 +149,9 @@ void main() {
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(),
         ),
+        expenseRefundRepositoryProvider.overrideWithValue(
+          _FakeRefundRepository(const []),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -188,5 +205,63 @@ void main() {
     expect(afterDelete.topPaymentNetwork, isNull);
     expect(afterDelete.topPaymentChannel, isNull);
     expect(afterDelete.smartInsights, isEmpty);
+  });
+
+  test('netSpendingHomeAmount deducts active refunds from grossSpendingHomeAmount', () async {
+    const tripId = 'trip-net-regression';
+
+    final activeRefund = ExpenseRefund.create(
+      id: 'refund-1',
+      tripId: tripId,
+      amount: 200.0,
+      currencyCode: 'SAR',
+      homeAmount: 200.0,
+      homeCurrency: 'SAR',
+      destination: RefundDestination.card,
+    );
+
+    final tripRepository = _FakeTripRepository();
+    final expenseRepository = _FakeExpenseRepository();
+
+    final container = ProviderContainer(
+      overrides: [
+        tripRepositoryProvider.overrideWithValue(tripRepository),
+        expenseRepositoryProvider.overrideWithValue(expenseRepository),
+        cashWalletRepositoryProvider.overrideWithValue(
+          _FakeCashWalletRepository(),
+        ),
+        expenseRefundRepositoryProvider.overrideWithValue(
+          _FakeRefundRepository([activeRefund]),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tripRepository.createTrip(Trip.create(
+      id: tripId,
+      name: 'Regression Trip',
+      destination: 'Riyadh',
+      startDate: DateTime(2026, 7, 1),
+      endDate: DateTime(2026, 7, 3),
+      baseCurrency: 'SAR',
+      destinationCurrency: 'SAR',
+      homeCurrencySnapshot: 'SAR',
+    ));
+
+    await expenseRepository.createExpense(Expense.create(
+      tripId: tripId,
+      title: 'Hotel',
+      amount: 1000.0,
+      currencyCode: 'SAR',
+      convertedHomeAmount: 1000.0,
+      homeCurrency: 'SAR',
+      paymentMethod: 'Card',
+    ));
+
+    final report = await container.read(tripReportProvider(tripId).future);
+
+    expect(report.grossSpendingHomeAmount, 1000.0);
+    expect(report.refundHomeAmount, 200.0);
+    expect(report.netSpendingHomeAmount, 800.0);
   });
 }

@@ -37,11 +37,15 @@ final tripReportProvider =
         }),
       );
 
+      final refundRepo = ref.read(expenseRefundRepositoryProvider);
+      final refunds = await refundRepo.getActiveRefundsByTrip(tripId);
+
       const calculator = TripReportCalculator();
       return calculator.calculate(
         tripId: tripId,
         tripName: trip?.name ?? tripId,
         expenses: expenses,
+        refunds: refunds,
         cashBalanceRates: cashBalanceRates,
       );
     });

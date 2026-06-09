@@ -5,6 +5,7 @@ import '../finance/manual_exchange_rate_repository.dart';
 import '../../features/expenses/data/expense_repository.dart';
 import '../../features/cash_wallet/data/cash_wallet_repository.dart';
 import '../../features/financial_profile/data/user_financial_profile_repository.dart';
+import '../../features/refunds/data/expense_refund_repository.dart';
 import '../../features/settings/data/card_repository.dart';
 import '../../features/settings/data/settings_repository.dart';
 import '../../features/trips/data/trip_repository.dart';
@@ -52,3 +53,7 @@ final userFinancialProfileRepositoryProvider =
     Provider<UserFinancialProfileRepository>((ref) {
       return UserFinancialProfileRepository(ref.watch(appDatabaseProvider));
     });
+
+final expenseRefundRepositoryProvider = Provider<ExpenseRefundRepository>((ref) {
+  return ExpenseRefundRepository(ref.watch(appDatabaseProvider));
+});

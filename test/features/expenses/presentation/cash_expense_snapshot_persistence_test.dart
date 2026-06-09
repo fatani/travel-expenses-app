@@ -7,6 +7,7 @@ import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_controller.dart';
+import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 
@@ -44,6 +45,9 @@ void main() {
           appDatabaseProvider.overrideWithValue(appDatabase),
           expenseRepositoryProvider.overrideWithValue(expenseRepository),
           cashWalletRepositoryProvider.overrideWithValue(cashWalletRepository),
+          expenseRefundRepositoryProvider.overrideWithValue(
+            ExpenseRefundRepository(appDatabase),
+          ),
         ],
       );
       addTearDown(container.dispose);
