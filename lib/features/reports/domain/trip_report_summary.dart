@@ -50,6 +50,8 @@ class TripReportSummary {
     this.reportingMoneyPreviews = const [],
     this.grossSpendingHomeAmount,
     this.grossSpendingHomeCurrency,
+    this.refundHomeAmount,
+    this.netSpendingHomeAmount,
   });
 
   final String tripId;
@@ -105,6 +107,17 @@ class TripReportSummary {
   /// The home currency used for [grossSpendingHomeAmount]. Null when no expense
   /// has a convertedHomeAmount.
   final String? grossSpendingHomeCurrency;
+
+  /// Sum of [homeAmount] for all active (non-reversed) refunds whose
+  /// [homeCurrency] matches [grossSpendingHomeCurrency]. Null when no such
+  /// refund exists.
+  final double? refundHomeAmount;
+
+  /// Net Spending = Gross Spending − Active Refunds.
+  ///
+  /// Null when [grossSpendingHomeAmount] is null (no home-currency data).
+  /// Equals [grossSpendingHomeAmount] when [refundHomeAmount] is null.
+  final double? netSpendingHomeAmount;
 
   /// Convenience: true when the trip has at least one international expense.
   bool get hasInternational => internationalExpenseCount > 0;

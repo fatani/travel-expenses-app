@@ -1,4 +1,5 @@
 import '../../expenses/domain/expense.dart';
+import '../../refunds/domain/expense_refund.dart';
 import '../../insights/data/insight_engine.dart';
 import '../../insights/domain/insight.dart';
 import '../domain/report_bucket.dart';
@@ -19,6 +20,7 @@ class TripReportCalculator {
     required String tripId,
     required String tripName,
     required List<Expense> expenses,
+    List<ExpenseRefund> refunds = const [],
   }) {
     if (expenses.isEmpty) {
       return TripReportSummary(
@@ -40,6 +42,8 @@ class TripReportCalculator {
         reportingMoneyPreviews: const [],
         grossSpendingHomeAmount: null,
         grossSpendingHomeCurrency: null,
+        refundHomeAmount: null,
+        netSpendingHomeAmount: null,
       );
     }
 
@@ -185,6 +189,25 @@ class TripReportCalculator {
     final double? grossSpendingHomeAmount =
         grossCurrency != null ? grossTotal : null;
 
+    // --- net spending in home currency --------------------------------------
+    // Only active (non-reversed) refunds whose homeCurrency matches the gross
+    // currency are included. Transaction-currency buckets are never touched.
+    double refundTotal = 0;
+    bool hasValidRefund = false;
+    if (grossCurrency != null) {
+      for (final r in refunds) {
+        if (r.isReversed) continue;
+        if (r.homeAmount == null) continue;
+        if (r.homeCurrency != grossCurrency) continue;
+        refundTotal += r.homeAmount!;
+        hasValidRefund = true;
+      }
+    }
+    final double? refundHomeAmount = hasValidRefund ? refundTotal : null;
+    final double? netSpendingHomeAmount = grossSpendingHomeAmount != null
+        ? grossSpendingHomeAmount - (refundHomeAmount ?? 0)
+        : null;
+
     return TripReportSummary(
       tripId: tripId,
       tripName: tripName,
@@ -204,6 +227,8 @@ class TripReportCalculator {
       reportingMoneyPreviews: reportingMoneyPreviews,
       grossSpendingHomeAmount: grossSpendingHomeAmount,
       grossSpendingHomeCurrency: grossCurrency,
+      refundHomeAmount: refundHomeAmount,
+      netSpendingHomeAmount: netSpendingHomeAmount,
     );
   }
 
