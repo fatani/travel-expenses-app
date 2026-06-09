@@ -170,6 +170,88 @@ void main() {
     expect(await cashBalance('JPY'), 0.0);
   });
 
+  test('reverseCashRefund throws StateError when cash transaction is missing', () async {
+    final refund = await refundRepository.createCashRefund(
+      tripId: trip.id,
+      amount: 200.0,
+      currencyCode: 'JPY',
+    );
+    expect(await cashBalance('JPY'), 200.0);
+
+    // Manually mark the cash transaction reversed so _findActiveCashRefundTransaction
+    // returns null, simulating an orphaned/corrupt state.
+    final db = await appDatabase.database;
+    await db.update(
+      AppDatabase.cashTransactionsTable,
+      {'is_reversed': 1, 'reversed_at': DateTime.now().toUtc().toIso8601String()},
+      where: 'trip_id = ? AND type = ? AND is_reversed = 0',
+      whereArgs: [trip.id, 'cash_refund'],
+    );
+
+    await expectLater(
+      refundRepository.reverseCashRefund(refund),
+      throwsA(
+        isA<StateError>().having(
+          (e) => e.message,
+          'message',
+          contains('Linked cash refund transaction not found'),
+        ),
+      ),
+    );
+  });
+
+  test('expense_refund row remains active after reverseCashRefund fails on missing cash transaction', () async {
+    final refund = await refundRepository.createCashRefund(
+      tripId: trip.id,
+      amount: 200.0,
+      currencyCode: 'JPY',
+    );
+
+    final db = await appDatabase.database;
+    await db.update(
+      AppDatabase.cashTransactionsTable,
+      {'is_reversed': 1, 'reversed_at': DateTime.now().toUtc().toIso8601String()},
+      where: 'trip_id = ? AND type = ? AND is_reversed = 0',
+      whereArgs: [trip.id, 'cash_refund'],
+    );
+
+    try {
+      await refundRepository.reverseCashRefund(refund);
+    } on StateError {
+      // expected
+    }
+
+    // Refund row must still be active — no half-reversal.
+    expect(await refundRowCount(includeReversed: false), 1);
+    expect(await refundRowCount(includeReversed: true), 1);
+  });
+
+  test('wallet balance is unchanged after reverseCashRefund fails on missing cash transaction', () async {
+    final refund = await refundRepository.createCashRefund(
+      tripId: trip.id,
+      amount: 200.0,
+      currencyCode: 'JPY',
+    );
+    expect(await cashBalance('JPY'), 200.0);
+
+    final db = await appDatabase.database;
+    await db.update(
+      AppDatabase.cashTransactionsTable,
+      {'is_reversed': 1, 'reversed_at': DateTime.now().toUtc().toIso8601String()},
+      where: 'trip_id = ? AND type = ? AND is_reversed = 0',
+      whereArgs: [trip.id, 'cash_refund'],
+    );
+
+    try {
+      await refundRepository.reverseCashRefund(refund);
+    } on StateError {
+      // expected
+    }
+
+    // Balance must be unaffected — transaction was rolled back.
+    expect(await cashBalance('JPY'), 200.0);
+  });
+
   test('reverseCardRefund throws StateError when refund is already reversed', () async {
     final refund = await refundRepository.createCardRefund(
       tripId: trip.id,

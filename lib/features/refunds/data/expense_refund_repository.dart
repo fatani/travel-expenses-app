@@ -217,27 +217,29 @@ class ExpenseRefundRepository {
         amount: refund.amount,
         currencyCode: refund.currencyCode,
       );
-      if (cashTxRow != null) {
-        await txn.update(
-          AppDatabase.cashTransactionsTable,
-          {
-            'is_reversed': 1,
-            'reversed_at': now.toIso8601String(),
-          },
-          where: 'id = ?',
-          whereArgs: [cashTxRow['id']],
-        );
-
-        final txAmount = (cashTxRow['amount'] as num).toDouble();
-        final txCurrency = (cashTxRow['currency_code'] as String).trim().toUpperCase();
-        await _applyBalanceDelta(
-          txn,
-          tripId: refund.tripId,
-          currencyCode: txCurrency,
-          delta: -CashTransactionType.cashRefund.signedDelta(txAmount),
-          updatedAt: now,
-        );
+      if (cashTxRow == null) {
+        throw StateError('Linked cash refund transaction not found: ${refund.id}');
       }
+
+      await txn.update(
+        AppDatabase.cashTransactionsTable,
+        {
+          'is_reversed': 1,
+          'reversed_at': now.toIso8601String(),
+        },
+        where: 'id = ?',
+        whereArgs: [cashTxRow['id']],
+      );
+
+      final txAmount = (cashTxRow['amount'] as num).toDouble();
+      final txCurrency = (cashTxRow['currency_code'] as String).trim().toUpperCase();
+      await _applyBalanceDelta(
+        txn,
+        tripId: refund.tripId,
+        currencyCode: txCurrency,
+        delta: -CashTransactionType.cashRefund.signedDelta(txAmount),
+        updatedAt: now,
+      );
     });
   }
 
