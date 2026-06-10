@@ -143,6 +143,77 @@ class CashWalletRepository {
     return transaction;
   }
 
+  /// Inserts a [CashTransactionType.currencyExchangeOut] row and applies
+  /// `-fromAmount` to [fromCurrencyCode] balance, all inside the caller's [txn].
+  ///
+  /// Called by [RecordCurrencyExchangeUseCase] to participate in its outer
+  /// atomic transaction.
+  Future<CashTransaction> recordCurrencyExchangeOutflow({
+    required DatabaseExecutor txn,
+    required String tripId,
+    required double fromAmount,
+    required String fromCurrencyCode,
+    String? note,
+    DateTime? createdAt,
+  }) async {
+    final normalizedCurrency = fromCurrencyCode.trim().toUpperCase();
+    final transaction = CashTransaction.create(
+      id: _uuid.v4(),
+      tripId: tripId,
+      type: CashTransactionType.currencyExchangeOut,
+      amount: fromAmount,
+      currencyCode: normalizedCurrency,
+      note: note,
+      createdAt: createdAt,
+    );
+    await _insertTransaction(txn, transaction);
+    await _applyBalanceDelta(
+      txn,
+      tripId: tripId,
+      currencyCode: normalizedCurrency,
+      delta: CashTransactionType.currencyExchangeOut.signedDelta(fromAmount),
+      updatedAt: transaction.createdAt,
+    );
+    return transaction;
+  }
+
+  /// Inserts a [CashTransactionType.currencyExchangeIn] row (with [toLotId] set)
+  /// and applies `+toAmount` to [toCurrencyCode] balance, all inside the
+  /// caller's [txn].
+  ///
+  /// Called by [RecordCurrencyExchangeUseCase] to participate in its outer
+  /// atomic transaction.
+  Future<CashTransaction> recordCurrencyExchangeInflow({
+    required DatabaseExecutor txn,
+    required String tripId,
+    required String toLotId,
+    required double toAmount,
+    required String toCurrencyCode,
+    String? note,
+    DateTime? createdAt,
+  }) async {
+    final normalizedCurrency = toCurrencyCode.trim().toUpperCase();
+    final transaction = CashTransaction.create(
+      id: _uuid.v4(),
+      tripId: tripId,
+      type: CashTransactionType.currencyExchangeIn,
+      amount: toAmount,
+      currencyCode: normalizedCurrency,
+      note: note,
+      createdAt: createdAt,
+      lotId: toLotId,
+    );
+    await _insertTransaction(txn, transaction);
+    await _applyBalanceDelta(
+      txn,
+      tripId: tripId,
+      currencyCode: normalizedCurrency,
+      delta: CashTransactionType.currencyExchangeIn.signedDelta(toAmount),
+      updatedAt: transaction.createdAt,
+    );
+    return transaction;
+  }
+
   Future<void> reverseManualCashTransaction({
     required CashTransaction transaction,
   }) async {

@@ -7,7 +7,9 @@ import '../../features/cash_wallet/data/cash_lot_repository.dart';
 import '../../features/cash_wallet/data/cash_wallet_repository.dart';
 import '../../features/cash_wallet/data/currency_exchange_repository.dart';
 import '../../features/cash_wallet/domain/cash_lot_fifo_engine.dart';
+import '../../features/cash_wallet/domain/currency_exchange_engine.dart';
 import '../../features/cash_wallet/domain/record_atm_withdrawal_use_case.dart';
+import '../../features/cash_wallet/domain/record_currency_exchange_use_case.dart';
 import '../../features/expenses/data/expense_repository.dart';
 import '../../features/expenses/domain/record_cash_expense_use_case.dart';
 import '../../features/financial_profile/data/user_financial_profile_repository.dart';
@@ -82,6 +84,10 @@ final cashLotFifoEngineProvider = Provider<CashLotFifoEngine>((ref) {
   return CashLotFifoEngine(ref.watch(cashLotRepositoryProvider));
 });
 
+final currencyExchangeEngineProvider = Provider<CurrencyExchangeEngine>((ref) {
+  return CurrencyExchangeEngine(ref.watch(cashLotFifoEngineProvider));
+});
+
 final recordAtmWithdrawalUseCaseProvider =
     Provider<RecordAtmWithdrawalUseCase>((ref) {
   return RecordAtmWithdrawalUseCase(
@@ -89,6 +95,18 @@ final recordAtmWithdrawalUseCaseProvider =
     cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
     lotRepository: ref.watch(cashLotRepositoryProvider),
     expenseRepository: ref.watch(expenseRepositoryProvider),
+  );
+});
+
+final recordCurrencyExchangeUseCaseProvider =
+    Provider<RecordCurrencyExchangeUseCase>((ref) {
+  return RecordCurrencyExchangeUseCase(
+    appDatabase: ref.watch(appDatabaseProvider),
+    exchangeEngine: ref.watch(currencyExchangeEngineProvider),
+    cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+    lotRepository: ref.watch(cashLotRepositoryProvider),
+    consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
+    exchangeRepository: ref.watch(currencyExchangeRepositoryProvider),
   );
 });
 

@@ -1125,6 +1125,18 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               note: _noteController.text,
               createdAt: _selectedDateTime,
             );
+      } else if (_selectedType == CashTransactionType.currencyExchangeIn &&
+          homeValue != null &&
+          homeValue > 0) {
+        await ref.read(recordCurrencyExchangeUseCaseProvider).execute(
+              tripId: widget.trip.id,
+              fromCurrencyCode: homeCurrencyCode,
+              fromAmount: homeValue,
+              toCurrencyCode: currencyCode,
+              toAmount: validAmount,
+              note: _noteController.text,
+              createdAt: _selectedDateTime,
+            );
       } else {
         await ref.read(cashWalletRepositoryProvider).addCashTransaction(
               tripId: widget.trip.id,
