@@ -8,7 +8,7 @@ class AppDatabase {
   static const String databaseName = 'travel_expenses.db';
 
   final String _databaseFileName;
-  static const int databaseVersion = 18;
+  static const int databaseVersion = 19;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -19,6 +19,9 @@ class AppDatabase {
   static const String cashTransactionsTable = 'cash_transactions';
   static const String manualExchangeRatesTable = 'manual_exchange_rates';
   static const String expenseRefundsTable = 'expense_refunds';
+  static const String cashLotsTable = 'cash_lots';
+  static const String cashLotConsumptionsTable = 'cash_lot_consumptions';
+  static const String currencyExchangesTable = 'currency_exchanges';
 
   Database? _database;
   Future<Database>? _opening;
@@ -85,6 +88,9 @@ class AppDatabase {
         await _ensureExpensesReferentialIntegrity(db);
         await _purgeOrphanFinancialRows(db);
         await _ensureExpenseRefundsTable(db);
+        await _ensureCurrencyExchangesTable(db);
+        await _ensureCashLotsTable(db);
+        await _ensureCashLotConsumptionsTable(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -242,6 +248,131 @@ class AppDatabase {
           'CREATE INDEX IF NOT EXISTS idx_expense_refunds_trip_expense '
           'ON $expenseRefundsTable (trip_id, expense_id, destination, is_reversed, created_at)',
         );
+
+        await db.execute('''
+          CREATE TABLE $currencyExchangesTable (
+            id                  TEXT    PRIMARY KEY,
+            trip_id             TEXT    NOT NULL,
+            from_currency_code  TEXT    NOT NULL,
+            from_amount         REAL    NOT NULL  CHECK (from_amount > 0),
+            to_currency_code    TEXT    NOT NULL,
+            to_amount           REAL    NOT NULL  CHECK (to_amount > 0),
+            exchange_rate       REAL    NOT NULL  CHECK (exchange_rate > 0),
+            to_lot_id           TEXT    NOT NULL,
+            is_reversed         INTEGER NOT NULL DEFAULT 0,
+            reversed_at         TEXT,
+            note                TEXT,
+            created_at          TEXT    NOT NULL,
+            CHECK (from_currency_code != to_currency_code),
+            CHECK (from_currency_code = UPPER(from_currency_code)),
+            CHECK (to_currency_code = UPPER(to_currency_code)),
+            CHECK (is_reversed IN (0, 1)),
+            CHECK (is_reversed = 0 OR reversed_at IS NOT NULL),
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+          )
+        ''');
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_exchanges_trip '
+          'ON $currencyExchangesTable (trip_id, is_reversed, created_at DESC)',
+        );
+
+        await db.execute('''
+          CREATE TABLE $cashLotsTable (
+            id                   TEXT    PRIMARY KEY,
+            trip_id              TEXT    NOT NULL,
+            source_type          TEXT    NOT NULL,
+            source_ref_type      TEXT    NOT NULL,
+            source_ref_id        TEXT    NOT NULL,
+            currency_code        TEXT    NOT NULL,
+            original_amount      REAL    NOT NULL  CHECK (original_amount > 0),
+            remaining_amount     REAL    NOT NULL  CHECK (remaining_amount >= 0),
+            home_currency_amount REAL    CHECK (home_currency_amount IS NULL OR home_currency_amount > 0),
+            home_currency_code   TEXT,
+            effective_rate       REAL    CHECK (effective_rate IS NULL OR effective_rate > 0),
+            is_fully_consumed    INTEGER NOT NULL DEFAULT 0,
+            is_reversed          INTEGER NOT NULL DEFAULT 0,
+            reversed_at          TEXT,
+            created_at           TEXT    NOT NULL,
+            note                 TEXT,
+            CHECK (source_type IN ('initial_cash','atm_withdrawal','exchange_in','manual_adjustment','cash_refund')),
+            CHECK (source_ref_type IN ('cash_transaction','currency_exchange','expense_refund')),
+            CHECK (remaining_amount <= original_amount),
+            CHECK (currency_code = UPPER(currency_code)),
+            CHECK (home_currency_code IS NULL OR home_currency_code = UPPER(home_currency_code)),
+            CHECK (is_fully_consumed IN (0, 1)),
+            CHECK (is_reversed IN (0, 1)),
+            CHECK (is_reversed = 0 OR reversed_at IS NOT NULL),
+            CHECK (is_fully_consumed = 0 OR remaining_amount = 0),
+            CHECK (is_reversed = 0 OR is_fully_consumed = 1),
+            CHECK (
+              (home_currency_amount IS NULL AND home_currency_code IS NULL AND effective_rate IS NULL)
+              OR
+              (home_currency_amount IS NOT NULL AND home_currency_code IS NOT NULL AND effective_rate IS NOT NULL)
+            ),
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+          )
+        ''');
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_cash_lots_fifo '
+          'ON $cashLotsTable (trip_id, currency_code, is_reversed, is_fully_consumed, created_at ASC)',
+        );
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_cash_lots_source_ref '
+          'ON $cashLotsTable (source_ref_type, source_ref_id)',
+        );
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_cash_lots_source '
+          'ON $cashLotsTable (trip_id, source_type)',
+        );
+
+        await db.execute('''
+          CREATE TABLE $cashLotConsumptionsTable (
+            id                TEXT    PRIMARY KEY,
+            lot_id            TEXT    NOT NULL,
+            consumption_type  TEXT    NOT NULL,
+            expense_id        TEXT,
+            exchange_id       TEXT,
+            consumed_amount   REAL    NOT NULL  CHECK (consumed_amount > 0),
+            home_amount       REAL    CHECK (home_amount IS NULL OR home_amount > 0),
+            home_currency_code TEXT,
+            is_reversed       INTEGER NOT NULL DEFAULT 0,
+            reversed_at       TEXT,
+            created_at        TEXT    NOT NULL,
+            CHECK (consumption_type IN ('cash_expense','exchange_out','manual_reduction')),
+            CHECK (home_currency_code IS NULL OR home_currency_code = UPPER(home_currency_code)),
+            CHECK (is_reversed IN (0, 1)),
+            CHECK (is_reversed = 0 OR reversed_at IS NOT NULL),
+            CHECK (
+              (consumption_type = 'cash_expense'     AND expense_id IS NOT NULL  AND exchange_id IS NULL)
+              OR
+              (consumption_type = 'exchange_out'     AND exchange_id IS NOT NULL AND expense_id IS NULL)
+              OR
+              (consumption_type = 'manual_reduction' AND expense_id IS NULL      AND exchange_id IS NULL)
+            ),
+            FOREIGN KEY (lot_id) REFERENCES $cashLotsTable (id),
+            FOREIGN KEY (expense_id) REFERENCES $expensesTable (id) ON DELETE SET NULL,
+            FOREIGN KEY (exchange_id) REFERENCES $currencyExchangesTable (id)
+          )
+        ''');
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_lot_consumptions_lot '
+          'ON $cashLotConsumptionsTable (lot_id, is_reversed)',
+        );
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_lot_consumptions_expense '
+          'ON $cashLotConsumptionsTable (expense_id, is_reversed)',
+        );
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_lot_consumptions_exchange '
+          'ON $cashLotConsumptionsTable (exchange_id, is_reversed)',
+        );
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -364,6 +495,12 @@ class AppDatabase {
 
         if (oldVersion < 18) {
           await _ensureExpenseRefundsTable(db);
+        }
+
+        if (oldVersion < 19) {
+          await _ensureCurrencyExchangesTable(db);
+          await _ensureCashLotsTable(db);
+          await _ensureCashLotConsumptionsTable(db);
         }
       },
     );
@@ -1005,6 +1142,161 @@ class AppDatabase {
     await db.execute(
       'CREATE INDEX IF NOT EXISTS idx_expense_refunds_trip_expense '
       'ON $expenseRefundsTable (trip_id, expense_id, destination, is_reversed, created_at)',
+    );
+  }
+
+  Future<void> _ensureCurrencyExchangesTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [currencyExchangesTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $currencyExchangesTable (
+        id                  TEXT    PRIMARY KEY,
+        trip_id             TEXT    NOT NULL,
+        from_currency_code  TEXT    NOT NULL,
+        from_amount         REAL    NOT NULL  CHECK (from_amount > 0),
+        to_currency_code    TEXT    NOT NULL,
+        to_amount           REAL    NOT NULL  CHECK (to_amount > 0),
+        exchange_rate       REAL    NOT NULL  CHECK (exchange_rate > 0),
+        to_lot_id           TEXT    NOT NULL,
+        is_reversed         INTEGER NOT NULL DEFAULT 0,
+        reversed_at         TEXT,
+        note                TEXT,
+        created_at          TEXT    NOT NULL,
+        CHECK (from_currency_code != to_currency_code),
+        CHECK (from_currency_code = UPPER(from_currency_code)),
+        CHECK (to_currency_code = UPPER(to_currency_code)),
+        CHECK (is_reversed IN (0, 1)),
+        CHECK (is_reversed = 0 OR reversed_at IS NOT NULL),
+        FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_exchanges_trip '
+      'ON $currencyExchangesTable (trip_id, is_reversed, created_at DESC)',
+    );
+  }
+
+  Future<void> _ensureCashLotsTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [cashLotsTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $cashLotsTable (
+        id                   TEXT    PRIMARY KEY,
+        trip_id              TEXT    NOT NULL,
+        source_type          TEXT    NOT NULL,
+        source_ref_type      TEXT    NOT NULL,
+        source_ref_id        TEXT    NOT NULL,
+        currency_code        TEXT    NOT NULL,
+        original_amount      REAL    NOT NULL  CHECK (original_amount > 0),
+        remaining_amount     REAL    NOT NULL  CHECK (remaining_amount >= 0),
+        home_currency_amount REAL    CHECK (home_currency_amount IS NULL OR home_currency_amount > 0),
+        home_currency_code   TEXT,
+        effective_rate       REAL    CHECK (effective_rate IS NULL OR effective_rate > 0),
+        is_fully_consumed    INTEGER NOT NULL DEFAULT 0,
+        is_reversed          INTEGER NOT NULL DEFAULT 0,
+        reversed_at          TEXT,
+        created_at           TEXT    NOT NULL,
+        note                 TEXT,
+        CHECK (source_type IN ('initial_cash','atm_withdrawal','exchange_in','manual_adjustment','cash_refund')),
+        CHECK (source_ref_type IN ('cash_transaction','currency_exchange','expense_refund')),
+        CHECK (remaining_amount <= original_amount),
+        CHECK (currency_code = UPPER(currency_code)),
+        CHECK (home_currency_code IS NULL OR home_currency_code = UPPER(home_currency_code)),
+        CHECK (is_fully_consumed IN (0, 1)),
+        CHECK (is_reversed IN (0, 1)),
+        CHECK (is_reversed = 0 OR reversed_at IS NOT NULL),
+        CHECK (is_fully_consumed = 0 OR remaining_amount = 0),
+        CHECK (is_reversed = 0 OR is_fully_consumed = 1),
+        CHECK (
+          (home_currency_amount IS NULL AND home_currency_code IS NULL AND effective_rate IS NULL)
+          OR
+          (home_currency_amount IS NOT NULL AND home_currency_code IS NOT NULL AND effective_rate IS NOT NULL)
+        ),
+        FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_lots_fifo '
+      'ON $cashLotsTable (trip_id, currency_code, is_reversed, is_fully_consumed, created_at ASC)',
+    );
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_lots_source_ref '
+      'ON $cashLotsTable (source_ref_type, source_ref_id)',
+    );
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_cash_lots_source '
+      'ON $cashLotsTable (trip_id, source_type)',
+    );
+  }
+
+  Future<void> _ensureCashLotConsumptionsTable(Database db) async {
+    final tables = await db.rawQuery(
+      "SELECT name FROM sqlite_master WHERE type='table' AND name=?",
+      [cashLotConsumptionsTable],
+    );
+    if (tables.isNotEmpty) {
+      return;
+    }
+
+    await db.execute('''
+      CREATE TABLE $cashLotConsumptionsTable (
+        id                 TEXT    PRIMARY KEY,
+        lot_id             TEXT    NOT NULL,
+        consumption_type   TEXT    NOT NULL,
+        expense_id         TEXT,
+        exchange_id        TEXT,
+        consumed_amount    REAL    NOT NULL  CHECK (consumed_amount > 0),
+        home_amount        REAL    CHECK (home_amount IS NULL OR home_amount > 0),
+        home_currency_code TEXT,
+        is_reversed        INTEGER NOT NULL DEFAULT 0,
+        reversed_at        TEXT,
+        created_at         TEXT    NOT NULL,
+        CHECK (consumption_type IN ('cash_expense','exchange_out','manual_reduction')),
+        CHECK (home_currency_code IS NULL OR home_currency_code = UPPER(home_currency_code)),
+        CHECK (is_reversed IN (0, 1)),
+        CHECK (is_reversed = 0 OR reversed_at IS NOT NULL),
+        CHECK (
+          (consumption_type = 'cash_expense'     AND expense_id IS NOT NULL  AND exchange_id IS NULL)
+          OR
+          (consumption_type = 'exchange_out'     AND exchange_id IS NOT NULL AND expense_id IS NULL)
+          OR
+          (consumption_type = 'manual_reduction' AND expense_id IS NULL      AND exchange_id IS NULL)
+        ),
+        FOREIGN KEY (lot_id) REFERENCES $cashLotsTable (id),
+        FOREIGN KEY (expense_id) REFERENCES $expensesTable (id) ON DELETE SET NULL,
+        FOREIGN KEY (exchange_id) REFERENCES $currencyExchangesTable (id)
+      )
+    ''');
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_lot_consumptions_lot '
+      'ON $cashLotConsumptionsTable (lot_id, is_reversed)',
+    );
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_lot_consumptions_expense '
+      'ON $cashLotConsumptionsTable (expense_id, is_reversed)',
+    );
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_lot_consumptions_exchange '
+      'ON $cashLotConsumptionsTable (exchange_id, is_reversed)',
     );
   }
 

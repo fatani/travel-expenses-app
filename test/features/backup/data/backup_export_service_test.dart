@@ -186,7 +186,7 @@ void main() {
     );
 
     expect(manifest.backupFormatVersion, 1);
-    expect(manifest.schemaVersion, 18);
+    expect(manifest.schemaVersion, AppDatabase.databaseVersion);
     expect(manifest.sourceApp, BackupConstants.sourceApp);
   });
 
