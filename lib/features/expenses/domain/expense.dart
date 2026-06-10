@@ -33,6 +33,8 @@ class Expense implements ExpenseLike {
     this.cardProfileId,
     required this.createdAt,
     required this.updatedAt,
+    this.isReversed = false,
+    this.reversedAt,
   });
 
   factory Expense.create({
@@ -108,6 +110,8 @@ class Expense implements ExpenseLike {
       cardProfileId: cardProfileId,
       createdAt: now,
       updatedAt: now,
+      isReversed: false,
+      reversedAt: null,
     );
   }
 
@@ -201,6 +205,10 @@ class Expense implements ExpenseLike {
       cardProfileId: map['card_profile_id'] as int?,
       createdAt: DateTime.parse(createdAtRaw),
       updatedAt: DateTime.parse(updatedAtRaw),
+      isReversed: ((map['is_reversed'] as num?)?.toInt() ?? 0) == 1,
+      reversedAt: (map['reversed_at'] as String?) != null
+          ? DateTime.parse(map['reversed_at']! as String)
+          : null,
     );
   }
 
@@ -239,6 +247,8 @@ class Expense implements ExpenseLike {
   final int? cardProfileId;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final bool isReversed;
+  final DateTime? reversedAt;
 
   static const Object sentinel = Object();
 
@@ -287,6 +297,8 @@ class Expense implements ExpenseLike {
     Object? cardProfileId = sentinel,
     DateTime? createdAt,
     DateTime? updatedAt,
+    bool? isReversed,
+    Object? reversedAt = sentinel,
   }) {
     return Expense(
       id: id ?? this.id,
@@ -335,6 +347,8 @@ class Expense implements ExpenseLike {
           : cardProfileId as int?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      isReversed: isReversed ?? this.isReversed,
+      reversedAt: identical(reversedAt, sentinel) ? this.reversedAt : reversedAt as DateTime?,
     );
   }
 
@@ -370,6 +384,8 @@ class Expense implements ExpenseLike {
       'card_profile_id': cardProfileId,
       'created_at': createdAt.toUtc().toIso8601String(),
       'updated_at': updatedAt.toUtc().toIso8601String(),
+      'is_reversed': isReversed ? 1 : 0,
+      'reversed_at': reversedAt?.toUtc().toIso8601String(),
     };
   }
 

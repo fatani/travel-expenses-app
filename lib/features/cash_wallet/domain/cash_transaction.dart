@@ -79,6 +79,8 @@ class CashTransaction {
     this.reversedAt,
     this.note,
     required this.createdAt,
+    this.lotId,
+    this.exchangeId,
   });
 
   final String id;
@@ -93,6 +95,8 @@ class CashTransaction {
   final double? homeCurrencyAmount;
   final String? homeCurrencyCode;
   final DateTime createdAt;
+  final String? lotId;
+  final String? exchangeId;
 
   factory CashTransaction.create({
     String id = '',
@@ -107,6 +111,8 @@ class CashTransaction {
     DateTime? reversedAt,
     String? note,
     DateTime? createdAt,
+    String? lotId,
+    String? exchangeId,
   }) {
     return CashTransaction(
       id: id,
@@ -121,6 +127,8 @@ class CashTransaction {
       reversedAt: reversedAt,
       note: _normalizeText(note),
       createdAt: (createdAt ?? DateTime.now()).toUtc(),
+      lotId: lotId,
+      exchangeId: exchangeId,
     );
   }
 
@@ -140,6 +148,8 @@ class CashTransaction {
           : null,
       note: map['note'] as String?,
       createdAt: DateTime.parse(map['created_at']! as String),
+      lotId: map['lot_id'] as String?,
+      exchangeId: map['exchange_id'] as String?,
     );
   }
 
@@ -157,6 +167,8 @@ class CashTransaction {
       'reversed_at': reversedAt?.toUtc().toIso8601String(),
       'note': note,
       'created_at': createdAt.toUtc().toIso8601String(),
+      'lot_id': lotId,
+      'exchange_id': exchangeId,
     };
   }
 

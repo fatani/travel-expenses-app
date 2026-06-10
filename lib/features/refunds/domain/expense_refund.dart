@@ -14,6 +14,7 @@ class ExpenseRefund {
     required this.isReversed,
     this.reversedAt,
     required this.createdAt,
+    this.returnedLotId,
   });
 
   factory ExpenseRefund.create({
@@ -27,6 +28,7 @@ class ExpenseRefund {
     required RefundDestination destination,
     String? note,
     DateTime? createdAt,
+    String? returnedLotId,
   }) {
     return ExpenseRefund(
       id: id,
@@ -41,6 +43,7 @@ class ExpenseRefund {
       isReversed: false,
       reversedAt: null,
       createdAt: (createdAt ?? DateTime.now()).toUtc(),
+      returnedLotId: returnedLotId,
     );
   }
 
@@ -60,6 +63,7 @@ class ExpenseRefund {
           ? DateTime.parse(map['reversed_at']! as String)
           : null,
       createdAt: DateTime.parse(map['created_at']! as String),
+      returnedLotId: map['returned_lot_id'] as String?,
     );
   }
 
@@ -75,6 +79,7 @@ class ExpenseRefund {
   final bool isReversed;
   final DateTime? reversedAt;
   final DateTime createdAt;
+  final String? returnedLotId;
 
   Map<String, Object?> toMap() {
     return {
@@ -90,6 +95,7 @@ class ExpenseRefund {
       'is_reversed': isReversed ? 1 : 0,
       'reversed_at': reversedAt?.toUtc().toIso8601String(),
       'created_at': createdAt.toUtc().toIso8601String(),
+      'returned_lot_id': returnedLotId,
     };
   }
 
@@ -106,6 +112,7 @@ class ExpenseRefund {
     bool? isReversed,
     Object? reversedAt = _sentinel,
     DateTime? createdAt,
+    Object? returnedLotId = _sentinel,
   }) {
     return ExpenseRefund(
       id: id ?? this.id,
@@ -120,6 +127,7 @@ class ExpenseRefund {
       isReversed: isReversed ?? this.isReversed,
       reversedAt: identical(reversedAt, _sentinel) ? this.reversedAt : reversedAt as DateTime?,
       createdAt: createdAt ?? this.createdAt,
+      returnedLotId: identical(returnedLotId, _sentinel) ? this.returnedLotId : returnedLotId as String?,
     );
   }
 
