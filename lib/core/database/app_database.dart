@@ -8,7 +8,7 @@ class AppDatabase {
   static const String databaseName = 'travel_expenses.db';
 
   final String _databaseFileName;
-  static const int databaseVersion = 19;
+  static const int databaseVersion = 20;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -91,6 +91,9 @@ class AppDatabase {
         await _ensureCurrencyExchangesTable(db);
         await _ensureCashLotsTable(db);
         await _ensureCashLotConsumptionsTable(db);
+        await _ensureExpensesReversalColumns(db);
+        await _ensureCashTransactionsFifoColumns(db);
+        await _ensureExpenseRefundsLotColumn(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -144,6 +147,8 @@ class AppDatabase {
             card_profile_id INTEGER,
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
+            is_reversed INTEGER NOT NULL DEFAULT 0,
+            reversed_at TEXT,
             FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
           )
         ''');
@@ -205,7 +210,11 @@ class AppDatabase {
             reversed_at TEXT,
             note TEXT,
             created_at TEXT NOT NULL,
-            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+            lot_id TEXT,
+            exchange_id TEXT,
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE,
+            FOREIGN KEY (lot_id) REFERENCES $cashLotsTable (id),
+            FOREIGN KEY (exchange_id) REFERENCES $currencyExchangesTable (id)
           )
         ''');
 
@@ -228,19 +237,21 @@ class AppDatabase {
 
         await db.execute('''
           CREATE TABLE $expenseRefundsTable (
-            id            TEXT    PRIMARY KEY,
-            trip_id       TEXT    NOT NULL,
-            expense_id    TEXT,
-            amount        REAL    NOT NULL,
-            currency_code TEXT    NOT NULL,
-            home_amount   REAL,
-            home_currency TEXT,
-            destination   TEXT    NOT NULL,
-            note          TEXT,
-            is_reversed   INTEGER NOT NULL DEFAULT 0,
-            reversed_at   TEXT,
-            created_at    TEXT    NOT NULL,
-            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
+            id              TEXT    PRIMARY KEY,
+            trip_id         TEXT    NOT NULL,
+            expense_id      TEXT,
+            amount          REAL    NOT NULL,
+            currency_code   TEXT    NOT NULL,
+            home_amount     REAL,
+            home_currency   TEXT,
+            destination     TEXT    NOT NULL,
+            note            TEXT,
+            is_reversed     INTEGER NOT NULL DEFAULT 0,
+            reversed_at     TEXT,
+            created_at      TEXT    NOT NULL,
+            returned_lot_id TEXT,
+            FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE,
+            FOREIGN KEY (returned_lot_id) REFERENCES $cashLotsTable (id)
           )
         ''');
 
@@ -501,6 +512,12 @@ class AppDatabase {
           await _ensureCurrencyExchangesTable(db);
           await _ensureCashLotsTable(db);
           await _ensureCashLotConsumptionsTable(db);
+        }
+
+        if (oldVersion < 20) {
+          await _ensureExpensesReversalColumns(db);
+          await _ensureCashTransactionsFifoColumns(db);
+          await _ensureExpenseRefundsLotColumn(db);
         }
       },
     );
@@ -1143,6 +1160,51 @@ class AppDatabase {
       'CREATE INDEX IF NOT EXISTS idx_expense_refunds_trip_expense '
       'ON $expenseRefundsTable (trip_id, expense_id, destination, is_reversed, created_at)',
     );
+  }
+
+  Future<void> _ensureExpensesReversalColumns(Database db) async {
+    final hasIsReversed = await _hasColumn(db, expensesTable, 'is_reversed');
+    if (!hasIsReversed) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN is_reversed INTEGER NOT NULL DEFAULT 0',
+      );
+    }
+
+    final hasReversedAt = await _hasColumn(db, expensesTable, 'reversed_at');
+    if (!hasReversedAt) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN reversed_at TEXT',
+      );
+    }
+  }
+
+  Future<void> _ensureCashTransactionsFifoColumns(Database db) async {
+    final hasLotId = await _hasColumn(db, cashTransactionsTable, 'lot_id');
+    if (!hasLotId) {
+      await db.execute(
+        'ALTER TABLE $cashTransactionsTable ADD COLUMN lot_id TEXT',
+      );
+    }
+
+    final hasExchangeId = await _hasColumn(db, cashTransactionsTable, 'exchange_id');
+    if (!hasExchangeId) {
+      await db.execute(
+        'ALTER TABLE $cashTransactionsTable ADD COLUMN exchange_id TEXT',
+      );
+    }
+  }
+
+  Future<void> _ensureExpenseRefundsLotColumn(Database db) async {
+    final hasReturnedLotId = await _hasColumn(
+      db,
+      expenseRefundsTable,
+      'returned_lot_id',
+    );
+    if (!hasReturnedLotId) {
+      await db.execute(
+        'ALTER TABLE $expenseRefundsTable ADD COLUMN returned_lot_id TEXT',
+      );
+    }
   }
 
   Future<void> _ensureCurrencyExchangesTable(Database db) async {

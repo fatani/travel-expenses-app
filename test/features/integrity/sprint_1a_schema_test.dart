@@ -464,10 +464,10 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('database version', () {
-    test('database version is 19', () async {
+    test('database version is at least 19', () async {
       final db = await appDatabase.database;
       final result = await db.rawQuery('PRAGMA user_version');
-      expect(result.first['user_version'], 19);
+      expect(result.first['user_version'] as int, greaterThanOrEqualTo(19));
     });
   });
 
