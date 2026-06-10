@@ -1115,6 +1115,16 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               nextNote: _noteController.text,
               nextCreatedAt: _selectedDateTime,
             );
+      } else if (_selectedType == CashTransactionType.atmWithdrawal) {
+        await ref.read(recordAtmWithdrawalUseCaseProvider).execute(
+              tripId: widget.trip.id,
+              receivedAmount: validAmount,
+              receivedCurrency: currencyCode,
+              chargedAmount: homeValue,
+              chargedCurrency: homeValue != null ? homeCurrencyCode : null,
+              note: _noteController.text,
+              createdAt: _selectedDateTime,
+            );
       } else {
         await ref.read(cashWalletRepositoryProvider).addCashTransaction(
               tripId: widget.trip.id,

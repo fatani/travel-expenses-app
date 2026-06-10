@@ -104,6 +104,45 @@ class CashWalletRepository {
     });
   }
 
+  /// Inserts an ATM withdrawal [CashTransaction] row (with [lotId] set) and
+  /// applies the balance delta, all inside the caller's [txn].
+  ///
+  /// Called by [RecordAtmWithdrawalUseCase] to participate in its outer
+  /// atomic transaction.  The returned [CashTransaction] has the assigned ID.
+  Future<CashTransaction> recordAtmInflow({
+    required DatabaseExecutor txn,
+    required String tripId,
+    required String lotId,
+    required double amount,
+    required String currencyCode,
+    double? homeCurrencyAmount,
+    String? homeCurrencyCode,
+    String? note,
+    DateTime? createdAt,
+  }) async {
+    final transaction = CashTransaction.create(
+      id: _uuid.v4(),
+      tripId: tripId,
+      type: CashTransactionType.atmWithdrawal,
+      amount: amount,
+      currencyCode: currencyCode,
+      homeCurrencyAmount: homeCurrencyAmount,
+      homeCurrencyCode: homeCurrencyCode,
+      note: note,
+      createdAt: createdAt,
+      lotId: lotId,
+    );
+    await _insertTransaction(txn, transaction);
+    await _applyBalanceDelta(
+      txn,
+      tripId: tripId,
+      currencyCode: transaction.currencyCode,
+      delta: CashTransactionType.atmWithdrawal.signedDelta(amount),
+      updatedAt: transaction.createdAt,
+    );
+    return transaction;
+  }
+
   Future<void> reverseManualCashTransaction({
     required CashTransaction transaction,
   }) async {

@@ -11,15 +11,30 @@ class CashLotRepository {
   final AppDatabase _appDatabase;
   final Uuid _uuid;
 
-  Future<CashLot> insertCashLot(CashLot lot) async {
+  Future<CashLot> insertCashLot(CashLot lot, {DatabaseExecutor? txn}) async {
     final entity = lot.id.isEmpty ? lot.copyWith(id: _uuid.v4()) : lot;
-    final db = await _appDatabase.database;
-    await db.insert(
+    final executor = txn ?? await _appDatabase.database;
+    await executor.insert(
       AppDatabase.cashLotsTable,
       entity.toMap(),
       conflictAlgorithm: ConflictAlgorithm.abort,
     );
     return entity;
+  }
+
+  /// Patches [source_ref_id] for a lot whose ref was not yet known at insert
+  /// time (e.g. the cash_transaction ID is generated inside the same txn).
+  Future<void> updateLotSourceRef(
+    {required String lotId,
+    required String sourceRefId,
+    DatabaseExecutor? txn}) async {
+    final executor = txn ?? await _appDatabase.database;
+    await executor.update(
+      AppDatabase.cashLotsTable,
+      {'source_ref_id': sourceRefId},
+      where: 'id = ?',
+      whereArgs: [lotId],
+    );
   }
 
   Future<CashLot?> getCashLotById(String id) async {
