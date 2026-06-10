@@ -1,3 +1,5 @@
+import 'cash_acquisition_entry.dart';
+import 'payment_source_entry.dart';
 import 'remaining_cash_value.dart';
 import 'report_bucket.dart';
 import 'reporting_money_preview.dart';
@@ -55,6 +57,8 @@ class TripReportSummary {
     this.netSpendingHomeAmount,
     this.remainingCashValues = const [],
     this.netTripCostHomeAmount,
+    this.cashAcquisitionSummary = const [],
+    this.paymentSourceSummary = const [],
   });
 
   final String tripId;
@@ -134,6 +138,17 @@ class TripReportSummary {
   /// Equals [netSpendingHomeAmount] when [remainingCashValues] is empty or none
   /// match [grossSpendingHomeCurrency].
   final double? netTripCostHomeAmount;
+
+  /// Cash inflow grouped by source type + original currency.
+  ///
+  /// Only active (non-reversed) lots contribute. Empty when no lots exist.
+  final List<CashAcquisitionEntry> cashAcquisitionSummary;
+
+  /// Spending grouped by payment type (cash/card/other) + transaction currency.
+  ///
+  /// Only active (non-reversed) expenses contribute. Empty when no expenses
+  /// have been recorded.
+  final List<PaymentSourceEntry> paymentSourceSummary;
 
   /// Convenience: true when the trip has at least one international expense.
   bool get hasInternational => internationalExpenseCount > 0;

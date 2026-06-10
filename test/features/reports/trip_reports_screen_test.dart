@@ -8,6 +8,7 @@ import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_lot_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
+import 'package:travel_expenses/features/cash_wallet/domain/cash_lot.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/cash_lot_currency_summary.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
@@ -48,7 +49,7 @@ class _FakeTripRepository extends TripRepository {
   }
 }
 
-/// Stub that returns no lot summaries — these tests do not exercise lot cost-basis.
+/// Stub that returns no lot data — these tests do not exercise lot cost-basis.
 class _FakeCashLotRepository extends CashLotRepository {
   _FakeCashLotRepository() : super(AppDatabase());
 
@@ -58,6 +59,9 @@ class _FakeCashLotRepository extends CashLotRepository {
     required String homeCurrencyCode,
   }) async =>
       const [];
+
+  @override
+  Future<List<CashLot>> getActiveLotsForTrip(String tripId) async => const [];
 }
 
 /// Stub with no balances — these tests do not exercise cost-basis.

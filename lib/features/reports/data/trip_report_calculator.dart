@@ -1,5 +1,8 @@
+import '../../cash_wallet/domain/cash_lot.dart';
 import '../../expenses/domain/expense.dart';
 import '../../refunds/domain/expense_refund.dart';
+import '../domain/cash_acquisition_entry.dart';
+import '../domain/payment_source_entry.dart';
 import '../domain/remaining_cash_value.dart';
 import '../../insights/data/insight_engine.dart';
 import '../../insights/domain/insight.dart';
@@ -24,6 +27,7 @@ class TripReportCalculator {
     List<ExpenseRefund> refunds = const [],
     List<CashBalanceRateInput> cashBalanceRates = const [],
     List<RemainingCashValue> lotRemainingValues = const [],
+    List<CashLot> activeLots = const [],
   }) {
     if (expenses.isEmpty) {
       final emptyRemainingCash = lotRemainingValues.isNotEmpty
@@ -52,6 +56,8 @@ class TripReportCalculator {
         netSpendingHomeAmount: null,
         remainingCashValues: emptyRemainingCash,
         netTripCostHomeAmount: null,
+        cashAcquisitionSummary: _buildCashAcquisitionSummary(activeLots),
+        paymentSourceSummary: const [],
       );
     }
 
@@ -257,6 +263,8 @@ class TripReportCalculator {
       netSpendingHomeAmount: netSpendingHomeAmount,
       remainingCashValues: remainingCashValues,
       netTripCostHomeAmount: netTripCostHomeAmount,
+      cashAcquisitionSummary: _buildCashAcquisitionSummary(activeLots),
+      paymentSourceSummary: _buildPaymentSourceSummary(expenses),
     );
   }
 
@@ -332,6 +340,92 @@ class TripReportCalculator {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Cash Acquisition Summary
+  // ---------------------------------------------------------------------------
+
+  /// Builds one [CashAcquisitionEntry] per (sourceType, originalCurrency) pair
+  /// from [lots].
+  ///
+  /// Only active (non-reversed) lots should be passed — the caller is
+  /// responsible for pre-filtering; this method does not re-check [CashLot.isReversed].
+  ///
+  /// [totalHomeAmount] and [homeCurrency] are included only when every lot in
+  /// the group shares the same non-null [homeCurrencyCode].
+  static List<CashAcquisitionEntry> _buildCashAcquisitionSummary(
+    List<CashLot> lots,
+  ) {
+    if (lots.isEmpty) return const [];
+
+    // key = 'sourceType|CURRENCY'
+    final groups = <String, _LotAccumulator>{};
+    for (final lot in lots) {
+      final key = '${lot.sourceType}|${lot.currencyCode}';
+      groups.putIfAbsent(key, () => _LotAccumulator(lot.sourceType, lot.currencyCode));
+      groups[key]!.add(lot);
+    }
+
+    return groups.values.map((acc) => acc.toEntry()).toList()
+      ..sort((a, b) {
+        final sourceOrder = const [
+          'initial_cash',
+          'atm_withdrawal',
+          'exchange_in',
+          'cash_refund',
+          'manual_adjustment',
+        ].indexOf(a.sourceType).compareTo(
+              const [
+                'initial_cash',
+                'atm_withdrawal',
+                'exchange_in',
+                'cash_refund',
+                'manual_adjustment',
+              ].indexOf(b.sourceType),
+            );
+        if (sourceOrder != 0) return sourceOrder;
+        return a.originalCurrency.compareTo(b.originalCurrency);
+      });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Payment Source Summary
+  // ---------------------------------------------------------------------------
+
+  /// Normalises an expense [paymentMethod] to `'cash'`, `'card'`, or `'other'`.
+  static String _normalisePaymentType(String paymentMethod) {
+    final lower = paymentMethod.trim().toLowerCase();
+    if (lower == 'cash') return 'cash';
+    if (lower == 'card') return 'card';
+    return 'other';
+  }
+
+  /// Builds one [PaymentSourceEntry] per (paymentType, transactionCurrency)
+  /// from active (non-reversed) [expenses].
+  static List<PaymentSourceEntry> _buildPaymentSourceSummary(
+    List<Expense> expenses,
+  ) {
+    // key = 'paymentType|CURRENCY'
+    final groups = <String, _ExpenseAccumulator>{};
+    for (final e in expenses) {
+      if (e.isReversed) continue;
+      final type = _normalisePaymentType(e.paymentMethod);
+      final currency = e.transactionCurrency.toUpperCase();
+      final key = '$type|$currency';
+      groups
+          .putIfAbsent(key, () => _ExpenseAccumulator(type, currency))
+          .add(e);
+    }
+
+    return groups.values.map((acc) => acc.toEntry()).toList()
+      ..sort((a, b) {
+        final typeOrder = const ['cash', 'card', 'other']
+            .indexOf(a.paymentType)
+            .compareTo(const ['cash', 'card', 'other'].indexOf(b.paymentType));
+        if (typeOrder != 0) return typeOrder;
+        return a.transactionCurrency.compareTo(b.transactionCurrency);
+      });
+  }
+
   /// Filters [inputs] and produces a [RemainingCashValue] for each entry that
   /// has a positive balance, a non-null effective rate, and a non-null home
   /// currency.
@@ -364,5 +458,101 @@ class _Accumulator {
   void add(double amount) {
     total += amount;
     count++;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Lot accumulator (Cash Acquisition Summary)
+// ---------------------------------------------------------------------------
+
+class _LotAccumulator {
+  _LotAccumulator(this.sourceType, this.currency);
+
+  final String sourceType;
+  final String currency;
+
+  double totalOriginal = 0;
+  double totalHome = 0;
+  bool hasAnyHome = false;
+  bool homeCurrencyConsistent = true;
+  String? homeCurrencyCode;
+  int count = 0;
+
+  void add(CashLot lot) {
+    totalOriginal += lot.originalAmount;
+    count++;
+    final homeAmt = lot.homeCurrencyAmount;
+    final homeCode = lot.homeCurrencyCode;
+    if (homeAmt != null && homeCode != null) {
+      totalHome += homeAmt;
+      hasAnyHome = true;
+      if (homeCurrencyCode == null) {
+        homeCurrencyCode = homeCode;
+      } else if (homeCurrencyCode != homeCode) {
+        homeCurrencyConsistent = false;
+      }
+    } else {
+      // At least one lot has no home data → consistency broken
+      homeCurrencyConsistent = false;
+    }
+  }
+
+  CashAcquisitionEntry toEntry() {
+    final canShowHome = hasAnyHome && homeCurrencyConsistent;
+    return CashAcquisitionEntry(
+      sourceType: sourceType,
+      originalCurrency: currency,
+      totalOriginalAmount: totalOriginal,
+      totalHomeAmount: canShowHome ? totalHome : null,
+      homeCurrency: canShowHome ? homeCurrencyCode : null,
+      count: count,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Expense accumulator (Payment Source Summary)
+// ---------------------------------------------------------------------------
+
+class _ExpenseAccumulator {
+  _ExpenseAccumulator(this.paymentType, this.currency);
+
+  final String paymentType;
+  final String currency;
+
+  double totalTransaction = 0;
+  double totalHome = 0;
+  bool hasAnyHome = false;
+  bool homeCurrencyConsistent = true;
+  String? homeCurrencyCode;
+  int count = 0;
+
+  void add(Expense e) {
+    totalTransaction += e.transactionAmount;
+    count++;
+    final homeAmt = e.convertedHomeAmount;
+    final homeCode = e.homeCurrency;
+    if (homeAmt != null && homeCode != null) {
+      totalHome += homeAmt;
+      hasAnyHome = true;
+      if (homeCurrencyCode == null) {
+        homeCurrencyCode = homeCode;
+      } else if (homeCurrencyCode != homeCode) {
+        homeCurrencyConsistent = false;
+      }
+    }
+    // expenses without home data simply don't contribute to home total
+  }
+
+  PaymentSourceEntry toEntry() {
+    final canShowHome = hasAnyHome && homeCurrencyConsistent;
+    return PaymentSourceEntry(
+      paymentType: paymentType,
+      transactionCurrency: currency,
+      totalTransactionAmount: totalTransaction,
+      totalHomeAmount: canShowHome ? totalHome : null,
+      homeCurrency: canShowHome ? homeCurrencyCode : null,
+      count: count,
+    );
   }
 }

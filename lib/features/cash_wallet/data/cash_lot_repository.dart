@@ -150,6 +150,22 @@ class CashLotRepository {
     }).toList();
   }
 
+  /// Returns all non-reversed lots for [tripId], ordered by creation time.
+  ///
+  /// Used by report calculators to build the Cash Acquisition Summary.
+  /// Unlike [getOpenLotsForCurrency] this includes fully-consumed lots so
+  /// the report reflects the full acquisition history, not just what remains.
+  Future<List<CashLot>> getActiveLotsForTrip(String tripId) async {
+    final db = await _appDatabase.database;
+    final rows = await db.query(
+      AppDatabase.cashLotsTable,
+      where: 'trip_id = ? AND is_reversed = 0',
+      whereArgs: [tripId],
+      orderBy: 'created_at ASC, id ASC',
+    );
+    return rows.map(CashLot.fromMap).toList();
+  }
+
   Future<List<CashLot>> getLotsBySourceRef(
     String sourceRefType,
     String sourceRefId,

@@ -39,6 +39,9 @@ final tripReportProvider =
         lotRemainingValues = const [];
       }
 
+      // Fetch all active (non-reversed) lots for Cash Acquisition Summary.
+      final activeLots = await lotRepo.getActiveLotsForTrip(tripId);
+
       final refundRepo = ref.read(expenseRefundRepositoryProvider);
       final refunds = await refundRepo.getActiveRefundsByTrip(tripId);
 
@@ -49,5 +52,6 @@ final tripReportProvider =
         expenses: expenses,
         refunds: refunds,
         lotRemainingValues: lotRemainingValues,
+        activeLots: activeLots,
       );
     });

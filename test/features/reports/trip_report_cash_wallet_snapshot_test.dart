@@ -8,6 +8,7 @@ import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_lot_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
+import 'package:travel_expenses/features/cash_wallet/domain/cash_lot.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/cash_lot_currency_summary.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
@@ -58,6 +59,9 @@ class _FakeCashLotRepository extends CashLotRepository {
     required String homeCurrencyCode,
   }) async =>
       const [];
+
+  @override
+  Future<List<CashLot>> getActiveLotsForTrip(String tripId) async => const [];
 }
 
 class _FakeCashWalletRepository extends CashWalletRepository {
