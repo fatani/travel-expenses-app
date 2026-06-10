@@ -11,31 +11,33 @@ final tripReportProvider =
       tripId,
     ) async {
       final expenseRepo = ref.watch(expenseRepositoryProvider);
-      final cashWalletRepo = ref.watch(cashWalletRepositoryProvider);
       final tripRepo = ref.watch(tripRepositoryProvider);
+      final lotRepo = ref.watch(cashLotRepositoryProvider);
 
       final trip = await tripRepo.getTripById(tripId);
       final expenses = await expenseRepo.getExpensesByTrip(tripId);
 
-      // Fetch balances and compute effective rates for Remaining Cash Cost Basis.
+      // Fetch lot-based remaining cash summaries (FIFO cost basis).
       final homeCurrency = trip?.homeCurrencySnapshot;
-      final balances = await cashWalletRepo.getBalancesByTrip(tripId);
-      final cashBalanceRates = await Future.wait(
-        balances.map((balance) async {
-          final rate = homeCurrency != null
-              ? await cashWalletRepo.getEffectiveCashRate(
-                  tripId: tripId,
-                  transactionCurrencyCode: balance.currencyCode,
-                  homeCurrencyCode: homeCurrency,
-                )
-              : null;
-          return CashBalanceRateInput(
-            balance: balance,
-            effectiveRate: rate,
-            homeCurrency: homeCurrency,
-          );
-        }),
-      );
+      final List<RemainingCashValue> lotRemainingValues;
+      if (homeCurrency != null) {
+        final summaries = await lotRepo.computeLotCurrencySummaries(
+          tripId: tripId,
+          homeCurrencyCode: homeCurrency,
+        );
+        lotRemainingValues = summaries
+            .where((s) => s.totalRemainingAmount > 0)
+            .map((s) => RemainingCashValue(
+                  currencyCode: s.currencyCode,
+                  balanceAmount: s.totalRemainingAmount,
+                  effectiveRate: s.totalHomeAmount / s.totalRemainingAmount,
+                  homeAmount: s.totalHomeAmount,
+                  homeCurrency: s.homeCurrencyCode,
+                ))
+            .toList();
+      } else {
+        lotRemainingValues = const [];
+      }
 
       final refundRepo = ref.read(expenseRefundRepositoryProvider);
       final refunds = await refundRepo.getActiveRefundsByTrip(tripId);
@@ -46,6 +48,6 @@ final tripReportProvider =
         tripName: trip?.name ?? tripId,
         expenses: expenses,
         refunds: refunds,
-        cashBalanceRates: cashBalanceRates,
+        lotRemainingValues: lotRemainingValues,
       );
     });

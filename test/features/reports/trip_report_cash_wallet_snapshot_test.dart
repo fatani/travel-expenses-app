@@ -6,7 +6,9 @@ import '../../support/test_expense_repository.dart';
 
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
+import 'package:travel_expenses/features/cash_wallet/data/cash_lot_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
+import 'package:travel_expenses/features/cash_wallet/domain/cash_lot_currency_summary.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
@@ -45,6 +47,17 @@ class _FakeTripRepository extends TripRepository {
   Future<Trip?> getTripById(String id) async {
     return id == _trip.id ? _trip : null;
   }
+}
+
+class _FakeCashLotRepository extends CashLotRepository {
+  _FakeCashLotRepository() : super(AppDatabase());
+
+  @override
+  Future<List<CashLotCurrencySummary>> computeLotCurrencySummaries({
+    required String tripId,
+    required String homeCurrencyCode,
+  }) async =>
+      const [];
 }
 
 class _FakeCashWalletRepository extends CashWalletRepository {
@@ -219,6 +232,7 @@ Future<void> _pumpReport(
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(balances: balances),
         ),
+        cashLotRepositoryProvider.overrideWithValue(_FakeCashLotRepository()),
         expenseRefundRepositoryProvider.overrideWithValue(
           _FakeRefundRepository(),
         ),

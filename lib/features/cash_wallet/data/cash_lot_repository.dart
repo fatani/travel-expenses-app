@@ -3,6 +3,7 @@ import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
 import '../domain/cash_lot.dart';
+import '../domain/cash_lot_currency_summary.dart';
 
 class CashLotRepository {
   CashLotRepository(this._appDatabase, {Uuid? uuid})
@@ -96,6 +97,57 @@ class CashLotRepository {
       where: 'id = ? AND is_reversed = 0',
       whereArgs: [id],
     );
+  }
+
+  /// Aggregates open lots into per-currency summaries for the Remaining Cash
+  /// Value report section.
+  ///
+  /// Only lots that satisfy **all** of the following criteria are included:
+  /// * `is_reversed = 0`
+  /// * `remaining_amount > 0`
+  /// * `effective_rate IS NOT NULL`
+  /// * `home_currency_code = [homeCurrencyCode]`
+  ///
+  /// For each currency the returned summary carries:
+  /// * `totalRemainingAmount` = SUM(remaining_amount)
+  /// * `totalHomeAmount`      = SUM(remaining_amount × effective_rate)
+  ///
+  /// The display rate (homeAmount / totalRemainingAmount) is intentionally left
+  /// to the caller to compute so the repository remains a thin data layer.
+  Future<List<CashLotCurrencySummary>> computeLotCurrencySummaries({
+    required String tripId,
+    required String homeCurrencyCode,
+  }) async {
+    final db = await _appDatabase.database;
+    final normalizedHome = homeCurrencyCode.trim().toUpperCase();
+
+    final rows = await db.rawQuery(
+      '''
+      SELECT
+        currency_code,
+        SUM(remaining_amount)                      AS total_remaining,
+        SUM(remaining_amount * effective_rate)     AS total_home
+      FROM ${AppDatabase.cashLotsTable}
+      WHERE trip_id = ?
+        AND is_reversed = 0
+        AND remaining_amount > 0
+        AND effective_rate IS NOT NULL
+        AND home_currency_code = ?
+      GROUP BY currency_code
+      ''',
+      [tripId, normalizedHome],
+    );
+
+    return rows.map((row) {
+      final totalRemaining = (row['total_remaining'] as num).toDouble();
+      final totalHome = (row['total_home'] as num).toDouble();
+      return CashLotCurrencySummary(
+        currencyCode: (row['currency_code']! as String).trim().toUpperCase(),
+        totalRemainingAmount: totalRemaining,
+        totalHomeAmount: totalHome,
+        homeCurrencyCode: normalizedHome,
+      );
+    }).toList();
   }
 
   Future<List<CashLot>> getLotsBySourceRef(

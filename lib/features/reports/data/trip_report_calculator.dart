@@ -23,8 +23,12 @@ class TripReportCalculator {
     required List<Expense> expenses,
     List<ExpenseRefund> refunds = const [],
     List<CashBalanceRateInput> cashBalanceRates = const [],
+    List<RemainingCashValue> lotRemainingValues = const [],
   }) {
     if (expenses.isEmpty) {
+      final emptyRemainingCash = lotRemainingValues.isNotEmpty
+          ? lotRemainingValues
+          : _buildRemainingCashValues(cashBalanceRates);
       return TripReportSummary(
         tripId: tripId,
         tripName: tripName,
@@ -46,7 +50,8 @@ class TripReportCalculator {
         grossSpendingHomeCurrency: null,
         refundHomeAmount: null,
         netSpendingHomeAmount: null,
-        remainingCashValues: _buildRemainingCashValues(cashBalanceRates),
+        remainingCashValues: emptyRemainingCash,
+        netTripCostHomeAmount: null,
       );
     }
 
@@ -211,6 +216,24 @@ class TripReportCalculator {
         ? grossSpendingHomeAmount - (refundHomeAmount ?? 0)
         : null;
 
+    // --- remaining cash values -------------------------------------------------
+    // If lot-based values are provided (new FIFO path) use them;
+    // otherwise fall back to the weighted-average path (backward compat).
+    final remainingCashValues = lotRemainingValues.isNotEmpty
+        ? lotRemainingValues
+        : _buildRemainingCashValues(cashBalanceRates);
+
+    // --- net trip cost ---------------------------------------------------------
+    // Net Trip Cost = Net Spending − Total Remaining Cash (home-currency value).
+    // Only remaining cash entries whose homeCurrency matches grossCurrency count.
+    double? netTripCostHomeAmount;
+    if (netSpendingHomeAmount != null) {
+      final totalRemainingCashHome = remainingCashValues
+          .where((v) => grossCurrency != null && v.homeCurrency == grossCurrency)
+          .fold<double>(0, (sum, v) => sum + v.homeAmount);
+      netTripCostHomeAmount = netSpendingHomeAmount - totalRemainingCashHome;
+    }
+
     return TripReportSummary(
       tripId: tripId,
       tripName: tripName,
@@ -232,7 +255,8 @@ class TripReportCalculator {
       grossSpendingHomeCurrency: grossCurrency,
       refundHomeAmount: refundHomeAmount,
       netSpendingHomeAmount: netSpendingHomeAmount,
-      remainingCashValues: _buildRemainingCashValues(cashBalanceRates),
+      remainingCashValues: remainingCashValues,
+      netTripCostHomeAmount: netTripCostHomeAmount,
     );
   }
 

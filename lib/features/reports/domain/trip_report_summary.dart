@@ -54,6 +54,7 @@ class TripReportSummary {
     this.refundHomeAmount,
     this.netSpendingHomeAmount,
     this.remainingCashValues = const [],
+    this.netTripCostHomeAmount,
   });
 
   final String tripId;
@@ -126,6 +127,13 @@ class TripReportSummary {
   /// Empty when no balance has a usable effective rate. Each entry satisfies:
   /// `homeAmount = balanceAmount × effectiveRate`.
   final List<RemainingCashValue> remainingCashValues;
+
+  /// Net Trip Cost = [netSpendingHomeAmount] − totalRemainingCashHomeAmount.
+  ///
+  /// Null when [netSpendingHomeAmount] is null (no home-currency data).
+  /// Equals [netSpendingHomeAmount] when [remainingCashValues] is empty or none
+  /// match [grossSpendingHomeCurrency].
+  final double? netTripCostHomeAmount;
 
   /// Convenience: true when the trip has at least one international expense.
   bool get hasInternational => internationalExpenseCount > 0;
