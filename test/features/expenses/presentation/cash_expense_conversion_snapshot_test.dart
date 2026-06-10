@@ -15,6 +15,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/no_fifo_record_cash_expense_use_case.dart';
 import '../../../support/test_expense_repository.dart';
 
 import 'package:travel_expenses/core/database/app_database.dart';
@@ -50,6 +51,13 @@ void main() {
         manualCurrencyConversionServiceProvider.overrideWithValue(
           ManualCurrencyConversionService(_NoOpManualRateRepository()),
         ),
+        // Bypass FIFO: no lots in this test; FX-snapshot values flow through.
+        recordCashExpenseUseCaseProvider.overrideWith((ref) {
+          return NoFifoRecordCashExpenseUseCase(
+            expenseRepository: ref.watch(expenseRepositoryProvider),
+            cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+          );
+        }),
       ],
     );
   }

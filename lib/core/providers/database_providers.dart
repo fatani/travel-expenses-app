@@ -2,8 +2,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../finance/manual_currency_conversion_service.dart';
 import '../finance/manual_exchange_rate_repository.dart';
-import '../../features/expenses/data/expense_repository.dart';
+import '../../features/cash_wallet/data/cash_lot_consumption_repository.dart';
+import '../../features/cash_wallet/data/cash_lot_repository.dart';
 import '../../features/cash_wallet/data/cash_wallet_repository.dart';
+import '../../features/cash_wallet/data/currency_exchange_repository.dart';
+import '../../features/cash_wallet/domain/cash_lot_fifo_engine.dart';
+import '../../features/expenses/data/expense_repository.dart';
+import '../../features/expenses/domain/record_cash_expense_use_case.dart';
 import '../../features/financial_profile/data/user_financial_profile_repository.dart';
 import '../../features/refunds/data/expense_refund_repository.dart';
 import '../../features/settings/data/card_repository.dart';
@@ -56,4 +61,34 @@ final userFinancialProfileRepositoryProvider =
 
 final expenseRefundRepositoryProvider = Provider<ExpenseRefundRepository>((ref) {
   return ExpenseRefundRepository(ref.watch(appDatabaseProvider));
+});
+
+final cashLotRepositoryProvider = Provider<CashLotRepository>((ref) {
+  return CashLotRepository(ref.watch(appDatabaseProvider));
+});
+
+final cashLotConsumptionRepositoryProvider =
+    Provider<CashLotConsumptionRepository>((ref) {
+  return CashLotConsumptionRepository(ref.watch(appDatabaseProvider));
+});
+
+final currencyExchangeRepositoryProvider =
+    Provider<CurrencyExchangeRepository>((ref) {
+  return CurrencyExchangeRepository(ref.watch(appDatabaseProvider));
+});
+
+final cashLotFifoEngineProvider = Provider<CashLotFifoEngine>((ref) {
+  return CashLotFifoEngine(ref.watch(cashLotRepositoryProvider));
+});
+
+final recordCashExpenseUseCaseProvider =
+    Provider<RecordCashExpenseUseCase>((ref) {
+  return RecordCashExpenseUseCase(
+    appDatabase: ref.watch(appDatabaseProvider),
+    expenseRepository: ref.watch(expenseRepositoryProvider),
+    cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+    fifoEngine: ref.watch(cashLotFifoEngineProvider),
+    lotRepository: ref.watch(cashLotRepositoryProvider),
+    consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
+  );
 });

@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
+import '../../../support/no_fifo_record_cash_expense_use_case.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_form_screen.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
@@ -375,7 +376,14 @@ Widget _buildTripDetailsApp({
   required List<Override> overrides,
 }) {
   return ProviderScope(
-    overrides: overrides,
+    overrides: [
+      ...overrides,
+      recordCashExpenseUseCaseProvider.overrideWith((ref) =>
+          NoFifoRecordCashExpenseUseCase(
+            expenseRepository: ref.watch(expenseRepositoryProvider),
+            cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+          )),
+    ],
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/async/async_notifier_reload.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../cash_wallet/data/cash_wallet_repository.dart';
+import '../../cash_wallet/domain/insufficient_cash_exception.dart';
 import '../../global_reports/data/global_report_provider.dart';
 import '../../predictions/data/trip_prediction_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
@@ -155,7 +156,6 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
 
     return _runMutation(() async {
       final expenseRepository = ref.read(expenseRepositoryProvider);
-      final cashWalletRepository = ref.read(cashWalletRepositoryProvider);
 
       if (!_isCashExpense(expense)) {
         final created = await expenseRepository.createExpense(expense);
@@ -165,17 +165,22 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
         );
       }
 
-      final cashCreateResult =
-          await expenseRepository.createCashExpenseWithWalletDeduction(
-        expense: expense,
-        cashWallet: cashWalletRepository,
-      );
-
-      return _buildCreateOutcome(
-        created: cashCreateResult.expense,
-        conversionSnapshot: conversionSnapshot,
-        deductionResult: cashCreateResult.deduction,
-      );
+      try {
+        final cashCreateResult =
+            await ref.read(recordCashExpenseUseCaseProvider).execute(expense);
+        return _buildCreateOutcome(
+          created: cashCreateResult.expense,
+          conversionSnapshot: conversionSnapshot,
+          deductionResult: cashCreateResult.deduction,
+        );
+      } on InsufficientCashException {
+        return ExpenseCreateOutcome(
+          cashBalanceInsufficient: true,
+          noCashBalanceRecorded: true,
+          missingManualRate: conversionSnapshot.missingManualRate,
+          createdExpenseId: null,
+        );
+      }
     });
   }
 

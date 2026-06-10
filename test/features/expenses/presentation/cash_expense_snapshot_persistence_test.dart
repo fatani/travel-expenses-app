@@ -7,6 +7,7 @@ import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_controller.dart';
+import '../../../support/no_fifo_record_cash_expense_use_case.dart';
 import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
@@ -48,6 +49,13 @@ void main() {
           expenseRefundRepositoryProvider.overrideWithValue(
             ExpenseRefundRepository(appDatabase),
           ),
+          // Bypass FIFO: no lots in this test; FX-snapshot values flow through.
+          recordCashExpenseUseCaseProvider.overrideWith((ref) {
+            return NoFifoRecordCashExpenseUseCase(
+              expenseRepository: ref.watch(expenseRepositoryProvider),
+              cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+            );
+          }),
         ],
       );
       addTearDown(container.dispose);

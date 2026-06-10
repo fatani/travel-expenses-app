@@ -10,6 +10,7 @@ import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/design_system/calm_snackbar.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
+import '../../../support/no_fifo_record_cash_expense_use_case.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
@@ -255,6 +256,11 @@ Widget _buildTripDetailsApp({
       ),
       if (cardRepository != null)
         cardRepositoryProvider.overrideWithValue(cardRepository),
+      recordCashExpenseUseCaseProvider.overrideWith((ref) =>
+          NoFifoRecordCashExpenseUseCase(
+            expenseRepository: ref.watch(expenseRepositoryProvider),
+            cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+          )),
     ],
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,

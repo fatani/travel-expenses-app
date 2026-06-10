@@ -12,6 +12,9 @@ import 'package:travel_expenses/features/refunds/data/expense_refund_repository.
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 
+import 'package:travel_expenses/features/cash_wallet/data/cash_lot_repository.dart';
+import 'package:travel_expenses/features/cash_wallet/domain/cash_lot.dart';
+
 import '../../../support/isolated_app_database.dart';
 
 void main() {
@@ -77,6 +80,26 @@ void main() {
           ExpenseRefundRepository(appDatabase),
         ),
       ],
+    );
+  }
+
+  /// Inserts a cash lot directly into the test DB, bypassing the wallet layer.
+  Future<void> insertLot({
+    required double amount,
+    String currency = 'THB',
+  }) async {
+    final lotRepo = CashLotRepository(appDatabase);
+    await lotRepo.insertCashLot(
+      CashLot.create(
+        id: 'lot-${DateTime.now().microsecondsSinceEpoch}',
+        tripId: trip.id,
+        sourceType: 'initial_cash',
+        sourceRefType: 'cash_transaction',
+        sourceRefId: 'src-test',
+        currencyCode: currency,
+        originalAmount: amount,
+        remainingAmount: amount,
+      ),
     );
   }
 
@@ -187,6 +210,8 @@ void main() {
     });
 
     test('controller does not return success when wallet deduction fails', () async {
+      // Provide a lot so FIFO planning succeeds; then the failing wallet throws.
+      await insertLot(amount: 500);
       final container = buildContainer(
         cashWalletOverride: _FailingDeductionCashWalletRepository(appDatabase),
       );
@@ -246,6 +271,9 @@ void main() {
     });
 
     test('insufficient balance warning still reports correctly', () async {
+      // With FIFO: no lots → InsufficientCashException is caught by the
+      // controller → cashBalanceInsufficient=true, expense NOT created,
+      // wallet balance stays at 0 (no deduction occurs).
       final container = buildContainer();
       addTearDown(container.dispose);
 
@@ -265,8 +293,10 @@ void main() {
 
       expect(outcome.cashBalanceInsufficient, isTrue);
       expect(outcome.noCashBalanceRecorded, isTrue);
-      expect(await walletBalance(), closeTo(-250, 0.000001));
-      expect((await expenseRepository.getExpensesByTrip(trip.id)), hasLength(1));
+      // No deduction written — balance stays zero.
+      expect(await walletBalance(), closeTo(0, 0.000001));
+      // No expense written — FIFO threw before the transaction opened.
+      expect((await expenseRepository.getExpensesByTrip(trip.id)), isEmpty);
     });
 
     test('duplicate submit does not create duplicate cash expense rows', () async {
@@ -300,6 +330,8 @@ void main() {
         amount: 300,
         currencyCode: 'THB',
       );
+      // Also insert a lot so FIFO planning succeeds.
+      await insertLot(amount: 300);
 
       final container = buildContainer();
       addTearDown(container.dispose);
