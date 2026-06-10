@@ -45,7 +45,7 @@ class CashLotRepository {
       where:
           'trip_id = ? AND currency_code = ? AND is_reversed = 0 AND is_fully_consumed = 0',
       whereArgs: [tripId, currencyCode.trim().toUpperCase()],
-      orderBy: 'created_at ASC',
+      orderBy: 'created_at ASC, id ASC',
     );
     return rows.map(CashLot.fromMap).toList();
   }
