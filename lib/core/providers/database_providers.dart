@@ -10,6 +10,8 @@ import '../../features/cash_wallet/domain/cash_lot_fifo_engine.dart';
 import '../../features/cash_wallet/domain/currency_exchange_engine.dart';
 import '../../features/cash_wallet/domain/record_atm_withdrawal_use_case.dart';
 import '../../features/cash_wallet/domain/record_currency_exchange_use_case.dart';
+import '../../features/refunds/domain/record_refund_use_case.dart';
+import '../../features/refunds/domain/refund_inheritance_engine.dart';
 import '../../features/expenses/data/expense_repository.dart';
 import '../../features/expenses/domain/record_cash_expense_use_case.dart';
 import '../../features/financial_profile/data/user_financial_profile_repository.dart';
@@ -107,6 +109,20 @@ final recordCurrencyExchangeUseCaseProvider =
     lotRepository: ref.watch(cashLotRepositoryProvider),
     consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
     exchangeRepository: ref.watch(currencyExchangeRepositoryProvider),
+  );
+});
+
+final refundInheritanceEngineProvider = Provider<RefundInheritanceEngine>((ref) {
+  return const RefundInheritanceEngine();
+});
+
+final recordRefundUseCaseProvider = Provider<RecordRefundUseCase>((ref) {
+  return RecordRefundUseCase(
+    appDatabase: ref.watch(appDatabaseProvider),
+    refundEngine: ref.watch(refundInheritanceEngineProvider),
+    refundRepository: ref.watch(expenseRefundRepositoryProvider),
+    lotRepository: ref.watch(cashLotRepositoryProvider),
+    cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
   );
 });
 

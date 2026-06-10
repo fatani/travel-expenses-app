@@ -143,6 +143,49 @@ class CashWalletRepository {
     return transaction;
   }
 
+  /// Inserts a [CashTransactionType.cashRefund] row (with optional [lotId] set)
+  /// and applies `+amount` to [currencyCode] balance, all inside the caller's
+  /// [txn].
+  ///
+  /// Called by [RecordRefundUseCase] to participate in its outer atomic
+  /// transaction.
+  Future<CashTransaction> recordCashRefundInflow({
+    required DatabaseExecutor txn,
+    required String tripId,
+    String? expenseId,
+    required double amount,
+    required String currencyCode,
+    String? lotId,
+    double? homeCurrencyAmount,
+    String? homeCurrencyCode,
+    String? note,
+    DateTime? createdAt,
+  }) async {
+    final normalizedCurrency = currencyCode.trim().toUpperCase();
+    final transaction = CashTransaction.create(
+      id: _uuid.v4(),
+      tripId: tripId,
+      expenseId: expenseId,
+      type: CashTransactionType.cashRefund,
+      amount: amount,
+      currencyCode: normalizedCurrency,
+      homeCurrencyAmount: homeCurrencyAmount,
+      homeCurrencyCode: homeCurrencyCode,
+      note: note,
+      createdAt: createdAt,
+      lotId: lotId,
+    );
+    await _insertTransaction(txn, transaction);
+    await _applyBalanceDelta(
+      txn,
+      tripId: tripId,
+      currencyCode: normalizedCurrency,
+      delta: CashTransactionType.cashRefund.signedDelta(amount),
+      updatedAt: transaction.createdAt,
+    );
+    return transaction;
+  }
+
   /// Inserts a [CashTransactionType.currencyExchangeOut] row and applies
   /// `-fromAmount` to [fromCurrencyCode] balance, all inside the caller's [txn].
   ///

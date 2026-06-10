@@ -159,6 +159,33 @@ class ExpenseRefundRepository {
   }
 
   // ---------------------------------------------------------------------------
+  // Transactional helpers — for use by RecordRefundUseCase
+  // ---------------------------------------------------------------------------
+
+  /// Inserts a refund row inside an existing [txn].
+  Future<void> insertRefundTxn(
+    DatabaseExecutor txn,
+    ExpenseRefund refund,
+  ) => _insertRefund(txn, refund);
+
+  /// Checks the over-refund guard inside an existing [txn].
+  ///
+  /// Throws [RefundOverLimitException] when the sum of existing active refunds
+  /// + [newHomeAmount] would exceed the linked expense's home amount.
+  Future<void> assertOverRefundGuardTxn(
+    DatabaseExecutor txn, {
+    required String? expenseId,
+    required double? newHomeAmount,
+    required Expense? linkedExpense,
+  }) =>
+      _assertOverRefundGuard(
+        txn,
+        expenseId: expenseId,
+        newHomeAmount: newHomeAmount,
+        linkedExpense: linkedExpense,
+      );
+
+  // ---------------------------------------------------------------------------
   // Reverse
   // ---------------------------------------------------------------------------
 
