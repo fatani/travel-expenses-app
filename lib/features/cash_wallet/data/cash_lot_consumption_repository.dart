@@ -78,6 +78,23 @@ class CashLotConsumptionRepository {
     return rows.map(CashLotConsumption.fromMap).toList();
   }
 
+  /// Hard-deletes all consumption rows for [expenseId].
+  ///
+  /// Call this inside a transaction **before** deleting the expense row so the
+  /// FK `ON DELETE SET NULL` trigger never fires and the
+  /// `CHECK (expense_id IS NOT NULL)` constraint is not violated.
+  Future<void> deleteConsumptionsByExpenseId(
+    String expenseId, {
+    DatabaseExecutor? txn,
+  }) async {
+    final executor = txn ?? await _appDatabase.database;
+    await executor.delete(
+      AppDatabase.cashLotConsumptionsTable,
+      where: 'expense_id = ?',
+      whereArgs: [expenseId],
+    );
+  }
+
   Future<void> markConsumptionsReversedForExpense(
     DatabaseExecutor txn,
     String expenseId,

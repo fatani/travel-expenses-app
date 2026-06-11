@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/sqflite.dart';
+import '../../../support/no_fifo_update_cash_expense_use_case.dart';
 import '../../../support/test_expense_repository.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -136,6 +138,11 @@ void main() {
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
         cashWalletRepositoryProvider.overrideWithValue(_NoOpCashWalletRepository()),
+        updateCashExpenseUseCaseProvider.overrideWith((ref) {
+          return NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: ref.watch(expenseRepositoryProvider),
+          );
+        }),
       ],
     );
     addTearDown(container.dispose);
@@ -156,6 +163,11 @@ void main() {
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
         cashWalletRepositoryProvider.overrideWithValue(_NoOpCashWalletRepository()),
+        updateCashExpenseUseCaseProvider.overrideWith((ref) {
+          return NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: ref.watch(expenseRepositoryProvider),
+          );
+        }),
       ],
     );
     addTearDown(container.dispose);
@@ -384,6 +396,11 @@ Widget _buildTripDetails({
     overrides: [
       expenseRepositoryProvider.overrideWithValue(repository),
       cashWalletRepositoryProvider.overrideWithValue(_EmptyCashWalletRepository()),
+      updateCashExpenseUseCaseProvider.overrideWith((ref) {
+        return NoFifoUpdateCashExpenseUseCase(
+          expenseRepository: ref.watch(expenseRepositoryProvider),
+        );
+      }),
     ],
     child: MaterialApp(
       locale: locale,
@@ -438,7 +455,7 @@ class _TrackingExpenseRepository extends TestExpenseRepository {
   }
 
   @override
-  Future<void> deleteExpense(String id) async {
+  Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {
     deletedExpenseIds.add(id);
     _expenses.removeWhere((expense) => expense.id == id);
   }
@@ -450,7 +467,7 @@ class _FailingDeleteExpenseRepository extends _TrackingExpenseRepository {
   int deleteAttempts = 0;
 
   @override
-  Future<void> deleteExpense(String id) async {
+  Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {
     deleteAttempts++;
     throw StateError('db unavailable');
   }

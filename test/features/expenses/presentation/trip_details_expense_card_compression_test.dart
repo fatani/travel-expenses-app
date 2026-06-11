@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/sqflite.dart';
 import '../../../support/test_expense_repository.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -333,7 +334,7 @@ class _FakeExpenseRepository extends TestExpenseRepository {
   }
 
   @override
-  Future<void> deleteExpense(String id) async {
+  Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {
     deletedExpenseIds.add(id);
     _expenses.removeWhere((expense) => expense.id == id);
   }

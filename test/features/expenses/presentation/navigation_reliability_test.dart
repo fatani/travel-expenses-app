@@ -316,7 +316,7 @@ class _TrackingExpenseRepository extends _StaticExpenseRepository {
   final List<String> deletedExpenseIds = <String>[];
 
   @override
-  Future<void> deleteExpense(String id) async {
+  Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {
     deletedExpenseIds.add(id);
   }
 }

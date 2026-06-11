@@ -457,47 +457,78 @@ class CashWalletRepository {
   }) async {
     final db = await _appDatabase.database;
     return db.transaction((txn) async {
-      Map<String, Object?>? deduction = await _findActiveDeductionByExpenseId(
+      return _reverseCashExpenseDeductionBody(
         txn,
         tripId: tripId,
         expenseId: expenseId,
+        fallbackExpense: fallbackExpense,
       );
-
-      deduction ??= await _findFallbackActiveDeduction(txn, expenseId: expenseId, fallbackExpense: fallbackExpense);
-
-      if (deduction == null) {
-        return false;
-      }
-
-      final deductionAmount = (deduction['amount'] as num).toDouble();
-      final deductionCurrency = (deduction['currency_code'] as String).trim().toUpperCase();
-      final now = DateTime.now().toUtc();
-
-      await txn.update(
-        AppDatabase.cashTransactionsTable,
-        {
-          'is_reversed': 1,
-          'reversed_at': now.toIso8601String(),
-          if ((deduction['expense_id'] as String?) == null) 'expense_id': expenseId,
-        },
-        where: 'id = ?',
-        whereArgs: [deduction['id']],
-      );
-
-      await _applyBalanceDelta(
-        txn,
-        tripId: tripId,
-        currencyCode: deductionCurrency,
-        delta: deductionAmount,
-        updatedAt: now,
-      );
-
-      return true;
     });
   }
 
+  /// Reverses the active [cash_transactions] deduction for [expenseId] and
+  /// restores [trip_cash_balances], using the caller-supplied [txn] so this
+  /// participates in an outer transaction.
+  ///
+  /// Returns [true] when a matching deduction was found and reversed.
+  Future<bool> reverseCashExpenseDeductionInTxn(
+    DatabaseExecutor txn, {
+    required String tripId,
+    required String expenseId,
+  }) {
+    return _reverseCashExpenseDeductionBody(
+      txn,
+      tripId: tripId,
+      expenseId: expenseId,
+    );
+  }
+
+  Future<bool> _reverseCashExpenseDeductionBody(
+    DatabaseExecutor txn, {
+    required String tripId,
+    required String expenseId,
+    Expense? fallbackExpense,
+  }) async {
+    Map<String, Object?>? deduction = await _findActiveDeductionByExpenseId(
+      txn,
+      tripId: tripId,
+      expenseId: expenseId,
+    );
+
+    deduction ??= await _findFallbackActiveDeduction(txn, expenseId: expenseId, fallbackExpense: fallbackExpense);
+
+    if (deduction == null) {
+      return false;
+    }
+
+    final deductionAmount = (deduction['amount'] as num).toDouble();
+    final deductionCurrency = (deduction['currency_code'] as String).trim().toUpperCase();
+    final now = DateTime.now().toUtc();
+
+    await txn.update(
+      AppDatabase.cashTransactionsTable,
+      {
+        'is_reversed': 1,
+        'reversed_at': now.toIso8601String(),
+        if ((deduction['expense_id'] as String?) == null) 'expense_id': expenseId,
+      },
+      where: 'id = ?',
+      whereArgs: [deduction['id']],
+    );
+
+    await _applyBalanceDelta(
+      txn,
+      tripId: tripId,
+      currencyCode: deductionCurrency,
+      delta: deductionAmount,
+      updatedAt: now,
+    );
+
+    return true;
+  }
+
   Future<Map<String, Object?>?> _findActiveDeductionByExpenseId(
-    Transaction txn, {
+    DatabaseExecutor txn, {
     required String tripId,
     required String expenseId,
   }) async {
@@ -517,7 +548,7 @@ class CashWalletRepository {
   }
 
   Future<Map<String, Object?>?> _findFallbackActiveDeduction(
-    Transaction txn, {
+    DatabaseExecutor txn, {
     required String expenseId,
     required Expense? fallbackExpense,
   }) async {
@@ -561,7 +592,7 @@ class CashWalletRepository {
   }
 
   Future<void> _reverseManualCashTransactionInTxn(
-    Transaction txn, {
+    DatabaseExecutor txn, {
     required CashTransaction transaction,
   }) async {
     final now = DateTime.now().toUtc();

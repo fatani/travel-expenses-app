@@ -92,7 +92,7 @@ class _FakeExpenseRepository extends TestExpenseRepository {
   }
 
   @override
-  Future<Expense> updateExpense(Expense expense) async {
+  Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
     final index = _expenses.indexWhere((item) => item.id == expense.id);
     if (index >= 0) {
       _expenses[index] = expense;
@@ -101,7 +101,7 @@ class _FakeExpenseRepository extends TestExpenseRepository {
   }
 
   @override
-  Future<void> deleteExpense(String id) async {
+  Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {
     _expenses.removeWhere((expense) => expense.id == id);
   }
 }

@@ -1,3 +1,5 @@
+import 'package:sqflite/sqflite.dart';
+
 import '../data/cash_lot_repository.dart';
 import 'cash_lot.dart';
 import 'insufficient_cash_exception.dart';
@@ -37,14 +39,20 @@ class CashLotFifoEngine {
   /// Returns a non-empty list of [LotConsumptionPlan]s in FIFO order.
   ///
   /// Throws [InsufficientCashException] when total open balance is too low.
+  ///
+  /// Pass [txn] to run the underlying lot query inside an existing SQLite
+  /// transaction so in-progress writes (e.g. lot restorations performed
+  /// earlier in the same transaction) are visible to the planner.
   Future<List<LotConsumptionPlan>> planConsumption({
     required String tripId,
     required String currencyCode,
     required double requiredAmount,
+    DatabaseExecutor? txn,
   }) async {
     final lots = await _lotRepository.getOpenLotsForCurrency(
       tripId,
       currencyCode.trim().toUpperCase(),
+      txn: txn,
     );
     return _buildPlan(lots, requiredAmount, currencyCode.trim().toUpperCase());
   }

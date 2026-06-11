@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/sqflite.dart';
 import '../../../support/test_expense_repository.dart';
 
 import 'package:travel_expenses/core/database/app_database.dart';
@@ -639,7 +640,7 @@ class _FakeExpenseRepository extends TestExpenseRepository {
   }
 
   @override
-  Future<Expense> updateExpense(Expense expense) async {
+  Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
     final index = _expenses.indexWhere((item) => item.id == expense.id);
     if (index >= 0) {
       _expenses[index] = expense;

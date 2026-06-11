@@ -16,6 +16,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../../../support/no_fifo_record_cash_expense_use_case.dart';
+import '../../../support/no_fifo_update_cash_expense_use_case.dart';
 import '../../../support/test_expense_repository.dart';
 
 import 'package:travel_expenses/core/database/app_database.dart';
@@ -56,6 +57,11 @@ void main() {
           return NoFifoRecordCashExpenseUseCase(
             expenseRepository: ref.watch(expenseRepositoryProvider),
             cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+          );
+        }),
+        updateCashExpenseUseCaseProvider.overrideWith((ref) {
+          return NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: ref.watch(expenseRepositoryProvider),
           );
         }),
       ],
@@ -429,7 +435,7 @@ class _FakeExpenseRepository extends TestExpenseRepository {
   }
 
   @override
-  Future<Expense> updateExpense(Expense expense) async {
+  Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
     final index = _expenses.indexWhere((e) => e.id == expense.id);
     if (index >= 0) _expenses[index] = expense;
     return expense;

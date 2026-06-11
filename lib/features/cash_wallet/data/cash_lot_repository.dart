@@ -51,12 +51,16 @@ class CashLotRepository {
 
   /// Returns open (not reversed, not fully consumed) lots for the given trip
   /// and currency, ordered oldest-first (FIFO consumption order).
+  ///
+  /// Pass [txn] to run the query inside an existing transaction so in-progress
+  /// writes (e.g. lot restorations) are visible.
   Future<List<CashLot>> getOpenLotsForCurrency(
     String tripId,
-    String currencyCode,
-  ) async {
-    final db = await _appDatabase.database;
-    final rows = await db.query(
+    String currencyCode, {
+    DatabaseExecutor? txn,
+  }) async {
+    final executor = txn ?? await _appDatabase.database;
+    final rows = await executor.query(
       AppDatabase.cashLotsTable,
       where:
           'trip_id = ? AND currency_code = ? AND is_reversed = 0 AND is_fully_consumed = 0',
@@ -64,6 +68,27 @@ class CashLotRepository {
       orderBy: 'created_at ASC, id ASC',
     );
     return rows.map(CashLot.fromMap).toList();
+  }
+
+  /// Adds [amountToRestore] back to the lot's [remaining_amount] and clears
+  /// [is_fully_consumed] if the result is positive.
+  ///
+  /// Used by the cash-expense update/delete reverse phase to undo a prior FIFO
+  /// consumption without needing to read the current remaining first.
+  Future<void> restoreLotConsumption(
+    String lotId,
+    double amountToRestore, {
+    DatabaseExecutor? txn,
+  }) async {
+    final executor = txn ?? await _appDatabase.database;
+    await executor.rawUpdate(
+      'UPDATE ${AppDatabase.cashLotsTable} '
+      'SET remaining_amount = remaining_amount + ?, '
+      '    is_fully_consumed = CASE WHEN remaining_amount + ? > 0 THEN 0 '
+      '                             ELSE is_fully_consumed END '
+      'WHERE id = ?',
+      [amountToRestore, amountToRestore, lotId],
+    );
   }
 
   Future<void> updateLotRemainingAmount(

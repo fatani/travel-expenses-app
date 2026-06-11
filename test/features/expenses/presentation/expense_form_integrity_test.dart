@@ -202,7 +202,7 @@ class _RecordingExpenseRepository extends TestExpenseRepository {
   }
 
   @override
-  Future<Expense> updateExpense(Expense expense) async {
+  Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
     updatedExpenses.add(expense);
     final index = _expenses.indexWhere((item) => item.id == expense.id);
     if (index != -1) {

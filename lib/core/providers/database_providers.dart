@@ -14,6 +14,7 @@ import '../../features/refunds/domain/record_refund_use_case.dart';
 import '../../features/refunds/domain/refund_inheritance_engine.dart';
 import '../../features/expenses/data/expense_repository.dart';
 import '../../features/expenses/domain/record_cash_expense_use_case.dart';
+import '../../features/expenses/domain/update_cash_expense_use_case.dart';
 import '../../features/financial_profile/data/user_financial_profile_repository.dart';
 import '../../features/refunds/data/expense_refund_repository.dart';
 import '../../features/settings/data/card_repository.dart';
@@ -135,5 +136,18 @@ final recordCashExpenseUseCaseProvider =
     fifoEngine: ref.watch(cashLotFifoEngineProvider),
     lotRepository: ref.watch(cashLotRepositoryProvider),
     consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
+  );
+});
+
+final updateCashExpenseUseCaseProvider =
+    Provider<UpdateCashExpenseUseCase>((ref) {
+  return UpdateCashExpenseUseCase(
+    appDatabase: ref.watch(appDatabaseProvider),
+    expenseRepository: ref.watch(expenseRepositoryProvider),
+    consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
+    lotRepository: ref.watch(cashLotRepositoryProvider),
+    cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+    fifoEngine: ref.watch(cashLotFifoEngineProvider),
+    refundRepository: ref.watch(expenseRefundRepositoryProvider),
   );
 });

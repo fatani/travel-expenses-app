@@ -12,6 +12,7 @@ import '../domain/expense.dart';
 import '../domain/expense_payment.dart';
 import '../domain/expense_payment_service.dart';
 import '../domain/money_model.dart';
+import '../domain/update_cash_expense_exception.dart';
 
 class ExpenseCreateOutcome {
   const ExpenseCreateOutcome({
@@ -282,10 +283,6 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       cardProfileId: cardProfileId,
     );
 
-    final fxSnapshotService = ExpenseFxSnapshotService(
-      cashWalletRepository: ref.read(cashWalletRepositoryProvider),
-    );
-
     final previousWasCash = _isCashPayment(
       paymentMethod: expense.paymentMethod,
       paymentChannel: expense.paymentChannel,
@@ -294,13 +291,99 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       paymentMethod: normalizedPayment.paymentMethod,
       paymentChannel: normalizedPayment.paymentChannel,
     );
-    final removedCardChargedAmount =
-        !previousWasCash &&
-        !nextIsCash &&
-        expense.totalChargedAmount != null &&
+
+    // ── Cash path ────────────────────────────────────────────────────────────
+    // When either side is cash, delegate to UpdateCashExpenseUseCase which
+    // handles FIFO lot reversal + recreation atomically.
+    // getEffectiveCashRate is NOT called on this path; FIFO is the sole source
+    // of cost basis for cash expenses.
+    if (nextIsCash || previousWasCash) {
+      // For cash → card: resolve the card FX snapshot so the expense carries
+      // a valid home-currency amount.  The FX service is safe here because
+      // neither old nor new expense is cash (nextIsCash = false), so
+      // getEffectiveCashRate is never invoked.
+      ExpenseConversionSnapshot? cardSnapshot;
+      if (!nextIsCash) {
+        final fxSnapshotService = ExpenseFxSnapshotService(
+          cashWalletRepository: ref.read(cashWalletRepositoryProvider),
+        );
+        cardSnapshot = await fxSnapshotService.resolveUpdateSnapshot(
+          tripId: _tripId,
+          fallbackAmount: amount,
+          fallbackCurrencyCode: currencyCode,
+          normalizedMoney: normalizedMoney,
+          originalAmount: originalAmount,
+          originalCurrency: originalCurrency,
+          convertedHomeAmount: convertedHomeAmount,
+          homeCurrency: homeCurrency,
+          conversionRate: conversionRate,
+          tripHomeCurrency: tripHomeCurrency,
+          previousExpense: expense,
+          paymentMethod: normalizedPayment.paymentMethod,
+          paymentChannel: normalizedPayment.paymentChannel,
+          // Force-clear the stale cash snapshot when switching to card.
+          forceClearSnapshot: true,
+        );
+      }
+
+      // Build the candidate expense.  For cash destinations the FX fields are
+      // intentionally null — the use case will derive them from FIFO.
+      final txAmount = normalizedMoney.transactionAmount ?? amount;
+      final txCurrency = normalizedMoney.transactionCurrency ?? currencyCode;
+      final updatedExpense = expense.copyWith(
+        title: title,
+        amount: amount,
+        currencyCode: currencyCode,
+        transactionAmount: txAmount,
+        transactionCurrency: txCurrency,
+        // Cash → card: use the resolved card snapshot.
+        // Card → cash / cash → cash: null — FIFO will set these.
+        originalAmount: nextIsCash ? txAmount : cardSnapshot?.originalAmount,
+        originalCurrency:
+            nextIsCash ? txCurrency : cardSnapshot?.originalCurrency,
+        convertedHomeAmount:
+            nextIsCash ? null : cardSnapshot?.convertedHomeAmount,
+        homeCurrency: nextIsCash
+            ? (homeCurrency ?? expense.homeCurrency)
+            : cardSnapshot?.homeCurrency,
+        conversionRate: nextIsCash ? null : cardSnapshot?.conversionRate,
+        billedAmount: normalizedMoney.billedAmount,
+        billedCurrency: normalizedMoney.billedCurrency,
+        feesAmount: normalizedMoney.feesAmount,
+        feesCurrency: normalizedMoney.feesCurrency,
+        totalChargedAmount: normalizedMoney.totalChargedAmount,
+        totalChargedCurrency: normalizedMoney.totalChargedCurrency,
+        isInternational: moneyModel?.isInternational ?? isInternational,
+        spentAt: spentAt,
+        paymentMethod: normalizedPayment.paymentMethod,
+        paymentNetwork: normalizedPayment.paymentNetwork,
+        paymentChannel: normalizedPayment.paymentChannel,
+        source: source,
+        category: category,
+        note: _normalizeText(note),
+        rawSmsText: _normalizeText(rawSmsText),
+        cardProfileId: normalizedPayment.cardProfileId,
+      );
+
+      await _runMutation(() async {
+        try {
+          await ref
+              .read(updateCashExpenseUseCaseProvider)
+              .execute(updatedExpense);
+        } on UpdateCashExpenseException {
+          rethrow;
+        }
+      });
+      return;
+    }
+
+    // ── Card → card path (unchanged) ────────────────────────────────────────
+    final fxSnapshotService = ExpenseFxSnapshotService(
+      cashWalletRepository: ref.read(cashWalletRepositoryProvider),
+    );
+
+    final removedCardChargedAmount = expense.totalChargedAmount != null &&
         normalizedMoney.totalChargedAmount == null;
-    final shouldForceClearSnapshot =
-        (previousWasCash && !nextIsCash) || removedCardChargedAmount;
 
     final conversionSnapshot = await fxSnapshotService.resolveUpdateSnapshot(
       tripId: _tripId,
@@ -316,7 +399,7 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       previousExpense: expense,
       paymentMethod: normalizedPayment.paymentMethod,
       paymentChannel: normalizedPayment.paymentChannel,
-      forceClearSnapshot: shouldForceClearSnapshot,
+      forceClearSnapshot: removedCardChargedAmount,
     );
 
     final updatedExpense = expense.copyWith(
@@ -349,7 +432,8 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     );
 
     await _runMutation(() async {
-      final saved = await ref.read(expenseRepositoryProvider).updateExpense(updatedExpense);
+      final saved =
+          await ref.read(expenseRepositoryProvider).updateExpense(updatedExpense);
       await ref.read(cashWalletRepositoryProvider).syncExpenseCashImpact(
             previousExpense: expense,
             nextExpense: saved,
@@ -370,11 +454,12 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
 
   Future<void> deleteExpense(String expenseId) async {
     await _runMutation(() async {
-      final existing = await ref.read(expenseRepositoryProvider).getExpenseById(expenseId);
-      if (existing != null) {
-        await ref.read(cashWalletRepositoryProvider).restoreCashForDeletedExpense(existing);
-      }
-      await ref.read(expenseRepositoryProvider).deleteExpense(expenseId);
+      // UpdateCashExpenseUseCase.reverseAndDelete atomically restores FIFO lot
+      // state (consumptions reversed, lot remaining_amounts restored,
+      // cash_transactions deduction reversed) before hard-deleting the row.
+      await ref
+          .read(updateCashExpenseUseCaseProvider)
+          .reverseAndDelete(expenseId);
     });
   }
 

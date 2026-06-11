@@ -119,14 +119,13 @@ class ExpenseRepository {
     return Expense.tryFromMap(rows.first);
   }
 
-  Future<Expense> updateExpense(Expense expense) async {
-    final db = await _appDatabase.database;
+  Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
     final entity = expense.copyWith(updatedAt: DateTime.now().toUtc());
 
-    await db.transaction((txn) async {
-      await _assertTripExists(txn, entity.tripId);
+    Future<void> doUpdate(DatabaseExecutor executor) async {
+      await _assertTripExists(executor, entity.tripId);
       DataIntegrity.requireExpense(entity);
-      final updated = await txn.update(
+      final updated = await executor.update(
         AppDatabase.expensesTable,
         entity.toMap(),
         where: 'id = ?',
@@ -135,19 +134,34 @@ class ExpenseRepository {
       if (updated == 0) {
         throw const DataIntegrityException('expenseNotFound');
       }
-    });
+    }
+
+    if (txn != null) {
+      await doUpdate(txn);
+    } else {
+      final db = await _appDatabase.database;
+      await db.transaction(doUpdate);
+    }
 
     return entity;
   }
 
-  Future<void> deleteExpense(String id) async {
+  Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {
     DataIntegrity.requireNonEmptyId(id, field: 'expenseId');
-    final db = await _appDatabase.database;
-    await db.delete(
-      AppDatabase.expensesTable,
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    if (txn != null) {
+      await txn.delete(
+        AppDatabase.expensesTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    } else {
+      final db = await _appDatabase.database;
+      await db.delete(
+        AppDatabase.expensesTable,
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    }
   }
 
   @Deprecated(
