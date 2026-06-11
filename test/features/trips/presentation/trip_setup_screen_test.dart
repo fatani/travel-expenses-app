@@ -257,7 +257,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.enterText(find.byType(TextField).last, '1500');
+      await tester.enterText(_cashAmountField(), '1500');
       await tester.pump();
 
       await tester.tap(find.text('Create trip'));
@@ -286,13 +286,13 @@ void main() {
       );
       await tester.pump();
 
-      await tester.enterText(find.byType(TextField).at(2), '1000');
+      await tester.enterText(_cashAmountField(rowIndex: 0), '1000');
       await tester.pump();
       await tester.ensureVisible(find.text('Add currency'));
       await tester.tap(find.text('Add currency'));
       await tester.pump();
 
-      await tester.enterText(find.byType(TextField).last, '250');
+      await tester.enterText(_cashAmountField(rowIndex: 1), '250');
       await tester.pump();
 
       await tester.tap(find.text('Create trip'));
@@ -321,7 +321,7 @@ void main() {
 
       await _pickDate(tester, fieldIndex: 0, dayText: '5');
       await _pickDate(tester, fieldIndex: 1, dayText: '12');
-      await tester.enterText(find.byType(TextField).at(2), '800');
+      await tester.enterText(_cashAmountField(rowIndex: 0), '800');
       await tester.pump();
 
       await tester.tap(find.text('Create trip'));
@@ -516,7 +516,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.enterText(find.byType(TextField).last, '500');
+      await tester.enterText(_cashAmountField(rowIndex: 0), '500');
       await tester.pump();
       await tester.tap(find.text('Create trip'));
       await tester.pump();
@@ -549,12 +549,12 @@ void main() {
       );
       await tester.pump();
 
-      await tester.enterText(find.byType(TextField).at(2), '1000');
+      await tester.enterText(_cashAmountField(rowIndex: 0), '1000');
       await tester.pump();
       await tester.ensureVisible(find.text('Add currency'));
       await tester.tap(find.text('Add currency'));
       await tester.pump();
-      await tester.enterText(find.byType(TextField).last, '250');
+      await tester.enterText(_cashAmountField(rowIndex: 1), '250');
       await tester.pump();
 
       await tester.tap(find.text('Create trip'));
@@ -653,7 +653,7 @@ void main() {
       );
       await tester.pump();
 
-      final amountField = find.byType(TextField).last;
+      final amountField = _cashAmountField(rowIndex: 0);
       await tester.ensureVisible(amountField);
       await tester.tap(amountField);
       await tester.pump();
@@ -667,6 +667,20 @@ void main() {
     });
   });
 
+}
+
+Finder _cashAmountField({int rowIndex = 0}) {
+  return find.byElementPredicate((element) {
+    final widget = element.widget;
+    if (widget is! TextField) {
+      return false;
+    }
+    final decoration = widget.decoration;
+    if (decoration is! InputDecoration) {
+      return false;
+    }
+    return decoration.labelText == 'Amount';
+  }).at(rowIndex);
 }
 
 Future<void> _pickDate(
@@ -773,6 +787,7 @@ class _RecordingTripsController extends TripsController {
     name: 'Thailand Trip',
     destination: 'Thailand',
     baseCurrency: 'THB',
+    homeCurrencySnapshot: 'SAR',
   );
 
   @override
@@ -833,7 +848,10 @@ class _RecordingCashWalletRepository extends CashWalletRepository {
   int addCalls = 0;
   String? lastCurrency;
   double? lastAmount;
+  double? lastHomeCurrencyAmount;
+  String? lastHomeCurrencyCode;
   final List<String> currencies = [];
+  final List<_CashAddCall> addCallLog = [];
 
   @override
   Future<void> addCashTransaction({
@@ -849,8 +867,32 @@ class _RecordingCashWalletRepository extends CashWalletRepository {
     addCalls++;
     lastCurrency = currencyCode;
     lastAmount = amount;
+    lastHomeCurrencyAmount = homeCurrencyAmount;
+    lastHomeCurrencyCode = homeCurrencyCode;
     currencies.add(currencyCode);
+    addCallLog.add(
+      _CashAddCall(
+        amount: amount,
+        currencyCode: currencyCode,
+        homeCurrencyAmount: homeCurrencyAmount,
+        homeCurrencyCode: homeCurrencyCode,
+      ),
+    );
   }
+}
+
+class _CashAddCall {
+  const _CashAddCall({
+    required this.amount,
+    required this.currencyCode,
+    this.homeCurrencyAmount,
+    this.homeCurrencyCode,
+  });
+
+  final double amount;
+  final String currencyCode;
+  final double? homeCurrencyAmount;
+  final String? homeCurrencyCode;
 }
 
 class _FailingCashWalletRepository extends CashWalletRepository {

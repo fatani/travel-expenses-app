@@ -201,6 +201,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripFormSaveCreate => 'Create trip';
 
   @override
+  String get tripFormContinue => 'Continue';
+
+  @override
   String get tripFormSaveEdit => 'Save changes';
 
   @override
@@ -1486,7 +1489,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripSetupTitle => 'Before you go';
 
   @override
-  String get tripSetupSubtitle => 'All optional — add what you know';
+  String get tripSetupSubtitle => 'Add what you know now. You can update everything later.';
 
   @override
   String get tripSetupDatesTitle => 'Dates';
@@ -1498,13 +1501,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripSetupCashTitle => 'Cash on hand';
 
   @override
+  String get tripSetupInitialCashTitle => 'Cash you\'re carrying at the start of the trip';
+
+  @override
   String get tripSetupCashHint => 'Optional · leave blank to skip';
 
   @override
-  String get tripSetupCardsTitle => 'Cards';
+  String get tripSetupCardsTitle => 'Cards used during the trip';
 
   @override
-  String get tripSetupCardsHint => 'Your saved payment cards';
+  String get tripSetupCardsHint => 'You can add them now or when recording your first card expense.';
 
   @override
   String get tripSetupCardsEmpty => 'None saved yet';
@@ -1520,6 +1526,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripSetupAmountLabel => 'Amount';
+
+  @override
+  String tripSetupHomeValueLabel(String currency) {
+    return 'Approximate value in $currency';
+  }
+
+  @override
+  String get tripSetupHomeValueHint => 'This helps calculate your trip cost in your home currency.';
 
   @override
   String get tripSetupSearchCurrency => 'Search currency';

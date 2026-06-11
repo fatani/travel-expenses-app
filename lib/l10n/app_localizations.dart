@@ -467,6 +467,12 @@ abstract class AppLocalizations {
   /// **'Create trip'**
   String get tripFormSaveCreate;
 
+  /// No description provided for @tripFormContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get tripFormContinue;
+
   /// No description provided for @tripFormSaveEdit.
   ///
   /// In en, this message translates to:
@@ -2840,7 +2846,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripSetupSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'All optional — add what you know'**
+  /// **'Add what you know now. You can update everything later.'**
   String get tripSetupSubtitle;
 
   /// No description provided for @tripSetupDatesTitle.
@@ -2861,6 +2867,12 @@ abstract class AppLocalizations {
   /// **'Cash on hand'**
   String get tripSetupCashTitle;
 
+  /// No description provided for @tripSetupInitialCashTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash you\'re carrying at the start of the trip'**
+  String get tripSetupInitialCashTitle;
+
   /// No description provided for @tripSetupCashHint.
   ///
   /// In en, this message translates to:
@@ -2870,13 +2882,13 @@ abstract class AppLocalizations {
   /// No description provided for @tripSetupCardsTitle.
   ///
   /// In en, this message translates to:
-  /// **'Cards'**
+  /// **'Cards used during the trip'**
   String get tripSetupCardsTitle;
 
   /// No description provided for @tripSetupCardsHint.
   ///
   /// In en, this message translates to:
-  /// **'Your saved payment cards'**
+  /// **'You can add them now or when recording your first card expense.'**
   String get tripSetupCardsHint;
 
   /// No description provided for @tripSetupCardsEmpty.
@@ -2908,6 +2920,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Amount'**
   String get tripSetupAmountLabel;
+
+  /// No description provided for @tripSetupHomeValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate value in {currency}'**
+  String tripSetupHomeValueLabel(String currency);
+
+  /// No description provided for @tripSetupHomeValueHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This helps calculate your trip cost in your home currency.'**
+  String get tripSetupHomeValueHint;
 
   /// No description provided for @tripSetupSearchCurrency.
   ///

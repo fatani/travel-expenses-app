@@ -65,6 +65,7 @@
   "tripFormStartDateLabel": "Start date",
   "tripFormEndDateLabel": "End date",
   "tripFormSaveCreate": "Create trip",
+  "tripFormContinue": "Continue",
   "tripFormSaveEdit": "Save changes",
   "tripFormBudgetNonNegative": "Budget must be zero or more.",
   "tripFormStartDateBeforeEnd": "Start date must be on or before the end date.",
@@ -539,18 +540,28 @@
     "@tripFormCreateWithoutCustomTitle": {"placeholders": {"tripTitle": {}}},
     "tripFormCustomDestinationFallback": "Can't find your destination? Add custom destination",
     "tripSetupTitle": "Before you go",
-    "tripSetupSubtitle": "All optional — add what you know",
+    "tripSetupSubtitle": "Add what you know now. You can update everything later.",
     "tripSetupDatesTitle": "Dates",
     "tripSetupDatesHint": "Optional",
     "tripSetupCashTitle": "Cash on hand",
+    "tripSetupInitialCashTitle": "Cash you're carrying at the start of the trip",
     "tripSetupCashHint": "Optional · leave blank to skip",
-    "tripSetupCardsTitle": "Cards",
-    "tripSetupCardsHint": "Your saved payment cards",
+    "tripSetupCardsTitle": "Cards used during the trip",
+    "tripSetupCardsHint": "You can add them now or when recording your first card expense.",
     "tripSetupCardsEmpty": "None saved yet",
     "tripSetupCardsError": "Couldn't load cards",
     "tripSetupAddCurrency": "Add currency",
     "tripSetupAddCard": "Add card",
     "tripSetupAmountLabel": "Amount",
+    "tripSetupHomeValueLabel": "Approximate value in {currency}",
+    "@tripSetupHomeValueLabel": {
+        "placeholders": {
+            "currency": {
+                "type": "String"
+            }
+        }
+    },
+    "tripSetupHomeValueHint": "This helps calculate your trip cost in your home currency.",
     "tripSetupSearchCurrency": "Search currency",
     "tripSetupCreateNow": "Create trip now",
     "tripSetupCreateNowHint": "Without dates, cash, or new cards",

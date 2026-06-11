@@ -65,6 +65,7 @@
   "tripFormStartDateLabel": "تاريخ البداية",
   "tripFormEndDateLabel": "تاريخ النهاية",
   "tripFormSaveCreate": "إنشاء الرحلة",
+  "tripFormContinue": "متابعة",
   "tripFormSaveEdit": "حفظ التغييرات",
   "tripFormBudgetNonNegative": "يجب أن تكون الميزانية صفراً أو أكثر.",
   "tripFormStartDateBeforeEnd": "يجب ألا يكون تاريخ البداية بعد تاريخ النهاية.",
@@ -540,18 +541,28 @@
   "@tripFormCreateWithoutCustomTitle": {"placeholders": {"tripTitle": {}}},
   "tripFormCustomDestinationFallback": "لم تجد وجهتك؟ أضف وجهة مخصصة",
   "tripSetupTitle": "قبل الانطلاق",
-  "tripSetupSubtitle": "كلها اختيارية — أضف ما تعرفه",
+  "tripSetupSubtitle": "أضف ما تعرفه الآن، ويمكنك تعديل كل شيء لاحقاً.",
   "tripSetupDatesTitle": "التواريخ",
   "tripSetupDatesHint": "اختياري",
   "tripSetupCashTitle": "النقد المتوفر",
+  "tripSetupInitialCashTitle": "النقد الذي تحمله عند بداية الرحلة",
   "tripSetupCashHint": "اختياري · اتركه فارغاً للتخطي",
-  "tripSetupCardsTitle": "البطاقات",
-  "tripSetupCardsHint": "بطاقات الدفع المحفوظة",
+  "tripSetupCardsTitle": "البطاقات المستخدمة أثناء الرحلة",
+  "tripSetupCardsHint": "يمكنك إضافتها الآن أو عند أول مصروف بالبطاقة.",
   "tripSetupCardsEmpty": "لا توجد بطاقات محفوظة",
   "tripSetupCardsError": "تعذّر تحميل البطاقات",
   "tripSetupAddCurrency": "إضافة عملة",
   "tripSetupAddCard": "إضافة بطاقة",
   "tripSetupAmountLabel": "المبلغ",
+  "tripSetupHomeValueLabel": "القيمة التقريبية بـ {currency}",
+  "@tripSetupHomeValueLabel": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "tripSetupHomeValueHint": "يساعد ذلك في حساب تكلفة الرحلة بعملتك الأساسية.",
   "tripSetupSearchCurrency": "بحث عن عملة",
   "tripSetupCreateNow": "إنشاء الرحلة الآن",
   "tripSetupCreateNowHint": "بدون تواريخ أو نقد أو بطاقات جديدة",

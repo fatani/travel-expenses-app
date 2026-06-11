@@ -93,6 +93,16 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
         _startDate!.isAfter(_endDate!);
   }
 
+  String _homeCurrencyCode() {
+    final profile =
+        ref.read(userFinancialProfileControllerProvider).valueOrNull;
+    final code = profile?.homeCurrencyCode.trim().toUpperCase();
+    if (code != null && code.isNotEmpty) {
+      return code;
+    }
+    return widget.selectedDestination.currencyCode;
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -102,6 +112,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
     final viewInsetsBottom = MediaQuery.viewInsetsOf(context).bottom;
     final isCompact = MediaQuery.sizeOf(context).width < 400;
     final horizontalPadding = isCompact ? 16.0 : 20.0;
+    final homeCurrencyCode = _homeCurrencyCode();
 
     return Directionality(
       textDirection: textDirection,
@@ -221,6 +232,10 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                                     row: _cashRows[i],
                                     enabled: !_isSubmitting,
                                     amountLabel: l10n.tripSetupAmountLabel,
+                                    homeValueLabel: l10n.tripSetupHomeValueLabel(
+                                      homeCurrencyCode,
+                                    ),
+                                    homeValueHint: l10n.tripSetupHomeValueHint,
                                     onCurrencyTap: () =>
                                         _pickCurrencyForRow(_cashRows[i]),
                                   ),
@@ -516,6 +531,10 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
               type: CashTransactionType.initialCash,
               amount: entry.amount,
               currencyCode: entry.currencyCode,
+              homeCurrencyAmount: entry.homeCurrencyAmount,
+              homeCurrencyCode: entry.homeCurrencyAmount != null
+                  ? createdTrip.homeCurrencySnapshot
+                  : null,
             );
           }
         } catch (_) {
@@ -573,7 +592,15 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
       if (currency.length != 3) {
         continue;
       }
-      entries.add(_ResolvedCashEntry(amount: amount, currencyCode: currency));
+      entries.add(
+        _ResolvedCashEntry(
+          amount: amount,
+          currencyCode: currency,
+          homeCurrencyAmount: parseOptionalHomeCurrencyAmount(
+            row.homeValueController.text,
+          ),
+        ),
+      );
     }
     return entries;
   }
@@ -699,15 +726,32 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
   }
 }
 
+double? parseOptionalHomeCurrencyAmount(String text) {
+  final trimmed = text.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+
+  final parsed = double.tryParse(trimmed);
+  if (parsed == null || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
 class _CashEntryRow {
   _CashEntryRow({required this.currencyCode})
-      : amountController = TextEditingController();
+      : amountController = TextEditingController(),
+        homeValueController = TextEditingController();
 
   String currencyCode;
   final TextEditingController amountController;
+  final TextEditingController homeValueController;
 
   void dispose() {
     amountController.dispose();
+    homeValueController.dispose();
   }
 }
 
@@ -715,10 +759,12 @@ class _ResolvedCashEntry {
   const _ResolvedCashEntry({
     required this.amount,
     required this.currencyCode,
+    this.homeCurrencyAmount,
   });
 
   final double amount;
   final String currencyCode;
+  final double? homeCurrencyAmount;
 }
 
 class _TripDateOverlap {
@@ -823,75 +869,117 @@ class _CashRowFields extends StatelessWidget {
     required this.onCurrencyTap,
     required this.enabled,
     required this.amountLabel,
+    required this.homeValueLabel,
+    required this.homeValueHint,
   });
 
   final _CashEntryRow row;
   final VoidCallback onCurrencyTap;
   final bool enabled;
   final String amountLabel;
+  final String homeValueLabel;
+  final String homeValueHint;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Expanded(
-          flex: 2,
-          child: Material(
-            color: const Color(0xFFF8FAFC),
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: enabled ? onCurrencyTap : null,
-              child: Padding(
-                padding:
-                    const EdgeInsetsDirectional.fromSTEB(12, 14, 12, 14),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        row.currencyCode,
-                        textDirection: TextDirection.ltr,
-                        textAlign: TextAlign.start,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: Color(0xFF0F172A),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Material(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: enabled ? onCurrencyTap : null,
+                  child: Padding(
+                    padding:
+                        const EdgeInsetsDirectional.fromSTEB(12, 14, 12, 14),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            row.currencyCode,
+                            textDirection: TextDirection.ltr,
+                            textAlign: TextAlign.start,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF0F172A),
+                            ),
+                          ),
                         ),
-                      ),
+                        const Icon(
+                          Icons.expand_more_rounded,
+                          size: 20,
+                          color: Color(0xFF64748B),
+                        ),
+                      ],
                     ),
-                    const Icon(
-                      Icons.expand_more_rounded,
-                      size: 20,
-                      color: Color(0xFF64748B),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
+            const SizedBox(width: 8),
+            Expanded(
+              flex: 3,
+              child: TextField(
+                controller: row.amountController,
+                enabled: enabled,
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+                ],
+                decoration: InputDecoration(
+                  labelText: amountLabel,
+                  isDense: true,
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  contentPadding:
+                      const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          homeValueHint,
+          style: const TextStyle(
+            fontSize: 12,
+            height: 1.35,
+            color: Color(0xFF94A3B8),
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 3,
-          child: TextField(
-            controller: row.amountController,
-            enabled: enabled,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            textInputAction: TextInputAction.done,
-            inputFormatters: [
-              FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
-            ],
-            decoration: InputDecoration(
-              labelText: amountLabel,
-              isDense: true,
-              filled: true,
-              fillColor: const Color(0xFFF8FAFC),
-              contentPadding:
-                  const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: row.homeValueController,
+          enabled: enabled,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          textInputAction: TextInputAction.done,
+          textDirection: TextDirection.ltr,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
+          ],
+          decoration: InputDecoration(
+            labelText: homeValueLabel,
+            isDense: true,
+            filled: true,
+            fillColor: const Color(0xFFF8FAFC),
+            contentPadding:
+                const EdgeInsetsDirectional.fromSTEB(14, 12, 14, 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
             ),
           ),
         ),

@@ -201,6 +201,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripFormSaveCreate => 'إنشاء الرحلة';
 
   @override
+  String get tripFormContinue => 'متابعة';
+
+  @override
   String get tripFormSaveEdit => 'حفظ التغييرات';
 
   @override
@@ -1493,7 +1496,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripSetupTitle => 'قبل الانطلاق';
 
   @override
-  String get tripSetupSubtitle => 'كلها اختيارية — أضف ما تعرفه';
+  String get tripSetupSubtitle => 'أضف ما تعرفه الآن، ويمكنك تعديل كل شيء لاحقاً.';
 
   @override
   String get tripSetupDatesTitle => 'التواريخ';
@@ -1505,13 +1508,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripSetupCashTitle => 'النقد المتوفر';
 
   @override
+  String get tripSetupInitialCashTitle => 'النقد الذي تحمله عند بداية الرحلة';
+
+  @override
   String get tripSetupCashHint => 'اختياري · اتركه فارغاً للتخطي';
 
   @override
-  String get tripSetupCardsTitle => 'البطاقات';
+  String get tripSetupCardsTitle => 'البطاقات المستخدمة أثناء الرحلة';
 
   @override
-  String get tripSetupCardsHint => 'بطاقات الدفع المحفوظة';
+  String get tripSetupCardsHint => 'يمكنك إضافتها الآن أو عند أول مصروف بالبطاقة.';
 
   @override
   String get tripSetupCardsEmpty => 'لا توجد بطاقات محفوظة';
@@ -1527,6 +1533,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripSetupAmountLabel => 'المبلغ';
+
+  @override
+  String tripSetupHomeValueLabel(String currency) {
+    return 'القيمة التقريبية بـ $currency';
+  }
+
+  @override
+  String get tripSetupHomeValueHint => 'يساعد ذلك في حساب تكلفة الرحلة بعملتك الأساسية.';
 
   @override
   String get tripSetupSearchCurrency => 'بحث عن عملة';
