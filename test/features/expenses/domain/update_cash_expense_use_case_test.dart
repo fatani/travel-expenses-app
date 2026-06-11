@@ -625,11 +625,11 @@ void main() {
   });
 
   // ---------------------------------------------------------------------------
-  // 15. reverseAndDelete — lot restoration + hard delete
+  // 15. reverseAndDelete — soft-delete: lot restoration + mark reversed
   // ---------------------------------------------------------------------------
 
-  group('15 — reverseAndDelete', () {
-    test('lot remaining_amount restored after delete', () async {
+  group('15 — reverseAndDelete (soft-delete)', () {
+    test('lot remaining_amount fully restored after delete', () async {
       await insertLot(amount: 5000);
       final exp = await createCash(amount: 2000);
 
@@ -639,28 +639,42 @@ void main() {
       expect(openLots.first.remainingAmount, closeTo(5000, 1e-6));
     });
 
-    test('consumption rows are hard-deleted after reverseAndDelete', () async {
+    test('consumption rows are marked reversed (not deleted)', () async {
       await insertLot(amount: 5000);
       final exp = await createCash(amount: 2000);
       final expenseId = exp.id;
 
       await updateUseCase.reverseAndDelete(expenseId);
 
-      // Rows are hard-deleted before the expense row is removed to avoid the
-      // FK ON DELETE SET NULL + CHECK(expense_id IS NOT NULL) conflict.
       final consumptions =
           await consumptionRepo.getConsumptionsByExpenseId(expenseId);
-      expect(consumptions, isEmpty);
+      expect(consumptions.isNotEmpty, isTrue);
+      expect(consumptions.every((c) => c.isReversed), isTrue);
     });
 
-    test('expense row is hard-deleted', () async {
+    test('expense row kept with is_reversed = true and reversedAt set', () async {
       await insertLot(amount: 5000);
       final exp = await createCash(amount: 2000);
 
       await updateUseCase.reverseAndDelete(exp.id);
 
       final found = await expenseRepo.getExpenseById(exp.id);
-      expect(found, isNull);
+      expect(found, isNotNull);
+      expect(found!.isReversed, isTrue);
+      expect(found.reversedAt, isNotNull);
+    });
+
+    test('getExpensesByTrip excludes reversed expense (report filter)', () async {
+      await insertLot(amount: 5000);
+      final exp = await createCash(amount: 2000);
+
+      final beforeDelete = await expenseRepo.getExpensesByTrip(trip.id);
+      expect(beforeDelete.any((e) => e.id == exp.id), isTrue);
+
+      await updateUseCase.reverseAndDelete(exp.id);
+
+      final afterDelete = await expenseRepo.getExpensesByTrip(trip.id);
+      expect(afterDelete.any((e) => e.id == exp.id), isFalse);
     });
 
     test('cash_transactions deduction reversed after delete', () async {
@@ -678,6 +692,148 @@ void main() {
           .toList();
       expect(deductions.isNotEmpty, isTrue);
       expect(deductions.every((t) => t.isReversed), isTrue);
+    });
+
+    test('trip_cash_balances restored to pre-expense amount after delete',
+        () async {
+      await insertLot(amount: 5000);
+      final exp = await createCash(amount: 2000);
+
+      final balanceBefore = await walletRepo.getBalancesByTrip(trip.id);
+      expect(
+        balanceBefore.firstWhere((b) => b.currencyCode == 'JPY').balanceAmount,
+        closeTo(3000, 1e-6),
+      );
+
+      await updateUseCase.reverseAndDelete(exp.id);
+
+      final balanceAfter = await walletRepo.getBalancesByTrip(trip.id);
+      expect(
+        balanceAfter.firstWhere((b) => b.currencyCode == 'JPY').balanceAmount,
+        closeTo(5000, 1e-6),
+      );
+    });
+
+    test('delete with active refunds throws hasActiveRefunds', () async {
+      await insertLot(amount: 5000);
+      final exp = await createCash(amount: 1000);
+
+      // Insert an active refund for this expense.
+      await (await db.database).insert(
+        'expense_refunds',
+        {
+          'id': 'refund-del-1',
+          'trip_id': trip.id,
+          'expense_id': exp.id,
+          'amount': 100.0,
+          'currency_code': 'JPY',
+          'home_amount': 3.5,
+          'home_currency': 'SAR',
+          'destination': 'cash',
+          'note': null,
+          'is_reversed': 0,
+          'reversed_at': null,
+          'created_at': DateTime.now().toUtc().toIso8601String(),
+        },
+      );
+
+      expect(
+        () => updateUseCase.reverseAndDelete(exp.id),
+        throwsA(isA<UpdateCashExpenseException>().having(
+          (e) => e.reason,
+          'reason',
+          UpdateCashExpenseFailureReason.hasActiveRefunds,
+        )),
+      );
+    });
+
+    test('calling reverseAndDelete on already-reversed expense is a no-op',
+        () async {
+      await insertLot(amount: 5000);
+      final exp = await createCash(amount: 1000);
+      await updateUseCase.reverseAndDelete(exp.id);
+
+      // Second call must not throw.
+      await updateUseCase.reverseAndDelete(exp.id);
+
+      final found = await expenseRepo.getExpenseById(exp.id);
+      expect(found!.isReversed, isTrue);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // 16. Critical FIFO regression: restore returns capacity to original lot
+  // ---------------------------------------------------------------------------
+
+  group('16 — FIFO regression: restored capacity stays at original lot position',
+      () {
+    test(
+        'editing expense 1700→1200 then creating 400 uses Lot2+Lot3, not end of queue',
+        () async {
+      // Three lots created in order: FIFO allocates Lot1 first.
+      final lot1 = await insertLot(
+        id: 'lot-r1',
+        amount: 1000,
+        rate: 0.035,
+        createdAt: DateTime(2026, 6, 1, 10, 0, 0),
+      );
+      final lot2 = await insertLot(
+        id: 'lot-r2',
+        amount: 500,
+        rate: 0.036,
+        createdAt: DateTime(2026, 6, 1, 10, 1, 0),
+      );
+      final lot3 = await insertLot(
+        id: 'lot-r3',
+        amount: 500,
+        rate: 0.037,
+        createdAt: DateTime(2026, 6, 1, 10, 2, 0),
+      );
+
+      // ── Step 1: Create expense 1700 JPY ────────────────────────────────────
+      // Expected FIFO: Lot1: 1000, Lot2: 500, Lot3: 200
+      final exp1 = await createCash(amount: 1700);
+
+      // Use getActiveLotsForTrip (includes fully-consumed lots) to inspect
+      // remaining amounts across all lots, not just open ones.
+      Future<double> remaining(String lotId) async {
+        final lots = await lotRepo.getActiveLotsForTrip(trip.id);
+        return lots.firstWhere((l) => l.id == lotId).remainingAmount;
+      }
+
+      expect(await remaining(lot1.id), closeTo(0, 1e-6),
+          reason: 'Lot1 fully consumed');
+      expect(await remaining(lot2.id), closeTo(0, 1e-6),
+          reason: 'Lot2 fully consumed');
+      expect(await remaining(lot3.id), closeTo(300, 1e-6),
+          reason: 'Lot3: 500 − 200 = 300 remaining');
+
+      // ── Step 2: Edit expense 1700 → 1200 ───────────────────────────────────
+      // Reverse+recreate: 1200 should use Lot1:1000, Lot2:200 (not touch Lot3).
+      final updated = exp1.copyWith(
+        amount: 1200,
+        transactionAmount: 1200,
+      );
+      await updateUseCase.execute(updated);
+
+      expect(await remaining(lot1.id), closeTo(0, 1e-6),
+          reason: 'Lot1 still fully consumed after edit');
+      expect(await remaining(lot2.id), closeTo(300, 1e-6),
+          reason: 'Lot2: restored 500, then consumed 200 → 300 remaining');
+      expect(await remaining(lot3.id), closeTo(500, 1e-6),
+          reason: 'Lot3: fully restored, not touched by 1200 edit');
+
+      // ── Step 3: Create new expense 400 JPY ─────────────────────────────────
+      // FIFO must start from Lot2 (first open lot), not append to end.
+      // Expected: Lot2: 300, Lot3: 100
+      await createCash(amount: 400);
+
+      expect(await remaining(lot1.id), closeTo(0, 1e-6),
+          reason: 'Lot1 remains fully consumed');
+      expect(await remaining(lot2.id), closeTo(0, 1e-6),
+          reason: 'Lot2: 300 − 300 = 0 (fully consumed by new expense)');
+      expect(await remaining(lot3.id), closeTo(400, 1e-6),
+          reason: 'Lot3: 500 − 100 = 400 remaining');
     });
   });
 }

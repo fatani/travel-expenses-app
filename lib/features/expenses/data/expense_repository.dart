@@ -81,7 +81,7 @@ class ExpenseRepository {
     final db = await _appDatabase.database;
     final rows = await db.query(
       AppDatabase.expensesTable,
-      where: 'trip_id = ?',
+      where: 'trip_id = ? AND is_reversed = 0',
       whereArgs: [tripId],
       orderBy: 'spent_at DESC, created_at DESC',
     );

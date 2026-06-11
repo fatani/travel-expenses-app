@@ -152,7 +152,8 @@ void main() {
         .read(expenseControllerProvider(trip.id).notifier)
         .deleteExpense(coffeeExpense.id);
 
-    expect(repository.deletedExpenseIds, [coffeeExpense.id]);
+    // Soft-delete: expense is marked reversed, not physically removed.
+    expect(repository.reversedExpenseIds, [coffeeExpense.id]);
     final expenses = await container.read(expenseControllerProvider(trip.id).future);
     expect(expenses, isEmpty);
   });
@@ -181,7 +182,8 @@ void main() {
       throwsA(isA<StateError>()),
     );
 
-    expect(repository.deleteAttempts, 1);
+    // Soft-delete path: reverseAttempts incremented, not deleteAttempts.
+    expect(repository.reverseAttempts, 1);
     final state = container.read(expenseControllerProvider(trip.id));
     expect(state.hasError, isTrue);
   });
@@ -438,10 +440,14 @@ class _TrackingExpenseRepository extends TestExpenseRepository {
 
   final List<Expense> _expenses;
   final List<String> deletedExpenseIds = <String>[];
+  final List<String> reversedExpenseIds = <String>[];
 
   @override
   Future<List<Expense>> getExpensesByTrip(String tripId) async {
-    return _expenses.where((expense) => expense.tripId == tripId).toList();
+    // Mirror the real ExpenseRepository filter: exclude reversed expenses.
+    return _expenses
+        .where((e) => e.tripId == tripId && !e.isReversed)
+        .toList();
   }
 
   @override
@@ -455,6 +461,18 @@ class _TrackingExpenseRepository extends TestExpenseRepository {
   }
 
   @override
+  Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
+    final index = _expenses.indexWhere((e) => e.id == expense.id);
+    if (index >= 0) {
+      _expenses[index] = expense;
+    }
+    if (expense.isReversed) {
+      reversedExpenseIds.add(expense.id);
+    }
+    return expense;
+  }
+
+  @override
   Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {
     deletedExpenseIds.add(id);
     _expenses.removeWhere((expense) => expense.id == id);
@@ -465,6 +483,16 @@ class _FailingDeleteExpenseRepository extends _TrackingExpenseRepository {
   _FailingDeleteExpenseRepository({required super.expenses});
 
   int deleteAttempts = 0;
+  int reverseAttempts = 0;
+
+  @override
+  Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
+    if (expense.isReversed) {
+      reverseAttempts++;
+      throw StateError('db unavailable');
+    }
+    return super.updateExpense(expense, txn: txn);
+  }
 
   @override
   Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {

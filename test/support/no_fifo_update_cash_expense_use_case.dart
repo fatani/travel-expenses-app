@@ -67,6 +67,11 @@ class NoFifoUpdateCashExpenseUseCase extends UpdateCashExpenseUseCase {
 
   @override
   Future<void> reverseAndDelete(String expenseId) async {
-    await _bypassExpenseRepo.deleteExpense(expenseId);
+    final expense = await _bypassExpenseRepo.getExpenseById(expenseId);
+    if (expense == null || expense.isReversed) return;
+    // Soft-delete: mark reversed so getExpensesByTrip filters it out.
+    await _bypassExpenseRepo.updateExpense(
+      expense.copyWith(isReversed: true, reversedAt: DateTime.now().toUtc()),
+    );
   }
 }

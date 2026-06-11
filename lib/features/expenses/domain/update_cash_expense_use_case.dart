@@ -260,14 +260,30 @@ class UpdateCashExpenseUseCase {
     return UpdateCashExpenseResult(expense: saved);
   }
 
-  /// Reverses FIFO lot state for [expenseId] and hard-deletes the expense row,
-  /// all within a single atomic transaction.
+  /// Reverses FIFO lot state for [expenseId] and soft-deletes the expense by
+  /// marking it `is_reversed = 1`, all within a single atomic transaction.
   ///
-  /// If the expense does not exist or is not a cash expense, only the delete
-  /// is performed (no lot operations).
+  /// The expense row is **never physically removed** so the audit trail is
+  /// preserved.  [getExpensesByTrip] already filters `is_reversed = 0`, so
+  /// the soft-deleted expense disappears from the UI and all reports.
+  ///
+  /// Throws [UpdateCashExpenseException] with:
+  /// - [UpdateCashExpenseFailureReason.hasActiveRefunds] if any active refund
+  ///   exists for the expense — caller must resolve refunds first.
+  ///
+  /// Returns silently if the expense does not exist or is already reversed.
   Future<void> reverseAndDelete(String expenseId) async {
     final existing = await _expenseRepository.getExpenseById(expenseId);
-    if (existing == null) return;
+    if (existing == null || existing.isReversed) return;
+
+    // Refund guard — cannot soft-delete an expense that has active refunds.
+    final refunds =
+        await _refundRepository.getActiveRefundsByExpense(expenseId);
+    if (refunds.isNotEmpty) {
+      throw const UpdateCashExpenseException(
+        UpdateCashExpenseFailureReason.hasActiveRefunds,
+      );
+    }
 
     final wasCash = _isCash(existing);
     final List<CashLotConsumption> activeConsumptions;
@@ -282,6 +298,7 @@ class UpdateCashExpenseUseCase {
     final db = await _appDatabase.database;
     await db.transaction((txn) async {
       if (wasCash) {
+        // Restore lot capacity.
         for (final c in activeConsumptions) {
           await _lotRepository.restoreLotConsumption(
             c.lotId,
@@ -289,23 +306,24 @@ class UpdateCashExpenseUseCase {
             txn: txn,
           );
         }
-        // Hard-delete consumption rows BEFORE deleting the expense row.
-        // The schema has FOREIGN KEY (expense_id) ON DELETE SET NULL plus a
-        // CHECK (expense_id IS NOT NULL) on cash_expense rows — they conflict
-        // when deleting the expense.  Removing the rows first prevents the FK
-        // trigger from firing.  Lot state is already restored above; the
-        // cash_transactions reversal below preserves the audit trail.
-        await _consumptionRepository.deleteConsumptionsByExpenseId(
+        // Mark consumption rows reversed (expense row still exists → FK safe).
+        await _consumptionRepository.markConsumptionsReversedForExpense(
+          txn,
           expenseId,
-          txn: txn,
         );
+        // Reverse the cash_transactions deduction (restores trip_cash_balances).
         await _cashWalletRepository.reverseCashExpenseDeductionInTxn(
           txn,
           tripId: existing.tripId,
           expenseId: expenseId,
         );
       }
-      await _expenseRepository.deleteExpense(expenseId, txn: txn);
+      // Soft-delete: keep the row for audit trail; hide via is_reversed = 1.
+      final now = DateTime.now().toUtc();
+      await _expenseRepository.updateExpense(
+        existing.copyWith(isReversed: true, reversedAt: now),
+        txn: txn,
+      );
     });
   }
 
