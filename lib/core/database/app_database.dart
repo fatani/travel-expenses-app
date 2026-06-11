@@ -1,6 +1,8 @@
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
+import '../../features/cash_wallet/data/cash_lot_backfill.dart';
+
 class AppDatabase {
   AppDatabase({String? databaseFileName})
       : _databaseFileName = databaseFileName ?? databaseName;
@@ -8,7 +10,7 @@ class AppDatabase {
   static const String databaseName = 'travel_expenses.db';
 
   final String _databaseFileName;
-  static const int databaseVersion = 20;
+  static const int databaseVersion = 21;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -94,6 +96,7 @@ class AppDatabase {
         await _ensureExpensesReversalColumns(db);
         await _ensureCashTransactionsFifoColumns(db);
         await _ensureExpenseRefundsLotColumn(db);
+        await _backfillLegacyCashLots(db);
       },
       onCreate: (db, version) async {
         await db.execute('''
@@ -519,8 +522,18 @@ class AppDatabase {
           await _ensureCashTransactionsFifoColumns(db);
           await _ensureExpenseRefundsLotColumn(db);
         }
+
+        if (oldVersion < 21) {
+          await _backfillLegacyCashLots(db);
+        }
       },
     );
+  }
+
+  /// Sprint 9B: link pre–Sprint 9A cash inflow transactions to FIFO lots.
+  /// Idempotent — safe on every open and during upgrade.
+  Future<void> _backfillLegacyCashLots(DatabaseExecutor db) async {
+    await CashLotBackfill().backfillUnlinkedInflowLots(db);
   }
 
   Future<bool> _hasColumn(Database db, String table, String columnName) async {
