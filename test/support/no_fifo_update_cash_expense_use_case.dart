@@ -5,17 +5,23 @@ import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository
 import 'package:travel_expenses/features/cash_wallet/domain/cash_lot_fifo_engine.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
+import 'package:travel_expenses/features/expenses/domain/expense_payment_service.dart';
 import 'package:travel_expenses/features/expenses/domain/update_cash_expense_use_case.dart';
 import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
 
 /// Test-only [UpdateCashExpenseUseCase] that bypasses FIFO lot planning and
 /// avoids opening any real SQLite database.
 ///
-/// For cash→cash edits, preserves the existing [Expense.conversionRate]
-/// snapshot and recalculates [Expense.convertedHomeAmount] using
-/// `amount × storedRate`.  All other fields are passed through unchanged.
+/// Mirrors the production contract without a database:
+/// * Cash destination: the FX snapshot is FIFO-derived in production. Here the
+///   rate is stubbed with [fifoRate] when provided, otherwise the existing
+///   stored [Expense.conversionRate] is preserved; the home amount is
+///   recalculated as `amount × rate`.
+/// * Card destination (cash → card edits): the expense is saved as-is — the
+///   controller already resolved the card snapshot.
 ///
-/// For [reverseAndDelete], simply forwards to the injected [ExpenseRepository].
+/// For [reverseAndDelete], marks the expense reversed via the injected
+/// [ExpenseRepository] (soft delete).
 ///
 /// Use to override [updateCashExpenseUseCaseProvider] in widget / unit tests
 /// that do not set up cash-lot fixtures:
@@ -31,6 +37,7 @@ class NoFifoUpdateCashExpenseUseCase extends UpdateCashExpenseUseCase {
   // ignore: use_super_parameters
   NoFifoUpdateCashExpenseUseCase({
     required ExpenseRepository expenseRepository,
+    this.fifoRate,
   })  : _bypassExpenseRepo = expenseRepository,
         super(
           // These objects are stored by super but never used because both
@@ -48,11 +55,29 @@ class NoFifoUpdateCashExpenseUseCase extends UpdateCashExpenseUseCase {
 
   final ExpenseRepository _bypassExpenseRepo;
 
+  /// Stub for the FIFO-derived effective rate applied to cash destinations.
+  final double? fifoRate;
+
   @override
   Future<UpdateCashExpenseResult> execute(Expense updatedExpense) async {
-    // Preserve the stored conversionRate snapshot; recalculate home amount.
+    final nextIsCash = isCashExpensePayment(
+      paymentMethod: updatedExpense.paymentMethod,
+      paymentChannel: updatedExpense.paymentChannel,
+    );
+
+    // Cash → card edits: the controller already resolved the card snapshot;
+    // production saves the expense as-is after reversing old consumptions.
+    if (!nextIsCash) {
+      final saved = await _bypassExpenseRepo.updateExpense(updatedExpense);
+      return UpdateCashExpenseResult(expense: saved);
+    }
+
+    // Cash destination: stub the FIFO-derived rate, falling back to the
+    // previously stored snapshot rate; recalculate the home amount.
     final previous = await _bypassExpenseRepo.getExpenseById(updatedExpense.id);
-    final storedRate = previous?.conversionRate ?? updatedExpense.conversionRate;
+    final storedRate = fifoRate ??
+        previous?.conversionRate ??
+        updatedExpense.conversionRate;
     final homeAmount = (storedRate != null)
         ? updatedExpense.amount * storedRate
         : updatedExpense.convertedHomeAmount;

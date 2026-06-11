@@ -128,7 +128,10 @@ class _FakeExpenseRepository extends TestExpenseRepository {
 
   @override
   Future<List<Expense>> getExpensesByTrip(String tripId) async {
-    return _expenses.where((expense) => expense.tripId == tripId).toList();
+    // Mirror production: reversed (soft-deleted) expenses are excluded.
+    return _expenses
+        .where((expense) => expense.tripId == tripId && !expense.isReversed)
+        .toList();
   }
 
   @override

@@ -105,16 +105,31 @@ class BackupRestoreService {
       envelope.manualExchangeRates,
     );
     await _insertRows(txn, AppDatabase.expensesTable, envelope.expenses);
+    // Backup format v1 does not include the FIFO lot ledger (cash_lots,
+    // cash_lot_consumptions, currency_exchanges). Strip lot/exchange
+    // references so restored rows do not violate foreign keys against
+    // tables that are not part of the backup. Lot-ledger round-trip is a
+    // backup-format v2 follow-up.
     await _insertRows(
       txn,
       AppDatabase.cashTransactionsTable,
-      envelope.cashTransactions,
+      _withoutColumns(envelope.cashTransactions, const {'lot_id', 'exchange_id'}),
     );
     await _insertRows(
       txn,
       AppDatabase.expenseRefundsTable,
-      envelope.expenseRefunds,
+      _withoutColumns(envelope.expenseRefunds, const {'returned_lot_id'}),
     );
+  }
+
+  List<Map<String, dynamic>> _withoutColumns(
+    List<Map<String, dynamic>> rows,
+    Set<String> columns,
+  ) {
+    return [
+      for (final row in rows)
+        Map<String, dynamic>.from(row)..removeWhere((key, _) => columns.contains(key)),
+    ];
   }
 
   Future<void> _insertRecomputedBalances(

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite/sqflite.dart';
+import '../../../support/no_fifo_update_cash_expense_use_case.dart';
 import '../../../support/test_expense_repository.dart';
 
 import 'package:travel_expenses/core/database/app_database.dart';
@@ -51,6 +52,13 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Use the
+        // no-FIFO bypass so no real database is needed in this unit test.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+          ),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(),
         ),
@@ -119,6 +127,13 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Use the
+        // no-FIFO bypass so no real database is needed in this unit test.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+          ),
+        ),
           cashWalletRepositoryProvider.overrideWithValue(
             _FakeCashWalletRepository(),
           ),
@@ -191,6 +206,13 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Use the
+        // no-FIFO bypass so no real database is needed in this unit test.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+          ),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(),
         ),
@@ -257,6 +279,13 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Use the
+        // no-FIFO bypass so no real database is needed in this unit test.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+          ),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(),
         ),
@@ -325,6 +354,14 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Stub the
+        // FIFO-derived rate so the card→cash edit picks up the cash basis.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+            fifoRate: 0.105,
+          ),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(effectiveRate: 0.105),
         ),
@@ -391,6 +428,13 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Use the
+        // no-FIFO bypass so no real database is needed in this unit test.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+          ),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(),
         ),
@@ -459,6 +503,13 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Use the
+        // no-FIFO bypass so no real database is needed in this unit test.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+          ),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(),
         ),
@@ -523,6 +574,13 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Use the
+        // no-FIFO bypass so no real database is needed in this unit test.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+          ),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(effectiveRate: 0.1),
         ),
@@ -583,6 +641,13 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(repository),
+        // Cash edits route through UpdateCashExpenseUseCase (FIFO). Use the
+        // no-FIFO bypass so no real database is needed in this unit test.
+        updateCashExpenseUseCaseProvider.overrideWith(
+          (ref) => NoFifoUpdateCashExpenseUseCase(
+            expenseRepository: repository,
+          ),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(
           _FakeCashWalletRepository(),
         ),

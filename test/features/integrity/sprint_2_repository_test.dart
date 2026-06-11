@@ -414,7 +414,9 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('CashTransaction lotId and exchangeId', () {
-    test('fromMap reads lot_id and exchange_id as null when absent', () async {
+    test(
+        'fromMap exposes lot_id created by addCashTransaction (Sprint 9A) '
+        'and null exchange_id', () async {
       await cashWalletRepository.addCashTransaction(
         tripId: testTrip.id,
         type: CashTransactionType.initialCash,
@@ -424,7 +426,8 @@ void main() {
 
       final txns = await cashWalletRepository.getRecentTransactionsByTrip(testTrip.id);
       expect(txns, hasLength(1));
-      expect(txns.first.lotId, isNull);
+      // Since Sprint 9A, manual cash inflows are lot-backed.
+      expect(txns.first.lotId, isNotNull);
       expect(txns.first.exchangeId, isNull);
     });
 

@@ -10,6 +10,7 @@ import 'package:travel_expenses/features/expenses/presentation/expense_form_scre
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import '../../../support/no_fifo_update_cash_expense_use_case.dart';
 import '../../../support/test_expense_repository.dart';
 
 void main() {
@@ -97,6 +98,13 @@ void main() {
           child: ExpenseFormScreen(trip: trip, expense: mismatchedExpense),
           overrides: [
             expenseRepositoryProvider.overrideWithValue(repository),
+            // Editing a cash expense routes through UpdateCashExpenseUseCase
+            // (FIFO). Bypass it so no real database is required here.
+            updateCashExpenseUseCaseProvider.overrideWith(
+              (ref) => NoFifoUpdateCashExpenseUseCase(
+                expenseRepository: repository,
+              ),
+            ),
           ],
         ),
       );
@@ -193,6 +201,16 @@ class _RecordingExpenseRepository extends TestExpenseRepository {
   final List<Expense> _expenses;
   final List<Expense> createdExpenses = <Expense>[];
   final List<Expense> updatedExpenses = <Expense>[];
+
+  @override
+  Future<Expense?> getExpenseById(String id) async {
+    for (final expense in _expenses) {
+      if (expense.id == id) {
+        return expense;
+      }
+    }
+    return null;
+  }
 
   @override
   Future<Expense> createExpense(Expense expense, {DatabaseExecutor? txn}) async {

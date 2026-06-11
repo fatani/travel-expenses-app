@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/integrity/data_integrity.dart';
 import '../../expenses/domain/expense.dart';
 import '../../expenses/domain/expense_payment.dart';
+import '../domain/cash_lot.dart';
 import '../domain/cash_transaction.dart';
 import '../domain/cash_effective_rate_calculator.dart';
 import '../domain/trip_cash_balance.dart';
@@ -58,6 +59,25 @@ class CashWalletRepository {
     return rows.map(CashTransaction.fromMap).toList();
   }
 
+  /// Records a manual cash transaction (initial cash, manual adjustment, …).
+  ///
+  /// Sprint 9A: cash **inflows** recorded through this method also create a
+  /// FIFO [cash_lots] row inside the same transaction, so cash entered via
+  /// the production UI (trip setup, Add Cash sheet) is spendable by
+  /// `RecordCashExpenseUseCase` and visible to lot-based reporting.
+  ///
+  /// Lot linkage contract:
+  /// * `cash_transactions.lot_id`   = lot.id
+  /// * `cash_lots.source_ref_type`  = 'cash_transaction'
+  /// * `cash_lots.source_ref_id`    = cash_transaction.id
+  ///
+  /// Cost-basis rule: when a positive [homeCurrencyAmount] (and
+  /// [homeCurrencyCode]) is provided the lot carries
+  /// `effective_rate = homeCurrencyAmount / amount`; otherwise the lot is
+  /// created without a basis (all three basis columns null).
+  ///
+  /// All writes (transaction row, lot row, balance upsert) are atomic: a
+  /// failure leaves no partial state behind.
   Future<void> addCashTransaction({
     required String tripId,
     required CashTransactionType type,
@@ -77,8 +97,10 @@ class CashWalletRepository {
     await _assertTripExists(tripId);
 
     final normalizedCurrency = currencyCode.trim().toUpperCase();
-    final transaction = CashTransaction.create(
-      id: _uuid.v4(),
+    final transactionId = _uuid.v4();
+    final lot = _buildInflowLot(
+      lotId: _uuid.v4(),
+      transactionId: transactionId,
       tripId: tripId,
       type: type,
       amount: amount,
@@ -88,11 +110,31 @@ class CashWalletRepository {
       note: note,
       createdAt: createdAt,
     );
+    final transaction = CashTransaction.create(
+      id: transactionId,
+      tripId: tripId,
+      type: type,
+      amount: amount,
+      currencyCode: normalizedCurrency,
+      homeCurrencyAmount: homeCurrencyAmount,
+      homeCurrencyCode: homeCurrencyCode,
+      note: note,
+      createdAt: createdAt,
+      lotId: lot?.id,
+    );
 
     final signedAmount = type.signedDelta(amount);
 
     final db = await _appDatabase.database;
     await db.transaction((txn) async {
+      // Lot first: cash_transactions.lot_id carries a FK to cash_lots(id).
+      if (lot != null) {
+        await txn.insert(
+          AppDatabase.cashLotsTable,
+          lot.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.abort,
+        );
+      }
       await _insertTransaction(txn, transaction);
       await _applyBalanceDelta(
         txn,
@@ -102,6 +144,67 @@ class CashWalletRepository {
         updatedAt: transaction.createdAt,
       );
     });
+  }
+
+  /// Builds the FIFO lot backing a manual cash **inflow**, or `null` when the
+  /// transaction must not create a lot (outflows and zero amounts).
+  ///
+  /// The basis columns follow the all-or-nothing schema contract: they are set
+  /// only when a positive home amount and a home currency are both provided.
+  CashLot? _buildInflowLot({
+    required String lotId,
+    required String transactionId,
+    required String tripId,
+    required CashTransactionType type,
+    required double amount,
+    required String currencyCode,
+    double? homeCurrencyAmount,
+    String? homeCurrencyCode,
+    String? note,
+    DateTime? createdAt,
+  }) {
+    if (amount <= 0 || type.signedDelta(amount) <= 0) {
+      return null;
+    }
+
+    final String sourceType;
+    switch (type) {
+      case CashTransactionType.initialCash:
+        sourceType = 'initial_cash';
+      case CashTransactionType.manualAdjustment:
+        sourceType = 'manual_adjustment';
+      case CashTransactionType.atmWithdrawal:
+        sourceType = 'atm_withdrawal';
+      case CashTransactionType.currencyExchangeIn:
+        sourceType = 'exchange_in';
+      case CashTransactionType.cashRefund:
+        sourceType = 'cash_refund';
+      case CashTransactionType.currencyExchangeOut:
+      case CashTransactionType.cashExpenseDeduction:
+        return null;
+    }
+
+    final normalizedHomeCode = homeCurrencyCode?.trim().toUpperCase();
+    final hasBasis = homeCurrencyAmount != null &&
+        homeCurrencyAmount > 0 &&
+        normalizedHomeCode != null &&
+        normalizedHomeCode.isNotEmpty;
+
+    return CashLot.create(
+      id: lotId,
+      tripId: tripId,
+      sourceType: sourceType,
+      sourceRefType: 'cash_transaction',
+      sourceRefId: transactionId,
+      currencyCode: currencyCode,
+      originalAmount: amount,
+      remainingAmount: amount,
+      homeCurrencyAmount: hasBasis ? homeCurrencyAmount : null,
+      homeCurrencyCode: hasBasis ? normalizedHomeCode : null,
+      effectiveRate: hasBasis ? homeCurrencyAmount / amount : null,
+      createdAt: createdAt,
+      note: note,
+    );
   }
 
   /// Inserts an ATM withdrawal [CashTransaction] row (with [lotId] set) and
@@ -294,8 +397,13 @@ class CashWalletRepository {
     );
 
     final normalizedCurrency = nextCurrencyCode.trim().toUpperCase();
-    final replacementTransaction = CashTransaction.create(
-      id: _uuid.v4(),
+    final replacementTransactionId = _uuid.v4();
+    // Reverse + recreate keeps the lot ledger consistent: the old inflow lot
+    // is reversed (guarded against consumed cash) and a fresh lot backs the
+    // replacement transaction.
+    final replacementLot = _buildInflowLot(
+      lotId: _uuid.v4(),
+      transactionId: replacementTransactionId,
       tripId: existingTransaction.tripId,
       type: nextType,
       amount: nextAmount,
@@ -305,6 +413,18 @@ class CashWalletRepository {
       note: nextNote,
       createdAt: nextCreatedAt,
     );
+    final replacementTransaction = CashTransaction.create(
+      id: replacementTransactionId,
+      tripId: existingTransaction.tripId,
+      type: nextType,
+      amount: nextAmount,
+      currencyCode: normalizedCurrency,
+      homeCurrencyAmount: nextHomeCurrencyAmount,
+      homeCurrencyCode: nextHomeCurrencyCode,
+      note: nextNote,
+      createdAt: nextCreatedAt,
+      lotId: replacementLot?.id,
+    );
 
     final db = await _appDatabase.database;
     await db.transaction((txn) async {
@@ -312,6 +432,14 @@ class CashWalletRepository {
         txn,
         transaction: existingTransaction,
       );
+      // Lot first: cash_transactions.lot_id carries a FK to cash_lots(id).
+      if (replacementLot != null) {
+        await txn.insert(
+          AppDatabase.cashLotsTable,
+          replacementLot.toMap(),
+          conflictAlgorithm: ConflictAlgorithm.abort,
+        );
+      }
       await _insertTransaction(txn, replacementTransaction);
       await _applyBalanceDelta(
         txn,
@@ -596,6 +724,54 @@ class CashWalletRepository {
     required CashTransaction transaction,
   }) async {
     final now = DateTime.now().toUtc();
+
+    // Resolve the linked inflow lot (if any) from the stored row, not the
+    // caller-supplied object, so stale in-memory copies cannot skip the lot.
+    final storedRows = await txn.query(
+      AppDatabase.cashTransactionsTable,
+      columns: ['lot_id'],
+      where: 'id = ? AND is_reversed = 0',
+      whereArgs: [transaction.id],
+      limit: 1,
+    );
+    if (storedRows.isEmpty) {
+      throw StateError('Transaction already reversed or not found.');
+    }
+    final lotId = storedRows.first['lot_id'] as String?;
+
+    // Reverse the linked lot first. A lot whose cash was already (partially)
+    // spent or exchanged cannot be reversed — that would orphan consumptions
+    // and let FIFO overdraw the wallet.
+    if (lotId != null) {
+      final lotRows = await txn.query(
+        AppDatabase.cashLotsTable,
+        where: 'id = ? AND is_reversed = 0',
+        whereArgs: [lotId],
+        limit: 1,
+      );
+      if (lotRows.isNotEmpty) {
+        final lot = CashLot.fromMap(lotRows.first);
+        const epsilon = 1e-9;
+        if (lot.originalAmount - lot.remainingAmount > epsilon) {
+          throw StateError(
+            'Cash from this transaction has already been spent; '
+            'reverse the consuming expenses/exchanges first.',
+          );
+        }
+        await txn.update(
+          AppDatabase.cashLotsTable,
+          {
+            'is_reversed': 1,
+            'reversed_at': now.toIso8601String(),
+            'is_fully_consumed': 1,
+            'remaining_amount': 0.0,
+          },
+          where: 'id = ?',
+          whereArgs: [lotId],
+        );
+      }
+    }
+
     final affected = await txn.update(
       AppDatabase.cashTransactionsTable,
       {
