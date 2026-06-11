@@ -1536,11 +1536,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String tripSetupHomeValueLabel(String currency) {
-    return 'القيمة التقريبية بـ $currency';
+    return 'القيمة التقريبية بـ $currency (موصى بها)';
   }
 
   @override
-  String get tripSetupHomeValueHint => 'يساعد ذلك في حساب تكلفة الرحلة بعملتك الأساسية.';
+  String tripSetupHomeValueInputHint(String currency) {
+    return 'مثال: 1050 $currency';
+  }
+
+  @override
+  String get tripSetupHomeValueHint => 'يساعد ذلك في حساب تكلفة الرحلة بعملتك الأساسية بدقة أكبر.';
+
+  @override
+  String get tripSetupMissingHomeValueTitle => 'لم تدخل القيمة التقريبية للنقد.';
+
+  @override
+  String get tripSetupMissingHomeValueMessage => 'سيستمر التطبيق بالعمل بشكل طبيعي، لكن بعض تقارير تكلفة الرحلة بعملتك الأساسية قد تكون أقل دقة.';
+
+  @override
+  String get tripSetupMissingHomeValueContinue => 'متابعة';
+
+  @override
+  String get tripSetupMissingHomeValueBack => 'رجوع';
 
   @override
   String get tripSetupSearchCurrency => 'بحث عن عملة';

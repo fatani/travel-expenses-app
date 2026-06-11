@@ -554,7 +554,7 @@
   "tripSetupAddCurrency": "إضافة عملة",
   "tripSetupAddCard": "إضافة بطاقة",
   "tripSetupAmountLabel": "المبلغ",
-  "tripSetupHomeValueLabel": "القيمة التقريبية بـ {currency}",
+  "tripSetupHomeValueLabel": "القيمة التقريبية بـ {currency} (موصى بها)",
   "@tripSetupHomeValueLabel": {
     "placeholders": {
       "currency": {
@@ -562,7 +562,19 @@
       }
     }
   },
-  "tripSetupHomeValueHint": "يساعد ذلك في حساب تكلفة الرحلة بعملتك الأساسية.",
+  "tripSetupHomeValueInputHint": "مثال: 1050 {currency}",
+  "@tripSetupHomeValueInputHint": {
+    "placeholders": {
+      "currency": {
+        "type": "String"
+      }
+    }
+  },
+  "tripSetupHomeValueHint": "يساعد ذلك في حساب تكلفة الرحلة بعملتك الأساسية بدقة أكبر.",
+  "tripSetupMissingHomeValueTitle": "لم تدخل القيمة التقريبية للنقد.",
+  "tripSetupMissingHomeValueMessage": "سيستمر التطبيق بالعمل بشكل طبيعي، لكن بعض تقارير تكلفة الرحلة بعملتك الأساسية قد تكون أقل دقة.",
+  "tripSetupMissingHomeValueContinue": "متابعة",
+  "tripSetupMissingHomeValueBack": "رجوع",
   "tripSetupSearchCurrency": "بحث عن عملة",
   "tripSetupCreateNow": "إنشاء الرحلة الآن",
   "tripSetupCreateNowHint": "بدون تواريخ أو نقد أو بطاقات جديدة",

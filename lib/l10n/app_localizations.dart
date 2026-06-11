@@ -2924,14 +2924,44 @@ abstract class AppLocalizations {
   /// No description provided for @tripSetupHomeValueLabel.
   ///
   /// In en, this message translates to:
-  /// **'Approximate value in {currency}'**
+  /// **'Approximate value in {currency} (Recommended)'**
   String tripSetupHomeValueLabel(String currency);
+
+  /// No description provided for @tripSetupHomeValueInputHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Example: 1050 {currency}'**
+  String tripSetupHomeValueInputHint(String currency);
 
   /// No description provided for @tripSetupHomeValueHint.
   ///
   /// In en, this message translates to:
-  /// **'This helps calculate your trip cost in your home currency.'**
+  /// **'This helps calculate your trip cost more accurately in your home currency.'**
   String get tripSetupHomeValueHint;
+
+  /// No description provided for @tripSetupMissingHomeValueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'You did not enter the approximate value of your cash.'**
+  String get tripSetupMissingHomeValueTitle;
+
+  /// No description provided for @tripSetupMissingHomeValueMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The app will still work normally, but some trip-cost reports in your home currency may be less accurate.'**
+  String get tripSetupMissingHomeValueMessage;
+
+  /// No description provided for @tripSetupMissingHomeValueContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get tripSetupMissingHomeValueContinue;
+
+  /// No description provided for @tripSetupMissingHomeValueBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get tripSetupMissingHomeValueBack;
 
   /// No description provided for @tripSetupSearchCurrency.
   ///

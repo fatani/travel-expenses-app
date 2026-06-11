@@ -235,6 +235,10 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                                     homeValueLabel: l10n.tripSetupHomeValueLabel(
                                       homeCurrencyCode,
                                     ),
+                                    homeValueInputHint:
+                                        l10n.tripSetupHomeValueInputHint(
+                                      homeCurrencyCode,
+                                    ),
                                     homeValueHint: l10n.tripSetupHomeValueHint,
                                     onCurrencyTap: () =>
                                         _pickCurrencyForRow(_cashRows[i]),
@@ -508,6 +512,14 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
         }
       }
 
+      final cashEntries = _resolvedCashEntries();
+      if (_hasCashAmountsMissingHomeValue(cashEntries)) {
+        final shouldContinue = await _showMissingHomeValueWarning();
+        if (!mounted || !shouldContinue) {
+          return;
+        }
+      }
+
       final createdTrip = await ref.read(tripsControllerProvider.notifier).createTrip(
             name: resolvedName,
             destination: destination.englishName,
@@ -521,7 +533,6 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
             description: Trip.normalizeDescription(widget.customTripDescription),
           );
 
-      final cashEntries = _resolvedCashEntries();
       if (cashEntries.isNotEmpty) {
         final cashWallet = ref.read(cashWalletRepositoryProvider);
         try {
@@ -678,6 +689,51 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
     required DateTime endB,
   }) {
     return !startA.isAfter(endB) && !endA.isBefore(startB);
+  }
+
+  bool _hasCashAmountsMissingHomeValue(List<_ResolvedCashEntry> entries) {
+    if (entries.isEmpty) {
+      return false;
+    }
+
+    return entries.any((entry) => entry.homeCurrencyAmount == null);
+  }
+
+  Future<bool> _showMissingHomeValueWarning() async {
+    final l10n = AppLocalizations.of(context)!;
+
+    final shouldContinue = await showModalBottomSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.34),
+      builder: (sheetContext) {
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md + bottomInset,
+            ),
+            child: AppConfirmationDialog(
+              icon: Icons.info_outline_rounded,
+              title: l10n.tripSetupMissingHomeValueTitle,
+              message: l10n.tripSetupMissingHomeValueMessage,
+              cancelLabel: l10n.tripSetupMissingHomeValueBack,
+              confirmLabel: l10n.tripSetupMissingHomeValueContinue,
+              onCancel: () => Navigator.of(sheetContext).pop(false),
+              onConfirm: () => Navigator.of(sheetContext).pop(true),
+            ),
+          ),
+        );
+      },
+    );
+
+    return shouldContinue == true;
   }
 
   Future<bool> _showOverlapWarning(List<_TripDateOverlap> overlaps) async {
@@ -870,6 +926,7 @@ class _CashRowFields extends StatelessWidget {
     required this.enabled,
     required this.amountLabel,
     required this.homeValueLabel,
+    required this.homeValueInputHint,
     required this.homeValueHint,
   });
 
@@ -878,6 +935,7 @@ class _CashRowFields extends StatelessWidget {
   final bool enabled;
   final String amountLabel;
   final String homeValueLabel;
+  final String homeValueInputHint;
   final String homeValueHint;
 
   @override
@@ -972,6 +1030,7 @@ class _CashRowFields extends StatelessWidget {
           ],
           decoration: InputDecoration(
             labelText: homeValueLabel,
+            hintText: homeValueInputHint,
             isDense: true,
             filled: true,
             fillColor: const Color(0xFFF8FAFC),

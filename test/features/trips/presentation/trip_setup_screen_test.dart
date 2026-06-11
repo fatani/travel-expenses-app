@@ -262,6 +262,7 @@ void main() {
 
       await tester.tap(find.text('Create trip'));
       await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
 
       expect(recording.createCalls.length, 1);
       expect(recording.cashWallet.addCalls, 1);
@@ -297,6 +298,7 @@ void main() {
 
       await tester.tap(find.text('Create trip'));
       await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
 
       expect(recording.cashWallet.addCalls, 2);
       expect(recording.cashWallet.currencies, ['THB', 'USD']);
@@ -326,6 +328,7 @@ void main() {
 
       await tester.tap(find.text('Create trip'));
       await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
 
       expect(recording.createCalls.first.startDate, isNotNull);
       expect(recording.createCalls.first.endDate, isNotNull);
@@ -520,6 +523,7 @@ void main() {
       await tester.pump();
       await tester.tap(find.text('Create trip'));
       await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
 
       expect(recording.createCalls.length, 1);
       expect(recording.deleteCalls.length, 1);
@@ -559,6 +563,7 @@ void main() {
 
       await tester.tap(find.text('Create trip'));
       await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
 
       expect(recording.createCalls.length, 1);
       expect(recording.deleteCalls.length, 1);
@@ -667,6 +672,15 @@ void main() {
     });
   });
 
+}
+
+Future<void> _confirmMissingHomeValueDialog(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 300));
+  final continueButton = find.text('Continue');
+  if (continueButton.evaluate().isNotEmpty) {
+    await tester.tap(continueButton);
+    await tester.pump();
+  }
 }
 
 Finder _cashAmountField({int rowIndex = 0}) {

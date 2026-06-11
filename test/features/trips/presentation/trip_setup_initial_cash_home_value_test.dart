@@ -46,10 +46,11 @@ void main() {
       expect(_cashHomeValueField(), findsOneWidget);
       expect(
         find.text(
-          'This helps calculate your trip cost in your home currency.',
+          'This helps calculate your trip cost more accurately in your home currency.',
         ),
         findsOneWidget,
       );
+      expect(find.text('Example: 1050 SAR'), findsOneWidget);
     });
 
     testWidgets('dynamic home currency label displays SAR', (tester) async {
@@ -61,7 +62,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Approximate value in SAR'), findsOneWidget);
+      expect(find.text('Approximate value in SAR (Recommended)'), findsOneWidget);
     });
 
     testWidgets('dynamic home currency label displays USD', (tester) async {
@@ -73,7 +74,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.text('Approximate value in USD'), findsOneWidget);
+      expect(find.text('Approximate value in USD (Recommended)'), findsOneWidget);
     });
 
     testWidgets('passes home value to addCashTransaction when provided',
@@ -118,6 +119,7 @@ void main() {
 
       await tester.tap(find.text('Create trip'));
       await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
 
       expect(recording.lastHomeCurrencyAmount, isNull);
       expect(recording.lastHomeCurrencyCode, isNull);
@@ -141,6 +143,7 @@ void main() {
 
       await tester.tap(find.text('Create trip'));
       await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
 
       expect(recording.lastHomeCurrencyAmount, isNull);
       expect(recording.lastHomeCurrencyCode, isNull);
@@ -165,6 +168,7 @@ void main() {
 
       await tester.tap(find.text('Create trip'));
       await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
 
       expect(recording.addCalls, 1);
       expect(recording.lastHomeCurrencyAmount, isNull);
@@ -202,6 +206,159 @@ void main() {
       expect(recording.addCallLog[0].homeCurrencyCode, 'SAR');
       expect(recording.addCallLog[1].homeCurrencyAmount, closeTo(62.5, 0.000001));
       expect(recording.addCallLog[1].homeCurrencyCode, 'SAR');
+    });
+  });
+
+  group('Sprint UX-1C — recommend initial cash home value', () {
+    testWidgets('recommended label visible', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Approximate value in SAR (Recommended)'), findsOneWidget);
+    });
+
+    testWidgets('recommended helper text visible', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+        ),
+      );
+      await tester.pump();
+
+      expect(
+        find.text(
+          'This helps calculate your trip cost more accurately in your home currency.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('dialog appears when cash amount exists and home value missing',
+        (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+        ),
+      );
+      await tester.pump();
+
+      await tester.enterText(_cashAmountField(), '10000');
+      await tester.pump();
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.text('You did not enter the approximate value of your cash.'),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'The app will still work normally, but some trip-cost reports in your home currency may be less accurate.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('continue creates trip successfully', (tester) async {
+      final recording = _RecordingTripsController(homeCurrencyCode: 'SAR');
+
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+          tripsController: recording,
+        ),
+      );
+      await tester.pump();
+
+      await tester.enterText(_cashAmountField(), '10000');
+      await tester.pump();
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+      await _confirmMissingHomeValueDialog(tester);
+
+      expect(recording.createCalls, 1);
+    });
+
+    testWidgets('back returns to form without creating trip', (tester) async {
+      final recording = _RecordingTripsController(homeCurrencyCode: 'SAR');
+
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+          tripsController: recording,
+        ),
+      );
+      await tester.pump();
+
+      await tester.enterText(_cashAmountField(), '10000');
+      await tester.pump();
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Back'));
+      await tester.pump();
+
+      expect(recording.createCalls, 0);
+      expect(find.byType(TripSetupScreen), findsOneWidget);
+    });
+
+    testWidgets('no dialog when no cash rows', (tester) async {
+      final recording = _RecordingTripsController(homeCurrencyCode: 'SAR');
+
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+          tripsController: recording,
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.text('You did not enter the approximate value of your cash.'),
+        findsNothing,
+      );
+      expect(recording.createCalls, 1);
+    });
+
+    testWidgets('no dialog when all rows have home values', (tester) async {
+      final recording = _RecordingTripsController(homeCurrencyCode: 'SAR');
+
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+          tripsController: recording,
+        ),
+      );
+      await tester.pump();
+
+      await tester.enterText(_cashAmountField(), '10000');
+      await tester.enterText(_cashHomeValueField(), '1050');
+      await tester.pump();
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(
+        find.text('You did not enter the approximate value of your cash.'),
+        findsNothing,
+      );
+      expect(recording.createCalls, 1);
     });
   });
 
@@ -318,17 +475,29 @@ Finder _cashHomeValueField({int rowIndex = 0}) {
     }
     final label = decoration.labelText;
     return label != null &&
-        (label.startsWith('Approximate value in ') ||
-            label.startsWith('القيمة التقريبية بـ '));
+        (label.contains('(Recommended)') || label.contains('(موصى بها)'));
   }).at(rowIndex);
+}
+
+Future<void> _confirmMissingHomeValueDialog(WidgetTester tester) async {
+  await tester.pump(const Duration(milliseconds: 300));
+  final continueButton = find.text('Continue');
+  if (continueButton.evaluate().isNotEmpty) {
+    await tester.tap(continueButton);
+    await tester.pump();
+  }
 }
 
 Widget _buildApp({
   required Widget home,
   required String homeCurrencyCode,
   CashWalletRepository? cashWallet,
+  _RecordingTripsController? tripsController,
 }) {
   final wallet = cashWallet ?? _RecordingCashWalletRepository();
+  final trips = tripsController ?? _RecordingTripsController(
+    homeCurrencyCode: homeCurrencyCode,
+  );
 
   return ProviderScope(
     overrides: [
@@ -336,9 +505,7 @@ Widget _buildApp({
       userFinancialProfileControllerProvider.overrideWith(
         () => _FakeFinancialProfileController(homeCurrencyCode),
       ),
-      tripsControllerProvider.overrideWith(
-        () => _RecordingTripsController(homeCurrencyCode: homeCurrencyCode),
-      ),
+      tripsControllerProvider.overrideWith(() => trips),
       cashWalletRepositoryProvider.overrideWithValue(wallet),
       tripRepositoryProvider.overrideWithValue(_EmptyTripRepository()),
     ],
@@ -374,6 +541,7 @@ class _RecordingTripsController extends TripsController {
   _RecordingTripsController({required this.homeCurrencyCode});
 
   final String homeCurrencyCode;
+  int createCalls = 0;
 
   @override
   Future<List<Trip>> build() async => const [];
@@ -393,6 +561,7 @@ class _RecordingTripsController extends TripsController {
     String? destinationCountryCode,
     String? description,
   }) async {
+    createCalls++;
     return Trip.create(
       id: 'created-trip',
       name: name,

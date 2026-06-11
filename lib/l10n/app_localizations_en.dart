@@ -1529,11 +1529,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String tripSetupHomeValueLabel(String currency) {
-    return 'Approximate value in $currency';
+    return 'Approximate value in $currency (Recommended)';
   }
 
   @override
-  String get tripSetupHomeValueHint => 'This helps calculate your trip cost in your home currency.';
+  String tripSetupHomeValueInputHint(String currency) {
+    return 'Example: 1050 $currency';
+  }
+
+  @override
+  String get tripSetupHomeValueHint => 'This helps calculate your trip cost more accurately in your home currency.';
+
+  @override
+  String get tripSetupMissingHomeValueTitle => 'You did not enter the approximate value of your cash.';
+
+  @override
+  String get tripSetupMissingHomeValueMessage => 'The app will still work normally, but some trip-cost reports in your home currency may be less accurate.';
+
+  @override
+  String get tripSetupMissingHomeValueContinue => 'Continue';
+
+  @override
+  String get tripSetupMissingHomeValueBack => 'Back';
 
   @override
   String get tripSetupSearchCurrency => 'Search currency';
