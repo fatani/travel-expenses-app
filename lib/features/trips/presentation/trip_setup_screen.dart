@@ -43,10 +43,12 @@ class TripSetupScreen extends ConsumerStatefulWidget {
     super.key,
     required this.selectedDestination,
     this.customTripTitle = '',
+    this.customTripDescription = '',
   });
 
   final CountryInfo selectedDestination;
   final String customTripTitle;
+  final String customTripDescription;
 
   @override
   ConsumerState<TripSetupScreen> createState() => _TripSetupScreenState();
@@ -209,7 +211,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                           ),
                           const SizedBox(height: 12),
                           _SetupSectionCard(
-                            title: l10n.tripSetupCashTitle,
+                            title: l10n.tripSetupInitialCashTitle,
                             hint: l10n.tripSetupCashHint,
                             child: Column(
                               children: [
@@ -324,32 +326,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                           label: l10n.tripFormSaveCreate,
                           onTap: _isSubmitting || _hasInvalidDateRange
                               ? null
-                              : () => _createTrip(skipOptionalData: false),
-                        ),
-                        const SizedBox(height: 4),
-                        TextButton(
-                          onPressed: _isSubmitting
-                              ? null
-                              : () => _createTrip(skipOptionalData: true),
-                          style: TextButton.styleFrom(
-                            visualDensity: VisualDensity.compact,
-                          ),
-                          child: Text(
-                            l10n.tripSetupCreateNow,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF475569),
-                            ),
-                          ),
-                        ),
-                        Text(
-                          l10n.tripSetupCreateNowHint,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            height: 1.3,
-                            color: Color(0xFF94A3B8),
-                          ),
+                              : _createTrip,
                         ),
                       ],
                     ),
@@ -470,12 +447,12 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
     return _isArabic ? ' ← ' : ' → ';
   }
 
-  Future<void> _createTrip({required bool skipOptionalData}) async {
+  Future<void> _createTrip() async {
     if (_isSubmitting) {
       return;
     }
 
-    if (!skipOptionalData && _hasInvalidDateRange) {
+    if (_hasInvalidDateRange) {
       return;
     }
 
@@ -498,15 +475,8 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
               ? profile!.homeCurrencyCode.trim().toUpperCase()
               : baseCurrency;
 
-      final startDate = skipOptionalData ? null : _startDate;
-      final endDate = skipOptionalData ? null : _endDate;
-
-      if (!skipOptionalData &&
-          startDate != null &&
-          endDate != null &&
-          _startDate!.isAfter(_endDate!)) {
-        return;
-      }
+      final startDate = _startDate;
+      final endDate = _endDate;
 
       final overlaps = await _findDateOverlaps(
         startDate: startDate,
@@ -533,11 +503,10 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
             homeCurrencySnapshot: homeCurrencySnapshot,
             isCustomTitle: isCustomTitle,
             destinationCountryCode: destination.countryCode,
+            description: Trip.normalizeDescription(widget.customTripDescription),
           );
 
-      final cashEntries = skipOptionalData
-          ? const <_ResolvedCashEntry>[]
-          : _resolvedCashEntries();
+      final cashEntries = _resolvedCashEntries();
       if (cashEntries.isNotEmpty) {
         final cashWallet = ref.read(cashWalletRepositoryProvider);
         try {
@@ -788,34 +757,25 @@ class _SetupSectionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF0F172A),
-                ),
-              ),
-              if (hint != null) ...[
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    hint!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF94A3B8),
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ],
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF0F172A),
+            ),
           ),
+          if (hint != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              hint!,
+              style: const TextStyle(
+                fontSize: 12,
+                height: 1.35,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+          ],
           const SizedBox(height: 10),
           child,
         ],

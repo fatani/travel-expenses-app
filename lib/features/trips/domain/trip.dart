@@ -17,7 +17,17 @@ class Trip {
     required this.updatedAt,
     this.isCustomTitle = false,
     this.destinationCountryCode,
+    this.description,
   });
+
+  static String? normalizeDescription(String? value) {
+    if (value == null) {
+      return null;
+    }
+
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : trimmed;
+  }
 
   static Trip? tryFromMap(Map<String, Object?> map) {
     try {
@@ -40,6 +50,7 @@ class Trip {
     String? budgetCurrency,
     bool isCustomTitle = false,
     String? destinationCountryCode,
+    String? description,
   }) {
     DataIntegrity.requireTripCurrencies(
       baseCurrency: baseCurrency,
@@ -71,6 +82,7 @@ class Trip {
       updatedAt: now,
       isCustomTitle: isCustomTitle,
       destinationCountryCode: destinationCountryCode,
+      description: normalizeDescription(description),
     );
   }
 
@@ -112,6 +124,7 @@ class Trip {
       updatedAt: updatedAt,
       isCustomTitle: (map['is_custom_title'] as int? ?? 0) != 0,
       destinationCountryCode: map['destination_country_code'] as String?,
+      description: normalizeDescription(map['description'] as String?),
     );
   }
 
@@ -129,6 +142,7 @@ class Trip {
   final DateTime updatedAt;
   final bool isCustomTitle;
   final String? destinationCountryCode;
+  final String? description;
 
   static const Object _unset = Object();
 
@@ -147,6 +161,7 @@ class Trip {
     DateTime? updatedAt,
     bool? isCustomTitle,
     Object? destinationCountryCode = _unset,
+    Object? description = _unset,
   }) {
     return Trip(
       id: id ?? this.id,
@@ -167,6 +182,9 @@ class Trip {
       destinationCountryCode: identical(destinationCountryCode, _unset)
           ? this.destinationCountryCode
           : destinationCountryCode as String?,
+      description: identical(description, _unset)
+          ? this.description
+          : normalizeDescription(description as String?),
     );
   }
 
@@ -186,6 +204,7 @@ class Trip {
       'updated_at': updatedAt.toUtc().toIso8601String(),
       'is_custom_title': isCustomTitle ? 1 : 0,
       'destination_country_code': destinationCountryCode,
+      'description': description,
     };
   }
 

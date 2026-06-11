@@ -10,7 +10,7 @@ class AppDatabase {
   static const String databaseName = 'travel_expenses.db';
 
   final String _databaseFileName;
-  static const int databaseVersion = 21;
+  static const int databaseVersion = 22;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -83,6 +83,7 @@ class AppDatabase {
         await _ensureExpensesCardProfileIdColumn(db);
         await _ensureCardsProfileColumns(db);
         await _ensureTripsCustomTitleColumns(db);
+        await _ensureTripsDescriptionColumn(db);
         await _ensureTripCashBalancesTable(db);
         await _ensureCashTransactionsTable(db);
         await _ensureCashTransactionsHomeValueColumns(db);
@@ -114,7 +115,8 @@ class AppDatabase {
             created_at TEXT NOT NULL,
             updated_at TEXT NOT NULL,
             is_custom_title INTEGER NOT NULL DEFAULT 0,
-            destination_country_code TEXT
+            destination_country_code TEXT,
+            description TEXT
           )
         ''');
 
@@ -526,6 +528,10 @@ class AppDatabase {
         if (oldVersion < 21) {
           await _backfillLegacyCashLots(db);
         }
+
+        if (oldVersion < 22) {
+          await _ensureTripsDescriptionColumn(db);
+        }
       },
     );
   }
@@ -846,6 +852,15 @@ class AppDatabase {
     if (!hasDisplayName) {
       await db.execute('ALTER TABLE $cardsTable ADD COLUMN display_name TEXT');
     }
+  }
+
+  Future<void> _ensureTripsDescriptionColumn(Database db) async {
+    final hasDescription = await _hasColumn(db, tripsTable, 'description');
+    if (hasDescription) {
+      return;
+    }
+
+    await db.execute('ALTER TABLE $tripsTable ADD COLUMN description TEXT');
   }
 
   Future<void> _ensureTripsCustomTitleColumns(Database db) async {

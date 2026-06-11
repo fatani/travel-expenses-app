@@ -31,7 +31,7 @@ void main() {
   });
 
   group('Trip creation', () {
-    testWidgets('creates trip with no setup data via Create trip now', (tester) async {
+    testWidgets('creates trip with no setup data via primary action', (tester) async {
       final recording = _RecordingTripsController();
 
       await tester.pumpWidget(
@@ -47,7 +47,7 @@ void main() {
       );
       await tester.pump();
 
-      await tester.tap(find.text('Create trip now'));
+      await tester.tap(find.text('Create trip'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -55,6 +55,160 @@ void main() {
       expect(recording.createCalls.first.startDate, isNull);
       expect(recording.createCalls.first.endDate, isNull);
       expect(recording.cashWallet.addCalls, 0);
+    });
+
+    testWidgets('has only one create action', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          overrides: [
+            tripsControllerProvider.overrideWith(_RecordingTripsController.new),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _RecordingCashWalletRepository(),
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Create trip'), findsOneWidget);
+      expect(find.text('Create trip now'), findsNothing);
+      expect(find.text('Without dates, cash, or new cards'), findsNothing);
+    });
+
+    testWidgets('persists custom trip name from setup', (tester) async {
+      final recording = _RecordingTripsController();
+
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(
+            selectedDestination: thailand,
+            customTripTitle: 'Dream Vacation',
+          ),
+          overrides: [
+            tripsControllerProvider.overrideWith(() => recording),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _RecordingCashWalletRepository(),
+            ),
+            tripRepositoryProvider.overrideWithValue(_EmptyTripRepository()),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+
+      expect(recording.createCalls.length, 1);
+      expect(recording.createCalls.first.name, 'Dream Vacation');
+      expect(recording.createCalls.first.isCustomTitle, isTrue);
+    });
+
+    testWidgets('falls back to auto-generated name when custom title empty',
+        (tester) async {
+      final recording = _RecordingTripsController();
+
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          overrides: [
+            tripsControllerProvider.overrideWith(() => recording),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _RecordingCashWalletRepository(),
+            ),
+            tripRepositoryProvider.overrideWithValue(_EmptyTripRepository()),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+
+      expect(recording.createCalls.length, 1);
+      expect(recording.createCalls.first.name, 'Thailand Trip');
+      expect(recording.createCalls.first.isCustomTitle, isFalse);
+    });
+
+    testWidgets('shows updated cards copy', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          overrides: [
+            tripsControllerProvider.overrideWith(_RecordingTripsController.new),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _RecordingCashWalletRepository(),
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text('Cards used during the trip'), findsOneWidget);
+      expect(
+        find.text(
+          'You can add them now or when recording your first card expense.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows updated cash section copy', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          overrides: [
+            tripsControllerProvider.overrideWith(_RecordingTripsController.new),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _RecordingCashWalletRepository(),
+            ),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      expect(find.text("Cash you're carrying at the start of the trip"), findsOneWidget);
+      expect(find.text('Cash on hand'), findsNothing);
+    });
+
+    test('trip model persists description field', () {
+      final trip = Trip.create(
+        id: 'trip-1',
+        name: 'Test',
+        destination: 'Test',
+        baseCurrency: 'USD',
+        description: 'Family vacation',
+      );
+
+      expect(trip.toMap().containsKey('notes'), isFalse);
+      expect(trip.toMap()['description'], 'Family vacation');
+    });
+
+    testWidgets('persists description from setup flow', (tester) async {
+      final recording = _RecordingTripsController();
+
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(
+            selectedDestination: thailand,
+            customTripDescription: 'Honeymoon trip',
+          ),
+          overrides: [
+            tripsControllerProvider.overrideWith(() => recording),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _RecordingCashWalletRepository(),
+            ),
+            tripRepositoryProvider.overrideWithValue(_EmptyTripRepository()),
+          ],
+        ),
+      );
+      await tester.pump();
+
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+
+      expect(recording.createCalls.length, 1);
+      expect(recording.createCalls.first.description, 'Honeymoon trip');
     });
 
     testWidgets('creates trip with dates only', (tester) async {
@@ -300,8 +454,8 @@ void main() {
       await tester.tap(find.text('Open setup flow'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
-      await tester.ensureVisible(find.text('Create trip now'));
-      await tester.tap(find.text('Create trip now'));
+      await tester.ensureVisible(find.text('Create trip'));
+      await tester.tap(find.text('Create trip'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 100));
 
@@ -441,7 +595,7 @@ void main() {
       await tester.pump();
 
       await tester.ensureVisible(find.text('Create trip'));
-      await tester.ensureVisible(find.text('Create trip now'));
+      expect(find.text('Create trip now'), findsNothing);
       expect(find.byType(SingleChildScrollView), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -474,7 +628,7 @@ void main() {
       await tester.pump();
 
       await tester.ensureVisible(find.text('إنشاء الرحلة'));
-      await tester.ensureVisible(find.text('إنشاء الرحلة الآن'));
+      expect(find.text('إنشاء الرحلة الآن'), findsNothing);
       expect(find.byType(SingleChildScrollView), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
@@ -637,9 +791,16 @@ class _RecordingTripsController extends TripsController {
     String? budgetCurrency,
     bool isCustomTitle = false,
     String? destinationCountryCode,
+    String? description,
   }) async {
     createCalls.add(
-      _CreateCall(startDate: startDate, endDate: endDate),
+      _CreateCall(
+        name: name,
+        isCustomTitle: isCustomTitle,
+        startDate: startDate,
+        endDate: endDate,
+        description: description,
+      ),
     );
     return tripToReturn;
   }
@@ -651,10 +812,19 @@ class _RecordingTripsController extends TripsController {
 }
 
 class _CreateCall {
-  _CreateCall({this.startDate, this.endDate});
+  _CreateCall({
+    required this.name,
+    required this.isCustomTitle,
+    this.startDate,
+    this.endDate,
+    this.description,
+  });
 
+  final String name;
+  final bool isCustomTitle;
   final DateTime? startDate;
   final DateTime? endDate;
+  final String? description;
 }
 
 class _RecordingCashWalletRepository extends CashWalletRepository {

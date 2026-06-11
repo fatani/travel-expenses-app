@@ -88,7 +88,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     _budgetCurrencyController = TextEditingController(
       text: trip?.budgetCurrency ?? trip?.baseCurrency ?? '',
     );
-    _notesController = TextEditingController();
+    _notesController = TextEditingController(text: trip?.description ?? '');
     _startDateController = TextEditingController();
     _endDateController = TextEditingController();
 
@@ -157,6 +157,8 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           : CreateTripVisualScreen(
               isArabic: isArabic,
               destinationController: _destinationController,
+              nameController: _nameController,
+              notesController: _notesController,
               selectedDestination: _selectedDestination,
               generatedTripTitle: _buildGeneratedTripTitle(
                 isArabic: isArabic,
@@ -165,9 +167,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
               onDestinationSelected: _onDestinationSelected,
               onDestinationCleared: _onDestinationCleared,
               onCustomDestinationSelected: _onCustomDestinationSelected,
-                onCreateTrip: _selectedDestination != null
-                  ? _openSetupScreen
-                  : null,
+              onContinue: _selectedDestination != null ? _openSetupScreen : null,
               onToggleLanguage: () => _toggleLanguage(isArabic: isArabic),
               onBack: () => Navigator.of(context).pop(),
             ),
@@ -488,6 +488,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
         builder: (_) => TripSetupScreen(
           selectedDestination: destination,
           customTripTitle: _nameController.text.trim(),
+          customTripDescription: _notesController.text,
         ),
       ),
     );
@@ -751,6 +752,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
     final budgetCurrency = budget == null
         ? null
         : (budgetCurrencyText.isEmpty ? baseCurrency : budgetCurrencyText);
+    final description = Trip.normalizeDescription(_notesController.text);
     final controller = ref.read(tripsControllerProvider.notifier);
 
     var isCurrencyLockedForSubmit = false;
@@ -800,6 +802,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           budgetCurrency: budgetCurrency,
           isCustomTitle: isCustomTitle,
           destinationCountryCode: destinationCountryCode,
+          description: description,
         );
 
         if (!mounted) {
@@ -828,6 +831,7 @@ class _TripFormScreenState extends ConsumerState<TripFormScreen> {
           budgetCurrency: budgetCurrency,
           isCustomTitle: isCustomTitle,
           destinationCountryCode: destinationCountryCode,
+          description: description,
         );
 
         if (!mounted) {
@@ -1259,12 +1263,14 @@ class _TripDateOverlap {
 class CreateTripVisualScreen extends StatelessWidget {
   final bool isArabic;
   final TextEditingController destinationController;
+  final TextEditingController nameController;
+  final TextEditingController notesController;
   final CountryInfo? selectedDestination;
   final String generatedTripTitle;
   final ValueChanged<CountryInfo> onDestinationSelected;
   final VoidCallback onDestinationCleared;
   final ValueChanged<String> onCustomDestinationSelected;
-  final VoidCallback? onCreateTrip;
+  final VoidCallback? onContinue;
   final VoidCallback onToggleLanguage;
   final VoidCallback onBack;
 
@@ -1272,12 +1278,14 @@ class CreateTripVisualScreen extends StatelessWidget {
     super.key,
     required this.isArabic,
     required this.destinationController,
+    required this.nameController,
+    required this.notesController,
     required this.selectedDestination,
     required this.generatedTripTitle,
     required this.onDestinationSelected,
     required this.onDestinationCleared,
     required this.onCustomDestinationSelected,
-    required this.onCreateTrip,
+    required this.onContinue,
     required this.onToggleLanguage,
     required this.onBack,
   });
@@ -1384,22 +1392,19 @@ class CreateTripVisualScreen extends StatelessWidget {
                               onCustomDestinationSelected:
                                   onCustomDestinationSelected,
                             ),
-                            if (generatedTripTitle.isNotEmpty) ...[
+                            if (selectedDestination != null) ...[
                               const SizedBox(height: 12),
-                              Text(
-                                l10n.tripFormCreateWithoutCustomTitle(generatedTripTitle),
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.blueGrey.shade400,
-                                ),
+                              _CreateTripDetailsCard(
+                                isArabic: isArabic,
+                                nameController: nameController,
+                                notesController: notesController,
+                                generatedTripTitle: generatedTripTitle,
                               ),
                             ],
                             const SizedBox(height: 24),
                             _GradientButton(
-                              label: l10n.tripFormSaveCreate,
-                              onTap: onCreateTrip,
+                              label: l10n.tripFormContinue,
+                              onTap: onContinue,
                             ),
                             const SizedBox(height: 40),
                           ],
@@ -1412,6 +1417,131 @@ class CreateTripVisualScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CreateTripDetailsCard extends StatelessWidget {
+  const _CreateTripDetailsCard({
+    required this.isArabic,
+    required this.nameController,
+    required this.notesController,
+    required this.generatedTripTitle,
+  });
+
+  final bool isArabic;
+  final TextEditingController nameController;
+  final TextEditingController notesController;
+  final String generatedTripTitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.045),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+            isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: nameController,
+            textInputAction: TextInputAction.next,
+            textAlign: isArabic ? TextAlign.right : TextAlign.left,
+            decoration: InputDecoration(
+              labelText: l10n.tripFormCustomTripNameLabel,
+              hintText: l10n.tripFormCustomTripNameHint,
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(
+                  color: Color(0xFF7C3AED),
+                  width: 1.4,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 16,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: notesController,
+            textInputAction: TextInputAction.done,
+            minLines: 2,
+            maxLines: 3,
+            textAlign: isArabic ? TextAlign.right : TextAlign.left,
+            decoration: InputDecoration(
+              labelText: l10n.tripFormNotesLabel,
+              hintText: l10n.tripFormNotesHint,
+              filled: true,
+              fillColor: const Color(0xFFF8FAFC),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(
+                  color: Color(0xFF7C3AED),
+                  width: 1.4,
+                ),
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 16,
+              ),
+            ),
+          ),
+          ValueListenableBuilder<TextEditingValue>(
+            valueListenable: nameController,
+            builder: (context, value, child) {
+              if (value.text.trim().isNotEmpty || generatedTripTitle.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              return Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  l10n.tripFormCreateWithoutCustomTitle(generatedTripTitle),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blueGrey.shade400,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }

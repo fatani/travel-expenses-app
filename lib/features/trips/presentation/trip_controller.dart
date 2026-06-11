@@ -36,6 +36,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
     String? budgetCurrency,
     bool isCustomTitle = false,
     String? destinationCountryCode,
+    String? description,
   }) async {
     final trip = Trip.create(
       name: name,
@@ -49,6 +50,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
       budgetCurrency: budgetCurrency,
       isCustomTitle: isCustomTitle,
       destinationCountryCode: destinationCountryCode,
+      description: description,
     );
 
     state = AsyncNotifierReload.loadingPreserving(state);
@@ -77,6 +79,7 @@ class TripsController extends AsyncNotifier<List<Trip>> {
     String? budgetCurrency,
     bool? isCustomTitle,
     Object? destinationCountryCode = _unset,
+    Object? description = _unset,
   }) async {
     final updatedTrip = trip.copyWith(
       name: name,
@@ -92,6 +95,9 @@ class TripsController extends AsyncNotifier<List<Trip>> {
       destinationCountryCode: identical(destinationCountryCode, _unset)
           ? trip.destinationCountryCode
           : destinationCountryCode as String?,
+      description: identical(description, _unset)
+          ? trip.description
+          : description as String?,
     );
 
     await _runMutation(
