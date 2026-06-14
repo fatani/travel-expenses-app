@@ -94,7 +94,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('52.5'), findsOneWidget);
+      expect(find.textContaining('52.5'), findsNothing);
       expect(find.textContaining('1 THB ='), findsNothing);
 
       final textWidgets = tester.widgetList<Text>(

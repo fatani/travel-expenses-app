@@ -24,6 +24,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonDelete => 'Delete';
 
   @override
+  String get commonRefund => 'Refund';
+
+  @override
   String get commonRequiredField => 'Required.';
 
   @override
@@ -828,6 +831,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get expenseEditTooltip => 'Edit expense';
+
+  @override
+  String expenseCardRefunded(Object amount) {
+    return 'Refunded: $amount';
+  }
+
+  @override
+  String get refundFormTitle => 'Record refund';
+
+  @override
+  String get refundFormAmountLabel => 'Refund amount';
+
+  @override
+  String get refundFormAmountPositive => 'Amount must be greater than zero.';
+
+  @override
+  String get refundFormDestinationLabel => 'Refund destination';
+
+  @override
+  String get refundFormDestinationCash => 'Cash wallet';
+
+  @override
+  String get refundFormDestinationCard => 'Card';
+
+  @override
+  String get refundFormNoteLabel => 'Note';
+
+  @override
+  String get refundFormNoteHint => 'Optional details';
+
+  @override
+  String get refundFormSave => 'Record refund';
+
+  @override
+  String get refundFormSaveFailed => 'Couldn\'t record this refund. Please try again.';
+
+  @override
+  String get refundFormOverRefundError => 'Refund exceeds the refundable amount for this expense.';
 
   @override
   String get expenseFormTitleLabel => 'Title';

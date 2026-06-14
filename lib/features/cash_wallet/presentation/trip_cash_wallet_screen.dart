@@ -9,6 +9,7 @@ import '../../../core/design_system/app_buttons.dart';
 import '../../../core/design_system/app_confirmation_dialog.dart';
 import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/design_system/calm_snackbar.dart';
+import '../../../core/formatting/bidi_format.dart';
 import '../../../core/finance/manual_exchange_rate.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -1812,6 +1813,12 @@ class _TransactionTile extends StatelessWidget {
     final amountColor = _isNegative(transaction.type)
         ? const Color(0xFFB45309)
         : const Color(0xFF4C1D95);
+    final homeAmount = transaction.homeCurrencyAmount;
+    final homeCurrency = transaction.homeCurrencyCode?.trim().toUpperCase();
+    final hasHomeBasis = homeAmount != null &&
+        homeAmount > 0 &&
+        homeCurrency != null &&
+        homeCurrency.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -1819,90 +1826,119 @@ class _TransactionTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         border: Border.all(color: const Color(0xFFE9D5FF)),
       ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        title: Text(
-          _typeLabel(l10n, transaction.type),
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF1F2937),
-              ),
-        ),
-        subtitle: Column(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              [
-                DateFormat('dd MMM yyyy, HH:mm').format(transaction.createdAt.toLocal()),
-                if (transaction.note != null && transaction.note!.isNotEmpty)
-                  transaction.note!,
-              ].join(' | '),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF6B7280),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    _typeLabel(l10n, transaction.type),
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1F2937),
+                        ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    [
+                      DateFormat('dd MMM yyyy, HH:mm')
+                          .format(transaction.createdAt.toLocal()),
+                      if (transaction.note != null && transaction.note!.isNotEmpty)
+                        transaction.note!,
+                    ].join(' | '),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF6B7280),
+                        ),
+                  ),
+                  if (balanceAfterTransaction != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        l10n.cashWalletBalanceAfterTransaction(
+                          '${formatter.format(balanceAfterTransaction)} ${transaction.currencyCode}',
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF667085),
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                    ),
+                  if (onEdit != null || onDelete != null || onEditExpense != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (onEditExpense != null)
+                            _ExpenseLinkActionButton(
+                              onPressed: onEditExpense,
+                              icon: Icons.receipt_long_outlined,
+                              label: l10n.cashWalletEditExpenseAction,
+                            ),
+                          if (onEdit != null)
+                            _SoftLedgerIconButton(
+                              onPressed: onEdit,
+                              icon: Icons.edit_outlined,
+                              tooltip: l10n.commonEdit,
+                            ),
+                          if (onDelete != null)
+                            _SoftLedgerIconButton(
+                              onPressed: onDelete,
+                              icon: Icons.delete_outline_rounded,
+                              tooltip: l10n.commonDelete,
+                              foregroundColor: const Color(0xFFB42318),
+                              backgroundColor: const Color(0xFFFEE4E2),
+                            ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
             ),
-            if (balanceAfterTransaction != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  l10n.cashWalletBalanceAfterTransaction(
-                    '${formatter.format(balanceAfterTransaction)} ${transaction.currencyCode}',
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF7F2FF),
+                    borderRadius: BorderRadius.circular(14),
                   ),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF667085),
-                        fontWeight: FontWeight.w500,
-                      ),
+                  child: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(
+                      '$sign${formatter.format(transaction.amount)} ${transaction.currencyCode.trim().toUpperCase()}',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                            color: amountColor,
+                          ),
+                    ),
+                  ),
                 ),
-              ),
-            if (onEdit != null || onDelete != null || onEditExpense != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    if (onEditExpense != null)
-                      _ExpenseLinkActionButton(
-                        onPressed: onEditExpense,
-                        icon: Icons.receipt_long_outlined,
-                        label: l10n.cashWalletEditExpenseAction,
-                      ),
-                    if (onEdit != null)
-                      _SoftLedgerIconButton(
-                        onPressed: onEdit,
-                        icon: Icons.edit_outlined,
-                        tooltip: l10n.commonEdit,
-                      ),
-                    if (onDelete != null)
-                      _SoftLedgerIconButton(
-                        onPressed: onDelete,
-                        icon: Icons.delete_outline_rounded,
-                        tooltip: l10n.commonDelete,
-                        foregroundColor: const Color(0xFFB42318),
-                        backgroundColor: const Color(0xFFFEE4E2),
-                      ),
-                  ],
-                ),
-              ),
+                if (hasHomeBasis) ...[
+                  const SizedBox(height: 4),
+                  LtrText(
+                    data: BidiAmountFormat.formatApproximate(
+                      homeAmount,
+                      homeCurrency,
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF667085),
+                          fontWeight: FontWeight.w500,
+                        ),
+                  ),
+                ],
+              ],
+            ),
           ],
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF7F2FF),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Directionality(
-            textDirection: TextDirection.ltr,
-            child: Text(
-              '$sign${formatter.format(transaction.amount)} ${transaction.currencyCode.trim().toUpperCase()}',
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.2,
-                    color: amountColor,
-                  ),
-            ),
-          ),
         ),
       ),
     );

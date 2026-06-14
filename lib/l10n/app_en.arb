@@ -5,6 +5,7 @@
   "commonCancel": "Cancel",
   "commonEdit": "Edit",
   "commonDelete": "Delete",
+  "commonRefund": "Refund",
   "commonRequiredField": "Required.",
   "commonEnterValidNumber": "Enter a valid number.",
   "cashWalletValidationInvalidAmount": "Enter a valid cash amount.",
@@ -305,6 +306,23 @@
   "@expenseEditTooltip": {
     "description": "Tooltip for the edit button on an expense card."
   },
+  "expenseCardRefunded": "Refunded: {amount}",
+  "@expenseCardRefunded": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "refundFormTitle": "Record refund",
+  "refundFormAmountLabel": "Refund amount",
+  "refundFormAmountPositive": "Amount must be greater than zero.",
+  "refundFormDestinationLabel": "Refund destination",
+  "refundFormDestinationCash": "Cash wallet",
+  "refundFormDestinationCard": "Card",
+  "refundFormNoteLabel": "Note",
+  "refundFormNoteHint": "Optional details",
+  "refundFormSave": "Record refund",
+  "refundFormSaveFailed": "Couldn't record this refund. Please try again.",
+  "refundFormOverRefundError": "Refund exceeds the refundable amount for this expense.",
   "expenseFormTitleLabel": "Title",
   "expenseFormTitleHint": "Airport taxi",
   "expenseFormTitleHelper": "Optional. If empty, category will be used.",

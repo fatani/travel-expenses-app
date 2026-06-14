@@ -5,6 +5,7 @@
   "commonCancel": "إلغاء",
   "commonEdit": "تعديل",
   "commonDelete": "حذف",
+  "commonRefund": "استرجاع",
   "commonRequiredField": "مطلوب.",
   "commonEnterValidNumber": "أدخل رقماً صالحاً.",
   "cashWalletValidationInvalidAmount": "أدخل مبلغ كاش صحيح.",
@@ -305,6 +306,23 @@
   "@expenseEditTooltip": {
     "description": "تلميح زر تعديل المصروف في بطاقة المصروف."
   },
+  "expenseCardRefunded": "مسترجع: {amount}",
+  "@expenseCardRefunded": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
+  "refundFormTitle": "تسجيل استرجاع",
+  "refundFormAmountLabel": "مبلغ الاسترجاع",
+  "refundFormAmountPositive": "يجب أن يكون المبلغ أكبر من صفر.",
+  "refundFormDestinationLabel": "وجهة الاسترجاع",
+  "refundFormDestinationCash": "محفظة الكاش",
+  "refundFormDestinationCard": "البطاقة",
+  "refundFormNoteLabel": "ملاحظة",
+  "refundFormNoteHint": "تفاصيل اختيارية",
+  "refundFormSave": "تسجيل الاسترجاع",
+  "refundFormSaveFailed": "تعذر تسجيل هذا الاسترجاع. حاول مرة أخرى.",
+  "refundFormOverRefundError": "مبلغ الاسترجاع يتجاوز المبلغ القابل للاسترجاع لهذا المصروف.",
   "expenseFormTitleLabel": "العنوان",
   "expenseFormTitleHint": "تاكسي المطار",
   "expenseFormTitleHelper": "اختياري. إذا تُرك فارغاً فسيتم استخدام الفئة.",

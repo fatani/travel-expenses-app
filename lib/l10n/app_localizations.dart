@@ -125,6 +125,12 @@ abstract class AppLocalizations {
   /// **'Delete'**
   String get commonDelete;
 
+  /// No description provided for @commonRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund'**
+  String get commonRefund;
+
   /// No description provided for @commonRequiredField.
   ///
   /// In en, this message translates to:
@@ -1660,6 +1666,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Edit expense'**
   String get expenseEditTooltip;
+
+  /// No description provided for @expenseCardRefunded.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunded: {amount}'**
+  String expenseCardRefunded(Object amount);
+
+  /// No description provided for @refundFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record refund'**
+  String get refundFormTitle;
+
+  /// No description provided for @refundFormAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund amount'**
+  String get refundFormAmountLabel;
+
+  /// No description provided for @refundFormAmountPositive.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be greater than zero.'**
+  String get refundFormAmountPositive;
+
+  /// No description provided for @refundFormDestinationLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund destination'**
+  String get refundFormDestinationLabel;
+
+  /// No description provided for @refundFormDestinationCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash wallet'**
+  String get refundFormDestinationCash;
+
+  /// No description provided for @refundFormDestinationCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Card'**
+  String get refundFormDestinationCard;
+
+  /// No description provided for @refundFormNoteLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get refundFormNoteLabel;
+
+  /// No description provided for @refundFormNoteHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Optional details'**
+  String get refundFormNoteHint;
+
+  /// No description provided for @refundFormSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Record refund'**
+  String get refundFormSave;
+
+  /// No description provided for @refundFormSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t record this refund. Please try again.'**
+  String get refundFormSaveFailed;
+
+  /// No description provided for @refundFormOverRefundError.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund exceeds the refundable amount for this expense.'**
+  String get refundFormOverRefundError;
 
   /// No description provided for @expenseFormTitleLabel.
   ///

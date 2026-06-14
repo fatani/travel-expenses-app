@@ -24,6 +24,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get commonDelete => 'حذف';
 
   @override
+  String get commonRefund => 'استرجاع';
+
+  @override
   String get commonRequiredField => 'مطلوب.';
 
   @override
@@ -828,6 +831,44 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get expenseEditTooltip => 'تعديل المصروف';
+
+  @override
+  String expenseCardRefunded(Object amount) {
+    return 'مسترجع: $amount';
+  }
+
+  @override
+  String get refundFormTitle => 'تسجيل استرجاع';
+
+  @override
+  String get refundFormAmountLabel => 'مبلغ الاسترجاع';
+
+  @override
+  String get refundFormAmountPositive => 'يجب أن يكون المبلغ أكبر من صفر.';
+
+  @override
+  String get refundFormDestinationLabel => 'وجهة الاسترجاع';
+
+  @override
+  String get refundFormDestinationCash => 'محفظة الكاش';
+
+  @override
+  String get refundFormDestinationCard => 'البطاقة';
+
+  @override
+  String get refundFormNoteLabel => 'ملاحظة';
+
+  @override
+  String get refundFormNoteHint => 'تفاصيل اختيارية';
+
+  @override
+  String get refundFormSave => 'تسجيل الاسترجاع';
+
+  @override
+  String get refundFormSaveFailed => 'تعذر تسجيل هذا الاسترجاع. حاول مرة أخرى.';
+
+  @override
+  String get refundFormOverRefundError => 'مبلغ الاسترجاع يتجاوز المبلغ القابل للاسترجاع لهذا المصروف.';
 
   @override
   String get expenseFormTitleLabel => 'العنوان';

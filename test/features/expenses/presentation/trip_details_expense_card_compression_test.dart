@@ -7,8 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
-import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
-import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_form_screen.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
@@ -179,7 +177,7 @@ void main() {
     expect(find.textContaining('≈ 80'), findsNothing);
   });
 
-  testWidgets('legacy stored conversion rate shows approximate amount not FX rate line',
+  testWidgets('legacy stored conversion rate does not show approximate home amount',
       (tester) async {
     final repository = _FakeExpenseRepository(
       initialExpenses: [
@@ -204,42 +202,18 @@ void main() {
       ],
     );
 
-    final cashWalletRepository = _FakeCashWalletRepository(
-      balances: [
-        TripCashBalance(
-          tripId: trip.id,
-          currencyCode: 'THB',
-          balanceAmount: 10000,
-          updatedAt: DateTime.utc(2026, 5, 16),
-        ),
-      ],
-      transactions: [
-        CashTransaction.create(
-          id: 'atm-new-rate',
-          tripId: trip.id,
-          type: CashTransactionType.atmWithdrawal,
-          amount: 30000,
-          currencyCode: 'THB',
-          homeCurrencyAmount: 3300,
-          homeCurrencyCode: 'SAR',
-        ),
-      ],
-    );
-
     await tester.pumpWidget(
       _buildApp(
         child: TripDetailsScreen(trip: trip),
         overrides: [
           expenseRepositoryProvider.overrideWithValue(repository),
-          cashWalletRepositoryProvider.overrideWithValue(cashWalletRepository),
         ],
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('52.5'), findsOneWidget);
-    expect(find.textContaining('1 THB ='), findsNothing);
-    expect(find.textContaining('0.11'), findsNothing);
+    expect(find.textContaining('52.5'), findsNothing);
+    expect(find.textContaining('≈'), findsNothing);
   });
 
   testWidgets('expense card does not show international fees line', (tester) async {
@@ -337,36 +311,6 @@ class _FakeExpenseRepository extends TestExpenseRepository {
   Future<void> deleteExpense(String id, {DatabaseExecutor? txn}) async {
     deletedExpenseIds.add(id);
     _expenses.removeWhere((expense) => expense.id == id);
-  }
-}
-
-class _FakeCashWalletRepository extends CashWalletRepository {
-  _FakeCashWalletRepository({
-    List<TripCashBalance>? balances,
-    List<CashTransaction>? transactions,
-  })  : _balances = balances ?? const <TripCashBalance>[],
-        _transactions = transactions ?? const <CashTransaction>[],
-        super(AppDatabase());
-
-  final List<TripCashBalance> _balances;
-  final List<CashTransaction> _transactions;
-
-  @override
-  Future<List<TripCashBalance>> getBalancesByTrip(String tripId) async {
-    return _balances.where((b) => b.tripId == tripId).toList();
-  }
-
-  @override
-  Future<List<CashTransaction>> getRecentTransactionsByTrip(
-    String tripId, {
-    int limit = 20,
-    bool includeReversed = false,
-  }) async {
-    final filtered = _transactions.where((t) => t.tripId == tripId).toList();
-    if (filtered.length <= limit) {
-      return filtered;
-    }
-    return filtered.take(limit).toList();
   }
 }
 

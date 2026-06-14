@@ -20,6 +20,7 @@ import '../../export/presentation/export_menu.dart';
 import '../../cash_wallet/presentation/trip_cash_wallet_screen.dart';
 import '../../sms_parser/presentation/sms_expense_screen.dart';
 import '../../reports/presentation/trip_reports_screen.dart';
+import '../../reports/data/trip_report_provider.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_timeline_status.dart';
 import '../../trips/domain/trip_title_resolver.dart';
@@ -29,6 +30,8 @@ import '../domain/expense_payment.dart';
 import 'expense_controller.dart';
 import 'expense_form_screen.dart';
 import 'expense_list_display.dart';
+import '../../refunds/presentation/refund_form_screen.dart';
+import '../../refunds/presentation/trip_refunds_provider.dart';
 import 'expense_option_labels.dart';
 import 'quick_add_currency.dart';
 import 'quick_add_currency_picker.dart';
@@ -66,6 +69,11 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final expensesState = ref.watch(expenseControllerProvider(_trip.id));
+    final refundsState = ref.watch(tripRefundsProvider(_trip.id));
+    final refundAmountsByExpense = refundsState.maybeWhen(
+      data: refundAmountsByExpenseId,
+      orElse: () => const <String, double>{},
+    );
     final hasExpenses = expensesState.valueOrNull?.isNotEmpty == true;
     return Scaffold(
       appBar: AppBar(
@@ -113,8 +121,10 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
           return _TripDetailsContent(
             trip: _trip,
             expenses: visibleExpenses,
+            refundAmountsByExpense: refundAmountsByExpense,
             onFixDates: _openTripEditor,
             onEditExpense: (expense) => _openExpenseForm(expense: expense),
+            onRefundExpense: (expense) => _openRefundForm(expense),
             onDeleteExpense: (expense) => _confirmDelete(expense),
             onOpenCashWallet: _openCashWallet,
             onAddViaSms: _openSmsExpenseScreen,
@@ -143,9 +153,11 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
                   child: _TripDetailsContent(
                     trip: _trip,
                     expenses: visibleExpenses,
+                    refundAmountsByExpense: refundAmountsByExpense,
                     onFixDates: _openTripEditor,
                     onEditExpense: (expense) =>
                         _openExpenseForm(expense: expense),
+                    onRefundExpense: (expense) => _openRefundForm(expense),
                     onDeleteExpense: (expense) => _confirmDelete(expense),
                     onOpenCashWallet: _openCashWallet,
                     onAddViaSms: _openSmsExpenseScreen,
@@ -190,6 +202,22 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     setState(() {
       _trip = refreshedTrip;
     });
+  }
+
+  Future<void> _openRefundForm(Expense expense) async {
+    CalmSnackBar.clear(context);
+    final recorded = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => RefundFormScreen(trip: _trip, expense: expense),
+      ),
+    );
+
+    if (!mounted || recorded != true) {
+      return;
+    }
+
+    ref.invalidate(tripRefundsProvider(_trip.id));
+    ref.invalidate(tripReportProvider(_trip.id));
   }
 
   Future<void> _openExpenseForm({
@@ -616,8 +644,10 @@ class _TripDetailsContent extends StatefulWidget {
   const _TripDetailsContent({
     required this.trip,
     required this.expenses,
+    required this.refundAmountsByExpense,
     this.onFixDates,
     required this.onEditExpense,
+    required this.onRefundExpense,
     required this.onDeleteExpense,
     required this.onOpenCashWallet,
     required this.onAddViaSms,
@@ -625,8 +655,10 @@ class _TripDetailsContent extends StatefulWidget {
 
   final Trip trip;
   final List<Expense> expenses;
+  final Map<String, double> refundAmountsByExpense;
   final VoidCallback? onFixDates;
   final ValueChanged<Expense> onEditExpense;
+  final ValueChanged<Expense> onRefundExpense;
   final ValueChanged<Expense> onDeleteExpense;
   final VoidCallback onOpenCashWallet;
   final VoidCallback onAddViaSms;
@@ -824,8 +856,9 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: _ExpenseCard(
                         expense: expense,
-                        tripHomeCurrency: widget.trip.homeCurrencySnapshot,
+                        refundedAmount: widget.refundAmountsByExpense[expense.id],
                         onEdit: () => widget.onEditExpense(expense),
+                        onRefund: () => widget.onRefundExpense(expense),
                         onDelete: () => widget.onDeleteExpense(expense),
                       ),
                     );
@@ -1362,19 +1395,21 @@ class _EmptyStateDiscoveryLink extends StatelessWidget {
   }
 }
 
-enum _ExpenseCardAction { delete }
+enum _ExpenseCardAction { edit, refund, delete }
 
 class _ExpenseCard extends StatelessWidget {
   const _ExpenseCard({
     required this.expense,
-    required this.tripHomeCurrency,
+    this.refundedAmount,
     required this.onEdit,
+    required this.onRefund,
     required this.onDelete,
   });
 
   final Expense expense;
-  final String tripHomeCurrency;
+  final double? refundedAmount;
   final VoidCallback onEdit;
+  final VoidCallback onRefund;
   final VoidCallback onDelete;
 
   @override
@@ -1385,52 +1420,13 @@ class _ExpenseCard extends StatelessWidget {
     // Primary display is always the real travel-country transaction amount.
     final double primaryAmount = expense.transactionAmount;
     final String primaryCurrency = expense.transactionCurrency;
-    final originalAmount = expense.originalAmount ?? expense.transactionAmount;
-    final originalCurrency = expense.originalCurrency ?? expense.transactionCurrency;
-    final normalizedTripHomeCurrency = tripHomeCurrency.trim().toUpperCase();
-    final normalizedStoredHomeCurrency = _normalizeCurrency(expense.homeCurrency);
-    final storedRate = expense.conversionRate;
-    final storedOriginalAmount = expense.originalAmount;
-
-    final double? displayedConvertedHomeAmount;
-    final String? displayedHomeCurrency;
-
-    if (expense.convertedHomeAmount != null) {
-      displayedConvertedHomeAmount = expense.convertedHomeAmount;
-      displayedHomeCurrency =
-          normalizedStoredHomeCurrency ??
-          (storedRate != null ? normalizedTripHomeCurrency : null);
-    } else {
-      final fallbackHomeCurrency =
-          normalizedStoredHomeCurrency ?? normalizedTripHomeCurrency;
-      final canUseStoredRateFallback =
-          storedRate != null &&
-          storedRate > 0 &&
-          fallbackHomeCurrency.isNotEmpty &&
-          originalCurrency.trim().toUpperCase() != fallbackHomeCurrency;
-
-      if (canUseStoredRateFallback) {
-        // Legacy data path: when converted amount is missing, trust persisted
-        // conversion snapshots only — never derive from cash wallet history.
-        final baseAmount =
-            (storedOriginalAmount != null && storedOriginalAmount > 0)
-                ? storedOriginalAmount
-                : originalAmount;
-        displayedConvertedHomeAmount = baseAmount * storedRate;
-        displayedHomeCurrency = fallbackHomeCurrency;
-      } else {
-        displayedConvertedHomeAmount = null;
-        displayedHomeCurrency = null;
-      }
-    }
-
-    final normalizedHomeCurrency = displayedHomeCurrency?.trim().toUpperCase() ?? '';
-    final normalizedOriginalCurrency = originalCurrency.trim().toUpperCase();
-    final hasHomeConversion =
-        displayedConvertedHomeAmount != null &&
+    final storedHomeAmount = expense.convertedHomeAmount;
+    final normalizedHomeCurrency = expense.homeCurrency?.trim().toUpperCase() ?? '';
+    final hasHomeConversion = storedHomeAmount != null &&
+        storedHomeAmount > 0 &&
         normalizedHomeCurrency.isNotEmpty &&
-        normalizedOriginalCurrency.isNotEmpty &&
-        normalizedOriginalCurrency != normalizedHomeCurrency;
+        primaryCurrency != normalizedHomeCurrency;
+    final hasRefundDisplay = refundedAmount != null && refundedAmount! > 0;
 
     final localeTag = Localizations.localeOf(context).toLanguageTag();
     final isArabic = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
@@ -1544,10 +1540,27 @@ class _ExpenseCard extends StatelessWidget {
                           alignment: AlignmentDirectional.centerEnd,
                           child: LtrText(
                             data: BidiAmountFormat.formatApproximate(
-                              displayedConvertedHomeAmount,
+                              storedHomeAmount,
                               normalizedHomeCurrency,
                             ),
                             style: subtleStyle,
+                          ),
+                        ),
+                      ],
+                      if (hasRefundDisplay) ...[
+                        const SizedBox(height: 2),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: LtrText(
+                            data: l10n.expenseCardRefunded(
+                              BidiAmountFormat.formatWithCurrency(
+                                refundedAmount!,
+                                primaryCurrency,
+                              ),
+                            ),
+                            style: subtleStyle?.copyWith(
+                              color: scheme.primary.withValues(alpha: 0.82),
+                            ),
                           ),
                         ),
                       ],
@@ -1578,11 +1591,44 @@ class _ExpenseCard extends StatelessWidget {
                 color: scheme.onSurfaceVariant.withValues(alpha: 0.55),
               ),
               onSelected: (action) {
-                if (action == _ExpenseCardAction.delete) {
-                  onDelete();
+                switch (action) {
+                  case _ExpenseCardAction.edit:
+                    onEdit();
+                  case _ExpenseCardAction.refund:
+                    onRefund();
+                  case _ExpenseCardAction.delete:
+                    onDelete();
                 }
               },
               itemBuilder: (_) => [
+                PopupMenuItem(
+                  value: _ExpenseCardAction.edit,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.edit_outlined,
+                        size: 18,
+                        color: scheme.onSurfaceVariant.withValues(alpha: 0.85),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(l10n.commonEdit),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: _ExpenseCardAction.refund,
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.undo_rounded,
+                        size: 18,
+                        color: scheme.primary.withValues(alpha: 0.85),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(l10n.commonRefund),
+                    ],
+                  ),
+                ),
                 PopupMenuItem(
                   value: _ExpenseCardAction.delete,
                   child: Row(
@@ -1603,14 +1649,6 @@ class _ExpenseCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String? _normalizeCurrency(String? value) {
-    final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) {
-      return null;
-    }
-    return trimmed.toUpperCase();
   }
 }
 
