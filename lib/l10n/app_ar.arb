@@ -323,6 +323,13 @@
   "refundFormSave": "تسجيل الاسترجاع",
   "refundFormSaveFailed": "تعذر تسجيل هذا الاسترجاع. حاول مرة أخرى.",
   "refundFormOverRefundError": "مبلغ الاسترجاع يتجاوز المبلغ القابل للاسترجاع لهذا المصروف.",
+  "refundFormHomeValueHint": "سيتم احتساب هذا الاسترجاع تقريباً بقيمة {homeAmount} بناءً على تكلفة الصرف الأصلية.",
+  "@refundFormHomeValueHint": {
+    "placeholders": {
+      "homeAmount": {}
+    }
+  },
+  "expenseFormRefundGuidance": "إذا كنت تسترجع جزءاً من المصروف أو كامله فاستخدم \"تسجيل استرجاع\" بدلاً من تعديل المبلغ.",
   "expenseFormTitleLabel": "العنوان",
   "expenseFormTitleHint": "تاكسي المطار",
   "expenseFormTitleHelper": "اختياري. إذا تُرك فارغاً فسيتم استخدام الفئة.",
@@ -491,6 +498,7 @@
   "@tripReportsEarlyRecorded": {"placeholders": {"count": {"type": "int"}}},
   "tripReportsEarlyAddMoreHint": "أضف المزيد من المصاريف لتقرير أوضح.",
   "tripReportsGrossSpending": "إجمالي الإنفاق",
+  "tripReportsHomeCurrencySummaryTitle": "ملخص الإنفاق بعملتك الأساسية",
   "tripReportsGrossExpenses": "إجمالي المصروفات",
   "tripReportsGrossSpendingByCurrency": "إجمالي الإنفاق حسب العملة",
   "tripReportsRefundsByCurrency": "الاسترجاعات حسب العملة",

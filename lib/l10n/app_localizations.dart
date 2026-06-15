@@ -1739,6 +1739,18 @@ abstract class AppLocalizations {
   /// **'Refund exceeds the refundable amount for this expense.'**
   String get refundFormOverRefundError;
 
+  /// No description provided for @refundFormHomeValueHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This refund will be valued at approximately {homeAmount} using the original cost basis.'**
+  String refundFormHomeValueHint(Object homeAmount);
+
+  /// No description provided for @expenseFormRefundGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'If you received a partial or full refund, use Refund instead of changing the expense amount.'**
+  String get expenseFormRefundGuidance;
+
   /// No description provided for @expenseFormTitleLabel.
   ///
   /// In en, this message translates to:
@@ -2578,6 +2590,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Gross spending'**
   String get tripReportsGrossSpending;
+
+  /// No description provided for @tripReportsHomeCurrencySummaryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Spending Summary in Your Home Currency'**
+  String get tripReportsHomeCurrencySummaryTitle;
 
   /// No description provided for @tripReportsGrossExpenses.
   ///

@@ -871,6 +871,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get refundFormOverRefundError => 'مبلغ الاسترجاع يتجاوز المبلغ القابل للاسترجاع لهذا المصروف.';
 
   @override
+  String refundFormHomeValueHint(Object homeAmount) {
+    return 'سيتم احتساب هذا الاسترجاع تقريباً بقيمة $homeAmount بناءً على تكلفة الصرف الأصلية.';
+  }
+
+  @override
+  String get expenseFormRefundGuidance => 'إذا كنت تسترجع جزءاً من المصروف أو كامله فاستخدم \"تسجيل استرجاع\" بدلاً من تعديل المبلغ.';
+
+  @override
   String get expenseFormTitleLabel => 'العنوان';
 
   @override
@@ -1344,6 +1352,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripReportsGrossSpending => 'إجمالي الإنفاق';
+
+  @override
+  String get tripReportsHomeCurrencySummaryTitle => 'ملخص الإنفاق بعملتك الأساسية';
 
   @override
   String get tripReportsGrossExpenses => 'إجمالي المصروفات';

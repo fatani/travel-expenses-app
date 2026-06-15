@@ -539,6 +539,14 @@ class _HomeSpendingSummaryCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              context.l10n.tripReportsHomeCurrencySummaryTitle,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 14),
             _HomeSpendingRow(
               label: context.l10n.tripReportsGrossSpending,
               amount: gross,

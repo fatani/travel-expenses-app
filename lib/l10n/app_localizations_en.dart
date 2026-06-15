@@ -871,6 +871,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refundFormOverRefundError => 'Refund exceeds the refundable amount for this expense.';
 
   @override
+  String refundFormHomeValueHint(Object homeAmount) {
+    return 'This refund will be valued at approximately $homeAmount using the original cost basis.';
+  }
+
+  @override
+  String get expenseFormRefundGuidance => 'If you received a partial or full refund, use Refund instead of changing the expense amount.';
+
+  @override
   String get expenseFormTitleLabel => 'Title';
 
   @override
@@ -1337,6 +1345,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripReportsGrossSpending => 'Gross spending';
+
+  @override
+  String get tripReportsHomeCurrencySummaryTitle => 'Spending Summary in Your Home Currency';
 
   @override
   String get tripReportsGrossExpenses => 'Gross expenses';

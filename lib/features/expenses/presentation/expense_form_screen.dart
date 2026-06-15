@@ -253,6 +253,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                             context,
                             labelText: _requiredLabel(l10n.expenseFormAmountLabel),
                             hintText: l10n.expenseFormAmountHint,
+                            helperText: widget.isEditMode
+                                ? l10n.expenseFormRefundGuidance
+                                : null,
                           ),
                           validator: _validateAmount,
                         ),

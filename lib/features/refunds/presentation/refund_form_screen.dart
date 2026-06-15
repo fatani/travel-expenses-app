@@ -38,21 +38,31 @@ class _RefundFormScreenState extends ConsumerState<RefundFormScreen> {
   late RefundDestination _destination;
   bool _isSubmitting = false;
 
+  bool get _isCashExpense => isCashExpensePayment(
+        paymentMethod: widget.expense.paymentMethod,
+        paymentChannel: widget.expense.paymentChannel,
+      );
+
   @override
   void initState() {
     super.initState();
     _amountController = TextEditingController();
     _noteController = TextEditingController();
-    _destination = isCashExpensePayment(
-      paymentMethod: widget.expense.paymentMethod,
-      paymentChannel: widget.expense.paymentChannel,
-    )
+    _destination = _isCashExpense
         ? RefundDestination.cash
         : RefundDestination.card;
+    _amountController.addListener(_onAmountChanged);
+  }
+
+  void _onAmountChanged() {
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   void dispose() {
+    _amountController.removeListener(_onAmountChanged);
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -62,6 +72,21 @@ class _RefundFormScreenState extends ConsumerState<RefundFormScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final currency = widget.expense.transactionCurrency.trim().toUpperCase();
+    final parsedAmount = double.tryParse(_amountController.text.trim());
+    String? homeValueHint;
+    if (parsedAmount != null && parsedAmount > 0) {
+      final snapshot = linkedRefundHomeSnapshot(
+        expense: widget.expense,
+        refundAmount: parsedAmount,
+      );
+      final homeAmount = snapshot.homeAmount;
+      final homeCurrency = snapshot.homeCurrency;
+      if (homeAmount != null && homeCurrency != null) {
+        homeValueHint = l10n.refundFormHomeValueHint(
+          BidiAmountFormat.formatWithCurrency(homeAmount, homeCurrency),
+        );
+      }
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -116,33 +141,44 @@ class _RefundFormScreenState extends ConsumerState<RefundFormScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<RefundDestination>(
-                initialValue: _destination,
-                decoration: InputDecoration(
-                  labelText: l10n.refundFormDestinationLabel,
+              if (homeValueHint != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  homeValueHint,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
                 ),
-                items: [
-                  DropdownMenuItem(
-                    value: RefundDestination.cash,
-                    child: Text(l10n.refundFormDestinationCash),
+              ],
+              if (!_isCashExpense) ...[
+                const SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<RefundDestination>(
+                  initialValue: _destination,
+                  decoration: InputDecoration(
+                    labelText: l10n.refundFormDestinationLabel,
                   ),
-                  DropdownMenuItem(
-                    value: RefundDestination.card,
-                    child: Text(l10n.refundFormDestinationCard),
-                  ),
-                ],
-                onChanged: _isSubmitting
-                    ? null
-                    : (value) {
-                        if (value == null) {
-                          return;
-                        }
-                        setState(() {
-                          _destination = value;
-                        });
-                      },
-              ),
+                  items: [
+                    DropdownMenuItem(
+                      value: RefundDestination.card,
+                      child: Text(l10n.refundFormDestinationCard),
+                    ),
+                    DropdownMenuItem(
+                      value: RefundDestination.cash,
+                      child: Text(l10n.refundFormDestinationCash),
+                    ),
+                  ],
+                  onChanged: _isSubmitting
+                      ? null
+                      : (value) {
+                          if (value == null) {
+                            return;
+                          }
+                          setState(() {
+                            _destination = value;
+                          });
+                        },
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _noteController,
@@ -189,7 +225,7 @@ class _RefundFormScreenState extends ConsumerState<RefundFormScreen> {
 
     try {
       await ref.read(recordRefundUseCaseProvider).execute(
-            destination: _destination,
+            destination: _isCashExpense ? RefundDestination.cash : _destination,
             tripId: widget.trip.id,
             expenseId: widget.expense.id,
             refundAmount: amount,
