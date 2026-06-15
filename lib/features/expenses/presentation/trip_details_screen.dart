@@ -263,8 +263,8 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     }
 
     CalmSnackBar.clear(context);
-    final outcome = await Navigator.of(context).push<ExpenseCreateOutcome?>(
-      MaterialPageRoute<ExpenseCreateOutcome?>(
+    final outcome = await Navigator.of(context).push<Object?>(
+      MaterialPageRoute<Object?>(
         builder: (_) => ExpenseFormScreen(
           trip: _trip,
           expense: expense,
@@ -282,12 +282,12 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       return;
     }
 
-    if (outcome != null) {
+    if (outcome is ExpenseCreateOutcome) {
       _showSaveConfirmationWithUndo(outcome);
       return;
     }
-    if (expense != null) {
-      _showEditSaveConfirmationWithUndo(expense);
+    if (outcome is ExpenseEditSaveOutcome) {
+      _showEditSaveConfirmationWithUndo(outcome.previousExpense);
     }
   }
 

@@ -959,6 +959,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormSaveEdit => 'حفظ التغييرات';
 
   @override
+  String get expenseFormUnsavedChangesMessage => 'لديك تغييرات غير محفوظة.\nهل تريد تجاهلها؟';
+
+  @override
+  String get expenseFormContinueEditing => 'متابعة التعديل';
+
+  @override
+  String get expenseFormDiscardChanges => 'تجاهل التغييرات';
+
+  @override
   String get expenseFormAmountPositive => 'يجب أن يكون المبلغ أكبر من صفر.';
 
   @override

@@ -32,6 +32,14 @@ class ExpenseCreateOutcome {
   final String? missingToCurrency;
 }
 
+/// Returned when an expense edit is saved successfully so callers can show
+/// undo feedback without treating a plain back navigation as a save.
+class ExpenseEditSaveOutcome {
+  const ExpenseEditSaveOutcome({required this.previousExpense});
+
+  final Expense previousExpense;
+}
+
 final expenseControllerProvider =
     AsyncNotifierProvider.family<ExpenseController, List<Expense>, String>(
       ExpenseController.new,

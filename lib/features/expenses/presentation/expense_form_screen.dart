@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
+import 'dart:async';
+
 import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/design_system/calm_snackbar.dart';
 import '../../trips/domain/trip.dart';
@@ -13,6 +15,7 @@ import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/rtl_typography.dart';
 import 'expense_controller.dart';
+import 'expense_form_dirty_state.dart';
 import 'expense_option_labels.dart';
 import '../../settings/presentation/cards_provider.dart';
 import '../../settings/domain/card_display_helper.dart';
@@ -66,6 +69,8 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   DateTime? _spentAt;
   bool _showValidationErrors = false;
   bool _isSubmitting = false;
+  ExpenseFormDirtySnapshot? _editBaseline;
+  bool _didCaptureEditBaseline = false;
 
   @override
   void initState() {
@@ -130,6 +135,14 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
 
     _spentAt = expense?.spentAt ?? widget.initialSpentAt ?? DateTime.now();
     _syncDateAndTimeFields(useLocale: false);
+
+    if (widget.isEditMode) {
+      _titleController.addListener(_onEditFieldChanged);
+      _amountController.addListener(_onEditFieldChanged);
+      _currencyController.addListener(_onEditFieldChanged);
+      _noteController.addListener(_onEditFieldChanged);
+      _chargedHomeAmountController.addListener(_onEditFieldChanged);
+    }
 
     if (!widget.isEditMode) {
       WidgetsBinding.instance.addPostFrameCallback(
@@ -207,14 +220,31 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     }
   }
 
+  void _onEditFieldChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _syncDateAndTimeFields();
+    if (widget.isEditMode && !_didCaptureEditBaseline) {
+      _editBaseline = _buildDirtySnapshot();
+      _didCaptureEditBaseline = true;
+    }
   }
 
   @override
   void dispose() {
+    if (widget.isEditMode) {
+      _titleController.removeListener(_onEditFieldChanged);
+      _amountController.removeListener(_onEditFieldChanged);
+      _currencyController.removeListener(_onEditFieldChanged);
+      _noteController.removeListener(_onEditFieldChanged);
+      _chargedHomeAmountController.removeListener(_onEditFieldChanged);
+    }
     _titleController.dispose();
     _amountController.dispose();
     _currencyController.dispose();
@@ -231,7 +261,15 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     final isSaving = _isSubmitting ||
         ref.watch(expenseControllerProvider(widget.trip.id)).isLoading;
 
-    return Scaffold(
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+        unawaited(_handleDiscardPop());
+      },
+      child: Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         title: Text(
@@ -550,6 +588,91 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
           ),
         ),
       ),
+      ),
+    );
+  }
+
+  bool get _hasUnsavedChanges {
+    if (!widget.isEditMode || _editBaseline == null) {
+      return false;
+    }
+    return _buildDirtySnapshot() != _editBaseline;
+  }
+
+  ExpenseFormDirtySnapshot _buildDirtySnapshot() {
+    final category = _selectedCategory ?? '';
+    final title = _titleController.text.trim().isEmpty
+        ? category
+        : _titleController.text.trim();
+    final amount = double.parse(_amountController.text.trim());
+    final currencyCode = _currencyController.text.trim().toUpperCase();
+    final chargedHomeAmountRaw = _chargedHomeAmountController.text.trim();
+    final chargedHomeAmount = chargedHomeAmountRaw.isEmpty
+        ? null
+        : double.tryParse(chargedHomeAmountRaw);
+    final normalizedHomeCurrency =
+        widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+    final paymentChannel = _resolvedPaymentChannel();
+    final derivedCardNetwork = _deriveNetworkFromSelectedCard();
+    final paymentNetwork = _isCashChannel(paymentChannel)
+        ? null
+        : (derivedCardNetwork ?? _selectedPaymentNetwork);
+    final paymentMethodHint = resolvePaymentMethodHint(
+      paymentNetwork,
+      paymentChannel,
+    );
+    final normalizedPayment = normalizeExpensePaymentMetadata(
+      paymentMethod: paymentMethodHint,
+      paymentNetwork: paymentNetwork,
+      paymentChannel: paymentChannel,
+      cardProfileId: _selectedCardProfileId,
+    );
+    final shouldAttachCardChargedAmount =
+        isCardExpenseChannel(normalizedPayment.paymentChannel);
+
+    return ExpenseFormDirtySnapshot.fromNormalizedValues(
+      title: title,
+      amount: amount,
+      currencyCode: currencyCode,
+      category: category,
+      note: _noteController.text,
+      spentAt: _spentAt ?? DateTime.now(),
+      payment: normalizedPayment,
+      totalChargedAmount:
+          shouldAttachCardChargedAmount ? chargedHomeAmount : null,
+      totalChargedCurrency:
+          shouldAttachCardChargedAmount && chargedHomeAmount != null
+              ? normalizedHomeCurrency
+              : null,
+    );
+  }
+
+  Future<void> _handleDiscardPop() async {
+    final shouldDiscard = await _confirmDiscardChanges();
+    if (shouldDiscard == true && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  Future<bool?> _confirmDiscardChanges() {
+    final l10n = AppLocalizations.of(context)!;
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          content: Text(l10n.expenseFormUnsavedChangesMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(l10n.expenseFormContinueEditing),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.expenseFormDiscardChanges),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -823,7 +946,9 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       }
 
       didPop = true;
-      Navigator.of(context).pop(null);
+      Navigator.of(context).pop(
+        ExpenseEditSaveOutcome(previousExpense: widget.expense!),
+      );
     } catch (error) {
       if (!mounted) {
         return;

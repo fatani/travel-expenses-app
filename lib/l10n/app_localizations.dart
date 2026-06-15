@@ -1907,6 +1907,24 @@ abstract class AppLocalizations {
   /// **'Save changes'**
   String get expenseFormSaveEdit;
 
+  /// No description provided for @expenseFormUnsavedChangesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'You have unsaved changes.\nDiscard them?'**
+  String get expenseFormUnsavedChangesMessage;
+
+  /// No description provided for @expenseFormContinueEditing.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Editing'**
+  String get expenseFormContinueEditing;
+
+  /// No description provided for @expenseFormDiscardChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard Changes'**
+  String get expenseFormDiscardChanges;
+
   /// No description provided for @expenseFormAmountPositive.
   ///
   /// In en, this message translates to:

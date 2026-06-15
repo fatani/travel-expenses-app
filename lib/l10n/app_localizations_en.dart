@@ -959,6 +959,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormSaveEdit => 'Save changes';
 
   @override
+  String get expenseFormUnsavedChangesMessage => 'You have unsaved changes.\nDiscard them?';
+
+  @override
+  String get expenseFormContinueEditing => 'Continue Editing';
+
+  @override
+  String get expenseFormDiscardChanges => 'Discard Changes';
+
+  @override
   String get expenseFormAmountPositive => 'Amount must be greater than zero.';
 
   @override
