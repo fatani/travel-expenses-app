@@ -169,7 +169,7 @@ void main() {
     expect(find.text('Add more expenses for a fuller report.'), findsOneWidget);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
-    expect(find.text('Spending by currency'), findsOneWidget);
+    expect(find.text('Gross spending by currency'), findsOneWidget);
     expect(find.text('By category'), findsNothing);
     expect(find.textContaining('transaction currency'), findsNothing);
     expect(find.text('By payment network'), findsNothing);
@@ -205,7 +205,7 @@ void main() {
     expect(find.text('Add more expenses for a fuller report.'), findsOneWidget);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
-    expect(find.text('Spending by currency'), findsOneWidget);
+    expect(find.text('Gross spending by currency'), findsOneWidget);
     expect(find.text('By category'), findsNothing);
     expect(find.textContaining('transaction currency'), findsNothing);
     expect(find.text('By payment network'), findsNothing);
@@ -247,7 +247,7 @@ void main() {
     expect(find.text('Add more expenses for a fuller report.'), findsOneWidget);
     expect(find.text('Overview'), findsNothing);
     expect(find.text('Total expenses'), findsNothing);
-    expect(find.text('Spending by currency'), findsOneWidget);
+    expect(find.text('Gross spending by currency'), findsOneWidget);
     expect(find.text('By category'), findsNothing);
     expect(find.textContaining('transaction currency'), findsNothing);
     expect(find.text('By payment network'), findsNothing);
@@ -304,9 +304,9 @@ void main() {
 
     expect(find.text('Overview'), findsOneWidget);
     expect(find.text('Total expenses'), findsOneWidget);
-    expect(find.text('Spending by currency'), findsOneWidget);
+    expect(find.text('Gross spending by currency'), findsOneWidget);
     expect(find.text('Overall spending'), findsNothing);
-    expect(find.textContaining('only'), findsWidgets);
+    expect(find.text('Gross expenses'), findsOneWidget);
     expect(find.text('3 categories'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -300));

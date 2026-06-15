@@ -2579,6 +2579,24 @@ abstract class AppLocalizations {
   /// **'Gross spending'**
   String get tripReportsGrossSpending;
 
+  /// No description provided for @tripReportsGrossExpenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross expenses'**
+  String get tripReportsGrossExpenses;
+
+  /// No description provided for @tripReportsGrossSpendingByCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross spending by currency'**
+  String get tripReportsGrossSpendingByCurrency;
+
+  /// No description provided for @tripReportsRefundsByCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunds by currency'**
+  String get tripReportsRefundsByCurrency;
+
   /// No description provided for @tripReportsRefunds.
   ///
   /// In en, this message translates to:

@@ -1346,6 +1346,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsGrossSpending => 'إجمالي الإنفاق';
 
   @override
+  String get tripReportsGrossExpenses => 'إجمالي المصروفات';
+
+  @override
+  String get tripReportsGrossSpendingByCurrency => 'إجمالي الإنفاق حسب العملة';
+
+  @override
+  String get tripReportsRefundsByCurrency => 'الاسترجاعات حسب العملة';
+
+  @override
   String get tripReportsRefunds => 'الاسترجاعات';
 
   @override

@@ -212,27 +212,27 @@ void main() {
     );
 
     final beforeDelete = await container.read(tripReportProvider(trip.id).future);
-    expect(beforeDelete.totalExpenseCount, 1);
-    expect(beforeDelete.totalBilledByCurrency, isNotEmpty);
-    expect(beforeDelete.byCategory, isNotEmpty);
+    expect(beforeDelete.summary.totalExpenseCount, 1);
+    expect(beforeDelete.summary.totalBilledByCurrency, isNotEmpty);
+    expect(beforeDelete.summary.byCategory, isNotEmpty);
 
     final expenses = await container.read(expenseControllerProvider(trip.id).future);
     await expenseController.deleteExpense(expenses.single.id);
 
     final afterDelete = await container.read(tripReportProvider(trip.id).future);
-    expect(afterDelete.totalExpenseCount, 0);
-    expect(afterDelete.internationalExpenseCount, 0);
-    expect(afterDelete.domesticExpenseCount, 0);
-    expect(afterDelete.totalBilledByCurrency, isEmpty);
-    expect(afterDelete.totalFeesByCurrency, isEmpty);
-    expect(afterDelete.byCategory, isEmpty);
-    expect(afterDelete.byTransactionCurrency, isEmpty);
-    expect(afterDelete.byPaymentNetwork, isEmpty);
-    expect(afterDelete.byPaymentChannel, isEmpty);
-    expect(afterDelete.topCategory, isNull);
-    expect(afterDelete.topPaymentNetwork, isNull);
-    expect(afterDelete.topPaymentChannel, isNull);
-    expect(afterDelete.smartInsights, isEmpty);
+    expect(afterDelete.summary.totalExpenseCount, 0);
+    expect(afterDelete.summary.internationalExpenseCount, 0);
+    expect(afterDelete.summary.domesticExpenseCount, 0);
+    expect(afterDelete.summary.totalBilledByCurrency, isEmpty);
+    expect(afterDelete.summary.totalFeesByCurrency, isEmpty);
+    expect(afterDelete.summary.byCategory, isEmpty);
+    expect(afterDelete.summary.byTransactionCurrency, isEmpty);
+    expect(afterDelete.summary.byPaymentNetwork, isEmpty);
+    expect(afterDelete.summary.byPaymentChannel, isEmpty);
+    expect(afterDelete.summary.topCategory, isNull);
+    expect(afterDelete.summary.topPaymentNetwork, isNull);
+    expect(afterDelete.summary.topPaymentChannel, isNull);
+    expect(afterDelete.summary.smartInsights, isEmpty);
   });
 
   test('netSpendingHomeAmount deducts active refunds from grossSpendingHomeAmount', () async {
@@ -289,8 +289,8 @@ void main() {
 
     final report = await container.read(tripReportProvider(tripId).future);
 
-    expect(report.grossSpendingHomeAmount, 1000.0);
-    expect(report.refundHomeAmount, 200.0);
-    expect(report.netSpendingHomeAmount, 800.0);
+    expect(report.summary.grossSpendingHomeAmount, 1000.0);
+    expect(report.summary.refundHomeAmount, 200.0);
+    expect(report.summary.netSpendingHomeAmount, 800.0);
   });
 }

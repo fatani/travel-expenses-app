@@ -1339,6 +1339,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsGrossSpending => 'Gross spending';
 
   @override
+  String get tripReportsGrossExpenses => 'Gross expenses';
+
+  @override
+  String get tripReportsGrossSpendingByCurrency => 'Gross spending by currency';
+
+  @override
+  String get tripReportsRefundsByCurrency => 'Refunds by currency';
+
+  @override
   String get tripReportsRefunds => 'Refunds';
 
   @override

@@ -371,8 +371,9 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Gross spending'), findsOneWidget);
-      expect(find.text('Refunds'), findsOneWidget);
-      expect(find.text('Net spending'), findsOneWidget);
+      expect(find.text('Gross expenses'), findsOneWidget);
+      expect(find.text('Refunds'), findsNWidgets(2));
+      expect(find.text('Net spending'), findsNWidgets(2));
       expect(find.textContaining('520'), findsWidgets);
       expect(find.textContaining('52'), findsWidgets);
       expect(find.textContaining('468'), findsOneWidget);

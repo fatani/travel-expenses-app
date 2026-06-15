@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/formatting/bidi_format.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/rtl_typography.dart';
 import '../../../l10n/l10n_extension.dart';
 import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../../shared/widgets/insight_card.dart';
@@ -16,6 +15,7 @@ import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../data/trip_report_provider.dart';
 import '../domain/report_bucket.dart';
+import '../domain/trip_report_display.dart';
 import '../domain/trip_report_summary.dart';
 import 'trip_report_cash_wallet_snapshot_slot.dart';
 
@@ -30,7 +30,7 @@ class TripReportsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaryAsync = ref.watch(tripReportProvider(trip.id));
+    final reportAsync = ref.watch(tripReportProvider(trip.id));
     final predictionAsync = ref.watch(tripPredictionProvider(trip.id));
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -52,15 +52,15 @@ class TripReportsScreen extends ConsumerWidget {
           ),
         ),
       ),
-      body: summaryAsync.when(
+      body: reportAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => CalmLoadErrorPanel(
           title: context.l10n.tripReportsLoadError,
           retryLabel: context.l10n.commonTryAgain,
           onRetry: () => ref.invalidate(tripReportProvider(trip.id)),
         ),
-        data: (summary) => _ReportBody(
-          summary: summary,
+        data: (display) => _ReportBody(
+          display: display,
           predictionSummary: predictionAsync.valueOrNull,
         ),
       ),
@@ -92,12 +92,14 @@ _ReportDataTier _dataTier(int count) {
 
 class _ReportBody extends ConsumerWidget {
   const _ReportBody({
-    required this.summary,
+    required this.display,
     required this.predictionSummary,
   });
 
-  final TripReportSummary summary;
+  final TripReportDisplay display;
   final TripPredictionSummary? predictionSummary;
+
+  TripReportSummary get summary => display.summary;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -124,7 +126,7 @@ class _ReportBody extends ConsumerWidget {
       return ListView(
         padding: listPadding,
         children: [
-          _LightweightSummaryCard(summary: summary),
+          _TripSpendingSummaryCard(display: display, compact: true),
           if (summary.grossSpendingHomeAmount != null) ...[
             sectionGap,
             _HomeSpendingSummaryCard(summary: summary),
@@ -135,9 +137,20 @@ class _ReportBody extends ConsumerWidget {
             sectionGap: sectionGap,
           ),
           if (summary.totalBilledByCurrency.isNotEmpty) ...[
-            _SectionHeader(title: context.l10n.tripReportsTotalBilled),
+            _SectionHeader(title: context.l10n.tripReportsGrossSpendingByCurrency),
             _BucketList(
               buckets: summary.totalBilledByCurrency,
+              showKey: false,
+              groupLabelType: _BucketGroupLabelType.none,
+              topKey: null,
+              topCurrency: null,
+            ),
+            sectionGap,
+          ],
+          if (display.hasRefundsByTransactionCurrency) ...[
+            _SectionHeader(title: context.l10n.tripReportsRefundsByCurrency),
+            _BucketList(
+              buckets: display.refundsByTransactionCurrency,
               showKey: false,
               groupLabelType: _BucketGroupLabelType.none,
               topKey: null,
@@ -165,8 +178,8 @@ class _ReportBody extends ConsumerWidget {
     return ListView(
       padding: listPadding,
       children: [
-        _ReportHeroSummaryCard(
-          summary: summary,
+        _TripSpendingSummaryCard(
+          display: display,
           categoryCount: categoryCount,
         ),
         if (summary.grossSpendingHomeAmount != null) ...[
@@ -196,9 +209,20 @@ class _ReportBody extends ConsumerWidget {
         _OverviewCard(summary: summary),
         sectionGap,
         if (summary.totalBilledByCurrency.isNotEmpty) ...[
-          _SectionHeader(title: context.l10n.tripReportsTotalBilled),
+          _SectionHeader(title: context.l10n.tripReportsGrossSpendingByCurrency),
           _BucketList(
             buckets: summary.totalBilledByCurrency,
+            showKey: false,
+            groupLabelType: _BucketGroupLabelType.none,
+            topKey: null,
+            topCurrency: null,
+          ),
+          sectionGap,
+        ],
+        if (display.hasRefundsByTransactionCurrency) ...[
+          _SectionHeader(title: context.l10n.tripReportsRefundsByCurrency),
+          _BucketList(
+            buckets: display.refundsByTransactionCurrency,
             showKey: false,
             groupLabelType: _BucketGroupLabelType.none,
             topKey: null,
@@ -259,6 +283,219 @@ class _ReportBody extends ConsumerWidget {
         const SizedBox(height: 24),
       ],
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Trip-currency spending summary (gross / refunds / net)
+// ---------------------------------------------------------------------------
+
+class _TripSpendingSummaryCard extends StatelessWidget {
+  const _TripSpendingSummaryCard({
+    required this.display,
+    this.categoryCount = 0,
+    this.compact = false,
+  });
+
+  final TripReportDisplay display;
+  final int categoryCount;
+  final bool compact;
+
+  TripReportSummary get summary => display.summary;
+
+  String? get _primaryCurrency {
+    final top =
+        summary.topBilledBucket ?? summary.topTransactionCurrencyBucket;
+    return top?.currency.trim().toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final currency = _primaryCurrency;
+    final amountStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: colorScheme.onSurface,
+    );
+    final topCategoryLabel = summary.topCategory == null
+        ? null
+        : ExpenseOptionLabels.category(context.l10n, summary.topCategory!);
+
+    final spendingRows = currency == null
+        ? <Widget>[]
+        : _buildSpendingRows(context, currency, amountStyle);
+
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (compact) ...[
+          Text(
+            context.l10n.tripReportsEarlyRecorded(summary.totalExpenseCount),
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: colorScheme.onSurface,
+            ),
+          ),
+          if (spendingRows.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            ...spendingRows,
+          ],
+          const SizedBox(height: 12),
+          Text(
+            context.l10n.tripReportsEarlyAddMoreHint,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ] else ...[
+          ...spendingRows,
+          if (spendingRows.isNotEmpty) const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _HeroMetricChip(
+                  value: context.l10n.tripReportsExpenseCountLabel(
+                    summary.totalExpenseCount,
+                  ),
+                ),
+              ),
+              if (categoryCount > 1) ...[
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _HeroMetricChip(
+                    value: context.l10n.tripReportsHeroCategoryCount(
+                      categoryCount,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+          if (topCategoryLabel != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(
+                horizontal: 12,
+                vertical: 10,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F5FF),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
+                ),
+              ),
+              child: Text(
+                '${context.l10n.tripReportsTopCategory}: $topCategoryLabel',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ],
+    );
+
+    if (compact) {
+      return Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.025),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.all(20),
+        child: content,
+      );
+    }
+
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFEEF0FF),
+              Color(0xFFF6EEFF),
+            ],
+          ),
+          border: Border.all(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+        child: content,
+      ),
+    );
+  }
+
+  List<Widget> _buildSpendingRows(
+    BuildContext context,
+    String currency,
+    TextStyle? amountStyle,
+  ) {
+    final gross = grossTransactionAmountForCurrency(summary, currency);
+    final refunds = refundTransactionAmountForCurrency(
+      display.refundsByTransactionCurrency,
+      currency,
+    );
+    final net = netTransactionAmountForCurrency(
+      summary: summary,
+      refundsByTransactionCurrency: display.refundsByTransactionCurrency,
+      currency: currency,
+    );
+
+    return [
+      _HomeSpendingRow(
+        label: context.l10n.tripReportsGrossExpenses,
+        amount: gross,
+        currency: currency,
+        valueStyle: amountStyle,
+      ),
+      if (refunds > 0) ...[
+        const Divider(height: 20),
+        _HomeSpendingRow(
+          label: context.l10n.tripReportsRefunds,
+          amount: refunds,
+          currency: currency,
+          valueStyle: amountStyle?.copyWith(
+            color: const Color(0xFF059669),
+          ),
+        ),
+      ],
+      const Divider(height: 20),
+      _HomeSpendingRow(
+        label: context.l10n.tripReportsNetSpending,
+        amount: net,
+        currency: currency,
+        valueStyle: amountStyle?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    ];
   }
 }
 
@@ -444,142 +681,8 @@ class _OverviewCard extends StatelessWidget {
   }
 }
 
-class _ReportHeroSummaryCard extends StatelessWidget {
-  const _ReportHeroSummaryCard({
-    required this.summary,
-    required this.categoryCount,
-  });
-
-  final TripReportSummary summary;
-  final int categoryCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final hasMultipleTransactionCurrencies =
-        summary.byTransactionCurrency.length > 1;
-    final totalBucket =
-        summary.topBilledBucket ?? summary.topTransactionCurrencyBucket;
-    final totalText = totalBucket == null
-        ? '--'
-      : '${_formatAmount(totalBucket.totalAmount)} ${totalBucket.currency.trim().toUpperCase()}';
-    final spendingLabel = totalBucket == null
-        ? '--'
-        : hasMultipleTransactionCurrencies
-            ? context.l10n.tripDetailsTotalInCurrencyOnly(
-                totalBucket.currency.trim().toUpperCase(),
-              )
-            : context.l10n.tripReportsOverallSpending;
-    final topCategoryLabel = summary.topCategory == null
-        ? null
-        : ExpenseOptionLabels.category(context.l10n, summary.topCategory!);
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFFEEF0FF),
-              const Color(0xFFF6EEFF),
-            ],
-          ),
-          border: Border.all(
-            color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF0F172A).withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Directionality(
-                textDirection: TextDirection.ltr,
-                child: Text(
-                  totalText,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: -0.15,
-                    color: colorScheme.onSurface,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                spendingLabel,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _HeroMetricChip(
-                      value: context.l10n.tripReportsExpenseCountLabel(
-                        summary.totalExpenseCount,
-                      ),
-                    ),
-                  ),
-                  if (categoryCount > 1) ...[
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _HeroMetricChip(
-                        value: context.l10n.tripReportsHeroCategoryCount(
-                          categoryCount,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              if (topCategoryLabel != null) ...[
-                const SizedBox(height: 10),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8F5FF),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: const Color(0xFF7C3AED).withValues(alpha: 0.12),
-                    ),
-                  ),
-                  child: Text(
-                    '${context.l10n.tripReportsTopCategory}: $topCategoryLabel',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: colorScheme.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ---------------------------------------------------------------------------
-// Early-state widgets (0 expenses and 1–3 expenses)
+// Early-state widgets (0 expenses)
 // ---------------------------------------------------------------------------
 
 class _EarlyReportEmptyState extends StatelessWidget {
@@ -605,74 +708,8 @@ class _EarlyReportEmptyState extends StatelessWidget {
   }
 }
 
-class _LightweightSummaryCard extends StatelessWidget {
-  const _LightweightSummaryCard({required this.summary});
-
-  final TripReportSummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final isArabic =
-        Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
-    final totalBucket =
-        summary.topBilledBucket ?? summary.topTransactionCurrencyBucket;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.025),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            context.l10n.tripReportsEarlyRecorded(summary.totalExpenseCount),
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: colorScheme.onSurface,
-            ),
-          ),
-          if (totalBucket != null) ...[
-            const SizedBox(height: 12),
-            Directionality(
-              textDirection: TextDirection.ltr,
-              child: Text(
-                '${_formatAmount(totalBucket.totalAmount)} ${totalBucket.currency.trim().toUpperCase()}',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: RtlTypography.summaryAmountWeight(isArabic),
-                  letterSpacing: isArabic ? 0 : -0.3,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ),
-          ],
-          const SizedBox(height: 12),
-          Text(
-            context.l10n.tripReportsEarlyAddMoreHint,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HeroMetricChip extends StatelessWidget {  const _HeroMetricChip({required this.value});
+class _HeroMetricChip extends StatelessWidget {
+  const _HeroMetricChip({required this.value});
 
   final String value;
 

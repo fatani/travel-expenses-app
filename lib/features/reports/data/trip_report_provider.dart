@@ -2,11 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../domain/remaining_cash_value.dart';
-import '../domain/trip_report_summary.dart';
+import '../domain/trip_report_display.dart';
 import 'trip_report_calculator.dart';
 
 final tripReportProvider =
-    FutureProvider.autoDispose.family<TripReportSummary, String>((
+    FutureProvider.autoDispose.family<TripReportDisplay, String>((
       ref,
       tripId,
     ) async {
@@ -46,12 +46,18 @@ final tripReportProvider =
       final refunds = await refundRepo.getActiveRefundsByTrip(tripId);
 
       const calculator = TripReportCalculator();
-      return calculator.calculate(
+      final summary = calculator.calculate(
         tripId: tripId,
         tripName: trip?.name ?? tripId,
         expenses: expenses,
         refunds: refunds,
         lotRemainingValues: lotRemainingValues,
         activeLots: activeLots,
+      );
+
+      return TripReportDisplay(
+        summary: summary,
+        refundsByTransactionCurrency:
+            buildRefundsByTransactionCurrency(refunds),
       );
     });
