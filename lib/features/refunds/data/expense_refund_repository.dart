@@ -5,6 +5,7 @@ import '../../../core/database/app_database.dart';
 import '../../../core/integrity/data_integrity.dart';
 import '../../cash_wallet/domain/cash_transaction.dart';
 import '../../expenses/domain/expense.dart';
+import '../domain/derive_refund_home_amount.dart';
 import '../domain/expense_refund.dart';
 import '../domain/refund_destination.dart';
 
@@ -50,7 +51,7 @@ class ExpenseRefundRepository {
     DataIntegrity.requirePositiveAmount(amount);
     DataIntegrity.requireValidCurrencyCode(currencyCode);
 
-    final derived = _deriveHomeAmount(
+    final derived = deriveRefundHomeAmount(
       callerHomeAmount: homeAmount,
       callerHomeCurrency: homeCurrency,
       refundAmount: amount,
@@ -100,7 +101,7 @@ class ExpenseRefundRepository {
     DataIntegrity.requirePositiveAmount(amount);
     DataIntegrity.requireValidCurrencyCode(currencyCode);
 
-    final derived = _deriveHomeAmount(
+    final derived = deriveRefundHomeAmount(
       callerHomeAmount: homeAmount,
       callerHomeCurrency: homeCurrency,
       refundAmount: amount,
@@ -296,56 +297,6 @@ class ExpenseRefundRepository {
       orderBy: 'created_at ASC',
     );
     return rows.map(ExpenseRefund.fromMap).toList();
-  }
-
-  // ---------------------------------------------------------------------------
-  // homeAmount derivation (Section 1.4 of spec)
-  // ---------------------------------------------------------------------------
-
-  static ({double? homeAmount, String? homeCurrency}) _deriveHomeAmount({
-    required double? callerHomeAmount,
-    required String? callerHomeCurrency,
-    required double refundAmount,
-    required Expense? linkedExpense,
-  }) {
-    if (callerHomeAmount != null) {
-      if (callerHomeCurrency == null || callerHomeCurrency.trim().isEmpty) {
-        throw const DataIntegrityException(
-          'missingHomeCurrency',
-          details: 'homeAmount requires homeCurrency',
-        );
-      }
-      return (
-        homeAmount: callerHomeAmount,
-        homeCurrency: DataIntegrity.normalizeCurrencyCode(callerHomeCurrency),
-      );
-    }
-
-    if (linkedExpense == null) {
-      return (homeAmount: null, homeCurrency: null);
-    }
-
-    final expense = linkedExpense;
-    final homeCurrency = expense.homeCurrency;
-    if (homeCurrency == null) {
-      return (homeAmount: null, homeCurrency: null);
-    }
-
-    final rate = expense.conversionRate;
-    if (rate != null && rate > 0) {
-      return (homeAmount: refundAmount * rate, homeCurrency: homeCurrency);
-    }
-
-    final convertedHome = expense.convertedHomeAmount;
-    final txAmount = expense.transactionAmount;
-    if (convertedHome != null && txAmount > 0) {
-      return (
-        homeAmount: (refundAmount / txAmount) * convertedHome,
-        homeCurrency: homeCurrency,
-      );
-    }
-
-    return (homeAmount: null, homeCurrency: null);
   }
 
   // ---------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import '../../cash_wallet/domain/cash_lot.dart';
 import '../../expenses/domain/expense.dart';
 import '../data/expense_refund_repository.dart';
 import 'expense_refund.dart';
+import 'derive_refund_home_amount.dart';
 import 'refund_destination.dart';
 import 'refund_inheritance_engine.dart';
 import 'refund_result.dart';
@@ -95,14 +96,24 @@ class RecordRefundUseCase {
     DateTime? createdAt,
     Expense? linkedExpense,
   }) async {
+    // ── Derive home snapshot when caller omitted homeAmount (spec §1.4) ───────
+    final derivedHome = deriveRefundHomeAmount(
+      callerHomeAmount: homeAmount,
+      callerHomeCurrency: homeCurrency,
+      refundAmount: refundAmount,
+      linkedExpense: linkedExpense,
+    );
+    final effectiveHomeAmount = derivedHome.homeAmount;
+    final effectiveHomeCurrency = derivedHome.homeCurrency;
+
     // ── Pre-flight: fetch existing refunds total for over-refund check ────────
     double existingRefundsHomeTotal = 0.0;
     if (expenseId != null &&
-        homeAmount != null &&
+        effectiveHomeAmount != null &&
         linkedExpense?.convertedHomeAmount != null) {
       final existing =
           await _refundRepository.getActiveRefundsByExpense(expenseId);
-      final homeCurrencyNorm = homeCurrency?.trim().toUpperCase() ??
+      final homeCurrencyNorm = effectiveHomeCurrency?.trim().toUpperCase() ??
           linkedExpense?.homeCurrency?.trim().toUpperCase();
       existingRefundsHomeTotal = existing
           .where((r) => r.homeAmount != null &&
@@ -116,8 +127,8 @@ class RecordRefundUseCase {
             expenseId: expenseId,
             refundAmount: refundAmount,
             refundCurrency: refundCurrency,
-            homeAmount: homeAmount,
-            homeCurrency: homeCurrency,
+            homeAmount: effectiveHomeAmount,
+            homeCurrency: effectiveHomeCurrency,
             linkedExpenseHomeAmount: linkedExpense?.convertedHomeAmount,
             linkedExpenseHomeCurrency: linkedExpense?.homeCurrency,
             existingRefundsHomeTotal: existingRefundsHomeTotal,
@@ -126,8 +137,8 @@ class RecordRefundUseCase {
             expenseId: expenseId,
             refundAmount: refundAmount,
             refundCurrency: refundCurrency,
-            homeAmount: homeAmount,
-            homeCurrency: homeCurrency,
+            homeAmount: effectiveHomeAmount,
+            homeCurrency: effectiveHomeCurrency,
             linkedExpenseHomeAmount: linkedExpense?.convertedHomeAmount,
             linkedExpenseHomeCurrency: linkedExpense?.homeCurrency,
             existingRefundsHomeTotal: existingRefundsHomeTotal,

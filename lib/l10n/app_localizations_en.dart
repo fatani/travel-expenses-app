@@ -1336,6 +1336,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsEarlyAddMoreHint => 'Add more expenses for a fuller report.';
 
   @override
+  String get tripReportsGrossSpending => 'Gross spending';
+
+  @override
+  String get tripReportsRefunds => 'Refunds';
+
+  @override
+  String get tripReportsNetSpending => 'Net spending';
+
+  @override
+  String expenseCardNet(Object amount) {
+    return 'Net: $amount';
+  }
+
+  @override
   String get globalReportsTitle => 'Global reports';
 
   @override

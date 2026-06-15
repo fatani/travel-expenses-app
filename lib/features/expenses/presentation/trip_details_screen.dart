@@ -1427,6 +1427,10 @@ class _ExpenseCard extends StatelessWidget {
         normalizedHomeCurrency.isNotEmpty &&
         primaryCurrency != normalizedHomeCurrency;
     final hasRefundDisplay = refundedAmount != null && refundedAmount! > 0;
+    final double? netAmount = hasRefundDisplay
+        ? (primaryAmount - refundedAmount!).clamp(0.0, primaryAmount).toDouble()
+        : null;
+    final showNetAmount = netAmount != null && netAmount < primaryAmount;
 
     final localeTag = Localizations.localeOf(context).toLanguageTag();
     final isArabic = Localizations.localeOf(context).languageCode.toLowerCase() == 'ar';
@@ -1560,6 +1564,24 @@ class _ExpenseCard extends StatelessWidget {
                             ),
                             style: subtleStyle?.copyWith(
                               color: scheme.primary.withValues(alpha: 0.82),
+                            ),
+                          ),
+                        ),
+                      ],
+                      if (showNetAmount) ...[
+                        const SizedBox(height: 2),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: LtrText(
+                            data: l10n.expenseCardNet(
+                              BidiAmountFormat.formatWithCurrency(
+                                netAmount,
+                                primaryCurrency,
+                              ),
+                            ),
+                            style: subtleStyle?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: scheme.onSurfaceVariant.withValues(alpha: 0.88),
                             ),
                           ),
                         ),

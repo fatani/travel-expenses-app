@@ -1343,6 +1343,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsEarlyAddMoreHint => 'أضف المزيد من المصاريف لتقرير أوضح.';
 
   @override
+  String get tripReportsGrossSpending => 'إجمالي الإنفاق';
+
+  @override
+  String get tripReportsRefunds => 'الاسترجاعات';
+
+  @override
+  String get tripReportsNetSpending => 'صافي الإنفاق';
+
+  @override
+  String expenseCardNet(Object amount) {
+    return 'الصافي: $amount';
+  }
+
+  @override
   String get globalReportsTitle => 'التقرير الشامل';
 
   @override

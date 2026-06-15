@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/app_surfaces.dart';
+import '../../../core/formatting/bidi_format.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/rtl_typography.dart';
 import '../../../l10n/l10n_extension.dart';
@@ -124,6 +125,10 @@ class _ReportBody extends ConsumerWidget {
         padding: listPadding,
         children: [
           _LightweightSummaryCard(summary: summary),
+          if (summary.grossSpendingHomeAmount != null) ...[
+            sectionGap,
+            _HomeSpendingSummaryCard(summary: summary),
+          ],
           sectionGap,
           TripReportCashWalletSnapshotSlot(
             tripId: summary.tripId,
@@ -164,6 +169,10 @@ class _ReportBody extends ConsumerWidget {
           summary: summary,
           categoryCount: categoryCount,
         ),
+        if (summary.grossSpendingHomeAmount != null) ...[
+          sectionGap,
+          _HomeSpendingSummaryCard(summary: summary),
+        ],
         sectionGap,
         TripReportCashWalletSnapshotSlot(
           tripId: summary.tripId,
@@ -248,6 +257,121 @@ class _ReportBody extends ConsumerWidget {
           sectionGap,
         ],
         const SizedBox(height: 24),
+      ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Home-currency spending summary (gross / refunds / net)
+// ---------------------------------------------------------------------------
+
+class _HomeSpendingSummaryCard extends StatelessWidget {
+  const _HomeSpendingSummaryCard({required this.summary});
+
+  final TripReportSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final gross = summary.grossSpendingHomeAmount;
+    final currency = summary.grossSpendingHomeCurrency;
+    if (gross == null || currency == null) {
+      return const SizedBox.shrink();
+    }
+
+    final refunds = summary.refundHomeAmount ?? 0;
+    final net = summary.netSpendingHomeAmount ?? gross;
+    final amountStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontWeight: FontWeight.w700,
+      color: colorScheme.onSurface,
+    );
+
+    return Card(
+      elevation: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _HomeSpendingRow(
+              label: context.l10n.tripReportsGrossSpending,
+              amount: gross,
+              currency: currency,
+              valueStyle: amountStyle,
+            ),
+            if (summary.refundHomeAmount != null && summary.refundHomeAmount! > 0) ...[
+              const Divider(height: 20),
+              _HomeSpendingRow(
+                label: context.l10n.tripReportsRefunds,
+                amount: refunds,
+                currency: currency,
+                valueStyle: amountStyle?.copyWith(
+                  color: const Color(0xFF059669),
+                ),
+              ),
+            ],
+            const Divider(height: 20),
+            _HomeSpendingRow(
+              label: context.l10n.tripReportsNetSpending,
+              amount: net,
+              currency: currency,
+              valueStyle: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: colorScheme.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeSpendingRow extends StatelessWidget {
+  const _HomeSpendingRow({
+    required this.label,
+    required this.amount,
+    required this.currency,
+    this.valueStyle,
+  });
+
+  final String label;
+  final double amount;
+  final String currency;
+  final TextStyle? valueStyle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        const SizedBox(width: 14),
+        Flexible(
+          child: LtrText(
+            data: BidiAmountFormat.formatWithCurrency(amount, currency),
+            style: valueStyle,
+            textAlign: TextAlign.end,
+          ),
+        ),
       ],
     );
   }

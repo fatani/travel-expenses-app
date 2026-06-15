@@ -4,6 +4,7 @@ import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_lot_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
+import 'package:travel_expenses/core/integrity/data_integrity.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
 import 'package:travel_expenses/features/refunds/domain/over_refund_exception.dart';
@@ -354,8 +355,7 @@ void main() {
       );
     });
 
-    test('throws ArgumentError when homeAmount provided but homeCurrency missing',
-        () {
+    test('throws when homeAmount provided but homeCurrency missing', () {
       expect(
         () => useCase.execute(
           destination: RefundDestination.cash,
@@ -365,7 +365,7 @@ void main() {
           homeAmount: 13.5,
           // homeCurrency: null — missing
         ),
-        throwsA(isA<ArgumentError>()),
+        throwsA(isA<DataIntegrityException>()),
       );
     });
   });

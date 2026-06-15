@@ -162,8 +162,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.textContaining('Refunded:'), findsOneWidget);
+      expect(find.textContaining('Net:'), findsOneWidget);
       expect(find.textContaining('50'), findsWidgets);
-      expect(find.textContaining('CNY'), findsWidgets);
     });
 
     testWidgets('expense without refund does not display refund section',

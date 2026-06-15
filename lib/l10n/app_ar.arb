@@ -490,6 +490,15 @@
   "tripReportsEarlyRecorded": "{count, plural, =1{مصروف واحد مسجّل} =2{مصروفان مسجّلان} few{{count} مصاريف مسجّلة} many{{count} مصروفًا مسجّلًا} other{{count} مصروف مسجّل}}",
   "@tripReportsEarlyRecorded": {"placeholders": {"count": {"type": "int"}}},
   "tripReportsEarlyAddMoreHint": "أضف المزيد من المصاريف لتقرير أوضح.",
+  "tripReportsGrossSpending": "إجمالي الإنفاق",
+  "tripReportsRefunds": "الاسترجاعات",
+  "tripReportsNetSpending": "صافي الإنفاق",
+  "expenseCardNet": "الصافي: {amount}",
+  "@expenseCardNet": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
   "globalReportsTitle": "التقرير الشامل",
   "globalReportsSubtitle": "عبر جميع الرحلات",
   "globalReportsTooltip": "التقرير الشامل",

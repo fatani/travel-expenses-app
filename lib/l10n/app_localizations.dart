@@ -2573,6 +2573,30 @@ abstract class AppLocalizations {
   /// **'Add more expenses for a fuller report.'**
   String get tripReportsEarlyAddMoreHint;
 
+  /// No description provided for @tripReportsGrossSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross spending'**
+  String get tripReportsGrossSpending;
+
+  /// No description provided for @tripReportsRefunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Refunds'**
+  String get tripReportsRefunds;
+
+  /// No description provided for @tripReportsNetSpending.
+  ///
+  /// In en, this message translates to:
+  /// **'Net spending'**
+  String get tripReportsNetSpending;
+
+  /// No description provided for @expenseCardNet.
+  ///
+  /// In en, this message translates to:
+  /// **'Net: {amount}'**
+  String expenseCardNet(Object amount);
+
   /// No description provided for @globalReportsTitle.
   ///
   /// In en, this message translates to:

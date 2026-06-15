@@ -490,6 +490,15 @@
   "tripReportsEarlyRecorded": "{count, plural, =1{1 expense recorded} other{{count} expenses recorded}}",
   "@tripReportsEarlyRecorded": {"placeholders": {"count": {"type": "int"}}},
   "tripReportsEarlyAddMoreHint": "Add more expenses for a fuller report.",
+  "tripReportsGrossSpending": "Gross spending",
+  "tripReportsRefunds": "Refunds",
+  "tripReportsNetSpending": "Net spending",
+  "expenseCardNet": "Net: {amount}",
+  "@expenseCardNet": {
+    "placeholders": {
+      "amount": {}
+    }
+  },
   "globalReportsTitle": "Global reports",
   "globalReportsSubtitle": "Across all trips",
   "globalReportsTooltip": "Global reports",
