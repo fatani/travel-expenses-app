@@ -4,6 +4,7 @@ import '../domain/expense_payment_service.dart';
 class ExpenseFormDirtySnapshot {
   const ExpenseFormDirtySnapshot({
     required this.title,
+    required this.amountText,
     required this.amount,
     required this.currencyCode,
     required this.category,
@@ -13,12 +14,14 @@ class ExpenseFormDirtySnapshot {
     required this.paymentNetwork,
     required this.paymentChannel,
     required this.cardProfileId,
+    required this.chargedHomeAmountText,
     required this.totalChargedAmount,
     required this.totalChargedCurrency,
   });
 
   final String title;
-  final double amount;
+  final String amountText;
+  final double? amount;
   final String currencyCode;
   final String category;
   final String note;
@@ -27,23 +30,28 @@ class ExpenseFormDirtySnapshot {
   final String? paymentNetwork;
   final String paymentChannel;
   final int? cardProfileId;
+  final String chargedHomeAmountText;
   final double? totalChargedAmount;
   final String? totalChargedCurrency;
 
   factory ExpenseFormDirtySnapshot.fromNormalizedValues({
     required String title,
-    required double amount,
+    required String amountText,
     required String currencyCode,
     required String category,
     required String note,
     required DateTime spentAt,
     required NormalizedExpensePayment payment,
+    required String chargedHomeAmountText,
     required double? totalChargedAmount,
     required String? totalChargedCurrency,
   }) {
+    final trimmedAmount = amountText.trim();
+    final trimmedChargedHomeAmount = chargedHomeAmountText.trim();
     return ExpenseFormDirtySnapshot(
       title: title,
-      amount: amount,
+      amountText: trimmedAmount,
+      amount: double.tryParse(trimmedAmount),
       currencyCode: currencyCode,
       category: category,
       note: note,
@@ -52,9 +60,25 @@ class ExpenseFormDirtySnapshot {
       paymentNetwork: payment.paymentNetwork,
       paymentChannel: payment.paymentChannel ?? '',
       cardProfileId: payment.cardProfileId,
+      chargedHomeAmountText: trimmedChargedHomeAmount,
       totalChargedAmount: totalChargedAmount,
       totalChargedCurrency: totalChargedCurrency,
     );
+  }
+
+  static bool optionalNumericFieldsEqual(
+    double? leftValue,
+    String leftText,
+    double? rightValue,
+    String rightText,
+  ) {
+    if (leftValue != null && rightValue != null) {
+      return leftValue == rightValue;
+    }
+    if (leftValue == null && rightValue == null) {
+      return leftText == rightText;
+    }
+    return false;
   }
 
   static DateTime _truncateToMinute(DateTime value) {
@@ -72,7 +96,12 @@ class ExpenseFormDirtySnapshot {
   bool operator ==(Object other) {
     return other is ExpenseFormDirtySnapshot &&
         title == other.title &&
-        amount == other.amount &&
+        optionalNumericFieldsEqual(
+          amount,
+          amountText,
+          other.amount,
+          other.amountText,
+        ) &&
         currencyCode == other.currencyCode &&
         category == other.category &&
         note == other.note &&
@@ -81,13 +110,19 @@ class ExpenseFormDirtySnapshot {
         paymentNetwork == other.paymentNetwork &&
         paymentChannel == other.paymentChannel &&
         cardProfileId == other.cardProfileId &&
-        totalChargedAmount == other.totalChargedAmount &&
+        optionalNumericFieldsEqual(
+          totalChargedAmount,
+          chargedHomeAmountText,
+          other.totalChargedAmount,
+          other.chargedHomeAmountText,
+        ) &&
         totalChargedCurrency == other.totalChargedCurrency;
   }
 
   @override
   int get hashCode => Object.hash(
     title,
+    amountText,
     amount,
     currencyCode,
     category,
@@ -97,6 +132,7 @@ class ExpenseFormDirtySnapshot {
     paymentNetwork,
     paymentChannel,
     cardProfileId,
+    chargedHomeAmountText,
     totalChargedAmount,
     totalChargedCurrency,
   );

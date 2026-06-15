@@ -10,6 +10,8 @@ import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/expense_form_screen.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
+import 'package:travel_expenses/features/settings/domain/card_profile.dart';
+import 'package:travel_expenses/features/settings/presentation/cards_provider.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
 
@@ -37,6 +39,43 @@ void main() {
     paymentChannel: 'Cash',
     category: 'Food',
     note: 'Quick bite',
+  );
+
+  final visaCard = CardProfile(
+    id: 1,
+    name: 'Visa',
+    cardNetwork: 'Visa',
+    last4: '4242',
+    createdAt: DateTime(2026, 1, 1),
+    updatedAt: DateTime(2026, 1, 1),
+  );
+
+  final mastercard = CardProfile(
+    id: 2,
+    name: 'Mastercard',
+    cardNetwork: 'Mastercard',
+    last4: '5555',
+    createdAt: DateTime(2026, 1, 1),
+    updatedAt: DateTime(2026, 1, 1),
+  );
+
+  final cardExpense = Expense.create(
+    id: 'expense-card-edit-ux',
+    tripId: trip.id,
+    title: 'Hotel',
+    amount: 100,
+    currencyCode: 'CNY',
+    transactionAmount: 100,
+    transactionCurrency: 'CNY',
+    spentAt: DateTime(2026, 5, 16, 12, 30),
+    paymentMethod: 'Credit Card',
+    paymentNetwork: 'Visa',
+    paymentChannel: 'POS Purchase',
+    cardProfileId: 1,
+    category: 'Accommodation',
+    note: 'Stay',
+    totalChargedAmount: 50,
+    totalChargedCurrency: 'SAR',
   );
 
   testWidgets('open expense then back shows no snackbar', (tester) async {
@@ -201,6 +240,204 @@ void main() {
     expect(find.text('Saved'), findsOneWidget);
     expect(find.text('Undo'), findsOneWidget);
   });
+
+  group('dirty-state field coverage', () {
+    setUp(() {
+      TestWidgetsFlutterBinding.ensureInitialized();
+    });
+
+    testWidgets('category change shows discard dialog on back', (tester) async {
+      await _openExpenseForm(
+        tester,
+        trip: trip,
+        expense: sampleExpense,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _TrackingExpenseRepository(initialExpenses: [sampleExpense]),
+          ),
+        ],
+      );
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(0));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Transport').last);
+      await tester.pumpAndSettle();
+
+      await _expectDiscardDialogOnBack(tester);
+    });
+
+    testWidgets('note change shows discard dialog on back', (tester) async {
+      await _openExpenseForm(
+        tester,
+        trip: trip,
+        expense: sampleExpense,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _TrackingExpenseRepository(initialExpenses: [sampleExpense]),
+          ),
+        ],
+      );
+
+      await tester.enterText(find.byType(TextFormField).last, 'Updated note');
+      await tester.pump();
+
+      await _expectDiscardDialogOnBack(tester);
+    });
+
+    testWidgets('payment method change shows discard dialog on back', (
+      tester,
+    ) async {
+      await _openExpenseForm(
+        tester,
+        trip: trip,
+        expense: sampleExpense,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _TrackingExpenseRepository(initialExpenses: [sampleExpense]),
+          ),
+        ],
+      );
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Other').last);
+      await tester.pumpAndSettle();
+
+      await _expectDiscardDialogOnBack(tester);
+    });
+
+    testWidgets('payment channel change shows discard dialog on back', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await _openExpenseForm(
+        tester,
+        trip: trip,
+        expense: cardExpense,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _TrackingExpenseRepository(initialExpenses: [cardExpense]),
+          ),
+          cardsProvider.overrideWith(() => _FakeCardsNotifier([visaCard])),
+        ],
+      );
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(2));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Online Purchase').last);
+      await tester.pumpAndSettle();
+
+      await _expectDiscardDialogOnBack(tester);
+    });
+
+    testWidgets('card change shows discard dialog on back', (tester) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await _openExpenseForm(
+        tester,
+        trip: trip,
+        expense: cardExpense,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _TrackingExpenseRepository(initialExpenses: [cardExpense]),
+          ),
+          cardsProvider.overrideWith(
+            () => _FakeCardsNotifier([visaCard, mastercard]),
+          ),
+        ],
+      );
+
+      await tester.tap(find.byType(DropdownButtonFormField<int?>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining('5555').last);
+      await tester.pumpAndSettle();
+
+      await _expectDiscardDialogOnBack(tester);
+    });
+
+    testWidgets('charged home amount change shows discard dialog on back', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(800, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await _openExpenseForm(
+        tester,
+        trip: trip,
+        expense: cardExpense,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _TrackingExpenseRepository(initialExpenses: [cardExpense]),
+          ),
+          cardsProvider.overrideWith(() => _FakeCardsNotifier([visaCard])),
+        ],
+      );
+
+      await tester.enterText(find.text('50.00'), '60');
+      await tester.pump();
+
+      await _expectDiscardDialogOnBack(tester);
+    });
+
+    testWidgets('date change shows discard dialog on back', (tester) async {
+      await _openExpenseForm(
+        tester,
+        trip: trip,
+        expense: sampleExpense,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _TrackingExpenseRepository(initialExpenses: [sampleExpense]),
+          ),
+        ],
+      );
+
+      await tester.tap(find.byIcon(Icons.calendar_today_rounded));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('17').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+
+      await _expectDiscardDialogOnBack(tester);
+    });
+
+    testWidgets('invalid amount text shows discard dialog on back', (
+      tester,
+    ) async {
+      await _openExpenseForm(
+        tester,
+        trip: trip,
+        expense: sampleExpense,
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _TrackingExpenseRepository(initialExpenses: [sampleExpense]),
+          ),
+        ],
+      );
+
+      await tester.enterText(find.byType(TextFormField).at(1), 'not-a-number');
+      await tester.pump();
+
+      await _expectDiscardDialogOnBack(tester);
+    });
+  });
+}
+
+Future<void> _expectDiscardDialogOnBack(WidgetTester tester) async {
+  await tester.pageBack();
+  await tester.pumpAndSettle();
+
+  expect(
+    find.text('You have unsaved changes.\nDiscard them?'),
+    findsOneWidget,
+  );
+  expect(find.byType(ExpenseFormScreen), findsOneWidget);
 }
 
 Future<void> _openExpenseForm(
@@ -309,4 +546,13 @@ class _TrackingExpenseRepository extends TestExpenseRepository {
 
 class _EmptyCashWalletRepository extends CashWalletRepository {
   _EmptyCashWalletRepository() : super(AppDatabase());
+}
+
+class _FakeCardsNotifier extends CardsNotifier {
+  _FakeCardsNotifier(this._cards);
+
+  final List<CardProfile> _cards;
+
+  @override
+  Future<List<CardProfile>> build() async => _cards;
 }

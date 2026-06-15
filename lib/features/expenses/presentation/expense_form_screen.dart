@@ -606,7 +606,6 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     final title = _titleController.text.trim().isEmpty
         ? category
         : _titleController.text.trim();
-    final amount = double.parse(_amountController.text.trim());
     final currencyCode = _currencyController.text.trim().toUpperCase();
     final chargedHomeAmountRaw = _chargedHomeAmountController.text.trim();
     final chargedHomeAmount = chargedHomeAmountRaw.isEmpty
@@ -634,12 +633,13 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
 
     return ExpenseFormDirtySnapshot.fromNormalizedValues(
       title: title,
-      amount: amount,
+      amountText: _amountController.text,
       currencyCode: currencyCode,
       category: category,
       note: _noteController.text,
       spentAt: _spentAt ?? DateTime.now(),
       payment: normalizedPayment,
+      chargedHomeAmountText: _chargedHomeAmountController.text,
       totalChargedAmount:
           shouldAttachCardChargedAmount ? chargedHomeAmount : null,
       totalChargedCurrency:
