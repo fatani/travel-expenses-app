@@ -57,9 +57,11 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   late final TextEditingController _chargedHomeAmountController;
 
   String? _selectedCategory;
+  String? _selectedPrimaryPaymentMethod;
   String? _selectedPaymentNetwork;
   String? _selectedPaymentChannel;
   int? _selectedCardProfileId;
+  String? _cardSelectionError;
   int? _preferredCardProfileId;
   DateTime? _spentAt;
   bool _showValidationErrors = false;
@@ -104,13 +106,25 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
         paymentChannel: expense.paymentChannel,
         cardProfileId: expense.cardProfileId,
       );
+      _selectedPrimaryPaymentMethod = ExpenseOptionLabels.derivePrimaryPaymentMethod(
+        paymentMethod: normalizedExistingPayment.paymentMethod,
+        paymentChannel: normalizedExistingPayment.paymentChannel,
+      );
       _selectedPaymentNetwork = normalizedExistingPayment.paymentNetwork;
-      _selectedPaymentChannel =
-          normalizedExistingPayment.paymentChannel ?? 'Other';
+      _selectedPaymentChannel = _channelForPrimaryMethod(
+        _selectedPrimaryPaymentMethod!,
+        normalizedExistingPayment.paymentChannel,
+      );
       _selectedCardProfileId = normalizedExistingPayment.cardProfileId;
+    } else if (initialPayment != null) {
+      _selectedPrimaryPaymentMethod = initialPayment.primaryMethod;
+      _selectedPaymentNetwork = initialPayment.network;
+      _selectedPaymentChannel = initialPayment.channel;
+      _selectedCardProfileId = null;
     } else {
-      _selectedPaymentNetwork = initialPayment?.network;
-      _selectedPaymentChannel = initialPayment?.channel;
+      _selectedPrimaryPaymentMethod = 'Cash';
+      _selectedPaymentChannel = 'Cash';
+      _selectedPaymentNetwork = null;
       _selectedCardProfileId = null;
     }
 
@@ -147,25 +161,49 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   _InitialPaymentSelection? _mapInitialPaymentMethod(String? value) {
     switch (value) {
       case 'Cash':
-        return const _InitialPaymentSelection(network: 'Other', channel: 'Cash');
+        return const _InitialPaymentSelection(
+          primaryMethod: 'Cash',
+          network: 'Other',
+          channel: 'Cash',
+        );
       case 'Wallet':
         // Legacy: Mobile Wallet was a wrapper around a card. Map to Card.
         return const _InitialPaymentSelection(
+          primaryMethod: 'Card',
           network: 'Visa',
           channel: 'POS Purchase',
         );
       case 'Card':
         return const _InitialPaymentSelection(
+          primaryMethod: 'Card',
           network: 'Visa',
           channel: 'POS Purchase',
         );
       case 'Other':
         return const _InitialPaymentSelection(
+          primaryMethod: 'Other',
           network: 'Other',
           channel: 'Other',
         );
       default:
         return null;
+    }
+  }
+
+  String _channelForPrimaryMethod(
+    String primaryMethod,
+    String? storedChannel,
+  ) {
+    switch (primaryMethod) {
+      case 'Cash':
+        return 'Cash';
+      case 'Card':
+        return isCardExpenseChannel(storedChannel)
+            ? storedChannel!
+            : 'POS Purchase';
+      case 'Other':
+      default:
+        return 'Other';
     }
   }
 
@@ -309,15 +347,15 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         DropdownButtonFormField<String>(
                           isExpanded: true,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
-                          initialValue: _selectedPaymentChannel,
-                          items: ExpenseOptionLabels.paymentChannels
+                          value: _selectedPrimaryPaymentMethod,
+                          items: ExpenseOptionLabels.primaryPaymentMethods
                               .map(
-                                (paymentChannel) => DropdownMenuItem<String>(
-                                  value: paymentChannel,
+                                (paymentMethod) => DropdownMenuItem<String>(
+                                  value: paymentMethod,
                                   child: Text(
-                                    ExpenseOptionLabels.paymentChannel(
+                                    ExpenseOptionLabels.primaryPaymentMethod(
                                       l10n,
-                                      paymentChannel,
+                                      paymentMethod,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -333,21 +371,65 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           ),
                           onChanged: (value) {
                             setState(() {
-                              _selectedPaymentChannel = value;
-                              if (!isCardExpenseChannel(value)) {
+                              _selectedPrimaryPaymentMethod = value;
+                              _cardSelectionError = null;
+                              if (value == 'Card') {
+                                _selectedPaymentChannel = 'POS Purchase';
+                              } else if (value == 'Cash') {
+                                _selectedPaymentChannel = 'Cash';
+                                _selectedCardProfileId = null;
+                              } else {
+                                _selectedPaymentChannel = 'Other';
                                 _selectedCardProfileId = null;
                               }
                             });
                           },
                           validator: _validateDropdown,
                         ),
+                        if (_isCardPayment) ...[
+                          const SizedBox(height: 12),
+                          DropdownButtonFormField<String>(
+                            isExpanded: true,
+                            autovalidateMode: AutovalidateMode.onUserInteraction,
+                            value: _selectedPaymentChannel,
+                            items: ExpenseOptionLabels.cardPurchaseChannels
+                                .map(
+                                  (purchaseChannel) => DropdownMenuItem<String>(
+                                    value: purchaseChannel,
+                                    child: Text(
+                                      ExpenseOptionLabels.cardPurchaseChannel(
+                                        l10n,
+                                        purchaseChannel,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                )
+                                .toList(),
+                            decoration: _premiumInputDecoration(
+                              context,
+                              labelText: _requiredLabel(
+                                l10n.expenseFormPurchaseChannelLabel,
+                              ),
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _selectedPaymentChannel = value;
+                              });
+                            },
+                            validator: _validateDropdown,
+                          ),
+                        ],
                         _CardDropdown(
                           selectedCardProfileId: _selectedCardProfileId,
                           preferredCardProfileId: _preferredCardProfileId,
                           isCardPayment: _isCardPayment,
+                          errorText: _cardSelectionError,
                           onChanged: (id) {
                             setState(() {
                               _selectedCardProfileId = id;
+                              _cardSelectionError = null;
                             });
                           },
                         ),
@@ -623,6 +705,14 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       return;
     }
 
+    if (_isCardPayment && _selectedCardProfileId == null) {
+      setState(() {
+        _cardSelectionError =
+            AppLocalizations.of(context)!.expenseFormSelectCardRequired;
+      });
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
     });
@@ -638,7 +728,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
       : double.tryParse(chargedHomeAmountRaw);
     final normalizedHomeCurrency =
       widget.trip.homeCurrencySnapshot.trim().toUpperCase();
-    final paymentChannel = _selectedPaymentChannel!;
+    final paymentChannel = _resolvedPaymentChannel();
     final derivedCardNetwork = _deriveNetworkFromSelectedCard();
     final paymentNetwork = _isCashChannel(paymentChannel)
       ? null
@@ -802,9 +892,21 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     return '$label *';
   }
 
-  bool get _isCardPayment => isCardExpenseChannel(_selectedPaymentChannel);
+  bool get _isCardPayment => _selectedPrimaryPaymentMethod == 'Card';
 
   bool _isCashChannel(String? channel) => channel == 'Cash';
+
+  String _resolvedPaymentChannel() {
+    switch (_selectedPrimaryPaymentMethod) {
+      case 'Cash':
+        return 'Cash';
+      case 'Card':
+        return _selectedPaymentChannel ?? 'POS Purchase';
+      case 'Other':
+      default:
+        return 'Other';
+    }
+  }
 
   String? _validateOptionalAmount(String? value) {
     final trimmed = value?.trim() ?? '';
@@ -859,8 +961,13 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
 }
 
 class _InitialPaymentSelection {
-  const _InitialPaymentSelection({required this.network, required this.channel});
+  const _InitialPaymentSelection({
+    required this.primaryMethod,
+    required this.network,
+    required this.channel,
+  });
 
+  final String primaryMethod;
   final String network;
   final String channel;
 }
@@ -899,12 +1006,14 @@ class _CardDropdown extends ConsumerStatefulWidget {
     required this.preferredCardProfileId,
     required this.onChanged,
     required this.isCardPayment,
+    this.errorText,
   });
 
   final int? selectedCardProfileId;
   final int? preferredCardProfileId;
   final ValueChanged<int?> onChanged;
   final bool isCardPayment;
+  final String? errorText;
 
   @override
   ConsumerState<_CardDropdown> createState() => _CardDropdownState();
@@ -1038,7 +1147,8 @@ class _CardDropdownState extends ConsumerState<_CardDropdown> {
                 ),
               ],
               decoration: InputDecoration(
-                labelText: label,
+                labelText: '$label *',
+                errorText: widget.errorText,
                 filled: true,
                 fillColor: const Color(0xFFF1F5F9),
                 contentPadding: const EdgeInsets.symmetric(

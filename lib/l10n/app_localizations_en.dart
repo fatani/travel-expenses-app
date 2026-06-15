@@ -909,6 +909,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get expenseFormPaymentChannelLabel => 'How you paid';
 
   @override
+  String get expenseFormPurchaseChannelLabel => 'Purchase channel';
+
+  @override
+  String get expenseFormSelectCardRequired => 'Please select the card used.';
+
+  @override
   String expenseFormChargedAmountLabel(Object currencyCode) {
     return 'Charged amount in $currencyCode';
   }
@@ -1047,7 +1053,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get paymentChannelCardPresent => 'POS Purchase';
 
   @override
+  String get paymentChannelCardPresentShort => 'POS Purchase';
+
+  @override
   String get paymentChannelOnline => 'Online Purchase';
+
+  @override
+  String get paymentChannelOnlineShort => 'Online Purchase';
 
   @override
   String get paymentChannelOther => 'Other';

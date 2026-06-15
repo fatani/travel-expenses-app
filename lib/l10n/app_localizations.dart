@@ -1811,6 +1811,18 @@ abstract class AppLocalizations {
   /// **'How you paid'**
   String get expenseFormPaymentChannelLabel;
 
+  /// No description provided for @expenseFormPurchaseChannelLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase channel'**
+  String get expenseFormPurchaseChannelLabel;
+
+  /// No description provided for @expenseFormSelectCardRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select the card used.'**
+  String get expenseFormSelectCardRequired;
+
   /// No description provided for @expenseFormChargedAmountLabel.
   ///
   /// In en, this message translates to:
@@ -2075,11 +2087,23 @@ abstract class AppLocalizations {
   /// **'POS Purchase'**
   String get paymentChannelCardPresent;
 
+  /// No description provided for @paymentChannelCardPresentShort.
+  ///
+  /// In en, this message translates to:
+  /// **'POS Purchase'**
+  String get paymentChannelCardPresentShort;
+
   /// No description provided for @paymentChannelOnline.
   ///
   /// In en, this message translates to:
   /// **'Online Purchase'**
   String get paymentChannelOnline;
+
+  /// No description provided for @paymentChannelOnlineShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Online Purchase'**
+  String get paymentChannelOnlineShort;
 
   /// No description provided for @paymentChannelOther.
   ///

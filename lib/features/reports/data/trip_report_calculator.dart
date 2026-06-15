@@ -395,7 +395,11 @@ class TripReportCalculator {
   static String _normalisePaymentType(String paymentMethod) {
     final lower = paymentMethod.trim().toLowerCase();
     if (lower == 'cash') return 'cash';
-    if (lower == 'card') return 'card';
+    if (lower == 'card' ||
+        lower == 'credit card' ||
+        lower == 'debit card') {
+      return 'card';
+    }
     return 'other';
   }
 

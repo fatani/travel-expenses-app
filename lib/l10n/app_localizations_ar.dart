@@ -909,6 +909,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get expenseFormPaymentChannelLabel => 'كيف دفعت';
 
   @override
+  String get expenseFormPurchaseChannelLabel => 'قناة الشراء';
+
+  @override
+  String get expenseFormSelectCardRequired => 'يرجى اختيار البطاقة المستخدمة.';
+
+  @override
   String expenseFormChargedAmountLabel(Object currencyCode) {
     return 'المبلغ المخصوم بـ $currencyCode';
   }
@@ -1047,7 +1053,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get paymentChannelCardPresent => 'شراء عبر نقاط البيع';
 
   @override
+  String get paymentChannelCardPresentShort => 'عبر نقاط البيع';
+
+  @override
   String get paymentChannelOnline => 'شراء عبر الإنترنت';
+
+  @override
+  String get paymentChannelOnlineShort => 'عبر الإنترنت';
 
   @override
   String get paymentChannelOther => 'أخرى';

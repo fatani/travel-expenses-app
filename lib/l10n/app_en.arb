@@ -340,6 +340,8 @@
   "expenseFormPaymentMethodLabel": "Payment method",
   "expenseFormPaymentNetworkLabel": "Card network",
   "expenseFormPaymentChannelLabel": "How you paid",
+  "expenseFormPurchaseChannelLabel": "Purchase channel",
+  "expenseFormSelectCardRequired": "Please select the card used.",
   "expenseFormChargedAmountLabel": "Charged amount in {currencyCode}",
   "@expenseFormChargedAmountLabel": {
     "placeholders": {
@@ -391,7 +393,9 @@
   "paymentChannelApplePay": "Apple Pay",
   "paymentChannelGooglePay": "Google Pay",
   "paymentChannelCardPresent": "POS Purchase",
+  "paymentChannelCardPresentShort": "POS Purchase",
   "paymentChannelOnline": "Online Purchase",
+  "paymentChannelOnlineShort": "Online Purchase",
   "paymentChannelOther": "Other",
   "settingsTitle": "Settings",
   "financialSettingsTitle": "Financial settings",

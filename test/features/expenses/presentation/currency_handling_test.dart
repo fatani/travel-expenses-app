@@ -2,6 +2,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/no_fifo_record_cash_expense_use_case.dart';
 import '../../../support/test_expense_repository.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -460,6 +461,15 @@ void main() {
           child: ExpenseFormScreen(trip: trip),
           overrides: [
             expenseRepositoryProvider.overrideWithValue(repository),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _NoOpCashWalletRepository(),
+            ),
+            recordCashExpenseUseCaseProvider.overrideWith(
+              (ref) => NoFifoRecordCashExpenseUseCase(
+                expenseRepository: ref.watch(expenseRepositoryProvider),
+                cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+              ),
+            ),
           ],
         ),
       );
@@ -475,19 +485,14 @@ void main() {
       await tester.tap(find.text('Food').last);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('POS Purchase').last);
-      await tester.pumpAndSettle();
-
-      await tester.ensureVisible(find.byType(TextFormField).at(4));
-      await tester.tap(find.byType(TextFormField).at(4));
+      await tester.ensureVisible(find.byType(TextFormField).at(3));
+      await tester.tap(find.byType(TextFormField).at(3));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
 
-      await tester.ensureVisible(find.byType(TextFormField).at(5));
-      await tester.tap(find.byType(TextFormField).at(5));
+      await tester.ensureVisible(find.byType(TextFormField).at(4));
+      await tester.tap(find.byType(TextFormField).at(4));
       await tester.pumpAndSettle();
       await tester.tap(find.text('OK'));
       await tester.pumpAndSettle();
@@ -533,6 +538,11 @@ void main() {
       expect(find.text('Charged amount in CNY'), findsNothing);
 
       await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Card').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(2));
       await tester.pumpAndSettle();
       await tester.tap(find.text('POS Purchase').last);
       await tester.pumpAndSettle();
@@ -964,4 +974,8 @@ class _FakeCashWalletRepository extends CashWalletRepository {
     required Expense? previousExpense,
     required Expense nextExpense,
   }) async {}
+}
+
+class _NoOpCashWalletRepository extends CashWalletRepository {
+  _NoOpCashWalletRepository() : super(AppDatabase());
 }

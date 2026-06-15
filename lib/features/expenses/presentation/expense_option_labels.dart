@@ -37,6 +37,19 @@ class ExpenseOptionLabels {
     'Other',
   ];
 
+  /// Primary expense-entry payment choices (method, not purchase channel).
+  static const List<String> primaryPaymentMethods = <String>[
+    'Cash',
+    'Card',
+    'Other',
+  ];
+
+  /// Purchase channels shown only when [primaryPaymentMethods] Card is selected.
+  static const List<String> cardPurchaseChannels = <String>[
+    'POS Purchase',
+    'Online Purchase',
+  ];
+
   static String category(AppLocalizations l10n, String value) {
     switch (value) {
       case 'Transport':
@@ -99,6 +112,58 @@ class ExpenseOptionLabels {
       default:
         return l10n.paymentChannelOther;
     }
+  }
+
+  static String primaryPaymentMethod(AppLocalizations l10n, String value) {
+    switch (value) {
+      case 'Cash':
+        return l10n.paymentMethodCash;
+      case 'Card':
+        return l10n.tripDetailsQuickAddPaymentCard;
+      case 'Other':
+        return l10n.paymentMethodOther;
+      default:
+        return value;
+    }
+  }
+
+  /// Shorter purchase-channel labels for the card secondary selector.
+  static String cardPurchaseChannel(AppLocalizations l10n, String value) {
+    switch (value) {
+      case 'POS Purchase':
+      case 'Card Present':
+        return l10n.paymentChannelCardPresentShort;
+      case 'Online Purchase':
+      case 'Online':
+        return l10n.paymentChannelOnlineShort;
+      default:
+        return paymentChannel(l10n, value);
+    }
+  }
+
+  /// Maps stored payment metadata to the primary form payment choice.
+  static String derivePrimaryPaymentMethod({
+    required String paymentMethod,
+    String? paymentChannel,
+  }) {
+    if (isCashExpensePayment(
+      paymentMethod: paymentMethod,
+      paymentChannel: paymentChannel,
+    )) {
+      return 'Cash';
+    }
+    if (isCardExpenseChannel(paymentChannel) ||
+        _isStoredCardPaymentMethod(paymentMethod)) {
+      return 'Card';
+    }
+    return 'Other';
+  }
+
+  static bool _isStoredCardPaymentMethod(String paymentMethod) {
+    final lower = paymentMethod.trim().toLowerCase();
+    return lower == 'credit card' ||
+        lower == 'debit card' ||
+        lower == 'card';
   }
 
   static String paymentSummary(

@@ -924,10 +924,8 @@ void main() {
           closeTo(1700, 1e-9));
       expect(paymentBuckets['cash|THB']!.totalHomeAmount,
           closeTo(foodHome + taxiHome, 1e-9));
-      // 'Credit Card' is normalised to 'other' by the payment source summary
-      // (only the literal strings 'cash'/'card' map to those types) —
-      // documented audit finding. Totals are still correct: 800 + 30 fee.
-      expect(paymentBuckets['other|SAR']!.totalTransactionAmount,
+      // Credit Card expenses are normalised to 'card' in payment source summary.
+      expect(paymentBuckets['card|SAR']!.totalTransactionAmount,
           closeTo(830, 1e-9));
 
       // ── Raw-table audit: every reversed artifact consistent ──────────────

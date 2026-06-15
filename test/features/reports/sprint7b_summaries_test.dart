@@ -334,6 +334,52 @@ void main() {
       expect(result.paymentSourceSummary, isEmpty);
     });
 
+    test('T12b – Credit Card expenses grouped as card', () {
+      final expenses = [
+        _expense(
+          paymentMethod: 'Credit Card',
+          currency: 'SAR',
+          amount: 200,
+          convertedHomeAmount: 200,
+          homeCurrency: 'SAR',
+        ),
+      ];
+      final result = _calc.calculate(
+        tripId: 'trip-1',
+        tripName: 'T',
+        expenses: expenses,
+      );
+
+      final cardEntries = result.paymentSourceSummary
+          .where((e) => e.paymentType == 'card')
+          .toList();
+      expect(cardEntries.length, 1);
+      expect(cardEntries.first.totalTransactionAmount, closeTo(200, 1e-9));
+    });
+
+    test('T12c – Debit Card expenses grouped as card', () {
+      final expenses = [
+        _expense(
+          paymentMethod: 'Debit Card',
+          currency: 'SAR',
+          amount: 150,
+          convertedHomeAmount: 150,
+          homeCurrency: 'SAR',
+        ),
+      ];
+      final result = _calc.calculate(
+        tripId: 'trip-1',
+        tripName: 'T',
+        expenses: expenses,
+      );
+
+      final cardEntries = result.paymentSourceSummary
+          .where((e) => e.paymentType == 'card')
+          .toList();
+      expect(cardEntries.length, 1);
+      expect(cardEntries.first.totalTransactionAmount, closeTo(150, 1e-9));
+    });
+
     test('T12 – cash and card expenses both present → separate entries', () {
       final expenses = [
         _expense(paymentMethod: 'cash', currency: 'JPY', amount: 1000),

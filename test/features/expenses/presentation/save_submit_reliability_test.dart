@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../../../support/test_expense_repository.dart';
+import '../../../support/no_fifo_record_cash_expense_use_case.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -20,10 +20,21 @@ import 'package:travel_expenses/features/expenses/presentation/expense_form_scre
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
 import 'package:travel_expenses/features/settings/data/card_repository.dart';
 import 'package:travel_expenses/features/settings/domain/card_profile.dart';
+import 'package:travel_expenses/features/settings/presentation/cards_provider.dart';
+import '../../../support/test_expense_repository.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/features/trips/presentation/trip_form_screen.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
+
+final _harnessCard = CardProfile(
+  id: 1,
+  name: 'Visa',
+  cardNetwork: 'Visa',
+  last4: '4242',
+  createdAt: DateTime(2026, 1, 1),
+  updatedAt: DateTime(2026, 1, 1),
+);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -361,7 +372,15 @@ Future<void> _fillMinimalExpenseForm(
 
   await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
   await tester.pumpAndSettle();
-  await tester.tap(find.text(paymentChannel).last);
+  if (paymentChannel == 'Cash' || paymentChannel == 'Other') {
+    await tester.tap(find.text(paymentChannel).last);
+  } else {
+    await tester.tap(find.text('Card').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButtonFormField<String>).at(2));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(paymentChannel).last);
+  }
   await tester.pumpAndSettle();
 }
 
@@ -392,6 +411,13 @@ Widget _buildExpenseFormHarness({
       expenseRepositoryProvider.overrideWithValue(repository),
       cardRepositoryProvider.overrideWithValue(_EmptyCardRepository()),
       cashWalletRepositoryProvider.overrideWithValue(_NoOpCashWalletRepository()),
+      recordCashExpenseUseCaseProvider.overrideWith(
+        (ref) => NoFifoRecordCashExpenseUseCase(
+          expenseRepository: ref.watch(expenseRepositoryProvider),
+          cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+        ),
+      ),
+      cardsProvider.overrideWith(() => _FakeCardsNotifier([_harnessCard])),
     ],
     child: MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -628,6 +654,15 @@ class _EmptyCardRepository extends CardRepository {
 
   @override
   Future<List<CardProfile>> getAllCards() async => const [];
+}
+
+class _FakeCardsNotifier extends CardsNotifier {
+  _FakeCardsNotifier(this._cards);
+
+  final List<CardProfile> _cards;
+
+  @override
+  Future<List<CardProfile>> build() async => _cards;
 }
 
 class _EmptyManualExchangeRateRepository extends ManualExchangeRateRepository {

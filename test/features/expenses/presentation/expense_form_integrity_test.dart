@@ -64,6 +64,11 @@ void main() {
 
       await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Card').last);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>).at(2));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('POS Purchase').last);
       await tester.pumpAndSettle();
 
