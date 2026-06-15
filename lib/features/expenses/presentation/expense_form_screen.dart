@@ -10,6 +10,7 @@ import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/design_system/calm_snackbar.dart';
 import '../../trips/domain/trip.dart';
 import '../domain/expense.dart';
+import '../domain/card_expense_completeness.dart';
 import '../domain/expense_payment.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
@@ -58,6 +59,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   late final TextEditingController _timeController;
   late final TextEditingController _noteController;
   late final TextEditingController _chargedHomeAmountController;
+  late final FocusNode _chargedHomeAmountFocusNode;
 
   String? _selectedCategory;
   String? _selectedPrimaryPaymentMethod;
@@ -71,6 +73,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
   bool _isSubmitting = false;
   ExpenseFormDirtySnapshot? _editBaseline;
   bool _didCaptureEditBaseline = false;
+  bool _didFocusPendingChargedAmount = false;
 
   @override
   void initState() {
@@ -102,6 +105,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     _chargedHomeAmountController = TextEditingController(
       text: seededChargedHomeAmount,
     );
+    _chargedHomeAmountFocusNode = FocusNode();
     _selectedCategory = expense?.category ?? widget.initialCategory;
 
     if (expense != null) {
@@ -233,7 +237,28 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     if (widget.isEditMode && !_didCaptureEditBaseline) {
       _editBaseline = _buildDirtySnapshot();
       _didCaptureEditBaseline = true;
+      _schedulePendingChargedAmountFocus();
     }
+  }
+
+  void _schedulePendingChargedAmountFocus() {
+    final expense = widget.expense;
+    if (_didFocusPendingChargedAmount ||
+        expense == null ||
+        !isPendingCardExpense(
+          expense: expense,
+          tripHomeCurrency: widget.trip.homeCurrencySnapshot,
+        )) {
+      return;
+    }
+
+    _didFocusPendingChargedAmount = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_isCardPayment) {
+        return;
+      }
+      _chargedHomeAmountFocusNode.requestFocus();
+    });
   }
 
   @override
@@ -252,6 +277,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
     _timeController.dispose();
     _noteController.dispose();
     _chargedHomeAmountController.dispose();
+    _chargedHomeAmountFocusNode.dispose();
     super.dispose();
   }
 
@@ -477,6 +503,7 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           const SizedBox(height: 12),
                           TextFormField(
                             controller: _chargedHomeAmountController,
+                            focusNode: _chargedHomeAmountFocusNode,
                             autovalidateMode: AutovalidateMode.onUserInteraction,
                             textInputAction: TextInputAction.next,
                             keyboardType: const TextInputType.numberWithOptions(

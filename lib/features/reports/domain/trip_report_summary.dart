@@ -57,6 +57,7 @@ class TripReportSummary {
     this.netSpendingHomeAmount,
     this.remainingCashValues = const [],
     this.netTripCostHomeAmount,
+    this.pendingCardExpenseCount = 0,
     this.cashAcquisitionSummary = const [],
     this.paymentSourceSummary = const [],
   });
@@ -138,6 +139,11 @@ class TripReportSummary {
   /// Equals [netSpendingHomeAmount] when [remainingCashValues] is empty or none
   /// match [grossSpendingHomeCurrency].
   final double? netTripCostHomeAmount;
+
+  /// Cross-currency card expenses missing a charged home amount.
+  ///
+  /// Derived at report time; never persisted.
+  final int pendingCardExpenseCount;
 
   /// Cash inflow grouped by source type + original currency.
   ///

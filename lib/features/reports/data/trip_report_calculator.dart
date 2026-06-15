@@ -1,4 +1,5 @@
 import '../../cash_wallet/domain/cash_lot.dart';
+import '../../expenses/domain/card_expense_completeness.dart';
 import '../../expenses/domain/expense.dart';
 import '../../refunds/domain/expense_refund.dart';
 import '../domain/cash_acquisition_entry.dart';
@@ -24,6 +25,7 @@ class TripReportCalculator {
     required String tripId,
     required String tripName,
     required List<Expense> expenses,
+    String? tripHomeCurrency,
     List<ExpenseRefund> refunds = const [],
     List<CashBalanceRateInput> cashBalanceRates = const [],
     List<RemainingCashValue> lotRemainingValues = const [],
@@ -56,10 +58,18 @@ class TripReportCalculator {
         netSpendingHomeAmount: null,
         remainingCashValues: emptyRemainingCash,
         netTripCostHomeAmount: null,
+        pendingCardExpenseCount: 0,
         cashAcquisitionSummary: _buildCashAcquisitionSummary(activeLots),
         paymentSourceSummary: const [],
       );
     }
+
+    final pendingCardExpenseCount = tripHomeCurrency == null
+        ? 0
+        : countPendingCardExpenses(
+            expenses: expenses,
+            tripHomeCurrency: tripHomeCurrency,
+          );
 
     final int total = expenses.length;
     final int international = expenses.where((e) => e.isInternational).length;
@@ -263,6 +273,7 @@ class TripReportCalculator {
       netSpendingHomeAmount: netSpendingHomeAmount,
       remainingCashValues: remainingCashValues,
       netTripCostHomeAmount: netTripCostHomeAmount,
+      pendingCardExpenseCount: pendingCardExpenseCount,
       cashAcquisitionSummary: _buildCashAcquisitionSummary(activeLots),
       paymentSourceSummary: _buildPaymentSourceSummary(expenses),
     );

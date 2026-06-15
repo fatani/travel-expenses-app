@@ -129,6 +129,10 @@ class _ReportBody extends ConsumerWidget {
           _TripSpendingSummaryCard(display: display, compact: true),
           if (summary.grossSpendingHomeAmount != null) ...[
             sectionGap,
+            if (summary.pendingCardExpenseCount > 0) ...[
+              _PendingCardReportNotice(count: summary.pendingCardExpenseCount),
+              const SizedBox(height: 12),
+            ],
             _HomeSpendingSummaryCard(summary: summary),
           ],
           sectionGap,
@@ -184,6 +188,10 @@ class _ReportBody extends ConsumerWidget {
         ),
         if (summary.grossSpendingHomeAmount != null) ...[
           sectionGap,
+          if (summary.pendingCardExpenseCount > 0) ...[
+            _PendingCardReportNotice(count: summary.pendingCardExpenseCount),
+            const SizedBox(height: 12),
+          ],
           _HomeSpendingSummaryCard(summary: summary),
         ],
         sectionGap,
@@ -496,6 +504,43 @@ class _TripSpendingSummaryCard extends StatelessWidget {
         ),
       ),
     ];
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pending card completeness notice
+// ---------------------------------------------------------------------------
+
+class _PendingCardReportNotice extends StatelessWidget {
+  const _PendingCardReportNotice({required this.count});
+
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: '${context.l10n.tripReportsEstimatedReportTitle}\n',
+            style: theme.textTheme.bodySmall?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurfaceVariant,
+            ),
+          ),
+          TextSpan(
+            text: context.l10n.tripReportsEstimatedReportMessage(count),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: colorScheme.onSurfaceVariant.withValues(alpha: 0.82),
+              height: 1.45,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

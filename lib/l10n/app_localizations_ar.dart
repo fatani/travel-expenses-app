@@ -838,6 +838,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get expenseCardAwaitingChargedAmount => 'بانتظار قيمة الخصم الفعلية';
+
+  @override
   String get refundFormTitle => 'تسجيل استرجاع';
 
   @override
@@ -1376,6 +1379,14 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get tripReportsHomeCurrencySummaryTitle => 'ملخص الإنفاق بعملتك الأساسية';
+
+  @override
+  String get tripReportsEstimatedReportTitle => 'التقرير تقديري';
+
+  @override
+  String tripReportsEstimatedReportMessage(int count) {
+    return 'يستثني $count من عمليات البطاقة التي لم يتم استكمال قيمتها الفعلية بعد.';
+  }
 
   @override
   String get tripReportsGrossExpenses => 'إجمالي المصروفات';

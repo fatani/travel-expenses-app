@@ -50,6 +50,7 @@ final tripReportProvider =
         tripId: tripId,
         tripName: trip?.name ?? tripId,
         expenses: expenses,
+        tripHomeCurrency: homeCurrency,
         refunds: refunds,
         lotRemainingValues: lotRemainingValues,
         activeLots: activeLots,

@@ -838,6 +838,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get expenseCardAwaitingChargedAmount => 'Awaiting charged amount';
+
+  @override
   String get refundFormTitle => 'Record refund';
 
   @override
@@ -1369,6 +1372,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tripReportsHomeCurrencySummaryTitle => 'Spending Summary in Your Home Currency';
+
+  @override
+  String get tripReportsEstimatedReportTitle => 'Estimated report';
+
+  @override
+  String tripReportsEstimatedReportMessage(int count) {
+    return 'Excludes $count card expense(s) awaiting charged amount.';
+  }
 
   @override
   String get tripReportsGrossExpenses => 'Gross expenses';

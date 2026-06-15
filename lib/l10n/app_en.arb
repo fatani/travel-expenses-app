@@ -312,6 +312,7 @@
       "amount": {}
     }
   },
+  "expenseCardAwaitingChargedAmount": "Awaiting charged amount",
   "refundFormTitle": "Record refund",
   "refundFormAmountLabel": "Refund amount",
   "refundFormAmountPositive": "Amount must be greater than zero.",
@@ -506,6 +507,15 @@
   "tripReportsEarlyAddMoreHint": "Add more expenses for a fuller report.",
   "tripReportsGrossSpending": "Gross spending",
   "tripReportsHomeCurrencySummaryTitle": "Spending Summary in Your Home Currency",
+  "tripReportsEstimatedReportTitle": "Estimated report",
+  "tripReportsEstimatedReportMessage": "Excludes {count} card expense(s) awaiting charged amount.",
+  "@tripReportsEstimatedReportMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tripReportsGrossExpenses": "Gross expenses",
   "tripReportsGrossSpendingByCurrency": "Gross spending by currency",
   "tripReportsRefundsByCurrency": "Refunds by currency",

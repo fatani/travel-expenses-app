@@ -1673,6 +1673,12 @@ abstract class AppLocalizations {
   /// **'Refunded: {amount}'**
   String expenseCardRefunded(Object amount);
 
+  /// No description provided for @expenseCardAwaitingChargedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Awaiting charged amount'**
+  String get expenseCardAwaitingChargedAmount;
+
   /// No description provided for @refundFormTitle.
   ///
   /// In en, this message translates to:
@@ -2638,6 +2644,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Spending Summary in Your Home Currency'**
   String get tripReportsHomeCurrencySummaryTitle;
+
+  /// No description provided for @tripReportsEstimatedReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated report'**
+  String get tripReportsEstimatedReportTitle;
+
+  /// No description provided for @tripReportsEstimatedReportMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Excludes {count} card expense(s) awaiting charged amount.'**
+  String tripReportsEstimatedReportMessage(int count);
 
   /// No description provided for @tripReportsGrossExpenses.
   ///

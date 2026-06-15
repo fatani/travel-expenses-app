@@ -312,6 +312,7 @@
       "amount": {}
     }
   },
+  "expenseCardAwaitingChargedAmount": "بانتظار قيمة الخصم الفعلية",
   "refundFormTitle": "تسجيل استرجاع",
   "refundFormAmountLabel": "مبلغ الاسترجاع",
   "refundFormAmountPositive": "يجب أن يكون المبلغ أكبر من صفر.",
@@ -506,6 +507,15 @@
   "tripReportsEarlyAddMoreHint": "أضف المزيد من المصاريف لتقرير أوضح.",
   "tripReportsGrossSpending": "إجمالي الإنفاق",
   "tripReportsHomeCurrencySummaryTitle": "ملخص الإنفاق بعملتك الأساسية",
+  "tripReportsEstimatedReportTitle": "التقرير تقديري",
+  "tripReportsEstimatedReportMessage": "يستثني {count} من عمليات البطاقة التي لم يتم استكمال قيمتها الفعلية بعد.",
+  "@tripReportsEstimatedReportMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "tripReportsGrossExpenses": "إجمالي المصروفات",
   "tripReportsGrossSpendingByCurrency": "إجمالي الإنفاق حسب العملة",
   "tripReportsRefundsByCurrency": "الاسترجاعات حسب العملة",

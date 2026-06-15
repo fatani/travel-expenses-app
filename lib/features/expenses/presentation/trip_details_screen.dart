@@ -26,6 +26,7 @@ import '../../trips/domain/trip_timeline_status.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../../trips/presentation/trip_form_screen.dart';
 import '../domain/expense.dart';
+import '../domain/card_expense_completeness.dart';
 import '../domain/expense_payment.dart';
 import 'expense_controller.dart';
 import 'expense_form_screen.dart';
@@ -856,6 +857,7 @@ class _TripDetailsContentState extends State<_TripDetailsContent> {
                       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: _ExpenseCard(
                         expense: expense,
+                        tripHomeCurrency: widget.trip.homeCurrencySnapshot,
                         refundedAmount: widget.refundAmountsByExpense[expense.id],
                         onEdit: () => widget.onEditExpense(expense),
                         onRefund: () => widget.onRefundExpense(expense),
@@ -1400,6 +1402,7 @@ enum _ExpenseCardAction { edit, refund, delete }
 class _ExpenseCard extends StatelessWidget {
   const _ExpenseCard({
     required this.expense,
+    required this.tripHomeCurrency,
     this.refundedAmount,
     required this.onEdit,
     required this.onRefund,
@@ -1407,6 +1410,7 @@ class _ExpenseCard extends StatelessWidget {
   });
 
   final Expense expense;
+  final String tripHomeCurrency;
   final double? refundedAmount;
   final VoidCallback onEdit;
   final VoidCallback onRefund;
@@ -1426,6 +1430,11 @@ class _ExpenseCard extends StatelessWidget {
         storedHomeAmount > 0 &&
         normalizedHomeCurrency.isNotEmpty &&
         primaryCurrency != normalizedHomeCurrency;
+    final isPendingCard = isPendingCardExpense(
+      expense: expense,
+      tripHomeCurrency: tripHomeCurrency,
+    );
+    final showAwaitingChargedAmount = isPendingCard && !hasHomeConversion;
     final hasRefundDisplay = refundedAmount != null && refundedAmount! > 0;
     final double? netAmount = hasRefundDisplay
         ? (primaryAmount - refundedAmount!).clamp(0.0, primaryAmount).toDouble()
@@ -1547,6 +1556,20 @@ class _ExpenseCard extends StatelessWidget {
                               storedHomeAmount,
                               normalizedHomeCurrency,
                             ),
+                            style: subtleStyle,
+                          ),
+                        ),
+                      ] else if (showAwaitingChargedAmount) ...[
+                        const SizedBox(height: 2),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: Text(
+                            l10n.expenseCardAwaitingChargedAmount,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textDirection: isArabic
+                                ? ui.TextDirection.rtl
+                                : ui.TextDirection.ltr,
                             style: subtleStyle,
                           ),
                         ),
