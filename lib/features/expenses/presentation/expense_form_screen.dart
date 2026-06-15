@@ -385,7 +385,8 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                         DropdownButtonFormField<String>(
                           isExpanded: true,
                           autovalidateMode: AutovalidateMode.onUserInteraction,
-                          value: _selectedPrimaryPaymentMethod,
+                          key: ValueKey(_selectedPrimaryPaymentMethod),
+                          initialValue: _selectedPrimaryPaymentMethod,
                           items: ExpenseOptionLabels.primaryPaymentMethods
                               .map(
                                 (paymentMethod) => DropdownMenuItem<String>(
@@ -429,7 +430,8 @@ class _ExpenseFormScreenState extends ConsumerState<ExpenseFormScreen> {
                           DropdownButtonFormField<String>(
                             isExpanded: true,
                             autovalidateMode: AutovalidateMode.onUserInteraction,
-                            value: _selectedPaymentChannel,
+                            key: ValueKey(_selectedPaymentChannel),
+                            initialValue: _selectedPaymentChannel,
                             items: ExpenseOptionLabels.cardPurchaseChannels
                                 .map(
                                   (purchaseChannel) => DropdownMenuItem<String>(
