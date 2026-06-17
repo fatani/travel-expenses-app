@@ -16,6 +16,10 @@ import '../../../core/theme/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../expenses/presentation/expense_form_screen.dart';
+import '../../settings/domain/card_display_helper.dart';
+import '../../settings/domain/card_profile.dart';
+import '../../settings/presentation/add_card_screen.dart';
+import '../../settings/presentation/cards_provider.dart';
 import '../../trips/domain/country_database.dart';
 import '../../trips/domain/country_info.dart';
 import '../../trips/domain/trip.dart';
@@ -253,7 +257,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                     totalCashIn: _primaryCurrencyTotalCashIn,
                     lastAtmWithdrawalEvent: _lastAtmWithdrawalEvent,
                     onAddCash: () => _showAddCashSheet(initialType: CashTransactionType.initialCash),
-                    onAtmWithdrawal: () => _showAddCashSheet(initialType: CashTransactionType.atmWithdrawal),
+                    onAtmWithdrawal: _showAtmWithdrawalSheet,
                   ),
                   const SizedBox(height: 22),
                   _SectionHeader(title: l10n.cashWalletBalancesTitle),
@@ -360,6 +364,45 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
               editingTransaction: editingTransaction,
               isOnboarding: isOnboarding,
             ),
+          );
+        },
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (result == true) {
+        await _load();
+      }
+    } finally {
+      _isCashSheetOpen = false;
+    }
+  }
+
+  /// Opens the dedicated ATM withdrawal sheet (Sprint ATM-1).
+  ///
+  /// Unlike [_showAddCashSheet], this flow does not expose the generic cash
+  /// source dropdown — it is locked to an ATM withdrawal with a funding card.
+  Future<void> _showAtmWithdrawalSheet() async {
+    if (_isCashSheetOpen) {
+      return;
+    }
+    _isCashSheetOpen = true;
+
+    try {
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (sheetContext) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: _AtmWithdrawalSheet(trip: widget.trip),
           );
         },
       );
@@ -1195,6 +1238,502 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   }
 }
 
+/// Dedicated ATM withdrawal sheet (Sprint ATM-1).
+///
+/// Models the traveller's mental model: "I used this card at an ATM and
+/// received this cash." It does not expose the generic cash source dropdown and
+/// always records through [RecordAtmWithdrawalUseCase] with a funding card.
+class _AtmWithdrawalSheet extends ConsumerStatefulWidget {
+  const _AtmWithdrawalSheet({required this.trip});
+
+  final Trip trip;
+
+  @override
+  ConsumerState<_AtmWithdrawalSheet> createState() =>
+      _AtmWithdrawalSheetState();
+}
+
+class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
+  final _receivedAmountController = TextEditingController();
+  final _chargedAmountController = TextEditingController();
+  final _feeController = TextEditingController();
+  final _noteController = TextEditingController();
+  late final TextEditingController _dateController;
+  late final TextEditingController _timeController;
+  late String _selectedCurrencyCode;
+  DateTime? _selectedDateTime;
+  int? _selectedCardId;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _dateController = TextEditingController();
+    _timeController = TextEditingController();
+    // Part D — default received currency to the trip destination currency.
+    _selectedCurrencyCode = widget.trip.destinationCurrency.trim().toUpperCase();
+    _selectedDateTime = DateTime.now();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _syncDateTimeFields();
+  }
+
+  @override
+  void dispose() {
+    _receivedAmountController.dispose();
+    _chargedAmountController.dispose();
+    _feeController.dispose();
+    _noteController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
+    super.dispose();
+  }
+
+  /// Resolves the effective funding card: the user's pick when still valid,
+  /// otherwise the first available card (Part C — auto-select first card).
+  int? _resolveSelectedCardId(List<CardProfile> cards) {
+    if (cards.isEmpty) {
+      return null;
+    }
+    final current = _selectedCardId;
+    if (current != null && cards.any((card) => card.id == current)) {
+      return current;
+    }
+    return cards.first.id;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    final cardsAsync = ref.watch(cardsProvider);
+    final cards = cardsAsync.value ?? const <CardProfile>[];
+    final effectiveCardId = _resolveSelectedCardId(cards);
+
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      clipBehavior: Clip.antiAlias,
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: 420,
+            maxHeight: maxHeight,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SheetHeader(
+                  icon: Icons.local_atm_outlined,
+                  title: l10n.cashWalletAtmSheetTitle,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: _receivedAmountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.cashWalletAtmCashReceivedLabel,
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                GestureDetector(
+                  onTap: _isSaving ? null : _pickCurrency,
+                  child: Builder(builder: (ctx) {
+                    final isArabic =
+                        Localizations.localeOf(ctx).languageCode == 'ar';
+                    final entry = CountryDatabase.countries.firstWhere(
+                      (c) => c.currencyCode == _selectedCurrencyCode,
+                      orElse: () => CountryInfo(
+                        countryCode: '',
+                        englishName: _selectedCurrencyCode,
+                        arabicName: _selectedCurrencyCode,
+                        currencyCode: _selectedCurrencyCode,
+                        currencyName: '',
+                        flagEmoji: '🏳',
+                      ),
+                    );
+                    return InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: l10n.cashWalletCashCurrencyLabel,
+                        prefixIcon:
+                            const Icon(Icons.currency_exchange_outlined),
+                        suffixIcon: const Icon(Icons.arrow_drop_down),
+                      ),
+                      child: Row(
+                        children: [
+                          Text(entry.flagEmoji,
+                              style: const TextStyle(fontSize: 20)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              '${entry.getLocalizedName(isArabic)} | ${entry.currencyCode}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 12),
+                _buildCardSelector(l10n, cards, effectiveCardId),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _chargedAmountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.cashWalletAtmChargedLabel,
+                    helperText: l10n.cashWalletAtmChargedHelper,
+                    helperMaxLines: 3,
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.credit_card_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _feeController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.cashWalletAtmFeeLabel,
+                    helperText: l10n.cashWalletAtmFeeHelper,
+                    helperMaxLines: 3,
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.receipt_long_outlined),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _noteController,
+                  decoration: InputDecoration(
+                    labelText: l10n.expenseFormNoteLabel,
+                    prefixIcon: const Icon(Icons.notes_rounded),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _dateController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: l10n.cashWalletDateLabel,
+                          prefixIcon:
+                              const Icon(Icons.calendar_today_rounded),
+                        ),
+                        onTap: _selectDate,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _timeController,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: l10n.cashWalletTimeLabel,
+                          prefixIcon: const Icon(Icons.access_time_rounded),
+                        ),
+                        onTap: _selectTime,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                _SheetGradientButton(
+                  onPressed: _isSaving ? null : () => _save(cards),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : Text(l10n.tripDetailsQuickAddSave),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardSelector(
+    AppLocalizations l10n,
+    List<CardProfile> cards,
+    int? effectiveCardId,
+  ) {
+    // Part C — when no cards exist, prompt the traveller to add one. There is
+    // no "No card" option in the ATM flow.
+    if (cards.isEmpty) {
+      return Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F2FF),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFDDD6FE)),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              l10n.cashWalletAtmNoCardsMessage,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF475569),
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _isSaving ? null : _addCard,
+              icon: const Icon(Icons.add_card_outlined, size: 18),
+              label: Text(l10n.cashWalletAtmAddCard),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return DropdownButtonFormField<int>(
+      key: const Key('atm_card_selector'),
+      isExpanded: true,
+      initialValue: effectiveCardId,
+      decoration: InputDecoration(
+        labelText: l10n.cashWalletAtmCardLabel,
+        prefixIcon: const Icon(Icons.credit_card_rounded),
+      ),
+      items: [
+        for (final card in cards)
+          DropdownMenuItem<int>(
+            value: card.id,
+            child: Text(
+              CardDisplayHelper.getDisplayString(context, card),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+      ],
+      onChanged: _isSaving
+          ? null
+          : (value) {
+              if (value == null) {
+                return;
+              }
+              setState(() {
+                _selectedCardId = value;
+              });
+            },
+    );
+  }
+
+  void _syncDateTimeFields() {
+    final dt = _selectedDateTime;
+    if (dt == null) {
+      _dateController.text = '';
+      _timeController.text = '';
+      return;
+    }
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    _dateController.text = DateFormat('dd MMM yyyy', localeTag).format(dt);
+    _timeController.text = DateFormat('HH:mm', localeTag).format(dt);
+  }
+
+  Future<void> _selectDate() async {
+    final base = _selectedDateTime ?? DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: DateUtils.dateOnly(base),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedDateTime = DateTime(
+        picked.year,
+        picked.month,
+        picked.day,
+        base.hour,
+        base.minute,
+      );
+      _syncDateTimeFields();
+    });
+  }
+
+  Future<void> _selectTime() async {
+    final base = _selectedDateTime ?? DateTime.now();
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(base),
+    );
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedDateTime = DateTime(
+        base.year,
+        base.month,
+        base.day,
+        picked.hour,
+        picked.minute,
+      );
+      _syncDateTimeFields();
+    });
+  }
+
+  Future<void> _pickCurrency() async {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final tripDest = widget.trip.destinationCurrency.trim().toUpperCase();
+    final tripHome = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+
+    final seen = <String>{};
+    final allUnique = <CountryInfo>[];
+    for (final c in CountryDatabase.countries) {
+      if (seen.add(c.currencyCode)) allUnique.add(c);
+    }
+
+    final pinned = allUnique
+        .where((c) => c.currencyCode == tripDest || c.currencyCode == tripHome)
+        .toList();
+    final rest = allUnique
+        .where((c) => c.currencyCode != tripDest && c.currencyCode != tripHome)
+        .toList()
+      ..sort((a, b) => a.currencyCode.compareTo(b.currencyCode));
+    final fullList = [...pinned, ...rest];
+
+    if (!mounted) return;
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _CurrencyPickerSheet(
+        allEntries: fullList,
+        selectedCode: _selectedCurrencyCode,
+        isArabic: isArabic,
+      ),
+    );
+
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedCurrencyCode = picked;
+      });
+    }
+  }
+
+  Future<void> _addCard() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(builder: (_) => const AddCardScreen()),
+    );
+    // cardsProvider auto-refreshes (CardsNotifier.invalidateSelf) after a save,
+    // and this sheet watches it — no manual reload needed.
+  }
+
+  Future<void> _save(List<CardProfile> cards) async {
+    if (_isSaving) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context)!;
+
+    final received = double.tryParse(_receivedAmountController.text.trim());
+    final currencyCode = _selectedCurrencyCode.trim().toUpperCase();
+    final homeCurrencyCode =
+        widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+
+    final chargedText = _chargedAmountController.text.trim();
+    final double? chargedAmount =
+        chargedText.isEmpty ? null : double.tryParse(chargedText);
+
+    final feeText = _feeController.text.trim();
+    final double? feeParsed =
+        feeText.isEmpty ? null : double.tryParse(feeText);
+
+    final selectedCardId = _resolveSelectedCardId(cards);
+
+    String? validationMessage;
+    if (received == null || received <= 0) {
+      validationMessage = l10n.cashWalletValidationInvalidAmount;
+    } else if (currencyCode.length != 3 ||
+        !RegExp(r'^[A-Z]{3}$').hasMatch(currencyCode)) {
+      validationMessage = l10n.cashWalletValidationInvalidCurrency;
+    } else if (selectedCardId == null) {
+      validationMessage = l10n.cashWalletAtmSelectCardValidation;
+    } else if (chargedText.isNotEmpty &&
+        (chargedAmount == null || chargedAmount <= 0)) {
+      validationMessage = l10n.commonEnterValidNumber;
+    } else if (feeText.isNotEmpty && (feeParsed == null || feeParsed < 0)) {
+      validationMessage = l10n.commonEnterValidNumber;
+    } else if (chargedAmount != null &&
+        feeParsed != null &&
+        feeParsed > 0 &&
+        feeParsed >= chargedAmount) {
+      validationMessage = l10n.cashWalletAtmFeeTooHighValidation;
+    }
+
+    if (validationMessage != null) {
+      CalmSnackBar.showMessage(context, message: validationMessage);
+      return;
+    }
+
+    // Only forward a positive fee — zero/blank means no fee expense.
+    final double? feeAmount =
+        (feeParsed != null && feeParsed > 0) ? feeParsed : null;
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      await ref.read(recordAtmWithdrawalUseCaseProvider).execute(
+            tripId: widget.trip.id,
+            receivedAmount: received!,
+            receivedCurrency: currencyCode,
+            chargedAmount: chargedAmount,
+            chargedCurrency: chargedAmount != null ? homeCurrencyCode : null,
+            feeAmount: feeAmount,
+            feeCurrency: feeAmount != null ? homeCurrencyCode : null,
+            fundingCardId: selectedCardId,
+            note: _noteController.text,
+            createdAt: _selectedDateTime,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      CalmSnackBar.showMessage(
+        context,
+        message: l10n.expenseFormSaveFailed,
+      );
+      setState(() {
+        _isSaving = false;
+      });
+    }
+  }
+}
+
 class _EmptyCard extends StatelessWidget {
   const _EmptyCard({required this.message});
 
@@ -1297,6 +1836,12 @@ class _CashHeroCard extends StatelessWidget {
               FilledButton(
                 onPressed: onAddCash,
                 child: Text(l10n.cashWalletAddCash),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onAtmWithdrawal,
+                icon: const Icon(Icons.local_atm_outlined, size: 18),
+                label: Text(l10n.cashWalletAtmSheetTitle),
               ),
             ],
           ),

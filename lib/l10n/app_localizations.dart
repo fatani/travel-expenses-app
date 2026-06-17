@@ -995,6 +995,72 @@ abstract class AppLocalizations {
   /// **'Optional — helps estimate your home currency spending.'**
   String get cashWalletHomeValueHelper;
 
+  /// No description provided for @cashWalletAtmSheetTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM Withdrawal'**
+  String get cashWalletAtmSheetTitle;
+
+  /// No description provided for @cashWalletAtmCashReceivedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash received'**
+  String get cashWalletAtmCashReceivedLabel;
+
+  /// No description provided for @cashWalletAtmCardLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Card used'**
+  String get cashWalletAtmCardLabel;
+
+  /// No description provided for @cashWalletAtmNoCardsMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a card to record this ATM withdrawal.'**
+  String get cashWalletAtmNoCardsMessage;
+
+  /// No description provided for @cashWalletAtmAddCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Add card'**
+  String get cashWalletAtmAddCard;
+
+  /// No description provided for @cashWalletAtmSelectCardValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Please select the card used.'**
+  String get cashWalletAtmSelectCardValidation;
+
+  /// No description provided for @cashWalletAtmChargedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount charged to your card'**
+  String get cashWalletAtmChargedLabel;
+
+  /// No description provided for @cashWalletAtmChargedHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Use the amount shown by your bank. You can leave it blank and add it later.'**
+  String get cashWalletAtmChargedHelper;
+
+  /// No description provided for @cashWalletAtmFeeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM fee'**
+  String get cashWalletAtmFeeLabel;
+
+  /// No description provided for @cashWalletAtmFeeHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Bank or ATM fee, if shown separately.'**
+  String get cashWalletAtmFeeHelper;
+
+  /// No description provided for @cashWalletAtmFeeTooHighValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'The ATM fee must be less than the amount charged to your card.'**
+  String get cashWalletAtmFeeTooHighValidation;
+
   /// No description provided for @cashWalletBalanceUnknownUntilInitial.
   ///
   /// In en, this message translates to:

@@ -479,6 +479,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletHomeValueHelper => 'اختياري — يساعد في تقدير المصروف بعملتك الأساسية.';
 
   @override
+  String get cashWalletAtmSheetTitle => 'سحب من الصراف الآلي';
+
+  @override
+  String get cashWalletAtmCashReceivedLabel => 'النقد المستلم';
+
+  @override
+  String get cashWalletAtmCardLabel => 'البطاقة المستخدمة';
+
+  @override
+  String get cashWalletAtmNoCardsMessage => 'أضف بطاقة لتسجيل هذا السحب من الصراف.';
+
+  @override
+  String get cashWalletAtmAddCard => 'أضف بطاقة';
+
+  @override
+  String get cashWalletAtmSelectCardValidation => 'يرجى اختيار البطاقة المستخدمة.';
+
+  @override
+  String get cashWalletAtmChargedLabel => 'المبلغ المخصوم من البطاقة';
+
+  @override
+  String get cashWalletAtmChargedHelper => 'استخدم المبلغ الظاهر من البنك. يمكنك تركه فارغاً وإضافته لاحقاً.';
+
+  @override
+  String get cashWalletAtmFeeLabel => 'رسوم السحب من الصراف';
+
+  @override
+  String get cashWalletAtmFeeHelper => 'رسوم البنك أو جهاز الصراف إذا ظهرت بشكل منفصل.';
+
+  @override
+  String get cashWalletAtmFeeTooHighValidation => 'يجب أن تكون رسوم السحب أقل من المبلغ المخصوم من البطاقة.';
+
+  @override
   String get cashWalletBalanceUnknownUntilInitial => 'أضف كاشك الابتدائي لبدء التتبع.';
 
   @override

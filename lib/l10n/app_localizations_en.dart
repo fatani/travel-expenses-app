@@ -479,6 +479,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletHomeValueHelper => 'Optional — helps estimate your home currency spending.';
 
   @override
+  String get cashWalletAtmSheetTitle => 'ATM Withdrawal';
+
+  @override
+  String get cashWalletAtmCashReceivedLabel => 'Cash received';
+
+  @override
+  String get cashWalletAtmCardLabel => 'Card used';
+
+  @override
+  String get cashWalletAtmNoCardsMessage => 'Add a card to record this ATM withdrawal.';
+
+  @override
+  String get cashWalletAtmAddCard => 'Add card';
+
+  @override
+  String get cashWalletAtmSelectCardValidation => 'Please select the card used.';
+
+  @override
+  String get cashWalletAtmChargedLabel => 'Amount charged to your card';
+
+  @override
+  String get cashWalletAtmChargedHelper => 'Use the amount shown by your bank. You can leave it blank and add it later.';
+
+  @override
+  String get cashWalletAtmFeeLabel => 'ATM fee';
+
+  @override
+  String get cashWalletAtmFeeHelper => 'Bank or ATM fee, if shown separately.';
+
+  @override
+  String get cashWalletAtmFeeTooHighValidation => 'The ATM fee must be less than the amount charged to your card.';
+
+  @override
   String get cashWalletBalanceUnknownUntilInitial => 'Add your starting cash to begin tracking.';
 
   @override
