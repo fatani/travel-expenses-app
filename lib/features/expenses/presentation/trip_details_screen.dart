@@ -386,17 +386,31 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
 
     final l10n = AppLocalizations.of(context)!;
     final createdExpenseId = outcome.createdExpenseId;
+
+    // A null createdExpenseId means nothing was inserted. The only create path
+    // that returns without inserting is a cash expense that failed FIFO
+    // planning (InsufficientCashException), which the controller converts into
+    // cashBalanceInsufficient. Surface that clearly instead of a false
+    // "Expense added" confirmation — otherwise the expense silently vanishes.
+    if (createdExpenseId == null) {
+      if (outcome.cashBalanceInsufficient || outcome.noCashBalanceRecorded) {
+        CalmSnackBar.showMessage(
+          context,
+          message: l10n.tripDetailsExpenseNotSavedNoCash,
+        );
+      }
+      return;
+    }
+
     CalmSnackBar.showMessage(
       context,
       message: l10n.tripDetailsQuickAddExpenseAdded,
-      action: createdExpenseId == null
-          ? null
-          : SnackBarAction(
-              label: l10n.commonUndo,
-              onPressed: () {
-                unawaited(_undoCreatedExpense(createdExpenseId));
-              },
-            ),
+      action: SnackBarAction(
+        label: l10n.commonUndo,
+        onPressed: () {
+          unawaited(_undoCreatedExpense(createdExpenseId));
+        },
+      ),
     );
   }
 

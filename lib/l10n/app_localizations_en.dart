@@ -767,6 +767,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsQuickAddExpenseAdded => 'Expense added';
 
   @override
+  String get tripDetailsExpenseNotSavedNoCash => 'Not enough cash recorded to add this cash expense. Add cash to your wallet first, or pay by card.';
+
+  @override
   String get tripDetailsQuickAddRecentMerchants => 'Recent merchants';
 
   @override
