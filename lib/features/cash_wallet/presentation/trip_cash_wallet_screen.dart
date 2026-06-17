@@ -798,6 +798,18 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     final isEditMode = widget.editingTransaction != null;
     final isOnboardingMode = widget.isOnboarding && !isEditMode;
 
+    // ATM withdrawals are recorded only through the dedicated ATM sheet
+    // (Sprint ATM-1A). The generic source selector therefore omits ATM, except
+    // when editing an existing ATM transaction so its row stays editable.
+    final showAtmOption =
+        isEditMode && _selectedType == CashTransactionType.atmWithdrawal;
+    final cashSourceOptions = <CashTransactionType>[
+      CashTransactionType.initialCash,
+      if (showAtmOption) CashTransactionType.atmWithdrawal,
+      CashTransactionType.currencyExchangeIn,
+      CashTransactionType.manualAdjustment,
+    ];
+
     return Material(
       color: Colors.white,
       borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -900,56 +912,22 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                       prefixIcon: const Icon(Icons.tune_rounded),
                     ),
                     selectedItemBuilder: (context) => [
-                      Text(
-                        l10n.cashWalletTypeInitialCash,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        l10n.cashWalletTypeAtmWithdrawal,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        l10n.cashWalletTypeCurrencyExchangeIn,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        l10n.cashWalletTypeManualAdjustment,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                      for (final type in cashSourceOptions)
+                        Text(
+                          _cashSourceLabel(l10n, type),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                     ],
                     items: [
-                      DropdownMenuItem(
-                        value: CashTransactionType.initialCash,
-                        child: _CashActionOptionRow(
-                          icon: Icons.luggage_outlined,
-                          label: l10n.cashWalletTypeInitialCash,
-                          description: l10n.cashWalletTypeInitialCashDescription,
+                      for (final type in cashSourceOptions)
+                        DropdownMenuItem(
+                          value: type,
+                          child: _CashActionOptionRow(
+                            icon: _cashSourceIcon(type),
+                            label: _cashSourceLabel(l10n, type),
+                            description: _cashSourceDescription(l10n, type),
+                          ),
                         ),
-                      ),
-                      DropdownMenuItem(
-                        value: CashTransactionType.atmWithdrawal,
-                        child: _CashActionOptionRow(
-                          icon: Icons.local_atm_outlined,
-                          label: l10n.cashWalletTypeAtmWithdrawal,
-                          description: l10n.cashWalletTypeAtmWithdrawalDescription,
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: CashTransactionType.currencyExchangeIn,
-                        child: _CashActionOptionRow(
-                          icon: Icons.currency_exchange_outlined,
-                          label: l10n.cashWalletTypeCurrencyExchangeIn,
-                          description: l10n.cashWalletTypeCurrencyExchangeInDescription,
-                        ),
-                      ),
-                      DropdownMenuItem(
-                        value: CashTransactionType.manualAdjustment,
-                        child: _CashActionOptionRow(
-                          icon: Icons.edit_note_rounded,
-                          label: l10n.cashWalletTypeManualAdjustment,
-                          description: l10n.cashWalletTypeManualAdjustmentDescription,
-                        ),
-                      ),
                     ],
                     onChanged: _isSaving
                         ? null
@@ -2300,6 +2278,63 @@ class _InfoChip extends StatelessWidget {
         );
       },
     );
+  }
+}
+
+// ── Generic Add Cash source selector helpers ───────────────────────────────
+// ATM withdrawal is intentionally excluded from the generic selector — it is
+// recorded only through the dedicated ATM sheet (Sprint ATM-1A). The ATM cases
+// below exist so an existing ATM transaction stays editable in the generic
+// sheet without crashing the dropdown.
+
+String _cashSourceLabel(AppLocalizations l10n, CashTransactionType type) {
+  switch (type) {
+    case CashTransactionType.initialCash:
+      return l10n.cashWalletTypeInitialCash;
+    case CashTransactionType.atmWithdrawal:
+      return l10n.cashWalletTypeAtmWithdrawal;
+    case CashTransactionType.currencyExchangeIn:
+      return l10n.cashWalletTypeCurrencyExchangeIn;
+    case CashTransactionType.manualAdjustment:
+      return l10n.cashWalletTypeManualAdjustment;
+    case CashTransactionType.currencyExchangeOut:
+    case CashTransactionType.cashExpenseDeduction:
+    case CashTransactionType.cashRefund:
+      return l10n.cashWalletTypeManualAdjustment;
+  }
+}
+
+String? _cashSourceDescription(AppLocalizations l10n, CashTransactionType type) {
+  switch (type) {
+    case CashTransactionType.initialCash:
+      return l10n.cashWalletTypeInitialCashDescription;
+    case CashTransactionType.atmWithdrawal:
+      return l10n.cashWalletTypeAtmWithdrawalDescription;
+    case CashTransactionType.currencyExchangeIn:
+      return l10n.cashWalletTypeCurrencyExchangeInDescription;
+    case CashTransactionType.manualAdjustment:
+      return l10n.cashWalletTypeManualAdjustmentDescription;
+    case CashTransactionType.currencyExchangeOut:
+    case CashTransactionType.cashExpenseDeduction:
+    case CashTransactionType.cashRefund:
+      return null;
+  }
+}
+
+IconData _cashSourceIcon(CashTransactionType type) {
+  switch (type) {
+    case CashTransactionType.initialCash:
+      return Icons.luggage_outlined;
+    case CashTransactionType.atmWithdrawal:
+      return Icons.local_atm_outlined;
+    case CashTransactionType.currencyExchangeIn:
+      return Icons.currency_exchange_outlined;
+    case CashTransactionType.manualAdjustment:
+      return Icons.edit_note_rounded;
+    case CashTransactionType.currencyExchangeOut:
+    case CashTransactionType.cashExpenseDeduction:
+    case CashTransactionType.cashRefund:
+      return Icons.edit_note_rounded;
   }
 }
 
