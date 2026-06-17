@@ -440,19 +440,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletTransactionTypeHelper => 'من أين أضفت هذا الكاش؟';
 
   @override
-  String get cashWalletTypeInitialCash => 'كاش البداية';
+  String get cashWalletTypeInitialCash => 'النقد الذي أحضرته معي';
+
+  @override
+  String get cashWalletTypeInitialCashDescription => 'النقد الذي كان معك عند بداية الرحلة.';
 
   @override
   String get cashWalletTypeAtmWithdrawal => 'سحب من صراف';
 
   @override
+  String get cashWalletTypeAtmWithdrawalDescription => 'نقد تم سحبه من جهاز صراف آلي باستخدام بطاقة.';
+
+  @override
   String get cashWalletTypeCurrencyExchangeIn => 'مكتب صرافة';
+
+  @override
+  String get cashWalletTypeCurrencyExchangeInDescription => 'نقد حصلت عليه بعد تحويل عملة أخرى.';
 
   @override
   String get cashWalletTypeCurrencyExchangeOut => 'تحويل عملة خارج';
 
   @override
-  String get cashWalletTypeManualAdjustment => 'إضافة كاش أخرى';
+  String get cashWalletTypeManualAdjustment => 'نقد استلمته أو وجدته';
+
+  @override
+  String get cashWalletTypeManualAdjustmentDescription => 'نقد استلمته من شخص أو وجدته أثناء الرحلة.';
 
   @override
   String get cashWalletCashAmountLabel => 'مبلغ الكاش';

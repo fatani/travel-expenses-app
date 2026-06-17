@@ -203,13 +203,13 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(
-        find.text('Initial cash'),
+        find.text('Cash I Brought'),
         200,
         scrollable: find.byType(Scrollable).first,
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Initial cash'), findsOneWidget);
+      expect(find.text('Cash I Brought'), findsOneWidget);
       expect(find.textContaining('10,000'), findsWidgets);
       expect(find.textContaining('CNY'), findsWidgets);
       expect(find.textContaining('5,200'), findsOneWidget);
@@ -236,7 +236,7 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.scrollUntilVisible(
-        find.text('Other cash added'),
+        find.text('Received or Found Cash'),
         200,
         scrollable: find.byType(Scrollable).first,
       );

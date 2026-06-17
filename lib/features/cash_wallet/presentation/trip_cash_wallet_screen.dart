@@ -849,18 +849,38 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                 const SizedBox(height: 12),
                 if (!isOnboardingMode) ...[
                   DropdownButtonFormField<CashTransactionType>(
+                    isExpanded: true,
                     initialValue: _selectedType,
                     decoration: InputDecoration(
                       labelText: l10n.cashWalletTransactionType,
                       helperText: l10n.cashWalletTransactionTypeHelper,
                       prefixIcon: const Icon(Icons.tune_rounded),
                     ),
+                    selectedItemBuilder: (context) => [
+                      Text(
+                        l10n.cashWalletTypeInitialCash,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        l10n.cashWalletTypeAtmWithdrawal,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        l10n.cashWalletTypeCurrencyExchangeIn,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        l10n.cashWalletTypeManualAdjustment,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                     items: [
                       DropdownMenuItem(
                         value: CashTransactionType.initialCash,
                         child: _CashActionOptionRow(
                           icon: Icons.luggage_outlined,
                           label: l10n.cashWalletTypeInitialCash,
+                          description: l10n.cashWalletTypeInitialCashDescription,
                         ),
                       ),
                       DropdownMenuItem(
@@ -868,6 +888,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                         child: _CashActionOptionRow(
                           icon: Icons.local_atm_outlined,
                           label: l10n.cashWalletTypeAtmWithdrawal,
+                          description: l10n.cashWalletTypeAtmWithdrawalDescription,
                         ),
                       ),
                       DropdownMenuItem(
@@ -875,6 +896,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                         child: _CashActionOptionRow(
                           icon: Icons.currency_exchange_outlined,
                           label: l10n.cashWalletTypeCurrencyExchangeIn,
+                          description: l10n.cashWalletTypeCurrencyExchangeInDescription,
                         ),
                       ),
                       DropdownMenuItem(
@@ -882,6 +904,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                         child: _CashActionOptionRow(
                           icon: Icons.edit_note_rounded,
                           label: l10n.cashWalletTypeManualAdjustment,
+                          description: l10n.cashWalletTypeManualAdjustmentDescription,
                         ),
                       ),
                     ],
@@ -2295,26 +2318,46 @@ class _SheetHeader extends StatelessWidget {
 }
 
 class _CashActionOptionRow extends StatelessWidget {
-  const _CashActionOptionRow({required this.icon, required this.label});
+  const _CashActionOptionRow({
+    required this.icon,
+    required this.label,
+    this.description,
+  });
 
   final IconData icon;
   final String label;
+  final String? description;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Icon(icon, size: 18, color: const Color(0xFF6D28D9)),
         const SizedBox(width: 10),
-        Flexible(
-          fit: FlexFit.loose,
-          child: Text(
-            label,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
+              ),
+              if (description != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  description!,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF64748B),
+                    height: 1.25,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
       ],

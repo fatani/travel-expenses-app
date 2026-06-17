@@ -920,8 +920,14 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletTypeInitialCash.
   ///
   /// In en, this message translates to:
-  /// **'Initial cash'**
+  /// **'Cash I Brought'**
   String get cashWalletTypeInitialCash;
+
+  /// No description provided for @cashWalletTypeInitialCashDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash you already had when the trip started.'**
+  String get cashWalletTypeInitialCashDescription;
 
   /// No description provided for @cashWalletTypeAtmWithdrawal.
   ///
@@ -929,11 +935,23 @@ abstract class AppLocalizations {
   /// **'ATM withdrawal'**
   String get cashWalletTypeAtmWithdrawal;
 
+  /// No description provided for @cashWalletTypeAtmWithdrawalDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash withdrawn from an ATM using a card.'**
+  String get cashWalletTypeAtmWithdrawalDescription;
+
   /// No description provided for @cashWalletTypeCurrencyExchangeIn.
   ///
   /// In en, this message translates to:
   /// **'Exchange office'**
   String get cashWalletTypeCurrencyExchangeIn;
+
+  /// No description provided for @cashWalletTypeCurrencyExchangeInDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash received after exchanging another currency.'**
+  String get cashWalletTypeCurrencyExchangeInDescription;
 
   /// No description provided for @cashWalletTypeCurrencyExchangeOut.
   ///
@@ -944,8 +962,14 @@ abstract class AppLocalizations {
   /// No description provided for @cashWalletTypeManualAdjustment.
   ///
   /// In en, this message translates to:
-  /// **'Other cash added'**
+  /// **'Received or Found Cash'**
   String get cashWalletTypeManualAdjustment;
+
+  /// No description provided for @cashWalletTypeManualAdjustmentDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash received from someone or found during the trip.'**
+  String get cashWalletTypeManualAdjustmentDescription;
 
   /// No description provided for @cashWalletCashAmountLabel.
   ///

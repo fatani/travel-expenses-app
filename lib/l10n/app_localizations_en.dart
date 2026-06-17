@@ -440,19 +440,31 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletTransactionTypeHelper => 'Where did this cash come from?';
 
   @override
-  String get cashWalletTypeInitialCash => 'Initial cash';
+  String get cashWalletTypeInitialCash => 'Cash I Brought';
+
+  @override
+  String get cashWalletTypeInitialCashDescription => 'Cash you already had when the trip started.';
 
   @override
   String get cashWalletTypeAtmWithdrawal => 'ATM withdrawal';
 
   @override
+  String get cashWalletTypeAtmWithdrawalDescription => 'Cash withdrawn from an ATM using a card.';
+
+  @override
   String get cashWalletTypeCurrencyExchangeIn => 'Exchange office';
+
+  @override
+  String get cashWalletTypeCurrencyExchangeInDescription => 'Cash received after exchanging another currency.';
 
   @override
   String get cashWalletTypeCurrencyExchangeOut => 'Currency exchange out';
 
   @override
-  String get cashWalletTypeManualAdjustment => 'Other cash added';
+  String get cashWalletTypeManualAdjustment => 'Received or Found Cash';
+
+  @override
+  String get cashWalletTypeManualAdjustmentDescription => 'Cash received from someone or found during the trip.';
 
   @override
   String get cashWalletCashAmountLabel => 'Cash amount';
