@@ -407,6 +407,22 @@ class CashWalletRepository {
       throw ArgumentError('Only manual cash transactions can be updated.');
     }
 
+    // Defense in depth: editing must never re-type a manual row into an
+    // exchange row. Exchange in/out rows are one half of a two-sided,
+    // lot-consuming exchange owned by RecordCurrencyExchangeUseCase; minting one
+    // here (reverse + recreate with an exchange nextType) would orphan the lot
+    // and break balance conservation. Reject the conversion before any write.
+    if (nextType == CashTransactionType.currencyExchangeIn ||
+        nextType == CashTransactionType.currencyExchangeOut) {
+      throw ArgumentError.value(
+        nextType,
+        'nextType',
+        'A manual cash transaction cannot be converted into a currency '
+            'exchange — exchanges are recorded only through '
+            'RecordCurrencyExchangeUseCase.',
+      );
+    }
+
     DataIntegrity.requireCashTransactionInput(
       tripId: existingTransaction.tripId,
       amount: nextAmount,

@@ -813,10 +813,14 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     // when editing an existing ATM transaction so its row stays editable.
     final showAtmOption =
         isEditMode && _selectedType == CashTransactionType.atmWithdrawal;
+    // Exchange Office is offered only when creating cash, never when editing an
+    // existing manual row: converting a manual transaction into an exchange
+    // would bypass RecordCurrencyExchangeUseCase and create an orphan exchange
+    // inflow. Exchanges are created exclusively through the dedicated path.
     final cashSourceOptions = <CashTransactionType>[
       CashTransactionType.initialCash,
       if (showAtmOption) CashTransactionType.atmWithdrawal,
-      CashTransactionType.currencyExchangeIn,
+      if (!isEditMode) CashTransactionType.currencyExchangeIn,
       CashTransactionType.manualAdjustment,
     ];
 
