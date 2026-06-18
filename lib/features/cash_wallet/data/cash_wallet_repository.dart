@@ -968,9 +968,15 @@ class CashWalletRepository {
     switch (transaction.type) {
       case CashTransactionType.initialCash:
       case CashTransactionType.atmWithdrawal:
-      case CashTransactionType.currencyExchangeIn:
       case CashTransactionType.manualAdjustment:
         return true;
+      // Exchange rows (in/out) must never be edited or reversed through the
+      // manual cash-transaction path. They are one half of a two-sided,
+      // lot-consuming exchange owned by RecordCurrencyExchangeUseCase; touching
+      // one side here would orphan lots and break balance conservation. This
+      // guard makes updateManualCashTransaction and reverseManualCashTransaction
+      // reject them even if a future UI re-exposes the action (defense in depth).
+      case CashTransactionType.currencyExchangeIn:
       case CashTransactionType.currencyExchangeOut:
       case CashTransactionType.cashExpenseDeduction:
       case CashTransactionType.cashRefund:

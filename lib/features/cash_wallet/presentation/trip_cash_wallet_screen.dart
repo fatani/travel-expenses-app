@@ -424,9 +424,13 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     if (transaction.isReversed || transaction.expenseId != null) {
       return false;
     }
+    // Exchange rows (in/out) are intentionally excluded: a currency exchange is
+    // a two-sided, lot-consuming record produced by RecordCurrencyExchangeUseCase.
+    // Editing or deleting only one side through the manual cash-transaction path
+    // would break Financial Core invariants (orphan lots, unbalanced cash), so
+    // these rows are not editable or deletable here.
     return transaction.type == CashTransactionType.initialCash ||
         transaction.type == CashTransactionType.atmWithdrawal ||
-        transaction.type == CashTransactionType.currencyExchangeIn ||
         transaction.type == CashTransactionType.manualAdjustment;
   }
 
