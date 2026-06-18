@@ -161,6 +161,12 @@ abstract class AppLocalizations {
   /// **'Amount cannot be negative.'**
   String get cashWalletValidationNegativeAmount;
 
+  /// No description provided for @cashWalletValidationExchangeHomeValueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the home value you exchanged to record this exchange.'**
+  String get cashWalletValidationExchangeHomeValueRequired;
+
   /// No description provided for @commonUndo.
   ///
   /// In en, this message translates to:

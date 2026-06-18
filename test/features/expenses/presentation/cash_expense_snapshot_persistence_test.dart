@@ -134,10 +134,14 @@ void main() {
       expect(b.originalCurrency, 'THB');
       expect(b.homeCurrency, 'SAR');
 
-      // Third-rate inflow: 10,000 THB ≈ 1,200 SAR
+      // Third-rate inflow: 10,000 THB ≈ 1,200 SAR. Recorded as a manual
+      // adjustment (a generic basis-carrying inflow) — currencyExchangeIn is no
+      // longer accepted through addCashTransaction, as it would be an orphan
+      // exchange inflow. The pooled-rate math depends only on the lot's basis,
+      // not its source type.
       await cashWalletRepository.addCashTransaction(
         tripId: trip.id,
-        type: CashTransactionType.currencyExchangeIn,
+        type: CashTransactionType.manualAdjustment,
         amount: 10000,
         currencyCode: 'THB',
         homeCurrencyAmount: 1200,

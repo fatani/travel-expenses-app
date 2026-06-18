@@ -88,6 +88,23 @@ class CashWalletRepository {
     String? note,
     DateTime? createdAt,
   }) async {
+    // Financial Core invariant (defense in depth): a currency-exchange inflow
+    // must never be created on its own. Every exchange-in lot requires a
+    // matching exchange-out consumption, source lot chain, transferred cost
+    // basis, and a currency_exchanges record — all of which are produced only
+    // by RecordCurrencyExchangeUseCase. Recording it here would create an
+    // orphan inflow (cash from nothing), so reject it outright.
+    if (type == CashTransactionType.currencyExchangeIn) {
+      throw ArgumentError.value(
+        type,
+        'type',
+        'currencyExchangeIn must be recorded through '
+            'RecordCurrencyExchangeUseCase, not addCashTransaction — a '
+            'destination exchange inflow requires a matching exchange-out '
+            'consumption.',
+      );
+    }
+
     DataIntegrity.requireCashTransactionInput(
       tripId: tripId,
       amount: amount,

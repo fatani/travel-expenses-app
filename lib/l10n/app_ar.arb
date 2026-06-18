@@ -11,6 +11,7 @@
   "cashWalletValidationInvalidAmount": "أدخل مبلغ كاش صحيح.",
   "cashWalletValidationInvalidCurrency": "أدخل رمز عملة صحيح مكوّن من 3 أحرف.",
   "cashWalletValidationNegativeAmount": "لا يمكن أن يكون المبلغ سالبًا.",
+  "cashWalletValidationExchangeHomeValueRequired": "أدخل القيمة بالعملة المحلية التي صرفتها لتسجيل عملية الصرف.",
   "commonUndo": "تراجع",
   "commonApprox": "تقريبًا",
   "tripDetailsExportTooltip": "تصدير",

@@ -42,6 +42,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletValidationNegativeAmount => 'Amount cannot be negative.';
 
   @override
+  String get cashWalletValidationExchangeHomeValueRequired => 'Enter the home value you exchanged to record this exchange.';
+
+  @override
   String get commonUndo => 'Undo';
 
   @override

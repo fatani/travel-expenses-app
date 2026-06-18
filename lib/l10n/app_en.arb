@@ -11,6 +11,7 @@
   "cashWalletValidationInvalidAmount": "Enter a valid cash amount.",
   "cashWalletValidationInvalidCurrency": "Enter a valid 3-letter currency code.",
   "cashWalletValidationNegativeAmount": "Amount cannot be negative.",
+  "cashWalletValidationExchangeHomeValueRequired": "Enter the home value you exchanged to record this exchange.",
   "commonUndo": "Undo",
   "commonApprox": "Approx.",
   "tripDetailsExportTooltip": "Export",

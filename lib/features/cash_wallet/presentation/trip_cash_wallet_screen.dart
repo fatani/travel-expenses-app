@@ -1134,6 +1134,13 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
       validationMessage = l10n.cashWalletValidationInvalidCurrency;
     } else if (homeValueText.isNotEmpty && homeValue == null) {
       validationMessage = l10n.commonEnterValidNumber;
+    } else if (widget.editingTransaction == null &&
+        _selectedType == CashTransactionType.currencyExchangeIn &&
+        (homeValue == null || homeValue <= 0)) {
+      // An exchange must always run through RecordCurrencyExchangeUseCase,
+      // which needs the source (home) amount given. Without it the save would
+      // fall through to a single-sided inflow (orphan inflow), so block it.
+      validationMessage = l10n.cashWalletValidationExchangeHomeValueRequired;
     }
 
     if (validationMessage != null) {

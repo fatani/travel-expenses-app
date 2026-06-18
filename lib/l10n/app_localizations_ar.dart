@@ -42,6 +42,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletValidationNegativeAmount => 'لا يمكن أن يكون المبلغ سالبًا.';
 
   @override
+  String get cashWalletValidationExchangeHomeValueRequired => 'أدخل القيمة بالعملة المحلية التي صرفتها لتسجيل عملية الصرف.';
+
+  @override
   String get commonUndo => 'تراجع';
 
   @override
