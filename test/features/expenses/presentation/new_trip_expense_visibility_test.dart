@@ -25,6 +25,7 @@ import 'package:travel_expenses/features/cash_wallet/domain/cash_lot_fifo_engine
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/insufficient_cash_exception.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/trip_cash_balance.dart';
+import 'package:travel_expenses/features/cash_wallet/presentation/trip_cash_wallet_screen.dart';
 import 'package:travel_expenses/features/expenses/data/expense_repository.dart';
 import 'package:travel_expenses/features/expenses/domain/card_expense_completeness.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
@@ -269,19 +270,78 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Sheet closed; clear insufficient-cash error shown, not a false success.
+    // Sheet closed; clear, short insufficient-cash error shown (test 1),
+    // not a false success.
     expect(find.byType(QuickAddExpenseSheet), findsNothing);
     expect(
-      find.text(
-        'Not enough cash recorded to add this cash expense. '
-        'Add cash to your wallet first, or pay by card.',
-      ),
+      find.text('Not enough cash to record this expense.'),
       findsOneWidget,
     );
     expect(find.text('Expense added'), findsNothing);
 
-    // Nothing was persisted.
+    // The snackbar offers an Add Cash recovery action (test 2).
+    expect(
+      find.widgetWithText(SnackBarAction, 'Add Cash'),
+      findsOneWidget,
+    );
+
+    // Nothing was persisted (test 4 — insertion still prevented).
     expect(expenseRepo.created, isEmpty);
+  });
+
+  // ── Test 3 — tapping Add Cash opens the existing Cash Wallet flow ──────────
+  testWidgets('3 (UI) — tapping Add Cash opens the existing Add Cash flow',
+      (tester) async {
+    tester.view.physicalSize = const Size(900, 1600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          expenseRepositoryProvider.overrideWithValue(
+            _RecordingExpenseRepository(),
+          ),
+          cashWalletRepositoryProvider.overrideWithValue(
+            _NoOpCashWalletRepository(),
+          ),
+          cardRepositoryProvider.overrideWithValue(_EmptyCardRepository()),
+          recordCashExpenseUseCaseProvider.overrideWith(
+            (ref) => _InsufficientCashUseCase(),
+          ),
+        ],
+        child: MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: TripDetailsScreen(trip: trip),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    await tester.tap(find.byType(FloatingActionButton));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.enterText(
+      find.descendant(
+        of: find.byType(QuickAddExpenseSheet),
+        matching: find.byType(TextField).first,
+      ),
+      '50',
+    );
+    await tester.pump();
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    // Tap the recovery action → existing Cash Wallet Add Cash entry path.
+    await tester.tap(find.widgetWithText(SnackBarAction, 'Add Cash'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.byType(TripCashWalletScreen), findsOneWidget);
   });
 }
 

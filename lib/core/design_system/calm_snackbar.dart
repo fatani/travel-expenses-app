@@ -5,6 +5,11 @@ abstract final class CalmSnackBar {
   static const Duration undoDuration = Duration(seconds: 4);
   static const Duration briefDuration = Duration(seconds: 3);
 
+  /// Longer visibility for recovery-oriented messages that offer an action the
+  /// user is expected to read and act on (e.g. "Add Cash" after a blocked
+  /// insufficient-cash save).
+  static const Duration recoveryDuration = Duration(seconds: 7);
+
   static bool _undoSessionActive = false;
 
   /// True while an undo snackbar is visible and must not be replaced casually.

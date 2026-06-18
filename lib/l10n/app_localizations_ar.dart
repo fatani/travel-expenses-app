@@ -767,7 +767,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsQuickAddExpenseAdded => 'تم إضافة المصروف';
 
   @override
-  String get tripDetailsExpenseNotSavedNoCash => 'لا يوجد كاش كافٍ مسجل لإضافة هذا المصروف النقدي. أضف كاش إلى محفظتك أولاً، أو ادفع بالبطاقة.';
+  String get tripDetailsExpenseNotSavedNoCash => 'لا يوجد كاش كافٍ لتسجيل هذا المصروف.';
 
   @override
   String get tripDetailsQuickAddRecentMerchants => 'المحلات الأخيرة';

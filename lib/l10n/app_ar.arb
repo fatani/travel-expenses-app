@@ -281,7 +281,7 @@
   "noExpensesTipLabel": "ملاحظة",
   "noExpensesTipBody": "تظهر المصاريف هنا عند إضافتها.",
   "tripDetailsQuickAddExpenseAdded": "تم إضافة المصروف",
-  "tripDetailsExpenseNotSavedNoCash": "لا يوجد كاش كافٍ مسجل لإضافة هذا المصروف النقدي. أضف كاش إلى محفظتك أولاً، أو ادفع بالبطاقة.",
+  "tripDetailsExpenseNotSavedNoCash": "لا يوجد كاش كافٍ لتسجيل هذا المصروف.",
   "tripDetailsQuickAddRecentMerchants": "المحلات الأخيرة",
   "tripDetailsQuickAddMoreDetails": "تفاصيل إضافية",
   "tripDetailsQuickAddSave": "حفظ",

@@ -394,9 +394,19 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     // "Expense added" confirmation — otherwise the expense silently vanishes.
     if (createdExpenseId == null) {
       if (outcome.cashBalanceInsufficient || outcome.noCashBalanceRecorded) {
+        // Recovery-oriented: offer to jump straight into the existing Cash
+        // Wallet Add Cash flow, and keep the snackbar up longer so the user
+        // has time to act on it.
         CalmSnackBar.showMessage(
           context,
           message: l10n.tripDetailsExpenseNotSavedNoCash,
+          duration: CalmSnackBar.recoveryDuration,
+          action: SnackBarAction(
+            label: l10n.cashWalletAddCash,
+            onPressed: () {
+              unawaited(_openCashWallet());
+            },
+          ),
         );
       }
       return;

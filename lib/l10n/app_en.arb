@@ -281,7 +281,7 @@
   "noExpensesTipLabel": "Note",
   "noExpensesTipBody": "Expenses appear here as you add them.",
   "tripDetailsQuickAddExpenseAdded": "Expense added",
-  "tripDetailsExpenseNotSavedNoCash": "Not enough cash recorded to add this cash expense. Add cash to your wallet first, or pay by card.",
+  "tripDetailsExpenseNotSavedNoCash": "Not enough cash to record this expense.",
   "tripDetailsQuickAddRecentMerchants": "Recent merchants",
   "tripDetailsQuickAddMoreDetails": "More details",
   "tripDetailsQuickAddSave": "Save",

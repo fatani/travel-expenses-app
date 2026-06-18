@@ -1538,7 +1538,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsExpenseNotSavedNoCash.
   ///
   /// In en, this message translates to:
-  /// **'Not enough cash recorded to add this cash expense. Add cash to your wallet first, or pay by card.'**
+  /// **'Not enough cash to record this expense.'**
   String get tripDetailsExpenseNotSavedNoCash;
 
   /// No description provided for @tripDetailsQuickAddRecentMerchants.
