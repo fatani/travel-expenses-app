@@ -45,6 +45,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletValidationExchangeHomeValueRequired => 'أدخل القيمة بالعملة المحلية التي صرفتها لتسجيل عملية الصرف.';
 
   @override
+  String get cashWalletExchangeSourceAmountLabel => 'المبلغ الذي قمت بتحويله';
+
+  @override
+  String get cashWalletExchangeSourceAmountHelper => 'مطلوب لتسجيل عملية الصرف بشكل صحيح.';
+
+  @override
+  String cashWalletExchangeInsufficientSource(Object currency) {
+    return 'لا يوجد رصيد كافٍ من $currency لتسجيل عملية الصرف.';
+  }
+
+  @override
   String get commonUndo => 'تراجع';
 
   @override

@@ -45,6 +45,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletValidationExchangeHomeValueRequired => 'Enter the home value you exchanged to record this exchange.';
 
   @override
+  String get cashWalletExchangeSourceAmountLabel => 'Amount you exchanged';
+
+  @override
+  String get cashWalletExchangeSourceAmountHelper => 'Required to record an exchange correctly.';
+
+  @override
+  String cashWalletExchangeInsufficientSource(Object currency) {
+    return 'Not enough $currency cash recorded to make this exchange.';
+  }
+
+  @override
   String get commonUndo => 'Undo';
 
   @override

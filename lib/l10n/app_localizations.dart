@@ -167,6 +167,24 @@ abstract class AppLocalizations {
   /// **'Enter the home value you exchanged to record this exchange.'**
   String get cashWalletValidationExchangeHomeValueRequired;
 
+  /// No description provided for @cashWalletExchangeSourceAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount you exchanged'**
+  String get cashWalletExchangeSourceAmountLabel;
+
+  /// No description provided for @cashWalletExchangeSourceAmountHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Required to record an exchange correctly.'**
+  String get cashWalletExchangeSourceAmountHelper;
+
+  /// No description provided for @cashWalletExchangeInsufficientSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough {currency} cash recorded to make this exchange.'**
+  String cashWalletExchangeInsufficientSource(Object currency);
+
   /// No description provided for @commonUndo.
   ///
   /// In en, this message translates to:

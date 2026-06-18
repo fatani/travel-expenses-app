@@ -25,6 +25,7 @@ import '../../trips/domain/country_info.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../domain/cash_transaction.dart';
+import '../domain/insufficient_cash_exception.dart';
 import '../domain/trip_cash_balance.dart';
 
 enum _TransactionTimeGroup { today, yesterday, earlier }
@@ -752,6 +753,11 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
   DateTime? _selectedDateTime;
   bool _isSaving = false;
 
+  /// Inline error shown inside the sheet. A modal bottom sheet covers the
+  /// floating snackbar area, so save/validation failures must be surfaced in
+  /// the sheet body — otherwise the user sees no feedback (silent failure).
+  String? _errorText;
+
   @override
   void initState() {
     super.initState();
@@ -895,8 +901,16 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
                   decoration: InputDecoration(
-                    labelText: l10n.cashWalletHomeValueLabel,
-                    helperText: l10n.cashWalletHomeValueHelper,
+                    // Exchange Office requires this value (it is the amount
+                    // given), so it must not be labelled "optional".
+                    labelText:
+                        _selectedType == CashTransactionType.currencyExchangeIn
+                            ? l10n.cashWalletExchangeSourceAmountLabel
+                            : l10n.cashWalletHomeValueLabel,
+                    helperText:
+                        _selectedType == CashTransactionType.currencyExchangeIn
+                            ? l10n.cashWalletExchangeSourceAmountHelper
+                            : l10n.cashWalletHomeValueHelper,
                     hintText: '0.00',
                     prefixIcon: const Icon(Icons.home_outlined),
                   ),
@@ -937,6 +951,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                             }
                             setState(() {
                               _selectedType = value;
+                              _errorText = null;
                             });
                           },
                   ),
@@ -975,6 +990,35 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                         ),
                       ),
                     ],
+                  ),
+                ],
+                if (_errorText != null) ...[
+                  const SizedBox(height: 14),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFECACA)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.error_outline_rounded,
+                            size: 18, color: Color(0xFFB91C1C)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorText!,
+                            style: const TextStyle(
+                              color: Color(0xFFB91C1C),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
                 const SizedBox(height: 18),
@@ -1144,7 +1188,9 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     }
 
     if (validationMessage != null) {
-      CalmSnackBar.showMessage(context, message: validationMessage);
+      setState(() {
+        _errorText = validationMessage;
+      });
       return;
     }
 
@@ -1152,6 +1198,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
 
     setState(() {
       _isSaving = true;
+      _errorText = null;
     });
 
     try {
@@ -1212,12 +1259,15 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
         return;
       }
 
-      CalmSnackBar.showMessage(
-        context,
-        message: l10n.expenseFormSaveFailed,
-      );
+      // Surface the failure inside the sheet. Insufficient source cash is the
+      // expected failure for an exchange whose source (home) wallet is empty,
+      // so name the currency rather than show a generic "save failed".
+      final message = error is InsufficientCashException
+          ? l10n.cashWalletExchangeInsufficientSource(error.currencyCode)
+          : l10n.expenseFormSaveFailed;
       setState(() {
         _isSaving = false;
+        _errorText = message;
       });
     }
   }
