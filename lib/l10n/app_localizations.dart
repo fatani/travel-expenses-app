@@ -1187,6 +1187,12 @@ abstract class AppLocalizations {
   /// **'Add cash first to exchange money.'**
   String get cashWalletExchangeAddCashFirst;
 
+  /// No description provided for @cashWalletExchangeAddOtherCurrencyFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Add another currency first to exchange money.'**
+  String get cashWalletExchangeAddOtherCurrencyFirst;
+
   /// No description provided for @cashWalletExchangeSaveFailed.
   ///
   /// In en, this message translates to:

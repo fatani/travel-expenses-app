@@ -202,6 +202,7 @@
   "@cashWalletExchangeInsufficientBalance": {"placeholders": {"currency": {}}},
   "cashWalletExchangeValidationPositiveAmount": "Amount must be greater than zero.",
   "cashWalletExchangeAddCashFirst": "Add cash first to exchange money.",
+  "cashWalletExchangeAddOtherCurrencyFirst": "Add another currency first to exchange money.",
   "cashWalletExchangeSaveFailed": "Couldn't save. Please try again.",
   "cashWalletExchangeRatePreview": "≈ {rate} {toCurrency} per {fromCurrency}",
   "@cashWalletExchangeRatePreview": {

@@ -275,7 +275,9 @@ void main() {
       expect(exchange.executeCallCount, 0);
     });
 
-    testWidgets('blocks same source and destination currency', (tester) async {
+    testWidgets(
+        'wallet holding only the destination currency cannot reach the '
+        'same-currency case (it is excluded as a source)', (tester) async {
       sizeLarge(tester);
       repo = _BalancesCashWalletRepository([
         _balance(chinaTrip.id, 'CNY', 500),
@@ -291,20 +293,14 @@ void main() {
 
       await pumpAndOpen(tester);
 
-      await tester.tap(find.byIcon(Icons.arrow_drop_down));
-      await tester.pumpAndSettle();
-      await tester.tap(find.textContaining('CNY').last);
-      await tester.pumpAndSettle();
-
-      await tester.enterText(find.byType(TextField).at(0), '100');
-      await tester.enterText(find.byType(TextField).at(1), '720');
-      await tester.tap(find.text('Save exchange'));
-      await tester.pumpAndSettle();
-
+      // The destination currency is excluded, so there is no source to give:
+      // the empty state guides the traveler, and no picker/Save is shown.
       expect(
-        find.text("You can't exchange a currency for itself."),
+        find.text('Add another currency first to exchange money.'),
         findsOneWidget,
       );
+      expect(find.byIcon(Icons.arrow_drop_down), findsNothing);
+      expect(find.text('Save exchange'), findsNothing);
       expect(exchange.executeCallCount, 0);
     });
 
@@ -378,6 +374,84 @@ void main() {
       expect(find.textContaining('USD'), findsWidgets);
       expect(find.textContaining('EUR'), findsWidgets);
       expect(find.textContaining('100'), findsWidgets);
+    });
+
+    testWidgets('destination currency is excluded from the source picker',
+        (tester) async {
+      sizeLarge(tester);
+      final repo = _BalancesCashWalletRepository([
+        _balance(chinaTrip.id, 'USD', 1000),
+        _balance(chinaTrip.id, 'CNY', 500),
+      ], transactions: [
+        CashTransaction.create(
+          id: 'usd-init',
+          tripId: chinaTrip.id,
+          type: CashTransactionType.initialCash,
+          amount: 1000,
+          currencyCode: 'USD',
+        ),
+      ]);
+
+      await tester.pumpWidget(buildApp(trip: chinaTrip, repository: repo));
+      await tester.pumpAndSettle();
+      await openExchangeSheet(tester);
+
+      await tester.tap(find.byIcon(Icons.arrow_drop_down));
+      await tester.pumpAndSettle();
+
+      // Scope to the picker sheet (the background wallet screen also shows USD).
+      final picker = find.byType(DraggableScrollableSheet);
+      expect(picker, findsOneWidget);
+      // USD is selectable; CNY (the destination) is not offered as a source.
+      expect(
+        find.descendant(of: picker, matching: find.text('USD')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: picker, matching: find.text('CNY')),
+        findsNothing,
+      );
+    });
+
+    testWidgets('currency display shows codes, not country names',
+        (tester) async {
+      sizeLarge(tester);
+      final repo = _BalancesCashWalletRepository([
+        _balance(chinaTrip.id, 'USD', 1000),
+      ], transactions: [
+        CashTransaction.create(
+          id: 'usd-init',
+          tripId: chinaTrip.id,
+          type: CashTransactionType.initialCash,
+          amount: 1000,
+          currencyCode: 'USD',
+        ),
+      ]);
+
+      await tester.pumpWidget(buildApp(trip: chinaTrip, repository: repo));
+      await tester.pumpAndSettle();
+      await openExchangeSheet(tester);
+
+      // Currency codes are shown for source (USD) and destination (CNY)…
+      expect(find.textContaining('USD'), findsWidgets);
+      expect(find.textContaining('CNY'), findsWidgets);
+      // …and no country name leaks into the currency display. The reported bug
+      // rendered "تيمور الشرقية | USD"; that country name must never appear.
+      expect(find.textContaining('Timor'), findsNothing);
+      expect(find.textContaining('تيمور الشرقية'), findsNothing);
+
+      // The same holds inside the source picker.
+      await tester.tap(find.byIcon(Icons.arrow_drop_down));
+      await tester.pumpAndSettle();
+      final picker = find.byType(DraggableScrollableSheet);
+      expect(
+        find.descendant(of: picker, matching: find.text('USD')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: picker, matching: find.textContaining('Timor')),
+        findsNothing,
+      );
     });
 
     testWidgets('destination currency is locked to trip destination',

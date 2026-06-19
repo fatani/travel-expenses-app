@@ -201,6 +201,7 @@
   "@cashWalletExchangeInsufficientBalance": {"placeholders": {"currency": {}}},
   "cashWalletExchangeValidationPositiveAmount": "يجب أن يكون المبلغ أكبر من صفر.",
   "cashWalletExchangeAddCashFirst": "أضف كاش أولاً لتتمكن من صرف العملة.",
+  "cashWalletExchangeAddOtherCurrencyFirst": "أضف عملة أخرى أولاً لتتمكن من صرف العملة.",
   "cashWalletExchangeSaveFailed": "تعذر الحفظ. حاول مرة أخرى.",
   "cashWalletExchangeRatePreview": "≈ {rate} {toCurrency} لكل {fromCurrency}",
   "@cashWalletExchangeRatePreview": {

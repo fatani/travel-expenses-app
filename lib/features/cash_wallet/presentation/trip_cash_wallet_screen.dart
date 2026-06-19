@@ -1829,6 +1829,10 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
 
   List<TripCashBalance> _heldBalances = const [];
   bool _isLoadingBalances = true;
+  // True when the wallet holds cash, but only in the destination currency —
+  // there is nothing valid to give, so the empty state must guide the traveler
+  // to add a *different* currency rather than "add cash".
+  bool _hasOnlyDestinationCash = false;
   String? _selectedSourceCurrency;
   bool _isSaving = false;
   String? _errorText;
@@ -1857,13 +1861,21 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
       final balances = await ref
           .read(cashWalletRepositoryProvider)
           .getBalancesByTrip(widget.trip.id);
-      final held = balances.where((b) => b.balanceAmount > 0).toList()
+      final positive =
+          balances.where((b) => b.balanceAmount > 0).toList();
+      // The destination currency can only be *received*, never given — exclude
+      // it from the source list so the user cannot pick "give CNY → receive CNY".
+      final held = positive
+          .where((b) =>
+              b.currencyCode.trim().toUpperCase() != _destinationCurrency)
+          .toList()
         ..sort((a, b) => b.balanceAmount.compareTo(a.balanceAmount));
       if (!mounted) {
         return;
       }
       setState(() {
         _heldBalances = held;
+        _hasOnlyDestinationCash = held.isEmpty && positive.isNotEmpty;
         _isLoadingBalances = false;
         if (held.isNotEmpty) {
           _selectedSourceCurrency ??= held.first.currencyCode;
@@ -1903,20 +1915,6 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
     return 0;
   }
 
-  CountryInfo _countryForCode(String code) {
-    return CountryDatabase.countries.firstWhere(
-      (c) => c.currencyCode == code,
-      orElse: () => CountryInfo(
-        countryCode: '',
-        englishName: code,
-        arabicName: code,
-        currencyCode: code,
-        currencyName: '',
-        flagEmoji: '🏳',
-      ),
-    );
-  }
-
   String? _ratePreviewText(AppLocalizations l10n) {
     final gave = double.tryParse(_gaveAmountController.text.trim());
     final received = double.tryParse(_receivedAmountController.text.trim());
@@ -1941,7 +1939,6 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
     if (_heldBalances.isEmpty || _isSaving) {
       return;
     }
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final picked = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -1949,7 +1946,6 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
       builder: (_) => _HeldCurrencyPickerSheet(
         heldBalances: _heldBalances,
         selectedCode: _selectedSourceCurrency ?? '',
-        isArabic: isArabic,
       ),
     );
     if (picked != null && mounted) {
@@ -2039,27 +2035,21 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
     );
   }
 
-  Widget _buildDestinationChip(AppLocalizations l10n, bool isArabic) {
-    final entry = _countryForCode(_destinationCurrency);
+  Widget _buildDestinationChip(AppLocalizations l10n) {
+    // Currency-first display: show the currency code, not a country name/flag
+    // (a code can map to many countries, which is misleading).
     return InputDecorator(
       decoration: InputDecoration(
         labelText: l10n.cashWalletExchangeDestinationCurrency,
         prefixIcon: const Icon(Icons.lock_outline_rounded),
       ),
-      child: Row(
-        children: [
-          Text(entry.flagEmoji, style: const TextStyle(fontSize: 20)),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Directionality(
-              textDirection: TextDirection.ltr,
-              child: Text(
-                '${entry.getLocalizedName(isArabic)} | ${entry.currencyCode}',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: Text(
+          _destinationCurrency,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }
@@ -2105,7 +2095,6 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final maxHeight = MediaQuery.of(context).size.height * 0.85;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final ratePreview = _ratePreviewText(l10n);
 
     if (_isLoadingBalances) {
@@ -2142,7 +2131,9 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  l10n.cashWalletExchangeAddCashFirst,
+                  _hasOnlyDestinationCash
+                      ? l10n.cashWalletExchangeAddOtherCurrencyFirst
+                      : l10n.cashWalletExchangeAddCashFirst,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: const Color(0xFF475569),
                         fontWeight: FontWeight.w600,
@@ -2160,7 +2151,6 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
       );
     }
 
-    final sourceEntry = _countryForCode(_selectedSourceCurrency ?? '');
     final availableText = l10n.cashWalletExchangeAvailable(
       BidiAmountFormat.ltrIsolate(
         _availableForSelected(),
@@ -2201,21 +2191,14 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
                           const Icon(Icons.currency_exchange_outlined),
                       suffixIcon: const Icon(Icons.arrow_drop_down),
                     ),
-                    child: Row(
-                      children: [
-                        Text(sourceEntry.flagEmoji,
-                            style: const TextStyle(fontSize: 20)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Directionality(
-                            textDirection: TextDirection.ltr,
-                            child: Text(
-                              '${sourceEntry.getLocalizedName(isArabic)} | ${sourceEntry.currencyCode}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ],
+                    // Currency-first: show the currency code, not a country.
+                    child: Directionality(
+                      textDirection: TextDirection.ltr,
+                      child: Text(
+                        _selectedSourceCurrency ?? '',
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ),
@@ -2251,7 +2234,7 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
                 const SizedBox(height: 16),
                 _buildSectionLabel(l10n.cashWalletExchangeReceivedLabel),
                 const SizedBox(height: 10),
-                _buildDestinationChip(l10n, isArabic),
+                _buildDestinationChip(l10n),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _receivedAmountController,
@@ -3335,26 +3318,10 @@ class _HeldCurrencyPickerSheet extends StatelessWidget {
   const _HeldCurrencyPickerSheet({
     required this.heldBalances,
     required this.selectedCode,
-    required this.isArabic,
   });
 
   final List<TripCashBalance> heldBalances;
   final String selectedCode;
-  final bool isArabic;
-
-  CountryInfo _entryFor(String code) {
-    return CountryDatabase.countries.firstWhere(
-      (c) => c.currencyCode == code,
-      orElse: () => CountryInfo(
-        countryCode: '',
-        englishName: code,
-        arabicName: code,
-        currencyCode: code,
-        currencyName: '',
-        flagEmoji: '🏳',
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -3394,25 +3361,26 @@ class _HeldCurrencyPickerSheet extends StatelessWidget {
                   itemCount: heldBalances.length,
                   itemBuilder: (_, i) {
                     final balance = heldBalances[i];
-                    final entry = _entryFor(balance.currencyCode);
                     final isSelected = balance.currencyCode == selectedCode;
-                    final balanceLabel = BidiAmountFormat.ltrIsolate(
-                      balance.balanceAmount,
-                      balance.currencyCode,
+                    final availableLabel =
+                        AppLocalizations.of(context)!.cashWalletExchangeAvailable(
+                      BidiAmountFormat.ltrIsolate(
+                        balance.balanceAmount,
+                        balance.currencyCode,
+                      ),
                     );
+                    // Currency-first: show the currency code, never a country.
                     return ListTile(
-                      leading: Text(entry.flagEmoji,
-                          style: const TextStyle(fontSize: 22)),
-                      title: Text(
-                        entry.getLocalizedName(isArabic),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      title: Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Text(
+                          balance.currencyCode,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                       ),
                       subtitle: Directionality(
                         textDirection: TextDirection.ltr,
-                        child: Text(
-                          '${entry.currencyCode} · $balanceLabel',
-                        ),
+                        child: Text(availableLabel),
                       ),
                       trailing: isSelected
                           ? const Icon(Icons.check_rounded,

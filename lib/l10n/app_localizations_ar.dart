@@ -581,6 +581,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletExchangeAddCashFirst => 'أضف كاش أولاً لتتمكن من صرف العملة.';
 
   @override
+  String get cashWalletExchangeAddOtherCurrencyFirst => 'أضف عملة أخرى أولاً لتتمكن من صرف العملة.';
+
+  @override
   String get cashWalletExchangeSaveFailed => 'تعذر الحفظ. حاول مرة أخرى.';
 
   @override
