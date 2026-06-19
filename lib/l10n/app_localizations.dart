@@ -1085,6 +1085,126 @@ abstract class AppLocalizations {
   /// **'The ATM fee must be less than the amount charged to your card.'**
   String get cashWalletAtmFeeTooHighValidation;
 
+  /// No description provided for @cashWalletExchangeMoneyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange Money'**
+  String get cashWalletExchangeMoneyTitle;
+
+  /// No description provided for @cashWalletExchangeGaveLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'I gave'**
+  String get cashWalletExchangeGaveLabel;
+
+  /// No description provided for @cashWalletExchangeReceivedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'I received'**
+  String get cashWalletExchangeReceivedLabel;
+
+  /// No description provided for @cashWalletExchangeCurrencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get cashWalletExchangeCurrencyLabel;
+
+  /// No description provided for @cashWalletExchangeAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get cashWalletExchangeAmountLabel;
+
+  /// No description provided for @cashWalletExchangeAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available: {amount}'**
+  String cashWalletExchangeAvailable(Object amount);
+
+  /// No description provided for @cashWalletExchangeDestinationCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Destination currency'**
+  String get cashWalletExchangeDestinationCurrency;
+
+  /// No description provided for @cashWalletExchangeRate.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange rate'**
+  String get cashWalletExchangeRate;
+
+  /// No description provided for @cashWalletExchangeSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save exchange'**
+  String get cashWalletExchangeSave;
+
+  /// No description provided for @cashWalletExchangeSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange saved.'**
+  String get cashWalletExchangeSaved;
+
+  /// No description provided for @cashWalletExchangeValidationGaveAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the amount you gave.'**
+  String get cashWalletExchangeValidationGaveAmount;
+
+  /// No description provided for @cashWalletExchangeValidationChooseCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the currency you gave.'**
+  String get cashWalletExchangeValidationChooseCurrency;
+
+  /// No description provided for @cashWalletExchangeValidationReceivedAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the amount you received.'**
+  String get cashWalletExchangeValidationReceivedAmount;
+
+  /// No description provided for @cashWalletExchangeValidationSameCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t exchange a currency for itself.'**
+  String get cashWalletExchangeValidationSameCurrency;
+
+  /// No description provided for @cashWalletExchangeInsufficientBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough {currency} cash in this trip.'**
+  String cashWalletExchangeInsufficientBalance(Object currency);
+
+  /// No description provided for @cashWalletExchangeValidationPositiveAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be greater than zero.'**
+  String get cashWalletExchangeValidationPositiveAmount;
+
+  /// No description provided for @cashWalletExchangeAddCashFirst.
+  ///
+  /// In en, this message translates to:
+  /// **'Add cash first to exchange money.'**
+  String get cashWalletExchangeAddCashFirst;
+
+  /// No description provided for @cashWalletExchangeSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save. Please try again.'**
+  String get cashWalletExchangeSaveFailed;
+
+  /// No description provided for @cashWalletExchangeRatePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'≈ {rate} {toCurrency} per {fromCurrency}'**
+  String cashWalletExchangeRatePreview(Object rate, Object toCurrency, Object fromCurrency);
+
+  /// No description provided for @cashWalletQuickExchangeShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange'**
+  String get cashWalletQuickExchangeShort;
+
   /// No description provided for @cashWalletBalanceUnknownUntilInitial.
   ///
   /// In en, this message translates to:

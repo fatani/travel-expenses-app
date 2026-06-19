@@ -526,6 +526,72 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletAtmFeeTooHighValidation => 'يجب أن تكون رسوم السحب أقل من المبلغ المخصوم من البطاقة.';
 
   @override
+  String get cashWalletExchangeMoneyTitle => 'صرف عملة';
+
+  @override
+  String get cashWalletExchangeGaveLabel => 'أعطيت';
+
+  @override
+  String get cashWalletExchangeReceivedLabel => 'استلمت';
+
+  @override
+  String get cashWalletExchangeCurrencyLabel => 'العملة';
+
+  @override
+  String get cashWalletExchangeAmountLabel => 'المبلغ';
+
+  @override
+  String cashWalletExchangeAvailable(Object amount) {
+    return 'المتاح: $amount';
+  }
+
+  @override
+  String get cashWalletExchangeDestinationCurrency => 'عملة الوجهة';
+
+  @override
+  String get cashWalletExchangeRate => 'سعر الصرف';
+
+  @override
+  String get cashWalletExchangeSave => 'حفظ عملية الصرف';
+
+  @override
+  String get cashWalletExchangeSaved => 'تم حفظ عملية الصرف.';
+
+  @override
+  String get cashWalletExchangeValidationGaveAmount => 'أدخل المبلغ الذي أعطيته.';
+
+  @override
+  String get cashWalletExchangeValidationChooseCurrency => 'اختر العملة التي أعطيتها.';
+
+  @override
+  String get cashWalletExchangeValidationReceivedAmount => 'أدخل المبلغ الذي استلمته.';
+
+  @override
+  String get cashWalletExchangeValidationSameCurrency => 'لا يمكنك صرف العملة بنفسها.';
+
+  @override
+  String cashWalletExchangeInsufficientBalance(Object currency) {
+    return 'لا يوجد رصيد كافٍ من $currency في هذه الرحلة.';
+  }
+
+  @override
+  String get cashWalletExchangeValidationPositiveAmount => 'يجب أن يكون المبلغ أكبر من صفر.';
+
+  @override
+  String get cashWalletExchangeAddCashFirst => 'أضف كاش أولاً لتتمكن من صرف العملة.';
+
+  @override
+  String get cashWalletExchangeSaveFailed => 'تعذر الحفظ. حاول مرة أخرى.';
+
+  @override
+  String cashWalletExchangeRatePreview(Object rate, Object toCurrency, Object fromCurrency) {
+    return '≈ $rate $toCurrency لكل $fromCurrency';
+  }
+
+  @override
+  String get cashWalletQuickExchangeShort => 'صرف';
+
+  @override
   String get cashWalletBalanceUnknownUntilInitial => 'أضف كاشك الابتدائي لبدء التتبع.';
 
   @override

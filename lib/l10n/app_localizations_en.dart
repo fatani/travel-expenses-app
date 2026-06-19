@@ -526,6 +526,72 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletAtmFeeTooHighValidation => 'The ATM fee must be less than the amount charged to your card.';
 
   @override
+  String get cashWalletExchangeMoneyTitle => 'Exchange Money';
+
+  @override
+  String get cashWalletExchangeGaveLabel => 'I gave';
+
+  @override
+  String get cashWalletExchangeReceivedLabel => 'I received';
+
+  @override
+  String get cashWalletExchangeCurrencyLabel => 'Currency';
+
+  @override
+  String get cashWalletExchangeAmountLabel => 'Amount';
+
+  @override
+  String cashWalletExchangeAvailable(Object amount) {
+    return 'Available: $amount';
+  }
+
+  @override
+  String get cashWalletExchangeDestinationCurrency => 'Destination currency';
+
+  @override
+  String get cashWalletExchangeRate => 'Exchange rate';
+
+  @override
+  String get cashWalletExchangeSave => 'Save exchange';
+
+  @override
+  String get cashWalletExchangeSaved => 'Exchange saved.';
+
+  @override
+  String get cashWalletExchangeValidationGaveAmount => 'Enter the amount you gave.';
+
+  @override
+  String get cashWalletExchangeValidationChooseCurrency => 'Choose the currency you gave.';
+
+  @override
+  String get cashWalletExchangeValidationReceivedAmount => 'Enter the amount you received.';
+
+  @override
+  String get cashWalletExchangeValidationSameCurrency => 'You can\'t exchange a currency for itself.';
+
+  @override
+  String cashWalletExchangeInsufficientBalance(Object currency) {
+    return 'Not enough $currency cash in this trip.';
+  }
+
+  @override
+  String get cashWalletExchangeValidationPositiveAmount => 'Amount must be greater than zero.';
+
+  @override
+  String get cashWalletExchangeAddCashFirst => 'Add cash first to exchange money.';
+
+  @override
+  String get cashWalletExchangeSaveFailed => 'Couldn\'t save. Please try again.';
+
+  @override
+  String cashWalletExchangeRatePreview(Object rate, Object toCurrency, Object fromCurrency) {
+    return '≈ $rate $toCurrency per $fromCurrency';
+  }
+
+  @override
+  String get cashWalletQuickExchangeShort => 'Exchange';
+
+  @override
   String get cashWalletBalanceUnknownUntilInitial => 'Add your starting cash to begin tracking.';
 
   @override

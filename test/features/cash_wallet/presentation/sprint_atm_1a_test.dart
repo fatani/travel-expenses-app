@@ -56,8 +56,8 @@ void main() {
       await openGenericAddCashSheet(tester);
 
       expect(find.text('Cash I Brought'), findsWidgets);
-      expect(find.text('Exchange office'), findsOneWidget);
       expect(find.text('Received or Found Cash'), findsOneWidget);
+      expect(find.text('Exchange office'), findsNothing);
     });
 
     testWidgets('5 — dedicated ATM button still opens the ATM withdrawal sheet',

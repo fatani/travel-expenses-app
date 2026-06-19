@@ -259,6 +259,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                     lastAtmWithdrawalEvent: _lastAtmWithdrawalEvent,
                     onAddCash: () => _showAddCashSheet(initialType: CashTransactionType.initialCash),
                     onAtmWithdrawal: _showAtmWithdrawalSheet,
+                    onExchangeMoney: _showExchangeMoneySheet,
                   ),
                   const SizedBox(height: 22),
                   _SectionHeader(title: l10n.cashWalletBalancesTitle),
@@ -414,6 +415,64 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
 
       if (result == true) {
         await _load();
+      }
+    } finally {
+      _isCashSheetOpen = false;
+    }
+  }
+
+  /// Opens the dedicated exchange money sheet (Exchange UX v1.0).
+  ///
+  /// Unlike [_showAddCashSheet], this flow lets the traveller pick any held
+  /// source currency and records through [RecordCurrencyExchangeUseCase].
+  Future<void> _showExchangeMoneySheet() async {
+    if (_isCashSheetOpen) {
+      return;
+    }
+    _isCashSheetOpen = true;
+
+    try {
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (sheetContext) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: _ExchangeMoneySheet(
+              trip: widget.trip,
+              onAddCash: () {
+                Navigator.of(sheetContext).pop(false);
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    _showAddCashSheet(
+                      initialType: CashTransactionType.initialCash,
+                    );
+                  }
+                });
+              },
+            ),
+          );
+        },
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (result == true) {
+        await _load();
+        if (!mounted) {
+          return;
+        }
+        CalmSnackBar.showMessage(
+          context,
+          message: AppLocalizations.of(context)!.cashWalletExchangeSaved,
+        );
       }
     } finally {
       _isCashSheetOpen = false;
@@ -813,14 +872,11 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
     // when editing an existing ATM transaction so its row stays editable.
     final showAtmOption =
         isEditMode && _selectedType == CashTransactionType.atmWithdrawal;
-    // Exchange Office is offered only when creating cash, never when editing an
-    // existing manual row: converting a manual transaction into an exchange
-    // would bypass RecordCurrencyExchangeUseCase and create an orphan exchange
-    // inflow. Exchanges are created exclusively through the dedicated path.
+    // Exchange Office is no longer offered in create mode — exchanges are
+    // recorded only through the dedicated Exchange Money sheet.
     final cashSourceOptions = <CashTransactionType>[
       CashTransactionType.initialCash,
       if (showAtmOption) CashTransactionType.atmWithdrawal,
-      if (!isEditMode) CashTransactionType.currencyExchangeIn,
       CashTransactionType.manualAdjustment,
     ];
 
@@ -909,16 +965,8 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
                   decoration: InputDecoration(
-                    // Exchange Office requires this value (it is the amount
-                    // given), so it must not be labelled "optional".
-                    labelText:
-                        _selectedType == CashTransactionType.currencyExchangeIn
-                            ? l10n.cashWalletExchangeSourceAmountLabel
-                            : l10n.cashWalletHomeValueLabel,
-                    helperText:
-                        _selectedType == CashTransactionType.currencyExchangeIn
-                            ? l10n.cashWalletExchangeSourceAmountHelper
-                            : l10n.cashWalletHomeValueHelper,
+                    labelText: l10n.cashWalletHomeValueLabel,
+                    helperText: l10n.cashWalletHomeValueHelper,
                     hintText: '0.00',
                     prefixIcon: const Icon(Icons.home_outlined),
                   ),
@@ -1186,13 +1234,6 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
       validationMessage = l10n.cashWalletValidationInvalidCurrency;
     } else if (homeValueText.isNotEmpty && homeValue == null) {
       validationMessage = l10n.commonEnterValidNumber;
-    } else if (widget.editingTransaction == null &&
-        _selectedType == CashTransactionType.currencyExchangeIn &&
-        (homeValue == null || homeValue <= 0)) {
-      // An exchange must always run through RecordCurrencyExchangeUseCase,
-      // which needs the source (home) amount given. Without it the save would
-      // fall through to a single-sided inflow (orphan inflow), so block it.
-      validationMessage = l10n.cashWalletValidationExchangeHomeValueRequired;
     }
 
     if (validationMessage != null) {
@@ -1229,18 +1270,6 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               receivedCurrency: currencyCode,
               chargedAmount: homeValue,
               chargedCurrency: homeValue != null ? homeCurrencyCode : null,
-              note: _noteController.text,
-              createdAt: _selectedDateTime,
-            );
-      } else if (_selectedType == CashTransactionType.currencyExchangeIn &&
-          homeValue != null &&
-          homeValue > 0) {
-        await ref.read(recordCurrencyExchangeUseCaseProvider).execute(
-              tripId: widget.trip.id,
-              fromCurrencyCode: homeCurrencyCode,
-              fromAmount: homeValue,
-              toCurrencyCode: currencyCode,
-              toAmount: validAmount,
               note: _noteController.text,
               createdAt: _selectedDateTime,
             );
@@ -1777,6 +1806,503 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
   }
 }
 
+/// Dedicated exchange money sheet (Exchange UX v1.0).
+///
+/// Models the traveller's mental model: "I gave this currency, I received
+/// destination currency." Always records through [RecordCurrencyExchangeUseCase].
+class _ExchangeMoneySheet extends ConsumerStatefulWidget {
+  const _ExchangeMoneySheet({
+    required this.trip,
+    required this.onAddCash,
+  });
+
+  final Trip trip;
+  final VoidCallback onAddCash;
+
+  @override
+  ConsumerState<_ExchangeMoneySheet> createState() => _ExchangeMoneySheetState();
+}
+
+class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
+  final _gaveAmountController = TextEditingController();
+  final _receivedAmountController = TextEditingController();
+
+  List<TripCashBalance> _heldBalances = const [];
+  bool _isLoadingBalances = true;
+  String? _selectedSourceCurrency;
+  bool _isSaving = false;
+  String? _errorText;
+
+  late final String _destinationCurrency;
+
+  @override
+  void initState() {
+    super.initState();
+    _destinationCurrency = widget.trip.destinationCurrency.trim().toUpperCase();
+    _gaveAmountController.addListener(_onFieldChanged);
+    _receivedAmountController.addListener(_onFieldChanged);
+    _loadBalances();
+  }
+
+  void _onFieldChanged() {
+    if (_errorText != null) {
+      setState(() => _errorText = null);
+    } else {
+      setState(() {});
+    }
+  }
+
+  Future<void> _loadBalances() async {
+    try {
+      final balances = await ref
+          .read(cashWalletRepositoryProvider)
+          .getBalancesByTrip(widget.trip.id);
+      final held = balances.where((b) => b.balanceAmount > 0).toList()
+        ..sort((a, b) => b.balanceAmount.compareTo(a.balanceAmount));
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _heldBalances = held;
+        _isLoadingBalances = false;
+        if (held.isNotEmpty) {
+          _selectedSourceCurrency ??= held.first.currencyCode;
+        }
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoadingBalances = false;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _gaveAmountController
+      ..removeListener(_onFieldChanged)
+      ..dispose();
+    _receivedAmountController
+      ..removeListener(_onFieldChanged)
+      ..dispose();
+    super.dispose();
+  }
+
+  double _availableForSelected() {
+    final code = _selectedSourceCurrency;
+    if (code == null) {
+      return 0;
+    }
+    for (final balance in _heldBalances) {
+      if (balance.currencyCode == code) {
+        return balance.balanceAmount;
+      }
+    }
+    return 0;
+  }
+
+  CountryInfo _countryForCode(String code) {
+    return CountryDatabase.countries.firstWhere(
+      (c) => c.currencyCode == code,
+      orElse: () => CountryInfo(
+        countryCode: '',
+        englishName: code,
+        arabicName: code,
+        currencyCode: code,
+        currencyName: '',
+        flagEmoji: '🏳',
+      ),
+    );
+  }
+
+  String? _ratePreviewText(AppLocalizations l10n) {
+    final gave = double.tryParse(_gaveAmountController.text.trim());
+    final received = double.tryParse(_receivedAmountController.text.trim());
+    final source = _selectedSourceCurrency;
+    if (gave == null ||
+        gave <= 0 ||
+        received == null ||
+        received <= 0 ||
+        source == null ||
+        source.isEmpty) {
+      return null;
+    }
+    final rate = received / gave;
+    return l10n.cashWalletExchangeRatePreview(
+      _formatExchangeRate(rate),
+      _destinationCurrency,
+      source,
+    );
+  }
+
+  Future<void> _pickSourceCurrency() async {
+    if (_heldBalances.isEmpty || _isSaving) {
+      return;
+    }
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _HeldCurrencyPickerSheet(
+        heldBalances: _heldBalances,
+        selectedCode: _selectedSourceCurrency ?? '',
+        isArabic: isArabic,
+      ),
+    );
+    if (picked != null && mounted) {
+      setState(() {
+        _selectedSourceCurrency = picked;
+        _errorText = null;
+      });
+    }
+  }
+
+  Future<void> _save() async {
+    if (_isSaving || _heldBalances.isEmpty) {
+      return;
+    }
+    final l10n = AppLocalizations.of(context)!;
+
+    final gaveText = _gaveAmountController.text.trim();
+    final receivedText = _receivedAmountController.text.trim();
+    final gaveAmount = gaveText.isEmpty ? null : double.tryParse(gaveText);
+    final receivedAmount =
+        receivedText.isEmpty ? null : double.tryParse(receivedText);
+    final sourceCurrency = _selectedSourceCurrency?.trim().toUpperCase();
+    final available = _availableForSelected();
+
+    String? validationMessage;
+    if (sourceCurrency == null || sourceCurrency.isEmpty) {
+      validationMessage = l10n.cashWalletExchangeValidationChooseCurrency;
+    } else if (gaveText.isEmpty || gaveAmount == null) {
+      validationMessage = l10n.cashWalletExchangeValidationGaveAmount;
+    } else if (receivedText.isEmpty || receivedAmount == null) {
+      validationMessage = l10n.cashWalletExchangeValidationReceivedAmount;
+    } else if (gaveAmount <= 0 || receivedAmount <= 0) {
+      validationMessage = l10n.cashWalletExchangeValidationPositiveAmount;
+    } else if (sourceCurrency == _destinationCurrency) {
+      validationMessage = l10n.cashWalletExchangeValidationSameCurrency;
+    } else if (gaveAmount > available) {
+      validationMessage =
+          l10n.cashWalletExchangeInsufficientBalance(sourceCurrency);
+    }
+
+    if (validationMessage != null) {
+      setState(() => _errorText = validationMessage);
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorText = null;
+    });
+
+    try {
+      await ref.read(recordCurrencyExchangeUseCaseProvider).execute(
+            tripId: widget.trip.id,
+            fromCurrencyCode: sourceCurrency!,
+            fromAmount: gaveAmount!,
+            toCurrencyCode: _destinationCurrency,
+            toAmount: receivedAmount!,
+          );
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      final message = error is InsufficientCashException
+          ? l10n.cashWalletExchangeInsufficientBalance(error.currencyCode)
+          : l10n.cashWalletExchangeSaveFailed;
+      setState(() {
+        _isSaving = false;
+        _errorText = message;
+      });
+    }
+  }
+
+  Widget _buildSectionLabel(String label) {
+    return Text(
+      label,
+      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF312E81),
+          ),
+    );
+  }
+
+  Widget _buildDestinationChip(AppLocalizations l10n, bool isArabic) {
+    final entry = _countryForCode(_destinationCurrency);
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: l10n.cashWalletExchangeDestinationCurrency,
+        prefixIcon: const Icon(Icons.lock_outline_rounded),
+      ),
+      child: Row(
+        children: [
+          Text(entry.flagEmoji, style: const TextStyle(fontSize: 20)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text(
+                '${entry.getLocalizedName(isArabic)} | ${entry.currencyCode}',
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInlineError() {
+    if (_errorText == null) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      children: [
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEF2F2),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFECACA)),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.error_outline_rounded,
+                  size: 18, color: Color(0xFFB91C1C)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  _errorText!,
+                  style: const TextStyle(
+                    color: Color(0xFFB91C1C),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final maxHeight = MediaQuery.of(context).size.height * 0.85;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ratePreview = _ratePreviewText(l10n);
+
+    if (_isLoadingBalances) {
+      return Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        child: SizedBox(
+          height: 240,
+          child: Center(
+            child: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (_heldBalances.isEmpty) {
+      return Material(
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        clipBehavior: Clip.antiAlias,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SheetHeader(
+                  icon: Icons.currency_exchange_outlined,
+                  title: l10n.cashWalletExchangeMoneyTitle,
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  l10n.cashWalletExchangeAddCashFirst,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF475569),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: widget.onAddCash,
+                  child: Text(l10n.cashWalletAddCash),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    final sourceEntry = _countryForCode(_selectedSourceCurrency ?? '');
+    final availableText = l10n.cashWalletExchangeAvailable(
+      BidiAmountFormat.ltrIsolate(
+        _availableForSelected(),
+        _selectedSourceCurrency ?? '',
+      ),
+    );
+
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      clipBehavior: Clip.antiAlias,
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: 420,
+            maxHeight: maxHeight,
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SheetHeader(
+                  icon: Icons.currency_exchange_outlined,
+                  title: l10n.cashWalletExchangeMoneyTitle,
+                ),
+                const SizedBox(height: 16),
+                _buildSectionLabel(l10n.cashWalletExchangeGaveLabel),
+                const SizedBox(height: 10),
+                GestureDetector(
+                  onTap: _isSaving ? null : _pickSourceCurrency,
+                  child: InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: l10n.cashWalletExchangeCurrencyLabel,
+                      prefixIcon:
+                          const Icon(Icons.currency_exchange_outlined),
+                      suffixIcon: const Icon(Icons.arrow_drop_down),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(sourceEntry.flagEmoji,
+                            style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Directionality(
+                            textDirection: TextDirection.ltr,
+                            child: Text(
+                              '${sourceEntry.getLocalizedName(isArabic)} | ${sourceEntry.currencyCode}',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _gaveAmountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^-?\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.cashWalletExchangeAmountLabel,
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  availableText,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF64748B),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: Icon(
+                    Icons.arrow_downward_rounded,
+                    color: const Color(0xFF7C3AED).withValues(alpha: 0.7),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildSectionLabel(l10n.cashWalletExchangeReceivedLabel),
+                const SizedBox(height: 10),
+                _buildDestinationChip(l10n, isArabic),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _receivedAmountController,
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'^-?\d*\.?\d*')),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: l10n.cashWalletExchangeAmountLabel,
+                    hintText: '0.00',
+                    prefixIcon: const Icon(Icons.payments_outlined),
+                  ),
+                ),
+                if (ratePreview != null) ...[
+                  const SizedBox(height: 10),
+                  Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(
+                      ratePreview,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFF64748B),
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ),
+                ],
+                _buildInlineError(),
+                const SizedBox(height: 18),
+                _SheetGradientButton(
+                  onPressed: _isSaving ? null : _save,
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(l10n.cashWalletExchangeSave),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _EmptyCard extends StatelessWidget {
   const _EmptyCard({required this.message});
 
@@ -1843,6 +2369,7 @@ class _CashHeroCard extends StatelessWidget {
     required this.lastAtmWithdrawalEvent,
     required this.onAddCash,
     required this.onAtmWithdrawal,
+    required this.onExchangeMoney,
   });
 
   final Trip trip;
@@ -1853,6 +2380,7 @@ class _CashHeroCard extends StatelessWidget {
   final _LastAtmWithdrawalEvent? lastAtmWithdrawalEvent;
   final VoidCallback onAddCash;
   final VoidCallback onAtmWithdrawal;
+  final VoidCallback onExchangeMoney;
 
   @override
   Widget build(BuildContext context) {
@@ -1885,6 +2413,12 @@ class _CashHeroCard extends StatelessWidget {
                 onPressed: onAtmWithdrawal,
                 icon: const Icon(Icons.local_atm_outlined, size: 18),
                 label: Text(l10n.cashWalletAtmSheetTitle),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onExchangeMoney,
+                icon: const Icon(Icons.currency_exchange_outlined, size: 18),
+                label: Text(l10n.cashWalletExchangeMoneyTitle),
               ),
             ],
           ),
@@ -1994,6 +2528,34 @@ class _CashHeroCard extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onExchangeMoney,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF312E81),
+                    backgroundColor: const Color(0xFFEDE9FE),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 12,
+                    ),
+                    minimumSize: const Size(0, 44),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.currency_exchange_outlined, size: 18),
+                  label: Text(
+                    l10n.cashWalletExchangeMoneyTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -2408,6 +2970,16 @@ String _formatAmount(double amount, String currencyCode) {
   return '${formatter.format(amount)} ${currencyCode.trim().toUpperCase()}';
 }
 
+String _formatExchangeRate(double rate) {
+  if (rate >= 100) {
+    return NumberFormat('#,##0.##', 'en').format(rate);
+  }
+  if (rate >= 1) {
+    return NumberFormat('0.##', 'en').format(rate);
+  }
+  return NumberFormat('0.####', 'en').format(rate);
+}
+
 String _formatTripDates(Trip trip, String localeName) {
   final formatter = DateFormat('dd MMM', localeName);
   return '${formatter.format(trip.startDate!.toLocal())} - ${formatter.format(trip.endDate!.toLocal())}';
@@ -2758,6 +3330,107 @@ String? _formatTripStatus(BuildContext context, Trip trip) {
 }
 
 // ── Currency picker sheet ──────────────────────────────────────────────────
+
+class _HeldCurrencyPickerSheet extends StatelessWidget {
+  const _HeldCurrencyPickerSheet({
+    required this.heldBalances,
+    required this.selectedCode,
+    required this.isArabic,
+  });
+
+  final List<TripCashBalance> heldBalances;
+  final String selectedCode;
+  final bool isArabic;
+
+  CountryInfo _entryFor(String code) {
+    return CountryDatabase.countries.firstWhere(
+      (c) => c.currencyCode == code,
+      orElse: () => CountryInfo(
+        countryCode: '',
+        englishName: code,
+        arabicName: code,
+        currencyCode: code,
+        currencyName: '',
+        flagEmoji: '🏳',
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.45,
+      maxChildSize: 0.75,
+      builder: (ctx, scrollController) {
+        return Material(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          child: Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFCBD5E1),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  AppLocalizations.of(context)!.cashWalletExchangeCurrencyLabel,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  itemCount: heldBalances.length,
+                  itemBuilder: (_, i) {
+                    final balance = heldBalances[i];
+                    final entry = _entryFor(balance.currencyCode);
+                    final isSelected = balance.currencyCode == selectedCode;
+                    final balanceLabel = BidiAmountFormat.ltrIsolate(
+                      balance.balanceAmount,
+                      balance.currencyCode,
+                    );
+                    return ListTile(
+                      leading: Text(entry.flagEmoji,
+                          style: const TextStyle(fontSize: 22)),
+                      title: Text(
+                        entry.getLocalizedName(isArabic),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      subtitle: Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Text(
+                          '${entry.currencyCode} · $balanceLabel',
+                        ),
+                      ),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_rounded,
+                              color: Color(0xFF4F46E5))
+                          : null,
+                      onTap: () =>
+                          Navigator.of(ctx).pop(balance.currencyCode),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
 
 class _CurrencyPickerSheet extends StatefulWidget {
   const _CurrencyPickerSheet({

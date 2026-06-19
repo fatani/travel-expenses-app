@@ -43,7 +43,7 @@ void main() {
       // ATM is recorded only through the dedicated ATM sheet (Sprint ATM-1A),
       // so it must not appear in the generic source selector.
       expect(find.text('ATM withdrawal'), findsNothing);
-      expect(find.text('Exchange office'), findsOneWidget);
+      expect(find.text('Exchange office'), findsNothing);
 
       expect(
         find.text('Cash you already had when the trip started.'),
@@ -55,7 +55,7 @@ void main() {
       );
       expect(
         find.text('Cash received after exchanging another currency.'),
-        findsWidgets,
+        findsNothing,
       );
       expect(
         find.text('Cash received from someone or found during the trip.'),
