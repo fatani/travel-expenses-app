@@ -32,6 +32,7 @@ import 'expense_controller.dart';
 import 'expense_form_screen.dart';
 import 'expense_list_display.dart';
 import '../../refunds/presentation/refund_form_screen.dart';
+import '../../refunds/presentation/trip_refund_form_screen.dart';
 import '../../refunds/presentation/trip_refunds_provider.dart';
 import 'expense_option_labels.dart';
 import 'quick_add_currency.dart';
@@ -96,6 +97,7 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
               onEditTrip: _openTripEditor,
               onOpenReports: _openTripReports,
               onOpenCashWallet: _openCashWallet,
+              onAddRefund: _openAddRefund,
               onAddViaSms: _openSmsExpenseScreen,
             ),
           ),
@@ -210,6 +212,28 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
     final recorded = await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
         builder: (_) => RefundFormScreen(trip: _trip, expense: expense),
+      ),
+    );
+
+    if (!mounted || recorded != true) {
+      return;
+    }
+
+    ref.invalidate(tripRefundsProvider(_trip.id));
+    ref.invalidate(tripReportProvider(_trip.id));
+  }
+
+  Future<void> _openAddRefund() async {
+    CalmSnackBar.clear(context);
+    final expenses = ref
+            .read(expenseControllerProvider(_trip.id))
+            .valueOrNull
+            ?.where((expense) => !_pendingDeletionExpenseIds.contains(expense.id))
+            .toList(growable: false) ??
+        const <Expense>[];
+    final recorded = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => TripRefundFormScreen(trip: _trip, expenses: expenses),
       ),
     );
 
@@ -1778,6 +1802,7 @@ enum _TripDetailsOverflowAction {
   editTrip,
   reports,
   cashWallet,
+  addRefund,
   smsImport,
   exportCsv,
   exportPdf,
@@ -1790,6 +1815,7 @@ class _TripDetailsOverflowMenu extends ConsumerWidget {
     required this.onEditTrip,
     required this.onOpenReports,
     required this.onOpenCashWallet,
+    required this.onAddRefund,
     required this.onAddViaSms,
   });
 
@@ -1798,6 +1824,7 @@ class _TripDetailsOverflowMenu extends ConsumerWidget {
   final VoidCallback onEditTrip;
   final VoidCallback onOpenReports;
   final VoidCallback onOpenCashWallet;
+  final VoidCallback onAddRefund;
   final VoidCallback onAddViaSms;
 
   @override
@@ -1816,6 +1843,8 @@ class _TripDetailsOverflowMenu extends ConsumerWidget {
             onOpenReports();
           case _TripDetailsOverflowAction.cashWallet:
             onOpenCashWallet();
+          case _TripDetailsOverflowAction.addRefund:
+            onAddRefund();
           case _TripDetailsOverflowAction.smsImport:
             onAddViaSms();
           case _TripDetailsOverflowAction.exportCsv:
@@ -1866,6 +1895,16 @@ class _TripDetailsOverflowMenu extends ConsumerWidget {
               const Icon(Icons.account_balance_wallet_outlined, size: 20),
               const SizedBox(width: AppSpacing.sm),
               Text(l10n.tripDetailsCashWalletAction),
+            ],
+          ),
+        ),
+        PopupMenuItem(
+          value: _TripDetailsOverflowAction.addRefund,
+          child: Row(
+            children: [
+              const Icon(Icons.replay_outlined, size: 20),
+              const SizedBox(width: AppSpacing.sm),
+              Text(l10n.tripDetailsAddRefund),
             ],
           ),
         ),

@@ -404,6 +404,16 @@
       "homeAmount": {}
     }
   },
+  "tripDetailsAddRefund": "إضافة استرداد",
+  "refundFormTripTitle": "إضافة استرداد",
+  "refundFormTypeLabel": "نوع الاسترداد",
+  "refundFormTypeCash": "استرداد نقدي",
+  "refundFormTypeCard": "استرداد بطاقة",
+  "refundFormCurrencyLabel": "العملة",
+  "refundFormLinkLabel": "ربط بمصروف",
+  "refundFormLinkNone": "بدون ربط",
+  "refundFormCurrencyInvalid": "أدخل رمز عملة من ٣ أحرف.",
+  "refundFormUnlinkedCashNeedsHome": "لتسجيل استرداد نقدي بهذه العملة، اربطه بمصروف أولاً.",
   "expenseFormRefundGuidance": "إذا كنت تسترجع جزءاً من المصروف أو كامله فاستخدم \"تسجيل استرجاع\" بدلاً من تعديل المبلغ.",
   "expenseFormTitleLabel": "العنوان",
   "expenseFormTitleHint": "تاكسي المطار",

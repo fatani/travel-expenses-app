@@ -1082,6 +1082,36 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get tripDetailsAddRefund => 'إضافة استرداد';
+
+  @override
+  String get refundFormTripTitle => 'إضافة استرداد';
+
+  @override
+  String get refundFormTypeLabel => 'نوع الاسترداد';
+
+  @override
+  String get refundFormTypeCash => 'استرداد نقدي';
+
+  @override
+  String get refundFormTypeCard => 'استرداد بطاقة';
+
+  @override
+  String get refundFormCurrencyLabel => 'العملة';
+
+  @override
+  String get refundFormLinkLabel => 'ربط بمصروف';
+
+  @override
+  String get refundFormLinkNone => 'بدون ربط';
+
+  @override
+  String get refundFormCurrencyInvalid => 'أدخل رمز عملة من ٣ أحرف.';
+
+  @override
+  String get refundFormUnlinkedCashNeedsHome => 'لتسجيل استرداد نقدي بهذه العملة، اربطه بمصروف أولاً.';
+
+  @override
   String get expenseFormRefundGuidance => 'إذا كنت تسترجع جزءاً من المصروف أو كامله فاستخدم \"تسجيل استرجاع\" بدلاً من تعديل المبلغ.';
 
   @override

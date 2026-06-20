@@ -1082,6 +1082,36 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get tripDetailsAddRefund => 'Add Refund';
+
+  @override
+  String get refundFormTripTitle => 'Add refund';
+
+  @override
+  String get refundFormTypeLabel => 'Refund type';
+
+  @override
+  String get refundFormTypeCash => 'Cash refund';
+
+  @override
+  String get refundFormTypeCard => 'Card refund';
+
+  @override
+  String get refundFormCurrencyLabel => 'Currency';
+
+  @override
+  String get refundFormLinkLabel => 'Link to expense';
+
+  @override
+  String get refundFormLinkNone => 'No linked expense';
+
+  @override
+  String get refundFormCurrencyInvalid => 'Enter a 3-letter currency code.';
+
+  @override
+  String get refundFormUnlinkedCashNeedsHome => 'To record a cash refund in this currency, link it to an expense first.';
+
+  @override
   String get expenseFormRefundGuidance => 'If you received a partial or full refund, use Refund instead of changing the expense amount.';
 
   @override

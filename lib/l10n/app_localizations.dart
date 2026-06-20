@@ -2141,6 +2141,66 @@ abstract class AppLocalizations {
   /// **'This refund will be valued at approximately {homeAmount} using the original cost basis.'**
   String refundFormHomeValueHint(Object homeAmount);
 
+  /// No description provided for @tripDetailsAddRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Refund'**
+  String get tripDetailsAddRefund;
+
+  /// No description provided for @refundFormTripTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add refund'**
+  String get refundFormTripTitle;
+
+  /// No description provided for @refundFormTypeLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund type'**
+  String get refundFormTypeLabel;
+
+  /// No description provided for @refundFormTypeCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash refund'**
+  String get refundFormTypeCash;
+
+  /// No description provided for @refundFormTypeCard.
+  ///
+  /// In en, this message translates to:
+  /// **'Card refund'**
+  String get refundFormTypeCard;
+
+  /// No description provided for @refundFormCurrencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency'**
+  String get refundFormCurrencyLabel;
+
+  /// No description provided for @refundFormLinkLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to expense'**
+  String get refundFormLinkLabel;
+
+  /// No description provided for @refundFormLinkNone.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked expense'**
+  String get refundFormLinkNone;
+
+  /// No description provided for @refundFormCurrencyInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a 3-letter currency code.'**
+  String get refundFormCurrencyInvalid;
+
+  /// No description provided for @refundFormUnlinkedCashNeedsHome.
+  ///
+  /// In en, this message translates to:
+  /// **'To record a cash refund in this currency, link it to an expense first.'**
+  String get refundFormUnlinkedCashNeedsHome;
+
   /// No description provided for @expenseFormRefundGuidance.
   ///
   /// In en, this message translates to:
