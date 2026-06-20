@@ -1611,11 +1611,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsHomeCurrencySummaryTitle => 'ملخص الإنفاق بعملتك الأساسية';
 
   @override
-  String get tripReportsEstimatedReportTitle => 'التقرير تقديري';
+  String get tripReportsHomeCurrencySummaryHelper => 'يعرض فقط العمليات التي اكتملت قيمتها بعملة الحساب الأساسية.';
 
   @override
-  String tripReportsEstimatedReportMessage(int count) {
-    return 'يستثني $count من عمليات البطاقة التي لم يتم استكمال قيمتها الفعلية بعد.';
+  String get tripReportsEstimatedReportTitle => 'تنبيه حول العملة الأساسية';
+
+  @override
+  String tripReportsEstimatedReportMessage(int count, String currency) {
+    return 'ملخص $currency أدناه لا يشمل $count من عمليات البطاقة لأن قيمتها النهائية بعملة الحساب الأساسية لم تكتمل بعد. ما زالت محسوبة في ملخص العملة الأصلية أعلاه.';
   }
 
   @override

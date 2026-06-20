@@ -590,12 +590,16 @@
   "tripReportsEarlyAddMoreHint": "أضف المزيد من المصاريف لتقرير أوضح.",
   "tripReportsGrossSpending": "إجمالي الإنفاق",
   "tripReportsHomeCurrencySummaryTitle": "ملخص الإنفاق بعملتك الأساسية",
-  "tripReportsEstimatedReportTitle": "التقرير تقديري",
-  "tripReportsEstimatedReportMessage": "يستثني {count} من عمليات البطاقة التي لم يتم استكمال قيمتها الفعلية بعد.",
+  "tripReportsHomeCurrencySummaryHelper": "يعرض فقط العمليات التي اكتملت قيمتها بعملة الحساب الأساسية.",
+  "tripReportsEstimatedReportTitle": "تنبيه حول العملة الأساسية",
+  "tripReportsEstimatedReportMessage": "ملخص {currency} أدناه لا يشمل {count} من عمليات البطاقة لأن قيمتها النهائية بعملة الحساب الأساسية لم تكتمل بعد. ما زالت محسوبة في ملخص العملة الأصلية أعلاه.",
   "@tripReportsEstimatedReportMessage": {
     "placeholders": {
       "count": {
         "type": "int"
+      },
+      "currency": {
+        "type": "String"
       }
     }
   },

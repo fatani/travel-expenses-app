@@ -130,7 +130,10 @@ class _ReportBody extends ConsumerWidget {
           if (summary.grossSpendingHomeAmount != null) ...[
             sectionGap,
             if (summary.pendingCardExpenseCount > 0) ...[
-              _PendingCardReportNotice(count: summary.pendingCardExpenseCount),
+              _PendingCardReportNotice(
+                count: summary.pendingCardExpenseCount,
+                currency: summary.grossSpendingHomeCurrency ?? '',
+              ),
               const SizedBox(height: 12),
             ],
             _HomeSpendingSummaryCard(summary: summary),
@@ -189,7 +192,10 @@ class _ReportBody extends ConsumerWidget {
         if (summary.grossSpendingHomeAmount != null) ...[
           sectionGap,
           if (summary.pendingCardExpenseCount > 0) ...[
-            _PendingCardReportNotice(count: summary.pendingCardExpenseCount),
+            _PendingCardReportNotice(
+              count: summary.pendingCardExpenseCount,
+              currency: summary.grossSpendingHomeCurrency ?? '',
+            ),
             const SizedBox(height: 12),
           ],
           _HomeSpendingSummaryCard(summary: summary),
@@ -512,9 +518,13 @@ class _TripSpendingSummaryCard extends StatelessWidget {
 // ---------------------------------------------------------------------------
 
 class _PendingCardReportNotice extends StatelessWidget {
-  const _PendingCardReportNotice({required this.count});
+  const _PendingCardReportNotice({
+    required this.count,
+    required this.currency,
+  });
 
   final int count;
+  final String currency;
 
   @override
   Widget build(BuildContext context) {
@@ -532,7 +542,7 @@ class _PendingCardReportNotice extends StatelessWidget {
             ),
           ),
           TextSpan(
-            text: context.l10n.tripReportsEstimatedReportMessage(count),
+            text: context.l10n.tripReportsEstimatedReportMessage(count, currency),
             style: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.82),
               height: 1.45,
@@ -589,6 +599,13 @@ class _HomeSpendingSummaryCard extends StatelessWidget {
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w700,
                 color: colorScheme.onSurface,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              context.l10n.tripReportsHomeCurrencySummaryHelper,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
               ),
             ),
             const SizedBox(height: 14),

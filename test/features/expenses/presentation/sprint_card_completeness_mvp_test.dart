@@ -273,11 +273,13 @@ void main() {
     testWidgets('report warning appears when pending count > 0', (tester) async {
       await _pumpReport(tester, trip: trip, expenses: reportExpenses);
 
-      expect(find.textContaining('Estimated report'), findsOneWidget);
+      expect(find.textContaining('Home-currency note'), findsOneWidget);
       expect(
-        find.textContaining(
-          'Excludes 1 card expense(s) awaiting charged amount.',
-        ),
+        find.textContaining('SAR summary below excludes 1 card operation'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('still counted in the original-currency summary above'),
         findsOneWidget,
       );
     });
@@ -289,7 +291,7 @@ void main() {
         expenses: reportExpenses.where((e) => e.id != 'pending-card').toList(),
       );
 
-      expect(find.textContaining('Estimated report'), findsNothing);
+      expect(find.textContaining('Home-currency note'), findsNothing);
     });
   });
 

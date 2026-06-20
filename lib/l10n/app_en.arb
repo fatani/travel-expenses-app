@@ -591,12 +591,16 @@
   "tripReportsEarlyAddMoreHint": "Add more expenses for a fuller report.",
   "tripReportsGrossSpending": "Gross spending",
   "tripReportsHomeCurrencySummaryTitle": "Spending Summary in Your Home Currency",
-  "tripReportsEstimatedReportTitle": "Estimated report",
-  "tripReportsEstimatedReportMessage": "Excludes {count} card expense(s) awaiting charged amount.",
+  "tripReportsHomeCurrencySummaryHelper": "Shows only items with a completed value in your home currency.",
+  "tripReportsEstimatedReportTitle": "Home-currency note",
+  "tripReportsEstimatedReportMessage": "The {currency} summary below excludes {count} card operation(s) — their final home-currency value is not available yet. They are still counted in the original-currency summary above.",
   "@tripReportsEstimatedReportMessage": {
     "placeholders": {
       "count": {
         "type": "int"
+      },
+      "currency": {
+        "type": "String"
       }
     }
   },

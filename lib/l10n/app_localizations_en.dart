@@ -1604,11 +1604,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsHomeCurrencySummaryTitle => 'Spending Summary in Your Home Currency';
 
   @override
-  String get tripReportsEstimatedReportTitle => 'Estimated report';
+  String get tripReportsHomeCurrencySummaryHelper => 'Shows only items with a completed value in your home currency.';
 
   @override
-  String tripReportsEstimatedReportMessage(int count) {
-    return 'Excludes $count card expense(s) awaiting charged amount.';
+  String get tripReportsEstimatedReportTitle => 'Home-currency note';
+
+  @override
+  String tripReportsEstimatedReportMessage(int count, String currency) {
+    return 'The $currency summary below excludes $count card operation(s) — their final home-currency value is not available yet. They are still counted in the original-currency summary above.';
   }
 
   @override

@@ -266,6 +266,96 @@ void main() {
 
       expect(find.text('Refunds by currency'), findsNothing);
     });
+
+    // -----------------------------------------------------------------------
+    // Home-currency clarity polish
+    // -----------------------------------------------------------------------
+
+    testWidgets('home-currency summary shows helper subtitle', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tripRepositoryProvider.overrideWithValue(_FakeTripRepository(trip)),
+            expenseRepositoryProvider.overrideWithValue(
+              _FakeExpenseRepository(expenses),
+            ),
+            expenseRefundRepositoryProvider.overrideWithValue(
+              _FakeRefundRepository(refunds),
+            ),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _FakeCashWalletRepository(),
+            ),
+            cashLotRepositoryProvider.overrideWithValue(
+              _FakeCashLotRepository(),
+            ),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: TripReportsScreen(trip: trip),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await _scrollToSection(tester, 'Spending Summary in Your Home Currency');
+
+      expect(
+        find.textContaining(
+          'Shows only items with a completed value in your home currency',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('no pending warning when all home values are complete',
+        (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            tripRepositoryProvider.overrideWithValue(_FakeTripRepository(trip)),
+            expenseRepositoryProvider.overrideWithValue(
+              _FakeExpenseRepository(expenses),
+            ),
+            expenseRefundRepositoryProvider.overrideWithValue(
+              _FakeRefundRepository(refunds),
+            ),
+            cashWalletRepositoryProvider.overrideWithValue(
+              _FakeCashWalletRepository(),
+            ),
+            cashLotRepositoryProvider.overrideWithValue(
+              _FakeCashLotRepository(),
+            ),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: TripReportsScreen(trip: trip),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // All test expenses have convertedHomeAmount set, so count == 0.
+      expect(find.textContaining('Home-currency note'), findsNothing);
+    });
+
+    test('calculator math unchanged after home-currency clarity polish', () {
+      const calculator = TripReportCalculator();
+      final summary = calculator.calculate(
+        tripId: trip.id,
+        tripName: trip.name,
+        expenses: expenses,
+        refunds: refunds,
+      );
+
+      expect(summary.grossSpendingHomeAmount, closeTo(1242.8, 0.01));
+      expect(summary.refundHomeAmount, closeTo(208, 0.01));
+      expect(summary.netSpendingHomeAmount, closeTo(1034.8, 0.01));
+      expect(summary.totalBilledByCurrency.single.totalAmount, 2390);
+    });
   });
 }
 

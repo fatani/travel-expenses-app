@@ -3089,17 +3089,23 @@ abstract class AppLocalizations {
   /// **'Spending Summary in Your Home Currency'**
   String get tripReportsHomeCurrencySummaryTitle;
 
+  /// No description provided for @tripReportsHomeCurrencySummaryHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Shows only items with a completed value in your home currency.'**
+  String get tripReportsHomeCurrencySummaryHelper;
+
   /// No description provided for @tripReportsEstimatedReportTitle.
   ///
   /// In en, this message translates to:
-  /// **'Estimated report'**
+  /// **'Home-currency note'**
   String get tripReportsEstimatedReportTitle;
 
   /// No description provided for @tripReportsEstimatedReportMessage.
   ///
   /// In en, this message translates to:
-  /// **'Excludes {count} card expense(s) awaiting charged amount.'**
-  String tripReportsEstimatedReportMessage(int count);
+  /// **'The {currency} summary below excludes {count} card operation(s) — their final home-currency value is not available yet. They are still counted in the original-currency summary above.'**
+  String tripReportsEstimatedReportMessage(int count, String currency);
 
   /// No description provided for @tripReportsGrossExpenses.
   ///
