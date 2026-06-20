@@ -38,9 +38,9 @@ class CashLotRepository {
     );
   }
 
-  Future<CashLot?> getCashLotById(String id) async {
-    final db = await _appDatabase.database;
-    final rows = await db.query(
+  Future<CashLot?> getCashLotById(String id, {DatabaseExecutor? txn}) async {
+    final executor = txn ?? await _appDatabase.database;
+    final rows = await executor.query(
       AppDatabase.cashLotsTable,
       where: 'id = ?',
       whereArgs: [id],

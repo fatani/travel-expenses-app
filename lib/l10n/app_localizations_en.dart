@@ -1899,4 +1899,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get backupRestoreFailed => 'Restore failed. Your current data was not changed.';
+
+  @override
+  String get cashWalletExchangeCorrectAction => 'Correct';
+
+  @override
+  String get cashWalletExchangeCorrectTitle => 'Correct Exchange';
+
+  @override
+  String get cashWalletExchangeSaveCorrection => 'Save correction';
+
+  @override
+  String get cashWalletExchangeCorrected => 'Exchange corrected.';
+
+  @override
+  String get cashWalletExchangeCorrectFailed => 'Couldn\'t correct the exchange. Please try again.';
+
+  @override
+  String get cashWalletExchangeUndoAction => 'Undo transaction';
+
+  @override
+  String get cashWalletExchangeUndoConfirmTitle => 'Undo this exchange?';
+
+  @override
+  String get cashWalletExchangeUndoConfirmMessage => 'Your cash balances will be restored as if this exchange never happened.';
+
+  @override
+  String get cashWalletExchangeUndone => 'Exchange undone.';
+
+  @override
+  String get cashWalletExchangeUndoFailed => 'Couldn\'t undo the exchange. Please try again.';
+
+  @override
+  String get cashWalletExchangeViewAffectedAction => 'View affected transactions';
+
+  @override
+  String get cashWalletExchangeAffectedTitle => 'Affected transactions';
+
+  @override
+  String get cashWalletExchangeUsedInLabel => 'Used in:';
+
+  @override
+  String get cashWalletExchangeUsedCashUndoBlocked => 'This transaction can\'t be undone because the cash from it was used in later transactions.';
+
+  @override
+  String get cashWalletExchangeUsedCashUndoGuidance => 'To fix this, delete or correct the affected transactions first, then come back and undo this transaction.';
+
+  @override
+  String get cashWalletExchangeUsedCashCorrectBlocked => 'This exchange can\'t be corrected because some of the cash you received has already been spent.';
+
+  @override
+  String get cashWalletExchangeAffectedTypeExpense => 'Cash expense';
+
+  @override
+  String get cashWalletExchangeAffectedTypeExchange => 'Currency exchange';
+
+  @override
+  String get cashWalletExchangeAffectedTypeManual => 'Manual reduction';
 }

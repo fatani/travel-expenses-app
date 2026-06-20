@@ -8,8 +8,11 @@ import '../../features/cash_wallet/data/cash_wallet_repository.dart';
 import '../../features/cash_wallet/data/currency_exchange_repository.dart';
 import '../../features/cash_wallet/domain/cash_lot_fifo_engine.dart';
 import '../../features/cash_wallet/domain/currency_exchange_engine.dart';
+import '../../features/cash_wallet/domain/correct_currency_exchange_use_case.dart';
+import '../../features/cash_wallet/domain/exchange_correction_service.dart';
 import '../../features/cash_wallet/domain/record_atm_withdrawal_use_case.dart';
 import '../../features/cash_wallet/domain/record_currency_exchange_use_case.dart';
+import '../../features/cash_wallet/domain/reverse_currency_exchange_use_case.dart';
 import '../../features/refunds/domain/record_refund_use_case.dart';
 import '../../features/refunds/domain/refund_inheritance_engine.dart';
 import '../../features/expenses/data/expense_repository.dart';
@@ -110,6 +113,37 @@ final recordCurrencyExchangeUseCaseProvider =
     lotRepository: ref.watch(cashLotRepositoryProvider),
     consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
     exchangeRepository: ref.watch(currencyExchangeRepositoryProvider),
+  );
+});
+
+final exchangeCorrectionServiceProvider =
+    Provider<ExchangeCorrectionService>((ref) {
+  return ExchangeCorrectionService(
+    exchangeRepository: ref.watch(currencyExchangeRepositoryProvider),
+    lotRepository: ref.watch(cashLotRepositoryProvider),
+    consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
+    expenseRepository: ref.watch(expenseRepositoryProvider),
+  );
+});
+
+final reverseCurrencyExchangeUseCaseProvider =
+    Provider<ReverseCurrencyExchangeUseCase>((ref) {
+  return ReverseCurrencyExchangeUseCase(
+    appDatabase: ref.watch(appDatabaseProvider),
+    correctionService: ref.watch(exchangeCorrectionServiceProvider),
+    exchangeRepository: ref.watch(currencyExchangeRepositoryProvider),
+    lotRepository: ref.watch(cashLotRepositoryProvider),
+    consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
+    cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+  );
+});
+
+final correctCurrencyExchangeUseCaseProvider =
+    Provider<CorrectCurrencyExchangeUseCase>((ref) {
+  return CorrectCurrencyExchangeUseCase(
+    appDatabase: ref.watch(appDatabaseProvider),
+    reverseUseCase: ref.watch(reverseCurrencyExchangeUseCaseProvider),
+    recordUseCase: ref.watch(recordCurrencyExchangeUseCaseProvider),
   );
 });
 

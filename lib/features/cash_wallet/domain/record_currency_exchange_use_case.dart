@@ -1,3 +1,4 @@
+import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
@@ -91,6 +92,37 @@ class RecordCurrencyExchangeUseCase {
     String? note,
     DateTime? createdAt,
   }) async {
+    final db = await _appDatabase.database;
+    return db.transaction((txn) {
+      return recordInTransaction(
+        txn,
+        tripId: tripId,
+        fromCurrencyCode: fromCurrencyCode,
+        fromAmount: fromAmount,
+        toCurrencyCode: toCurrencyCode,
+        toAmount: toAmount,
+        note: note,
+        createdAt: createdAt,
+      );
+    });
+  }
+
+  /// Records a currency exchange inside the caller-supplied [txn].
+  ///
+  /// Used directly by the correct-exchange flow so the reverse-of-original and
+  /// the recording of the corrected exchange share one atomic transaction (the
+  /// plan runs inside [txn] so source lots restored by the reverse are visible
+  /// to FIFO). [execute] wraps this in its own transaction.
+  Future<CurrencyExchangeResult> recordInTransaction(
+    DatabaseExecutor txn, {
+    required String tripId,
+    required String fromCurrencyCode,
+    required double fromAmount,
+    required String toCurrencyCode,
+    required double toAmount,
+    String? note,
+    DateTime? createdAt,
+  }) async {
     // ── 1. Plan (validates + FIFO) — no DB writes ──────────────────────────
     final plan = await _exchangeEngine.planExchange(
       tripId: tripId,
@@ -98,18 +130,23 @@ class RecordCurrencyExchangeUseCase {
       fromAmount: fromAmount,
       toCurrencyCode: toCurrencyCode,
       toAmount: toAmount,
+      txn: txn,
     );
 
     final timestamp = (createdAt ?? DateTime.now()).toUtc();
     final destLotId = _uuid.v4();
+    // Generate the exchange id up front so both exchange cash transactions can
+    // carry exchange_id, giving undo/correct a reliable link to reverse them.
+    final exchangeId = _uuid.v4();
 
-    // ── 2. Build destination lot (sourceRefId patched after exchange insert) ─
+    // ── 2. Build destination lot. The exchange id is known up front, so the
+    //       lot's source_ref_id is set directly (no post-insert patch).
     final destLot = CashLot.create(
       id: destLotId,
       tripId: tripId,
       sourceType: 'exchange_in',
       sourceRefType: 'currency_exchange',
-      sourceRefId: '', // placeholder — patched below
+      sourceRefId: exchangeId,
       currencyCode: plan.toCurrencyCode,
       originalAmount: toAmount,
       remainingAmount: toAmount,
@@ -120,87 +157,85 @@ class RecordCurrencyExchangeUseCase {
       note: note,
     );
 
-    // ── 3. Atomic transaction ──────────────────────────────────────────────
-    final db = await _appDatabase.database;
-    return db.transaction((txn) async {
-      // a. Insert destination lot
-      final insertedLot = await _lotRepository.insertCashLot(destLot, txn: txn);
+    // ── 3. Writes (atomic — caller owns the transaction) ───────────────────
+    // Write order respects FKs: the destination lot and the currency_exchanges
+    // row must exist before the cash transactions reference them (lot_id /
+    // exchange_id), and before the source consumptions reference the exchange.
 
-      // b. Exchange-out transaction (fromCurrency, −fromAmount, updates balance)
-      final outTx = await _cashWalletRepository.recordCurrencyExchangeOutflow(
-        txn: txn,
+    // a. Insert destination lot (to_lot_id target for the exchange row).
+    final insertedLot = await _lotRepository.insertCashLot(destLot, txn: txn);
+
+    // b. Insert currency_exchanges row (id pre-generated so the cash
+    //    transactions below can carry exchange_id).
+    final exchange = await _exchangeRepository.insertCurrencyExchange(
+      CurrencyExchange.create(
+        id: exchangeId,
         tripId: tripId,
-        fromAmount: plan.fromAmount,
         fromCurrencyCode: plan.fromCurrencyCode,
-        note: note,
-        createdAt: timestamp,
-      );
-
-      // c. Exchange-in transaction (toCurrency, +toAmount, lot_id=destLotId)
-      final inTx = await _cashWalletRepository.recordCurrencyExchangeInflow(
-        txn: txn,
-        tripId: tripId,
-        toLotId: insertedLot.id,
-        toAmount: plan.toAmount,
+        fromAmount: plan.fromAmount,
         toCurrencyCode: plan.toCurrencyCode,
+        toAmount: plan.toAmount,
+        exchangeRate: plan.exchangeRate,
+        toLotId: insertedLot.id,
         note: note,
         createdAt: timestamp,
-      );
+      ),
+      txn: txn,
+    );
 
-      // d. Insert currency_exchanges row
-      final exchange = await _exchangeRepository.insertCurrencyExchange(
-        CurrencyExchange.create(
-          tripId: tripId,
-          fromCurrencyCode: plan.fromCurrencyCode,
-          fromAmount: plan.fromAmount,
-          toCurrencyCode: plan.toCurrencyCode,
-          toAmount: plan.toAmount,
-          exchangeRate: plan.exchangeRate,
-          toLotId: insertedLot.id,
-          note: note,
+    // c. Exchange-out transaction (fromCurrency, −fromAmount, updates balance).
+    final outTx = await _cashWalletRepository.recordCurrencyExchangeOutflow(
+      txn: txn,
+      tripId: tripId,
+      fromAmount: plan.fromAmount,
+      fromCurrencyCode: plan.fromCurrencyCode,
+      exchangeId: exchangeId,
+      note: note,
+      createdAt: timestamp,
+    );
+
+    // d. Exchange-in transaction (toCurrency, +toAmount, lot_id=destLotId).
+    final inTx = await _cashWalletRepository.recordCurrencyExchangeInflow(
+      txn: txn,
+      tripId: tripId,
+      toLotId: insertedLot.id,
+      toAmount: plan.toAmount,
+      toCurrencyCode: plan.toCurrencyCode,
+      exchangeId: exchangeId,
+      note: note,
+      createdAt: timestamp,
+    );
+
+    // e. Consumptions + source lot updates
+    final consumptions = <CashLotConsumption>[];
+    for (final sourcePlan in plan.sourcePlans) {
+      final consumption = await _consumptionRepository.insertConsumption(
+        CashLotConsumption.create(
+          lotId: sourcePlan.lotId,
+          consumptionType: 'exchange_out',
+          exchangeId: exchange.id,
+          consumedAmount: sourcePlan.consumedAmount,
+          homeAmount: sourcePlan.homeAmount,
+          homeCurrencyCode: sourcePlan.homeCurrencyCode,
           createdAt: timestamp,
         ),
         txn: txn,
       );
+      consumptions.add(consumption);
 
-      // e. Patch destination lot source_ref_id = exchange.id
-      await _lotRepository.updateLotSourceRef(
-        lotId: insertedLot.id,
-        sourceRefId: exchange.id,
+      await _lotRepository.updateLotRemainingAmount(
+        sourcePlan.lotId,
+        sourcePlan.remainingAmountAfter,
         txn: txn,
       );
+    }
 
-      // f. Consumptions + source lot updates
-      final consumptions = <CashLotConsumption>[];
-      for (final sourcePlan in plan.sourcePlans) {
-        final consumption = await _consumptionRepository.insertConsumption(
-          CashLotConsumption.create(
-            lotId: sourcePlan.lotId,
-            consumptionType: 'exchange_out',
-            exchangeId: exchange.id,
-            consumedAmount: sourcePlan.consumedAmount,
-            homeAmount: sourcePlan.homeAmount,
-            homeCurrencyCode: sourcePlan.homeCurrencyCode,
-            createdAt: timestamp,
-          ),
-          txn: txn,
-        );
-        consumptions.add(consumption);
-
-        await _lotRepository.updateLotRemainingAmount(
-          sourcePlan.lotId,
-          sourcePlan.remainingAmountAfter,
-          txn: txn,
-        );
-      }
-
-      return CurrencyExchangeResult(
-        exchange: exchange,
-        destinationLot: insertedLot.copyWith(sourceRefId: exchange.id),
-        exchangeOutTransaction: outTx,
-        exchangeInTransaction: inTx,
-        consumptions: consumptions,
-      );
-    });
+    return CurrencyExchangeResult(
+      exchange: exchange,
+      destinationLot: insertedLot.copyWith(sourceRefId: exchange.id),
+      exchangeOutTransaction: outTx,
+      exchangeInTransaction: inTx,
+      consumptions: consumptions,
+    );
   }
 }

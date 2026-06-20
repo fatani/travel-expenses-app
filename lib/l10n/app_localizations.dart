@@ -3598,6 +3598,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Restore failed. Your current data was not changed.'**
   String get backupRestoreFailed;
+
+  /// No description provided for @cashWalletExchangeCorrectAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct'**
+  String get cashWalletExchangeCorrectAction;
+
+  /// No description provided for @cashWalletExchangeCorrectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct Exchange'**
+  String get cashWalletExchangeCorrectTitle;
+
+  /// No description provided for @cashWalletExchangeSaveCorrection.
+  ///
+  /// In en, this message translates to:
+  /// **'Save correction'**
+  String get cashWalletExchangeSaveCorrection;
+
+  /// No description provided for @cashWalletExchangeCorrected.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange corrected.'**
+  String get cashWalletExchangeCorrected;
+
+  /// No description provided for @cashWalletExchangeCorrectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t correct the exchange. Please try again.'**
+  String get cashWalletExchangeCorrectFailed;
+
+  /// No description provided for @cashWalletExchangeUndoAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo transaction'**
+  String get cashWalletExchangeUndoAction;
+
+  /// No description provided for @cashWalletExchangeUndoConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo this exchange?'**
+  String get cashWalletExchangeUndoConfirmTitle;
+
+  /// No description provided for @cashWalletExchangeUndoConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your cash balances will be restored as if this exchange never happened.'**
+  String get cashWalletExchangeUndoConfirmMessage;
+
+  /// No description provided for @cashWalletExchangeUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'Exchange undone.'**
+  String get cashWalletExchangeUndone;
+
+  /// No description provided for @cashWalletExchangeUndoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t undo the exchange. Please try again.'**
+  String get cashWalletExchangeUndoFailed;
+
+  /// No description provided for @cashWalletExchangeViewAffectedAction.
+  ///
+  /// In en, this message translates to:
+  /// **'View affected transactions'**
+  String get cashWalletExchangeViewAffectedAction;
+
+  /// No description provided for @cashWalletExchangeAffectedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Affected transactions'**
+  String get cashWalletExchangeAffectedTitle;
+
+  /// No description provided for @cashWalletExchangeUsedInLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Used in:'**
+  String get cashWalletExchangeUsedInLabel;
+
+  /// No description provided for @cashWalletExchangeUsedCashUndoBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This transaction can\'t be undone because the cash from it was used in later transactions.'**
+  String get cashWalletExchangeUsedCashUndoBlocked;
+
+  /// No description provided for @cashWalletExchangeUsedCashUndoGuidance.
+  ///
+  /// In en, this message translates to:
+  /// **'To fix this, delete or correct the affected transactions first, then come back and undo this transaction.'**
+  String get cashWalletExchangeUsedCashUndoGuidance;
+
+  /// No description provided for @cashWalletExchangeUsedCashCorrectBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'This exchange can\'t be corrected because some of the cash you received has already been spent.'**
+  String get cashWalletExchangeUsedCashCorrectBlocked;
+
+  /// No description provided for @cashWalletExchangeAffectedTypeExpense.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash expense'**
+  String get cashWalletExchangeAffectedTypeExpense;
+
+  /// No description provided for @cashWalletExchangeAffectedTypeExchange.
+  ///
+  /// In en, this message translates to:
+  /// **'Currency exchange'**
+  String get cashWalletExchangeAffectedTypeExchange;
+
+  /// No description provided for @cashWalletExchangeAffectedTypeManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual reduction'**
+  String get cashWalletExchangeAffectedTypeManual;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

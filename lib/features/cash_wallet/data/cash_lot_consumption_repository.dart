@@ -78,6 +78,43 @@ class CashLotConsumptionRepository {
     return rows.map(CashLotConsumption.fromMap).toList();
   }
 
+  /// Returns the **active** (not reversed) consumptions that draw from [lotId].
+  ///
+  /// Used by the exchange undo/correct flow to detect whether a destination lot
+  /// has been spent. Pass [txn] to read uncommitted writes inside an outer
+  /// transaction (e.g. when re-validating just before reversing).
+  Future<List<CashLotConsumption>> getActiveConsumptionsByLotId(
+    String lotId, {
+    DatabaseExecutor? txn,
+  }) async {
+    final executor = txn ?? await _appDatabase.database;
+    final rows = await executor.query(
+      AppDatabase.cashLotConsumptionsTable,
+      where: 'lot_id = ? AND is_reversed = 0',
+      whereArgs: [lotId],
+      orderBy: 'created_at ASC',
+    );
+    return rows.map(CashLotConsumption.fromMap).toList();
+  }
+
+  /// Returns the **active** (not reversed) source consumptions recorded for the
+  /// exchange [exchangeId] (the `exchange_out` draws against source lots).
+  ///
+  /// Pass [txn] to read inside an outer transaction.
+  Future<List<CashLotConsumption>> getActiveConsumptionsByExchangeId(
+    String exchangeId, {
+    DatabaseExecutor? txn,
+  }) async {
+    final executor = txn ?? await _appDatabase.database;
+    final rows = await executor.query(
+      AppDatabase.cashLotConsumptionsTable,
+      where: 'exchange_id = ? AND is_reversed = 0',
+      whereArgs: [exchangeId],
+      orderBy: 'created_at ASC',
+    );
+    return rows.map(CashLotConsumption.fromMap).toList();
+  }
+
   /// Hard-deletes all consumption rows for [expenseId].
   ///
   /// Call this inside a transaction **before** deleting the expense row so the

@@ -25,6 +25,9 @@ import '../../trips/domain/country_info.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_title_resolver.dart';
 import '../domain/cash_transaction.dart';
+import '../domain/currency_exchange.dart';
+import '../domain/exchange_correction.dart';
+import '../domain/exchange_not_correctable_exception.dart';
 import '../domain/insufficient_cash_exception.dart';
 import '../domain/trip_cash_balance.dart';
 
@@ -44,8 +47,12 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   bool _hasLoadError = false;
   bool _isCashSheetOpen = false;
   final Set<String> _deletingManualTransactionIds = <String>{};
+  final Set<String> _processingExchangeIds = <String>{};
   List<TripCashBalance> _balances = const [];
   List<CashTransaction> _transactions = const [];
+  // Correction status for each active exchange, keyed by exchange id. Drives
+  // whether an exchange row offers Correct/Undo (unused) or View affected (used).
+  Map<String, ExchangeCorrectionStatus> _exchangeStatusById = const {};
 
   late _PrimaryCashBalance _primaryCashBalance;
   late _CashHealth _cashHealth;
@@ -83,12 +90,14 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       final transactions = await ref
           .read(cashWalletRepositoryProvider)
           .getRecentTransactionsByTrip(widget.trip.id);
+      final exchangeStatuses = await _loadExchangeStatuses(transactions);
       if (!mounted || generation != _loadGeneration) {
         return;
       }
       setState(() {
         _balances = balances;
         _transactions = transactions;
+        _exchangeStatusById = exchangeStatuses;
         _isLoading = false;
         _hasLoadError = false;
         _recomputeDerivedState();
@@ -102,6 +111,33 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         _hasLoadError = true;
       });
     }
+  }
+
+  /// Loads the correction status for every active exchange surfaced in the
+  /// activity list. Each exchange's `currency_exchange_in` row carries the
+  /// `exchangeId`; reversed rows are skipped (they offer no actions).
+  Future<Map<String, ExchangeCorrectionStatus>> _loadExchangeStatuses(
+    List<CashTransaction> transactions,
+  ) async {
+    final service = ref.read(exchangeCorrectionServiceProvider);
+    final statuses = <String, ExchangeCorrectionStatus>{};
+    for (final transaction in transactions) {
+      if (transaction.type != CashTransactionType.currencyExchangeIn ||
+          transaction.isReversed) {
+        continue;
+      }
+      final exchangeId = transaction.exchangeId;
+      if (exchangeId == null || exchangeId.isEmpty) {
+        continue;
+      }
+      try {
+        statuses[exchangeId] = await service.getStatus(exchangeId);
+      } catch (_) {
+        // A status failure must not break the wallet load; the row simply
+        // shows no correction actions.
+      }
+    }
+    return statuses;
   }
 
   void _recomputeDerivedState() {
@@ -302,6 +338,8 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                                   ? _balanceAfterByTransactionId[
                                       transaction.id]
                                   : null,
+                              exchangeStatus:
+                                  _exchangeStatusFor(transaction),
                               onEdit: _canEditManualTransaction(transaction)
                                   ? () => _showAddCashSheet(
                                         initialType: transaction.type,
@@ -314,6 +352,12 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                               onEditExpense: _canEditLinkedExpense(transaction)
                                   ? () => _openLinkedExpenseEditor(transaction)
                                   : null,
+                              onCorrectExchange: () =>
+                                  _handleCorrectExchange(transaction),
+                              onUndoExchange: () =>
+                                  _handleUndoExchange(transaction),
+                              onViewAffectedExchange: () =>
+                                  _handleViewAffectedExchange(transaction),
                             ),
                           ),
                         const SizedBox(height: 4),
@@ -567,6 +611,242 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     } finally {
       _deletingManualTransactionIds.remove(transaction.id);
     }
+  }
+
+  /// The correction status for an exchange's `currency_exchange_in` row, or
+  /// null for any non-exchange / reversed / unlinked row.
+  ExchangeCorrectionStatus? _exchangeStatusFor(CashTransaction transaction) {
+    if (transaction.type != CashTransactionType.currencyExchangeIn ||
+        transaction.isReversed) {
+      return null;
+    }
+    final exchangeId = transaction.exchangeId;
+    if (exchangeId == null || exchangeId.isEmpty) {
+      return null;
+    }
+    return _exchangeStatusById[exchangeId];
+  }
+
+  /// Safe Undo: reverse an unused exchange so balances behave as if it never
+  /// happened. Blocked (with guidance) when the received cash was used.
+  Future<void> _handleUndoExchange(CashTransaction transaction) async {
+    final l10n = AppLocalizations.of(context)!;
+    final status = _exchangeStatusFor(transaction);
+    final exchangeId = transaction.exchangeId;
+    if (status == null || exchangeId == null) {
+      return;
+    }
+    if (!status.canUndo) {
+      if (status.isBlockedByUsedCash) {
+        await _showAffectedTransactionsSheet(status, isCorrect: false);
+      }
+      return;
+    }
+
+    final confirmed = await _confirmUndoExchange();
+    if (!mounted || confirmed != true) {
+      return;
+    }
+    if (_processingExchangeIds.contains(exchangeId)) {
+      return;
+    }
+    _processingExchangeIds.add(exchangeId);
+    try {
+      await ref
+          .read(reverseCurrencyExchangeUseCaseProvider)
+          .execute(exchangeId);
+      if (!mounted) {
+        return;
+      }
+      await _load();
+      if (!mounted) {
+        return;
+      }
+      CalmSnackBar.showMessage(context, message: l10n.cashWalletExchangeUndone);
+    } on ExchangeNotCorrectableException catch (error) {
+      if (!mounted) {
+        return;
+      }
+      // The cash was spent between status load and confirm — refresh and guide.
+      await _load();
+      if (!mounted) {
+        return;
+      }
+      if (error.reason == ExchangeCorrectionReason.destinationCashUsed) {
+        final refreshed = _exchangeStatusById[exchangeId];
+        if (refreshed != null) {
+          await _showAffectedTransactionsSheet(refreshed, isCorrect: false);
+          return;
+        }
+      }
+      CalmSnackBar.showMessage(
+        context,
+        message: l10n.cashWalletExchangeUndoFailed,
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      CalmSnackBar.showMessage(
+        context,
+        message: l10n.cashWalletExchangeUndoFailed,
+      );
+    } finally {
+      _processingExchangeIds.remove(exchangeId);
+    }
+  }
+
+  /// Safe Correct: open the exchange sheet prefilled with the original values.
+  /// The original is NOT reversed here — only when the user saves the
+  /// correction (handled atomically by [CorrectCurrencyExchangeUseCase]).
+  Future<void> _handleCorrectExchange(CashTransaction transaction) async {
+    final l10n = AppLocalizations.of(context)!;
+    final status = _exchangeStatusFor(transaction);
+    final exchangeId = transaction.exchangeId;
+    if (status == null || exchangeId == null) {
+      return;
+    }
+    if (!status.canCorrect) {
+      if (status.isBlockedByUsedCash) {
+        await _showAffectedTransactionsSheet(status, isCorrect: true);
+      }
+      return;
+    }
+
+    final exchange = await ref
+        .read(currencyExchangeRepositoryProvider)
+        .getExchangeById(exchangeId);
+    if (!mounted) {
+      return;
+    }
+    if (exchange == null || exchange.isReversed) {
+      CalmSnackBar.showMessage(
+        context,
+        message: l10n.cashWalletExchangeCorrectFailed,
+      );
+      return;
+    }
+
+    await _showCorrectExchangeSheet(exchange);
+  }
+
+  /// Shows the read-only "what used this cash" sheet for a blocked exchange.
+  Future<void> _handleViewAffectedExchange(CashTransaction transaction) async {
+    final status = _exchangeStatusFor(transaction);
+    if (status == null) {
+      return;
+    }
+    await _showAffectedTransactionsSheet(
+      status,
+      isCorrect: false,
+    );
+  }
+
+  Future<bool?> _confirmUndoExchange() {
+    final l10n = AppLocalizations.of(context)!;
+    return showModalBottomSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.34),
+      builder: (sheetContext) {
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md + bottomInset,
+            ),
+            child: AppConfirmationDialog(
+              icon: Icons.undo_rounded,
+              title: l10n.cashWalletExchangeUndoConfirmTitle,
+              message: l10n.cashWalletExchangeUndoConfirmMessage,
+              cancelLabel: l10n.commonCancel,
+              confirmLabel: l10n.cashWalletExchangeUndoAction,
+              onCancel: () => Navigator.of(sheetContext).pop(false),
+              onConfirm: () => Navigator.of(sheetContext).pop(true),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showCorrectExchangeSheet(CurrencyExchange exchange) async {
+    if (_isCashSheetOpen) {
+      return;
+    }
+    _isCashSheetOpen = true;
+    try {
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (sheetContext) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: _ExchangeMoneySheet(
+              trip: widget.trip,
+              onAddCash: () => Navigator.of(sheetContext).pop(false),
+              correction: _ExchangeCorrectionContext(
+                exchangeId: exchange.id,
+                fromCurrencyCode: exchange.fromCurrencyCode,
+                fromAmount: exchange.fromAmount,
+                toAmount: exchange.toAmount,
+              ),
+            ),
+          );
+        },
+      );
+
+      if (!mounted) {
+        return;
+      }
+      if (result == true) {
+        await _load();
+        if (!mounted) {
+          return;
+        }
+        CalmSnackBar.showMessage(
+          context,
+          message: AppLocalizations.of(context)!.cashWalletExchangeCorrected,
+        );
+      }
+    } finally {
+      _isCashSheetOpen = false;
+    }
+  }
+
+  Future<void> _showAffectedTransactionsSheet(
+    ExchangeCorrectionStatus status, {
+    required bool isCorrect,
+  }) {
+    return showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: _AffectedTransactionsSheet(
+            status: status,
+            isCorrect: isCorrect,
+          ),
+        );
+      },
+    );
   }
 
   String _transactionTypeLabel(AppLocalizations l10n, CashTransactionType type) {
@@ -1810,14 +2090,36 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
 ///
 /// Models the traveller's mental model: "I gave this currency, I received
 /// destination currency." Always records through [RecordCurrencyExchangeUseCase].
+/// Immutable description of the exchange being corrected, passed to
+/// [_ExchangeMoneySheet] to drive correction mode (prefill + locked source).
+class _ExchangeCorrectionContext {
+  const _ExchangeCorrectionContext({
+    required this.exchangeId,
+    required this.fromCurrencyCode,
+    required this.fromAmount,
+    required this.toAmount,
+  });
+
+  final String exchangeId;
+  final String fromCurrencyCode;
+  final double fromAmount;
+  final double toAmount;
+}
+
 class _ExchangeMoneySheet extends ConsumerStatefulWidget {
   const _ExchangeMoneySheet({
     required this.trip,
     required this.onAddCash,
+    this.correction,
   });
 
   final Trip trip;
   final VoidCallback onAddCash;
+
+  /// Non-null when the sheet is correcting an existing exchange. In this mode
+  /// the fields are prefilled, the source currency is locked, and saving
+  /// reverses the original and records a corrected exchange atomically.
+  final _ExchangeCorrectionContext? correction;
 
   @override
   ConsumerState<_ExchangeMoneySheet> createState() => _ExchangeMoneySheetState();
@@ -1839,13 +2141,31 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
 
   late final String _destinationCurrency;
 
+  bool get _isCorrection => widget.correction != null;
+
   @override
   void initState() {
     super.initState();
     _destinationCurrency = widget.trip.destinationCurrency.trim().toUpperCase();
+    final correction = widget.correction;
+    if (correction != null) {
+      // Correction mode: prefill original values; the source currency is locked.
+      _selectedSourceCurrency = correction.fromCurrencyCode.trim().toUpperCase();
+      _gaveAmountController.text = _formatAmountForField(correction.fromAmount);
+      _receivedAmountController.text =
+          _formatAmountForField(correction.toAmount);
+    }
     _gaveAmountController.addListener(_onFieldChanged);
     _receivedAmountController.addListener(_onFieldChanged);
     _loadBalances();
+  }
+
+  String _formatAmountForField(double value) {
+    // Trim a trailing ".0" so whole amounts read cleanly (720 not 720.0).
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toString();
   }
 
   void _onFieldChanged() {
@@ -1907,12 +2227,22 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
     if (code == null) {
       return 0;
     }
+    double base = 0;
     for (final balance in _heldBalances) {
       if (balance.currencyCode == code) {
-        return balance.balanceAmount;
+        base = balance.balanceAmount;
+        break;
       }
     }
-    return 0;
+    // In correction mode the original exchange still holds its source cash;
+    // saving the correction reverses it first, so that amount is available
+    // again. Add it back so the insufficient-balance guard reflects reality.
+    final correction = widget.correction;
+    if (correction != null &&
+        correction.fromCurrencyCode.trim().toUpperCase() == code) {
+      base += correction.fromAmount;
+    }
+    return base;
   }
 
   String? _ratePreviewText(AppLocalizations l10n) {
@@ -1957,7 +2287,9 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
   }
 
   Future<void> _save() async {
-    if (_isSaving || _heldBalances.isEmpty) {
+    // In create mode an empty wallet blocks save; correction mode is always
+    // saveable (the locked source's cash is restored by the reverse step).
+    if (_isSaving || (_heldBalances.isEmpty && !_isCorrection)) {
       return;
     }
     final l10n = AppLocalizations.of(context)!;
@@ -1997,13 +2329,24 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
     });
 
     try {
-      await ref.read(recordCurrencyExchangeUseCaseProvider).execute(
-            tripId: widget.trip.id,
-            fromCurrencyCode: sourceCurrency!,
-            fromAmount: gaveAmount!,
-            toCurrencyCode: _destinationCurrency,
-            toAmount: receivedAmount!,
-          );
+      final correction = widget.correction;
+      if (correction != null) {
+        await ref.read(correctCurrencyExchangeUseCaseProvider).execute(
+              originalExchangeId: correction.exchangeId,
+              fromCurrencyCode: sourceCurrency!,
+              fromAmount: gaveAmount!,
+              toCurrencyCode: _destinationCurrency,
+              toAmount: receivedAmount!,
+            );
+      } else {
+        await ref.read(recordCurrencyExchangeUseCaseProvider).execute(
+              tripId: widget.trip.id,
+              fromCurrencyCode: sourceCurrency!,
+              fromAmount: gaveAmount!,
+              toCurrencyCode: _destinationCurrency,
+              toAmount: receivedAmount!,
+            );
+      }
 
       if (!mounted) {
         return;
@@ -2015,9 +2358,17 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
         return;
       }
 
-      final message = error is InsufficientCashException
-          ? l10n.cashWalletExchangeInsufficientBalance(error.currencyCode)
-          : l10n.cashWalletExchangeSaveFailed;
+      final String message;
+      if (error is InsufficientCashException) {
+        message = l10n.cashWalletExchangeInsufficientBalance(error.currencyCode);
+      } else if (error is ExchangeNotCorrectableException) {
+        // The received cash was spent between opening the sheet and saving.
+        message = l10n.cashWalletExchangeUsedCashCorrectBlocked;
+      } else if (_isCorrection) {
+        message = l10n.cashWalletExchangeCorrectFailed;
+      } else {
+        message = l10n.cashWalletExchangeSaveFailed;
+      }
       setState(() {
         _isSaving = false;
         _errorText = message;
@@ -2112,7 +2463,7 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
       );
     }
 
-    if (_heldBalances.isEmpty) {
+    if (_heldBalances.isEmpty && !_isCorrection) {
       return Material(
         color: Colors.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
@@ -2177,19 +2528,29 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
               children: [
                 _SheetHeader(
                   icon: Icons.currency_exchange_outlined,
-                  title: l10n.cashWalletExchangeMoneyTitle,
+                  title: _isCorrection
+                      ? l10n.cashWalletExchangeCorrectTitle
+                      : l10n.cashWalletExchangeMoneyTitle,
                 ),
                 const SizedBox(height: 16),
                 _buildSectionLabel(l10n.cashWalletExchangeGaveLabel),
                 const SizedBox(height: 10),
                 GestureDetector(
-                  onTap: _isSaving ? null : _pickSourceCurrency,
+                  // Source currency is locked while correcting (only amounts
+                  // change), so the picker is disabled.
+                  onTap: (_isSaving || _isCorrection)
+                      ? null
+                      : _pickSourceCurrency,
                   child: InputDecorator(
                     decoration: InputDecoration(
                       labelText: l10n.cashWalletExchangeCurrencyLabel,
                       prefixIcon:
                           const Icon(Icons.currency_exchange_outlined),
-                      suffixIcon: const Icon(Icons.arrow_drop_down),
+                      suffixIcon: Icon(
+                        _isCorrection
+                            ? Icons.lock_outline_rounded
+                            : Icons.arrow_drop_down,
+                      ),
                     ),
                     // Currency-first: show the currency code, not a country.
                     child: Directionality(
@@ -2275,7 +2636,9 @@ class _ExchangeMoneySheetState extends ConsumerState<_ExchangeMoneySheet> {
                             color: Colors.white,
                           ),
                         )
-                      : Text(l10n.cashWalletExchangeSave),
+                      : Text(_isCorrection
+                          ? l10n.cashWalletExchangeSaveCorrection
+                          : l10n.cashWalletExchangeSave),
                 ),
               ],
             ),
@@ -3017,16 +3380,24 @@ class _TransactionTile extends StatelessWidget {
   const _TransactionTile({
     required this.transaction,
     required this.balanceAfterTransaction,
+    this.exchangeStatus,
     this.onEdit,
     this.onDelete,
     this.onEditExpense,
+    this.onCorrectExchange,
+    this.onUndoExchange,
+    this.onViewAffectedExchange,
   });
 
   final CashTransaction transaction;
   final double? balanceAfterTransaction;
+  final ExchangeCorrectionStatus? exchangeStatus;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onEditExpense;
+  final VoidCallback? onCorrectExchange;
+  final VoidCallback? onUndoExchange;
+  final VoidCallback? onViewAffectedExchange;
 
   @override
   Widget build(BuildContext context) {
@@ -3090,7 +3461,7 @@ class _TransactionTile extends StatelessWidget {
                             ),
                       ),
                     ),
-                  if (onEdit != null || onDelete != null || onEditExpense != null)
+                  if (_hasAnyAction)
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Wrap(
@@ -3116,6 +3487,25 @@ class _TransactionTile extends StatelessWidget {
                               tooltip: l10n.commonDelete,
                               foregroundColor: const Color(0xFFB42318),
                               backgroundColor: const Color(0xFFFEE4E2),
+                            ),
+                          if (_showExchangeCorrect)
+                            _ExpenseLinkActionButton(
+                              onPressed: onCorrectExchange,
+                              icon: Icons.tune_rounded,
+                              label: l10n.cashWalletExchangeCorrectAction,
+                            ),
+                          if (_showExchangeUndo)
+                            _ExpenseLinkActionButton(
+                              onPressed: onUndoExchange,
+                              icon: Icons.undo_rounded,
+                              label: l10n.cashWalletExchangeUndoAction,
+                            ),
+                          if (_showViewAffected)
+                            _ExpenseLinkActionButton(
+                              onPressed: onViewAffectedExchange,
+                              icon: Icons.visibility_outlined,
+                              label:
+                                  l10n.cashWalletExchangeViewAffectedAction,
                             ),
                         ],
                       ),
@@ -3166,6 +3556,26 @@ class _TransactionTile extends StatelessWidget {
       ),
     );
   }
+
+  bool get _showExchangeCorrect =>
+      onCorrectExchange != null &&
+      (exchangeStatus?.canCorrect ?? false);
+
+  bool get _showExchangeUndo =>
+      onUndoExchange != null && (exchangeStatus?.canUndo ?? false);
+
+  bool get _showViewAffected =>
+      onViewAffectedExchange != null &&
+      (exchangeStatus?.isBlockedByUsedCash ?? false) &&
+      !(exchangeStatus?.canUndo ?? false);
+
+  bool get _hasAnyAction =>
+      onEdit != null ||
+      onDelete != null ||
+      onEditExpense != null ||
+      _showExchangeCorrect ||
+      _showExchangeUndo ||
+      _showViewAffected;
 
   bool _isNegative(CashTransactionType type) {
     return type == CashTransactionType.cashExpenseDeduction ||
@@ -3648,5 +4058,160 @@ class _CashActionOptionRow extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// Read-only sheet shown when an exchange cannot be undone/corrected because the
+/// received cash was already used. Lists the consuming transactions and tells
+/// the traveller to fix those first.
+class _AffectedTransactionsSheet extends StatelessWidget {
+  const _AffectedTransactionsSheet({
+    required this.status,
+    required this.isCorrect,
+  });
+
+  final ExchangeCorrectionStatus status;
+  final bool isCorrect;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final maxHeight = MediaQuery.of(context).size.height * 0.8;
+    final blockedMessage = isCorrect
+        ? l10n.cashWalletExchangeUsedCashCorrectBlocked
+        : l10n.cashWalletExchangeUsedCashUndoBlocked;
+
+    return Material(
+      color: Colors.white,
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+      clipBehavior: Clip.antiAlias,
+      child: SafeArea(
+        top: false,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxHeight: maxHeight),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SheetHeader(
+                  icon: Icons.info_outline_rounded,
+                  title: l10n.cashWalletExchangeAffectedTitle,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  blockedMessage,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF1F2937),
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  l10n.cashWalletExchangeUsedCashUndoGuidance,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF6B7280),
+                      ),
+                ),
+                if (status.affectedTransactions.isNotEmpty) ...[
+                  const SizedBox(height: 18),
+                  Text(
+                    l10n.cashWalletExchangeUsedInLabel,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF312E81),
+                        ),
+                  ),
+                  const SizedBox(height: 10),
+                  for (final affected in status.affectedTransactions)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _AffectedTransactionRow(affected: affected),
+                    ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AffectedTransactionRow extends StatelessWidget {
+  const _AffectedTransactionRow({required this.affected});
+
+  final AffectedCashUse affected;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final formatter = NumberFormat('#,##0.##', 'en');
+    final typeLabel = _typeLabel(l10n);
+    final title = (affected.title != null && affected.title!.trim().isNotEmpty)
+        ? affected.title!.trim()
+        : typeLabel;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFAF5FF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE9D5FF)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1F2937),
+                      ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  [
+                    typeLabel,
+                    DateFormat('dd MMM yyyy').format(affected.date.toLocal()),
+                  ].join(' | '),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF6B7280),
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: Text(
+              '${formatter.format(affected.amount)} '
+              '${affected.currencyCode.trim().toUpperCase()}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFFB45309),
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _typeLabel(AppLocalizations l10n) {
+    switch (affected.type) {
+      case AffectedCashUseType.cashExpense:
+        return l10n.cashWalletExchangeAffectedTypeExpense;
+      case AffectedCashUseType.exchange:
+        return l10n.cashWalletExchangeAffectedTypeExchange;
+      case AffectedCashUseType.manualReduction:
+        return l10n.cashWalletExchangeAffectedTypeManual;
+    }
   }
 }

@@ -40,9 +40,12 @@ class CurrencyExchangeRepository {
     return entity;
   }
 
-  Future<CurrencyExchange?> getExchangeById(String id) async {
-    final db = await _appDatabase.database;
-    final rows = await db.query(
+  Future<CurrencyExchange?> getExchangeById(
+    String id, {
+    DatabaseExecutor? txn,
+  }) async {
+    final executor = txn ?? await _appDatabase.database;
+    final rows = await executor.query(
       AppDatabase.currencyExchangesTable,
       where: 'id = ?',
       whereArgs: [id],

@@ -1906,4 +1906,61 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get backupRestoreFailed => 'فشلت الاستعادة. لم تتغيّر بياناتك الحالية.';
+
+  @override
+  String get cashWalletExchangeCorrectAction => 'تصحيح';
+
+  @override
+  String get cashWalletExchangeCorrectTitle => 'تصحيح عملية الصرف';
+
+  @override
+  String get cashWalletExchangeSaveCorrection => 'حفظ التصحيح';
+
+  @override
+  String get cashWalletExchangeCorrected => 'تم تصحيح عملية الصرف.';
+
+  @override
+  String get cashWalletExchangeCorrectFailed => 'تعذّر تصحيح عملية الصرف. حاول مرة أخرى.';
+
+  @override
+  String get cashWalletExchangeUndoAction => 'إلغاء العملية';
+
+  @override
+  String get cashWalletExchangeUndoConfirmTitle => 'هل تريد إلغاء عملية الصرف؟';
+
+  @override
+  String get cashWalletExchangeUndoConfirmMessage => 'سيتم استرجاع أرصدتك كما لو أن عملية الصرف لم تحدث.';
+
+  @override
+  String get cashWalletExchangeUndone => 'تم إلغاء عملية الصرف.';
+
+  @override
+  String get cashWalletExchangeUndoFailed => 'تعذّر إلغاء عملية الصرف. حاول مرة أخرى.';
+
+  @override
+  String get cashWalletExchangeViewAffectedAction => 'عرض العمليات المتأثرة';
+
+  @override
+  String get cashWalletExchangeAffectedTitle => 'العمليات المتأثرة';
+
+  @override
+  String get cashWalletExchangeUsedInLabel => 'استُخدم في:';
+
+  @override
+  String get cashWalletExchangeUsedCashUndoBlocked => 'لا يمكن إلغاء هذه العملية الآن لأن النقد الناتج عنها استُخدم في عمليات لاحقة.';
+
+  @override
+  String get cashWalletExchangeUsedCashUndoGuidance => 'لحل المشكلة، احذف أو صحّح العمليات المتأثرة أولاً، ثم عد لإلغاء هذه العملية.';
+
+  @override
+  String get cashWalletExchangeUsedCashCorrectBlocked => 'لا يمكن تصحيح عملية الصرف لأن جزءاً من النقد الذي استلمته قد تم صرفه.';
+
+  @override
+  String get cashWalletExchangeAffectedTypeExpense => 'مصروف نقدي';
+
+  @override
+  String get cashWalletExchangeAffectedTypeExchange => 'عملية صرف';
+
+  @override
+  String get cashWalletExchangeAffectedTypeManual => 'تخفيض يدوي';
 }

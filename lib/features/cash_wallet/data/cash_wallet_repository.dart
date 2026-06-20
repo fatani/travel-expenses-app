@@ -316,6 +316,7 @@ class CashWalletRepository {
     required String tripId,
     required double fromAmount,
     required String fromCurrencyCode,
+    String? exchangeId,
     String? note,
     DateTime? createdAt,
   }) async {
@@ -328,6 +329,7 @@ class CashWalletRepository {
       currencyCode: normalizedCurrency,
       note: note,
       createdAt: createdAt,
+      exchangeId: exchangeId,
     );
     await _insertTransaction(txn, transaction);
     await _applyBalanceDelta(
@@ -352,6 +354,7 @@ class CashWalletRepository {
     required String toLotId,
     required double toAmount,
     required String toCurrencyCode,
+    String? exchangeId,
     String? note,
     DateTime? createdAt,
   }) async {
@@ -365,6 +368,7 @@ class CashWalletRepository {
       note: note,
       createdAt: createdAt,
       lotId: toLotId,
+      exchangeId: exchangeId,
     );
     await _insertTransaction(txn, transaction);
     await _applyBalanceDelta(
@@ -375,6 +379,64 @@ class CashWalletRepository {
       updatedAt: transaction.createdAt,
     );
     return transaction;
+  }
+
+  /// Reverses the two `currency_exchange_out` / `currency_exchange_in` cash
+  /// transactions linked to [exchangeId] and restores [trip_cash_balances],
+  /// all inside the caller's [txn].
+  ///
+  /// Original effects undone:
+  /// * `exchange_out`: source balance was decreased by `fromAmount` → restored.
+  /// * `exchange_in`:  destination balance was increased by `toAmount` → removed.
+  ///
+  /// Idempotency-safe: only rows with `is_reversed = 0` are touched, so a
+  /// double call is a no-op for already-reversed rows. Throws [StateError] when
+  /// no active exchange transactions are found (the linkage is required —
+  /// `RecordCurrencyExchangeUseCase` always sets `exchange_id`).
+  Future<void> reverseCurrencyExchangeTransactionsInTxn(
+    DatabaseExecutor txn, {
+    required String exchangeId,
+  }) async {
+    final now = DateTime.now().toUtc();
+    final rows = await txn.query(
+      AppDatabase.cashTransactionsTable,
+      where: 'exchange_id = ? AND is_reversed = 0 AND type IN (?, ?)',
+      whereArgs: [
+        exchangeId,
+        CashTransactionType.currencyExchangeOut.value,
+        CashTransactionType.currencyExchangeIn.value,
+      ],
+    );
+
+    if (rows.isEmpty) {
+      throw StateError(
+        'No active exchange cash transactions found for exchange '
+        '$exchangeId — cannot reverse.',
+      );
+    }
+
+    for (final row in rows) {
+      final transaction = CashTransaction.fromMap(row);
+      await txn.update(
+        AppDatabase.cashTransactionsTable,
+        {
+          'is_reversed': 1,
+          'reversed_at': now.toIso8601String(),
+        },
+        where: 'id = ? AND is_reversed = 0',
+        whereArgs: [transaction.id],
+      );
+      // Undo the original signed delta (out restores +fromAmount to the source
+      // currency; in removes +toAmount from the destination currency).
+      final reversalDelta = -transaction.type.signedDelta(transaction.amount);
+      await _applyBalanceDelta(
+        txn,
+        tripId: transaction.tripId,
+        currencyCode: transaction.currencyCode,
+        delta: reversalDelta,
+        updatedAt: now,
+      );
+    }
   }
 
   Future<void> reverseManualCashTransaction({

@@ -1,3 +1,5 @@
+import 'package:sqflite/sqflite.dart';
+
 import 'cash_lot_fifo_engine.dart';
 import 'exchange_plan.dart';
 
@@ -37,12 +39,16 @@ class CurrencyExchangeEngine {
   /// Throws [ArgumentError] for invalid inputs.
   /// Throws [InsufficientCashException] when the wallet lacks sufficient
   /// [fromCurrencyCode] balance.
+  /// Pass [txn] to plan inside an existing transaction so in-progress writes
+  /// (e.g. source lots restored by a prior reversal in the same transaction)
+  /// are visible to FIFO selection. Used by the correct-exchange flow.
   Future<ExchangePlan> planExchange({
     required String tripId,
     required String fromCurrencyCode,
     required double fromAmount,
     required String toCurrencyCode,
     required double toAmount,
+    DatabaseExecutor? txn,
   }) async {
     final from = fromCurrencyCode.trim().toUpperCase();
     final to = toCurrencyCode.trim().toUpperCase();
@@ -75,6 +81,7 @@ class CurrencyExchangeEngine {
       tripId: tripId,
       currencyCode: from,
       requiredAmount: fromAmount,
+      txn: txn,
     );
 
     // --- Cost-basis transfer ------------------------------------------------
