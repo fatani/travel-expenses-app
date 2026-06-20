@@ -10,12 +10,14 @@ import '../../../core/design_system/app_confirmation_dialog.dart';
 import '../../../core/design_system/app_surfaces.dart';
 import '../../../core/design_system/calm_snackbar.dart';
 import '../../../core/formatting/bidi_format.dart';
+import '../../../core/formatting/date_format_cache.dart';
 import '../../../core/finance/manual_exchange_rate.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/calm_load_error_panel.dart';
 import '../../expenses/presentation/expense_form_screen.dart';
+import '../../expenses/presentation/expense_option_labels.dart';
 import '../../settings/domain/card_display_helper.dart';
 import '../../settings/domain/card_profile.dart';
 import '../../settings/presentation/add_card_screen.dart';
@@ -4147,11 +4149,11 @@ class _AffectedTransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context);
     final formatter = NumberFormat('#,##0.##', 'en');
     final typeLabel = _typeLabel(l10n);
-    final title = (affected.title != null && affected.title!.trim().isNotEmpty)
-        ? affected.title!.trim()
-        : typeLabel;
+    final title = _displayTitle(l10n, typeLabel);
+    final subtitle = _subtitle(locale, typeLabel);
 
     return Container(
       decoration: BoxDecoration(
@@ -4176,10 +4178,7 @@ class _AffectedTransactionRow extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  [
-                    typeLabel,
-                    DateFormat('dd MMM yyyy').format(affected.date.toLocal()),
-                  ].join(' | '),
+                  subtitle,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: const Color(0xFF6B7280),
                       ),
@@ -4213,5 +4212,26 @@ class _AffectedTransactionRow extends StatelessWidget {
       case AffectedCashUseType.manualReduction:
         return l10n.cashWalletExchangeAffectedTypeManual;
     }
+  }
+
+  /// Prefer a user-entered title; localize only known built-in category names.
+  String _displayTitle(AppLocalizations l10n, String typeLabel) {
+    final raw = affected.title?.trim();
+    if (raw == null || raw.isEmpty) {
+      return typeLabel;
+    }
+    if (ExpenseOptionLabels.categories.contains(raw)) {
+      return ExpenseOptionLabels.category(l10n, raw);
+    }
+    return raw;
+  }
+
+  String _subtitle(Locale locale, String typeLabel) {
+    final localeTag = locale.toLanguageTag();
+    final datePattern =
+        locale.languageCode == 'ar' ? 'd MMM yyyy' : 'MMM d, yyyy';
+    final dateText = DateFormatCache.get(datePattern, localeTag)
+        .format(affected.date.toLocal());
+    return '$typeLabel · $dateText';
   }
 }

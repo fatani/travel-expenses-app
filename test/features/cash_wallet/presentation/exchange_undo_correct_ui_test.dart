@@ -104,12 +104,53 @@ void main() {
             type: AffectedCashUseType.cashExpense,
             amount: 100,
             currencyCode: 'CNY',
-            date: DateTime.utc(2026, 6, 10),
+            date: DateTime(2026, 6, 20),
             title: 'Dumplings',
             referenceId: 'exp-1',
           ),
         ],
       );
+
+  ExchangeCorrectionStatus usedCashWithCategory(String category) =>
+      ExchangeCorrectionStatus.blocked(
+        exchangeId: 'exch-1',
+        reasonCode: ExchangeCorrectionReason.destinationCashUsed,
+        destinationLotId: 'lot-1',
+        affectedTransactions: [
+          AffectedCashUse(
+            type: AffectedCashUseType.cashExpense,
+            amount: 250,
+            currencyCode: 'CNY',
+            date: DateTime(2026, 6, 20),
+            title: category,
+            referenceId: 'exp-2',
+          ),
+        ],
+      );
+
+  Future<void> openAffectedSheet(
+    WidgetTester tester, {
+    Locale locale = const Locale('en'),
+    required ExchangeCorrectionStatus status,
+  }) async {
+    sizeLarge(tester);
+    await tester.pumpWidget(buildApp(status: status, locale: locale));
+    await tester.pumpAndSettle();
+
+    final actionLabel = locale.languageCode == 'ar'
+        ? 'عرض العمليات المتأثرة'
+        : 'View affected transactions';
+    await tester.tap(find.text(actionLabel));
+    await tester.pumpAndSettle();
+  }
+
+  String sheetText(WidgetTester tester) {
+    return tester
+        .widgetList<Text>(find.byType(Text))
+        .map((widget) => widget.data)
+        .whereType<String>()
+        .join('\n');
+  }
 
   group('legacy exchange row actions', () {
     testWidgets(
@@ -152,17 +193,72 @@ void main() {
 
     testWidgets('View affected lists title, amount and currency',
         (tester) async {
-      sizeLarge(tester);
-      await tester.pumpWidget(buildApp(status: usedCash()));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('View affected transactions'));
-      await tester.pumpAndSettle();
+      await openAffectedSheet(tester, status: usedCash());
 
       expect(find.text('Affected transactions'), findsOneWidget);
       expect(find.text('Dumplings'), findsOneWidget);
       expect(find.textContaining('100'), findsWidgets);
       expect(find.textContaining('CNY'), findsWidgets);
+      expect(find.textContaining('Cash expense · Jun 20, 2026'), findsOneWidget);
+    });
+  });
+
+  group('affected transactions sheet polish', () {
+    testWidgets('Arabic blocking message has no duplicate wording',
+        (tester) async {
+      await openAffectedSheet(
+        tester,
+        locale: const Locale('ar'),
+        status: usedCash(),
+      );
+
+      final text = sheetText(tester);
+      expect(text, isNot(contains('لأن لأن')));
+      expect(
+        text,
+        contains(
+          'لا يمكن إلغاء هذه العملية الآن لأن النقد الناتج عنها استُخدم في عمليات لاحقة.',
+        ),
+      );
+    });
+
+    testWidgets('built-in category is localized in Arabic affected rows',
+        (tester) async {
+      await openAffectedSheet(
+        tester,
+        locale: const Locale('ar'),
+        status: usedCashWithCategory('Accommodation'),
+      );
+
+      expect(find.text('إقامة'), findsOneWidget);
+      expect(find.text('Accommodation'), findsNothing);
+    });
+
+    testWidgets('user-entered custom title is not translated in Arabic',
+        (tester) async {
+      await openAffectedSheet(
+        tester,
+        locale: const Locale('ar'),
+        status: usedCash(),
+      );
+
+      expect(find.text('Dumplings'), findsOneWidget);
+    });
+
+    testWidgets('Arabic affected row uses locale-friendly date subtitle',
+        (tester) async {
+      await openAffectedSheet(
+        tester,
+        locale: const Locale('ar'),
+        status: usedCashWithCategory('Accommodation'),
+      );
+
+      final text = sheetText(tester);
+      expect(text, isNot(contains('Jun 2026 20')));
+      expect(text, contains('20'));
+      expect(text, contains('2026'));
+      expect(text, contains('يونيو'));
+      expect(text, contains('مصروف نقدي ·'));
     });
   });
 
