@@ -350,6 +350,88 @@ void main() {
     });
   });
 
+  // ── 6. Legacy exchange with null cash_transactions.exchange_id ─────────────
+
+  group('6 — legacy exchange with null cash_transactions.exchange_id', () {
+    Future<void> stripExchangeIdFromCashTransactions(String exchangeId) async {
+      final rawDb = await db.database;
+      await rawDb.update(
+        AppDatabase.cashTransactionsTable,
+        {'exchange_id': null},
+        where: 'exchange_id = ?',
+        whereArgs: [exchangeId],
+      );
+    }
+
+    test('direct reverse fails safely with no partial reversal', () async {
+      await addJpy(10000, homeAmount: 270);
+      final result = await exchangeJpyToCny(from: 5000, to: 720);
+
+      await stripExchangeIdFromCashTransactions(result.exchange.id);
+
+      final jpyBefore = await balanceOf('JPY');
+      final cnyBefore = await balanceOf('CNY');
+
+      await expectLater(
+        reverseExchange.execute(result.exchange.id),
+        throwsA(isA<StateError>()),
+      );
+
+      // Exchange and lots remain active — nothing half-reversed.
+      final exchange = await exchangeRepo.getExchangeById(result.exchange.id);
+      expect(exchange!.isReversed, isFalse);
+      expect(exchange.reversedAt, isNull);
+
+      final destLot = await lotRepo.getCashLotById(result.destinationLot.id);
+      expect(destLot!.isReversed, isFalse);
+      expect(destLot.remainingAmount, closeTo(720, 1e-6));
+
+      final activeConsumptions =
+          await consumptionRepo.getActiveConsumptionsByExchangeId(
+        result.exchange.id,
+      );
+      expect(activeConsumptions, isNotEmpty);
+      expect(
+        activeConsumptions.every((c) => c.isReversed == false),
+        isTrue,
+      );
+
+      // Balances unchanged.
+      expect(await balanceOf('JPY'), closeTo(jpyBefore, 1e-6));
+      expect(await balanceOf('CNY'), closeTo(cnyBefore, 1e-6));
+
+      // Cash transactions still present and not reversed.
+      final rawDb = await db.database;
+      final txRows = await rawDb.query(
+        AppDatabase.cashTransactionsTable,
+        where: 'trip_id = ? AND type IN (?, ?)',
+        whereArgs: [
+          trip.id,
+          CashTransactionType.currencyExchangeOut.value,
+          CashTransactionType.currencyExchangeIn.value,
+        ],
+      );
+      expect(txRows, hasLength(2));
+      for (final row in txRows) {
+        expect(row['exchange_id'], isNull);
+        expect(row['is_reversed'], 0);
+      }
+    });
+
+    test('correction status still reports correctable for domain lookup',
+        () async {
+      await addJpy(10000, homeAmount: 270);
+      final result = await exchangeJpyToCny(from: 5000, to: 720);
+      await stripExchangeIdFromCashTransactions(result.exchange.id);
+
+      // Status query alone does not inspect cash_transactions.exchange_id;
+      // the UI blocks actions when the activity row lacks the linkage.
+      final status = await correctionService.getStatus(result.exchange.id);
+      expect(status.canUndo, isTrue);
+      expect(status.canCorrect, isTrue);
+    });
+  });
+
   // ── 5. Idempotency ─────────────────────────────────────────────────────────
 
   group('5 — idempotency', () {

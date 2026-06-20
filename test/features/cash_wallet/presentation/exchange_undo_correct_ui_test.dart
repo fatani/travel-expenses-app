@@ -46,13 +46,14 @@ void main() {
         updatedAt: DateTime.now().toUtc(),
       );
 
-  CashTransaction exchangeInTx() => CashTransaction.create(
+  CashTransaction exchangeInTx({String? exchangeId = 'exch-1'}) =>
+      CashTransaction.create(
         id: 'in-1',
         tripId: chinaTrip.id,
         type: CashTransactionType.currencyExchangeIn,
         amount: 720,
         currencyCode: 'CNY',
-        exchangeId: 'exch-1',
+        exchangeId: exchangeId,
         createdAt: DateTime.now().toUtc(),
       );
 
@@ -61,10 +62,11 @@ void main() {
     _SpyReverseUseCase? reverse,
     _SpyCorrectUseCase? correct,
     Locale locale = const Locale('en'),
+    List<CashTransaction>? transactions,
   }) {
     final repo = _FakeWalletRepository(
       balances: [balance('CNY', 720), balance('USD', 0)],
-      transactions: [exchangeInTx()],
+      transactions: transactions ?? [exchangeInTx()],
     );
     return ProviderScope(
       overrides: [
@@ -108,6 +110,23 @@ void main() {
           ),
         ],
       );
+
+  group('legacy exchange row actions', () {
+    testWidgets(
+        'null exchange_id hides Correct, Undo, and View affected transactions',
+        (tester) async {
+      sizeLarge(tester);
+      await tester.pumpWidget(buildApp(
+        status: correctable(),
+        transactions: [exchangeInTx(exchangeId: null)],
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Correct'), findsNothing);
+      expect(find.text('Undo transaction'), findsNothing);
+      expect(find.text('View affected transactions'), findsNothing);
+    });
+  });
 
   group('exchange row actions', () {
     testWidgets('correctable exchange shows Correct and Undo', (tester) async {

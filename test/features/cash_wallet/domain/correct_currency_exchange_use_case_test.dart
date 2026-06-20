@@ -195,6 +195,105 @@ void main() {
     });
   });
 
+  // ── 8. Failed correction rolls back reverse ────────────────────────────────
+
+  group('8 — failed correction rolls back reverse', () {
+    test(
+        'record-step failure leaves original exchange active and balances unchanged',
+        () async {
+      // Spec scenario: USD 100 → 720 CNY, then a correction that fails after
+      // the reverse step begins (same-currency corrected values).
+      final usdTrip = await tripRepo.createTrip(
+        Trip.create(
+          id: 'trip-cor-rollback',
+          name: 'Rollback Trip',
+          destination: 'China',
+          baseCurrency: 'USD',
+          destinationCurrency: 'USD',
+          homeCurrencySnapshot: 'SAR',
+        ),
+      );
+      await walletRepo.addCashTransaction(
+        tripId: usdTrip.id,
+        type: CashTransactionType.initialCash,
+        amount: 100,
+        currencyCode: 'USD',
+        homeCurrencyAmount: 375,
+        homeCurrencyCode: 'SAR',
+      );
+      final original = await recordExchange.execute(
+        tripId: usdTrip.id,
+        fromCurrencyCode: 'USD',
+        fromAmount: 100,
+        toCurrencyCode: 'CNY',
+        toAmount: 720,
+      );
+
+      final preCorrectionBalances = await walletRepo.getBalancesByTrip(usdTrip.id);
+      double preUsd = 0;
+      double preCny = 0;
+      for (final b in preCorrectionBalances) {
+        if (b.currencyCode == 'USD') preUsd = b.balanceAmount;
+        if (b.currencyCode == 'CNY') preCny = b.balanceAmount;
+      }
+      expect(preUsd, closeTo(0, 1e-6));
+      expect(preCny, closeTo(720, 1e-6));
+
+      final exchangesBefore =
+          await exchangeRepo.getExchangesByTripId(usdTrip.id);
+
+      await expectLater(
+        correctExchange.execute(
+          originalExchangeId: original.exchange.id,
+          fromCurrencyCode: 'USD',
+          fromAmount: 100,
+          toCurrencyCode: 'USD',
+          toAmount: 720,
+        ),
+        throwsA(isA<ArgumentError>()),
+      );
+
+      // Original exchange still active — not half-reversed.
+      final originalRow =
+          await exchangeRepo.getExchangeById(original.exchange.id);
+      expect(originalRow!.isReversed, isFalse);
+      expect(originalRow.reversedAt, isNull);
+
+      // Balances unchanged from the pre-correction state.
+      final usdBalances = await walletRepo.getBalancesByTrip(usdTrip.id);
+      double usdBalance = 0;
+      double cnyBalance = 0;
+      for (final b in usdBalances) {
+        if (b.currencyCode == 'USD') usdBalance = b.balanceAmount;
+        if (b.currencyCode == 'CNY') cnyBalance = b.balanceAmount;
+      }
+      expect(usdBalance, closeTo(0, 1e-6));
+      expect(cnyBalance, closeTo(720, 1e-6));
+
+      // Destination lot still active with full received amount.
+      final destLot =
+          await lotRepo.getCashLotById(original.destinationLot.id);
+      expect(destLot!.isReversed, isFalse);
+      expect(destLot.remainingAmount, closeTo(720, 1e-6));
+
+      // Source consumptions still active.
+      final activeConsumptions =
+          await consumptionRepo.getActiveConsumptionsByExchangeId(
+        original.exchange.id,
+      );
+      expect(activeConsumptions, isNotEmpty);
+      expect(
+        activeConsumptions.every((c) => c.isReversed == false),
+        isTrue,
+      );
+
+      // No corrected exchange appended.
+      final exchangesAfter =
+          await exchangeRepo.getExchangesByTripId(usdTrip.id);
+      expect(exchangesAfter.length, exchangesBefore.length);
+    });
+  });
+
   // ── 7. Correct blocked when destination consumed ──────────────────────────
 
   group('7 — correct blocked when destination consumed', () {
