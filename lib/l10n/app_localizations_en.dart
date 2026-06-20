@@ -556,7 +556,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletAtmUndoMessage => 'This will remove the cash received and the linked ATM fee from active totals.';
 
   @override
-  String get cashWalletAtmUndoConfirm => 'Undo';
+  String get cashWalletAtmUndoCancel => 'Cancel';
+
+  @override
+  String get cashWalletAtmUndoConfirm => 'Undo withdrawal';
 
   @override
   String get cashWalletAtmUndone => 'ATM withdrawal undone.';

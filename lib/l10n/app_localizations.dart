@@ -1145,10 +1145,16 @@ abstract class AppLocalizations {
   /// **'This will remove the cash received and the linked ATM fee from active totals.'**
   String get cashWalletAtmUndoMessage;
 
+  /// No description provided for @cashWalletAtmUndoCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cashWalletAtmUndoCancel;
+
   /// No description provided for @cashWalletAtmUndoConfirm.
   ///
   /// In en, this message translates to:
-  /// **'Undo'**
+  /// **'Undo withdrawal'**
   String get cashWalletAtmUndoConfirm;
 
   /// No description provided for @cashWalletAtmUndone.

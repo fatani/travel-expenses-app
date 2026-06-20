@@ -783,7 +783,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
               icon: Icons.undo_rounded,
               title: l10n.cashWalletAtmUndoTitle,
               message: l10n.cashWalletAtmUndoMessage,
-              cancelLabel: l10n.commonCancel,
+              cancelLabel: l10n.cashWalletAtmUndoCancel,
               confirmLabel: l10n.cashWalletAtmUndoConfirm,
               onCancel: () => Navigator.of(sheetContext).pop(false),
               onConfirm: () => Navigator.of(sheetContext).pop(true),

@@ -57,6 +57,7 @@ void main() {
   Future<void> pump(
     WidgetTester tester, {
     required AtmCorrectionStatus status,
+    Locale? locale,
   }) async {
     tester.view.physicalSize = const Size(1000, 2000);
     tester.view.devicePixelRatio = 1.0;
@@ -74,6 +75,7 @@ void main() {
           reverseAtmWithdrawalUseCaseProvider.overrideWithValue(reverseSpy),
         ],
         child: MaterialApp(
+          locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           home: TripCashWalletScreen(trip: trip),
@@ -118,7 +120,24 @@ void main() {
     expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);
   });
 
-  testWidgets('Undo shows confirmation then calls the reverse use case',
+  testWidgets('Undo shows confirmation with distinct actions then reverses',
+      (tester) async {
+    await pump(tester, status: correctable());
+
+    await tester.tap(find.text('Undo'));
+    await settle(tester);
+    expect(find.text('Undo ATM withdrawal?'), findsOneWidget);
+    // Distinct cancel/confirm labels — no two identical buttons.
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(find.text('Undo withdrawal'), findsOneWidget);
+
+    await tester.tap(find.text('Undo withdrawal'));
+    await settle(tester);
+
+    expect(reverseSpy.executedIds, ['tx-atm']);
+  });
+
+  testWidgets('Undo confirmation Cancel dismisses without reversing',
       (tester) async {
     await pump(tester, status: correctable());
 
@@ -126,9 +145,28 @@ void main() {
     await settle(tester);
     expect(find.text('Undo ATM withdrawal?'), findsOneWidget);
 
-    await tester.tap(find.text('Undo').last);
+    await tester.tap(find.text('Cancel'));
     await settle(tester);
 
+    expect(find.text('Undo ATM withdrawal?'), findsNothing);
+    expect(reverseSpy.executedIds, isEmpty);
+  });
+
+  testWidgets('Arabic Undo dialog has distinct labels (not two إلغاء)',
+      (tester) async {
+    await pump(tester, status: correctable(), locale: const Locale('ar'));
+
+    await tester.tap(find.text('إلغاء')); // the row "Undo" action
+    await settle(tester);
+
+    expect(find.text('إلغاء سحب الصراف؟'), findsOneWidget);
+    // Cancel = تراجع, destructive confirm = إلغاء السحب — no bare "إلغاء" button.
+    expect(find.text('تراجع'), findsOneWidget);
+    expect(find.text('إلغاء السحب'), findsOneWidget);
+    expect(find.widgetWithText(TextButton, 'إلغاء'), findsNothing);
+
+    await tester.tap(find.text('إلغاء السحب'));
+    await settle(tester);
     expect(reverseSpy.executedIds, ['tx-atm']);
   });
 

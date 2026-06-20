@@ -556,7 +556,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletAtmUndoMessage => 'سيتم إزالة الكاش المستلم ورسوم الصراف المرتبطة من الإجماليات النشطة.';
 
   @override
-  String get cashWalletAtmUndoConfirm => 'إلغاء';
+  String get cashWalletAtmUndoCancel => 'تراجع';
+
+  @override
+  String get cashWalletAtmUndoConfirm => 'إلغاء السحب';
 
   @override
   String get cashWalletAtmUndone => 'تم إلغاء سحب الصراف.';
