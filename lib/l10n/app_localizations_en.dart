@@ -526,6 +526,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletAtmFeeTooHighValidation => 'The ATM fee must be less than the amount charged to your card.';
 
   @override
+  String get cashWalletAtmFeeCategory => 'ATM fee';
+
+  @override
+  String get cashWalletAtmWithdrawalFeeChannel => 'ATM withdrawal fee';
+
+  @override
+  String get cashWalletAtmBreakdownTitle => 'Withdrawal breakdown';
+
+  @override
+  String get cashWalletAtmBreakdownCashReceived => 'Cash received';
+
+  @override
+  String get cashWalletAtmBreakdownCashCost => 'Cash cost';
+
+  @override
+  String get cashWalletAtmBreakdownAtmFee => 'ATM fee';
+
+  @override
+  String get cashWalletAtmBreakdownTotalCharged => 'Total charged to card';
+
+  @override
   String get cashWalletExchangeMoneyTitle => 'Exchange Money';
 
   @override

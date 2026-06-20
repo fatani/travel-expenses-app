@@ -1552,6 +1552,7 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
               receivedCurrency: currencyCode,
               chargedAmount: homeValue,
               chargedCurrency: homeValue != null ? homeCurrencyCode : null,
+              homeCurrencyCode: homeCurrencyCode,
               note: _noteController.text,
               createdAt: _selectedDateTime,
             );
@@ -1696,6 +1697,7 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
+                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: l10n.cashWalletAtmCashReceivedLabel,
                     hintText: '0.00',
@@ -1752,6 +1754,7 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
+                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: l10n.cashWalletAtmChargedLabel,
                     helperText: l10n.cashWalletAtmChargedHelper,
@@ -1768,6 +1771,7 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
                   ],
+                  onChanged: (_) => setState(() {}),
                   decoration: InputDecoration(
                     labelText: l10n.cashWalletAtmFeeLabel,
                     helperText: l10n.cashWalletAtmFeeHelper,
@@ -1776,6 +1780,7 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
                     prefixIcon: const Icon(Icons.receipt_long_outlined),
                   ),
                 ),
+                _buildBreakdown(l10n),
                 const SizedBox(height: 12),
                 TextField(
                   controller: _noteController,
@@ -1829,6 +1834,91 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Live cost breakdown explaining `charged = cash cost + ATM fee`.
+  ///
+  /// Shown only once the card-charged amount is a valid positive number, so the
+  /// traveller can see how the home-currency charge splits into the cash they
+  /// received and the separate ATM fee. Pure display — never blocks Save and
+  /// never fetches exchange rates.
+  Widget _buildBreakdown(AppLocalizations l10n) {
+    final received = double.tryParse(_receivedAmountController.text.trim());
+    final charged = double.tryParse(_chargedAmountController.text.trim());
+    final feeText = _feeController.text.trim();
+    final feeParsed = feeText.isEmpty ? null : double.tryParse(feeText);
+    final fee = (feeParsed != null && feeParsed > 0) ? feeParsed : 0.0;
+
+    // Not enough information to explain the relationship yet.
+    if (charged == null || charged <= 0 || fee >= charged) {
+      return const SizedBox.shrink();
+    }
+
+    final homeCurrency = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+    final cashCost = charged - fee;
+
+    Widget row(String label, String value, {bool emphasize = false}) {
+      final theme = Theme.of(context);
+      final style = theme.textTheme.bodyMedium?.copyWith(
+        color: const Color(0xFF475569),
+        fontWeight: emphasize ? FontWeight.w700 : FontWeight.w500,
+      );
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          children: [
+            Expanded(child: Text(label, style: style)),
+            Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text(value, style: style),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(top: 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F2FF),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFDDD6FE)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            l10n.cashWalletAtmBreakdownTitle,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: const Color(0xFF4C1D95),
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: 8),
+          if (received != null && received > 0)
+            row(
+              l10n.cashWalletAtmBreakdownCashReceived,
+              _formatAmount(received, _selectedCurrencyCode),
+            ),
+          row(
+            l10n.cashWalletAtmBreakdownCashCost,
+            _formatAmount(cashCost, homeCurrency),
+          ),
+          if (fee > 0)
+            row(
+              l10n.cashWalletAtmBreakdownAtmFee,
+              _formatAmount(fee, homeCurrency),
+            ),
+          const Divider(height: 16, color: Color(0xFFDDD6FE)),
+          row(
+            l10n.cashWalletAtmBreakdownTotalCharged,
+            _formatAmount(charged, homeCurrency),
+            emphasize: true,
+          ),
+        ],
       ),
     );
   }
@@ -2063,6 +2153,7 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
             feeAmount: feeAmount,
             feeCurrency: feeAmount != null ? homeCurrencyCode : null,
             fundingCardId: selectedCardId,
+            homeCurrencyCode: homeCurrencyCode,
             note: _noteController.text,
             createdAt: _selectedDateTime,
           );

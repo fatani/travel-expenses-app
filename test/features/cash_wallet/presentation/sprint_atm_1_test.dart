@@ -280,6 +280,62 @@ void main() {
       expect(spy.lastChargedAmount, 275);
     });
 
+    testWidgets('15 — live breakdown explains charged = cash cost + fee',
+        (tester) async {
+      tester.view.physicalSize = const Size(900, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      await tester.pumpWidget(
+        _buildApp(trip: trip, cards: [buildCard(1, 'Visa')]),
+      );
+      await tester.pumpAndSettle();
+
+      await openAtmSheet(tester);
+
+      await tester.enterText(find.byType(TextField).at(0), '1000'); // received
+      await tester.enterText(find.byType(TextField).at(1), '530'); // charged
+      await tester.enterText(find.byType(TextField).at(2), '10'); // fee
+      await tester.pumpAndSettle();
+
+      // Breakdown panel and its derived values are shown before Save.
+      expect(find.text('Withdrawal breakdown'), findsOneWidget);
+      expect(find.text('Cash cost'), findsOneWidget);
+      expect(find.text('Total charged to card'), findsOneWidget);
+      // Cash cost = 530 - 10 = 520 SAR; total charged = 530 SAR.
+      expect(find.textContaining('520 SAR'), findsOneWidget);
+      expect(find.textContaining('530 SAR'), findsOneWidget);
+      // Received cash is echoed in the trip destination currency.
+      expect(find.textContaining('1,000 THB'), findsOneWidget);
+    });
+
+    testWidgets('16 — save forwards the trip home currency to the use case',
+        (tester) async {
+      tester.view.physicalSize = const Size(900, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final spy = _SpyAtmUseCase();
+      await tester.pumpWidget(
+        _buildApp(trip: trip, cards: [buildCard(1, 'Visa')], atmUseCase: spy),
+      );
+      await tester.pumpAndSettle();
+
+      await openAtmSheet(tester);
+
+      await tester.enterText(find.byType(TextField).at(0), '1000'); // received
+      await tester.enterText(find.byType(TextField).at(1), '530'); // charged
+      await tester.enterText(find.byType(TextField).at(2), '10'); // fee
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(spy.callCount, 1);
+      expect(spy.lastHomeCurrencyCode, 'SAR');
+      expect(spy.lastFeeAmount, 10);
+      expect(spy.lastFeeCurrency, 'SAR');
+    });
+
     testWidgets('14 — fee >= charged amount blocks save', (tester) async {
       tester.view.physicalSize = const Size(900, 1600);
       tester.view.devicePixelRatio = 1.0;
@@ -374,6 +430,7 @@ class _SpyAtmUseCase extends RecordAtmWithdrawalUseCase {
   double? lastFeeAmount;
   String? lastFeeCurrency;
   int? lastFundingCardId;
+  String? lastHomeCurrencyCode;
 
   @override
   Future<AtmWithdrawalResult> execute({
@@ -386,6 +443,7 @@ class _SpyAtmUseCase extends RecordAtmWithdrawalUseCase {
     String? feeCurrency,
     String? feeNote,
     int? fundingCardId,
+    String? homeCurrencyCode,
     String? note,
     DateTime? createdAt,
   }) async {
@@ -397,6 +455,7 @@ class _SpyAtmUseCase extends RecordAtmWithdrawalUseCase {
     lastFeeAmount = feeAmount;
     lastFeeCurrency = feeCurrency;
     lastFundingCardId = fundingCardId;
+    lastHomeCurrencyCode = homeCurrencyCode;
 
     return AtmWithdrawalResult(
       cashLot: CashLot.create(

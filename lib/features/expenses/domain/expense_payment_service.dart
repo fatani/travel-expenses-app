@@ -78,7 +78,9 @@ class ExpensePaymentService {
   bool isCardExpenseChannel(String? paymentChannel) {
     final normalizedChannel = paymentChannel?.trim().toLowerCase();
     return normalizedChannel == 'pos purchase' ||
-        normalizedChannel == 'online purchase';
+        normalizedChannel == 'online purchase' ||
+        // ATM withdrawal fees are charged to a card, not paid in cash.
+        normalizedChannel == 'atm withdrawal fee';
   }
 
   /// Infers the canonical payment method string from the user-selected

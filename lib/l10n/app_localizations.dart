@@ -1085,6 +1085,48 @@ abstract class AppLocalizations {
   /// **'The ATM fee must be less than the amount charged to your card.'**
   String get cashWalletAtmFeeTooHighValidation;
 
+  /// No description provided for @cashWalletAtmFeeCategory.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM fee'**
+  String get cashWalletAtmFeeCategory;
+
+  /// No description provided for @cashWalletAtmWithdrawalFeeChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM withdrawal fee'**
+  String get cashWalletAtmWithdrawalFeeChannel;
+
+  /// No description provided for @cashWalletAtmBreakdownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawal breakdown'**
+  String get cashWalletAtmBreakdownTitle;
+
+  /// No description provided for @cashWalletAtmBreakdownCashReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash received'**
+  String get cashWalletAtmBreakdownCashReceived;
+
+  /// No description provided for @cashWalletAtmBreakdownCashCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash cost'**
+  String get cashWalletAtmBreakdownCashCost;
+
+  /// No description provided for @cashWalletAtmBreakdownAtmFee.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM fee'**
+  String get cashWalletAtmBreakdownAtmFee;
+
+  /// No description provided for @cashWalletAtmBreakdownTotalCharged.
+  ///
+  /// In en, this message translates to:
+  /// **'Total charged to card'**
+  String get cashWalletAtmBreakdownTotalCharged;
+
   /// No description provided for @cashWalletExchangeMoneyTitle.
   ///
   /// In en, this message translates to:

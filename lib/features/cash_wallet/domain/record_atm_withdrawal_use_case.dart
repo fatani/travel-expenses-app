@@ -39,6 +39,13 @@ import 'cash_lot.dart';
 /// * category        = 'Fees'
 /// * card_profile_id = [fundingCardId]
 ///
+/// When [homeCurrencyCode] is provided and the fee is denominated in that
+/// currency, the fee expense also carries a 1:1 home-value snapshot
+/// (`convertedHomeAmount = feeAmount`, `homeCurrency = homeCurrencyCode`,
+/// `conversionRate = 1`) so reports include it in home-currency spending
+/// totals. This mirrors [ExpenseFxSnapshotService]'s same-currency rule and
+/// does **not** touch the cash lot cost basis.
+///
 /// ## Atomicity
 ///
 /// If any step fails the entire transaction rolls back — no partial lot, no
@@ -74,6 +81,9 @@ class RecordAtmWithdrawalUseCase {
   /// [feeCurrency]     — currency of the fee (defaults to [chargedCurrency]).
   /// [feeNote]         — title for the fee expense (defaults to 'ATM Fee').
   /// [fundingCardId]   — card profile ID for the fee expense.
+  /// [homeCurrencyCode] — trip home currency; when the fee is in this currency
+  ///                     the fee expense gets a 1:1 home-value snapshot so it
+  ///                     counts in home-currency report totals.
   /// [note]            — free-text note for the cash transaction.
   /// [createdAt]       — timestamp; defaults to now.
   Future<AtmWithdrawalResult> execute({
@@ -86,6 +96,7 @@ class RecordAtmWithdrawalUseCase {
     String? feeCurrency,
     String? feeNote,
     int? fundingCardId,
+    String? homeCurrencyCode,
     String? note,
     DateTime? createdAt,
   }) async {
@@ -152,11 +163,20 @@ class RecordAtmWithdrawalUseCase {
             : null) ??
         normalizedChargedCurrency ??
         normalizedReceived;
+    final String? normalizedHomeCurrency =
+        (homeCurrencyCode?.trim().isNotEmpty == true)
+            ? homeCurrencyCode!.trim().toUpperCase()
+            : null;
 
     Expense? feeExpense;
     if (hasFee) {
       // feeAmount is promoted non-null by hasFee guard
       final effectiveFeeAmount = feeAmount;
+      // Home-value snapshot: a fee already denominated in the home currency is
+      // worth its face value at home (1:1) so reports include it in
+      // home-currency totals. Cross-currency fees stay null (no rate guessed).
+      final bool feeInHomeCurrency = normalizedHomeCurrency != null &&
+          effectiveFeeCurrency == normalizedHomeCurrency;
       feeExpense = Expense.create(
         tripId: tripId,
         title: (feeNote != null && feeNote.trim().isNotEmpty)
@@ -166,6 +186,9 @@ class RecordAtmWithdrawalUseCase {
         currencyCode: effectiveFeeCurrency,
         transactionAmount: effectiveFeeAmount,
         transactionCurrency: effectiveFeeCurrency,
+        convertedHomeAmount: feeInHomeCurrency ? effectiveFeeAmount : null,
+        homeCurrency: feeInHomeCurrency ? normalizedHomeCurrency : null,
+        conversionRate: feeInHomeCurrency ? 1 : null,
         paymentMethod: 'Credit Card',
         paymentChannel: 'ATM Withdrawal Fee',
         category: 'Fees',

@@ -526,6 +526,27 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletAtmFeeTooHighValidation => 'يجب أن تكون رسوم السحب أقل من المبلغ المخصوم من البطاقة.';
 
   @override
+  String get cashWalletAtmFeeCategory => 'رسوم الصراف';
+
+  @override
+  String get cashWalletAtmWithdrawalFeeChannel => 'رسوم سحب من الصراف';
+
+  @override
+  String get cashWalletAtmBreakdownTitle => 'تفصيل السحب';
+
+  @override
+  String get cashWalletAtmBreakdownCashReceived => 'الكاش المستلم';
+
+  @override
+  String get cashWalletAtmBreakdownCashCost => 'تكلفة الكاش';
+
+  @override
+  String get cashWalletAtmBreakdownAtmFee => 'رسوم الصراف';
+
+  @override
+  String get cashWalletAtmBreakdownTotalCharged => 'إجمالي الخصم من البطاقة';
+
+  @override
   String get cashWalletExchangeMoneyTitle => 'صرف عملة';
 
   @override

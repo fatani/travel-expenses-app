@@ -246,6 +246,72 @@ void main() {
     });
   });
 
+  // ─── 8b. Fee carries home value when fee currency == home currency ────────
+
+  group('8b — fee home value (feeCurrency == homeCurrency)', () {
+    test('fee expense has convertedHomeAmount = fee and homeCurrency = home',
+        () async {
+      // Received 1000 CNY, charged 530 SAR, fee 10 SAR, home = SAR.
+      final result = await useCase.execute(
+        tripId: trip.id,
+        receivedAmount: 1000,
+        receivedCurrency: 'CNY',
+        chargedAmount: 530,
+        chargedCurrency: 'SAR',
+        feeAmount: 10,
+        feeCurrency: 'SAR',
+        homeCurrencyCode: 'SAR',
+      );
+
+      // Cash lot cost basis stays 520 SAR (charged - fee), NOT 530.
+      expect(result.cashLot.homeCurrencyAmount, closeTo(520.0, 1e-6));
+
+      // Fee expense carries a 1:1 home value so reports can count it.
+      final fee = result.feeExpense!;
+      expect(fee.transactionAmount, closeTo(10.0, 1e-6));
+      expect(fee.transactionCurrency, 'SAR');
+      expect(fee.convertedHomeAmount, closeTo(10.0, 1e-6));
+      expect(fee.homeCurrency, 'SAR');
+      expect(fee.conversionRate, closeTo(1.0, 1e-9));
+    });
+
+    test('fee home value persisted to expenses table', () async {
+      await useCase.execute(
+        tripId: trip.id,
+        receivedAmount: 1000,
+        receivedCurrency: 'CNY',
+        chargedAmount: 530,
+        chargedCurrency: 'SAR',
+        feeAmount: 10,
+        feeCurrency: 'SAR',
+        homeCurrencyCode: 'SAR',
+      );
+
+      final expenses = await expenseRepo.getExpensesByTrip(trip.id);
+      expect(expenses, hasLength(1));
+      expect(expenses.first.convertedHomeAmount, closeTo(10.0, 1e-6));
+      expect(expenses.first.homeCurrency, 'SAR');
+    });
+
+    test('fee has no home value when fee currency != home currency', () async {
+      // Fee in JPY but home is SAR — no rate is invented.
+      final result = await useCase.execute(
+        tripId: trip.id,
+        receivedAmount: 1000,
+        receivedCurrency: 'CNY',
+        chargedAmount: 530,
+        chargedCurrency: 'SAR',
+        feeAmount: 10,
+        feeCurrency: 'JPY',
+        homeCurrencyCode: 'SAR',
+      );
+
+      expect(result.feeExpense!.convertedHomeAmount, isNull);
+      expect(result.feeExpense!.homeCurrency, isNull);
+      expect(result.feeExpense!.conversionRate, isNull);
+    });
+  });
+
   // ─── 9. Fee does not affect cash balance ──────────────────────────────────
 
   group('9 — fee does not affect cash balance', () {

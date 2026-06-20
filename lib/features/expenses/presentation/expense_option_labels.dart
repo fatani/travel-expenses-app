@@ -64,6 +64,8 @@ class ExpenseOptionLabels {
         return l10n.expenseCategoryShopping;
       case 'Entertainment':
         return l10n.expenseCategoryEntertainment;
+      case 'Fees':
+        return l10n.cashWalletAtmFeeCategory;
       default:
         return l10n.expenseCategoryOther;
     }
@@ -107,6 +109,8 @@ class ExpenseOptionLabels {
       case 'Online Purchase':
       case 'Online':
         return l10n.paymentChannelOnline;
+      case 'ATM Withdrawal Fee':
+        return l10n.cashWalletAtmWithdrawalFeeChannel;
       case 'Cash':
         return l10n.paymentMethodCash;
       default:
