@@ -336,6 +336,37 @@ void main() {
       expect(spy.lastFeeCurrency, 'SAR');
     });
 
+    testWidgets('17 — received currency is locked to the trip currency',
+        (tester) async {
+      tester.view.physicalSize = const Size(900, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final spy = _SpyAtmUseCase();
+      await tester.pumpWidget(
+        _buildApp(trip: trip, cards: [buildCard(1, 'Visa')], atmUseCase: spy),
+      );
+      await tester.pumpAndSettle();
+
+      await openAtmSheet(tester);
+
+      // The currency is shown locked (read-only) with explanatory helper text,
+      // not as a selectable picker.
+      expect(find.text('ATM withdrawals use the trip currency.'),
+          findsOneWidget);
+      expect(find.byIcon(Icons.lock_outline), findsOneWidget);
+      expect(find.textContaining('THB'), findsWidgets);
+
+      // Saving forwards the trip destination currency unchanged.
+      await tester.enterText(find.byType(TextField).at(0), '1000');
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(spy.callCount, 1);
+      expect(spy.lastReceivedCurrency, 'THB');
+    });
+
     testWidgets('14 — fee >= charged amount blocks save', (tester) async {
       tester.view.physicalSize = const Size(900, 1600);
       tester.view.devicePixelRatio = 1.0;

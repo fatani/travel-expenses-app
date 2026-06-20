@@ -526,6 +526,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletAtmFeeTooHighValidation => 'The ATM fee must be less than the amount charged to your card.';
 
   @override
+  String get cashWalletAtmCurrencyLockedHelper => 'ATM withdrawals use the trip currency.';
+
+  @override
+  String get cashWalletAtmEditBlocked => 'ATM withdrawals can\'t be edited from this screen yet. To protect the card charge, ATM fee, and cash cost, correction will be handled separately.';
+
+  @override
+  String get cashWalletAtmDeleteBlocked => 'ATM withdrawals can\'t be deleted from this screen yet. This withdrawal may include a card charge and ATM fee, so it needs a safe correction flow.';
+
+  @override
   String get cashWalletAtmFeeCategory => 'ATM fee';
 
   @override

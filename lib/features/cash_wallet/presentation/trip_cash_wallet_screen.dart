@@ -346,15 +346,20 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                                   : null,
                               exchangeStatus:
                                   _exchangeStatusFor(transaction),
-                              onEdit: _canEditManualTransaction(transaction)
-                                  ? () => _showAddCashSheet(
-                                        initialType: transaction.type,
-                                        editingTransaction: transaction,
-                                      )
-                                  : null,
-                              onDelete: _canDeleteManualTransaction(transaction)
-                                  ? () => _confirmDeleteManualTransaction(transaction)
-                                  : null,
+                              onEdit: _isAtmWithdrawalRow(transaction)
+                                  ? _showAtmEditBlockedMessage
+                                  : _canEditManualTransaction(transaction)
+                                      ? () => _showAddCashSheet(
+                                            initialType: transaction.type,
+                                            editingTransaction: transaction,
+                                          )
+                                      : null,
+                              onDelete: _isAtmWithdrawalRow(transaction)
+                                  ? _showAtmDeleteBlockedMessage
+                                  : _canDeleteManualTransaction(transaction)
+                                      ? () => _confirmDeleteManualTransaction(
+                                            transaction)
+                                      : null,
                               onEditExpense: _canEditLinkedExpense(transaction)
                                   ? () => _openLinkedExpenseEditor(transaction)
                                   : null,
@@ -566,13 +571,48 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     // Editing or deleting only one side through the manual cash-transaction path
     // would break Financial Core invariants (orphan lots, unbalanced cash), so
     // these rows are not editable or deletable here.
+    //
+    // ATM withdrawals are also excluded: an ATM withdrawal can carry a card
+    // charge + a separate ATM fee expense + a cash cost basis. The generic
+    // manual edit/delete path only touches the cash transaction/lot, which
+    // would orphan the fee expense and break the card/cash relationship. ATM
+    // rows route to a blocked-message handler instead (see
+    // [_isAtmWithdrawalRow]); a safe correction flow is handled separately.
     return transaction.type == CashTransactionType.initialCash ||
-        transaction.type == CashTransactionType.atmWithdrawal ||
         transaction.type == CashTransactionType.manualAdjustment;
   }
 
   bool _canDeleteManualTransaction(CashTransaction transaction) {
     return _canEditManualTransaction(transaction);
+  }
+
+  /// Whether [transaction] is an active ATM withdrawal row. Such rows expose
+  /// edit/delete affordances that explain why the action is unavailable, rather
+  /// than silently dropping the buttons.
+  bool _isAtmWithdrawalRow(CashTransaction transaction) {
+    return transaction.type == CashTransactionType.atmWithdrawal &&
+        !transaction.isReversed;
+  }
+
+  /// Pre-launch guard: editing an ATM withdrawal through the generic Add Cash
+  /// sheet could break the card charge / ATM fee / cash cost relationship, so
+  /// it is blocked with guidance instead of opening that sheet.
+  void _showAtmEditBlockedMessage() {
+    final l10n = AppLocalizations.of(context)!;
+    CalmSnackBar.showMessage(
+      context,
+      message: l10n.cashWalletAtmEditBlocked,
+    );
+  }
+
+  /// Pre-launch guard: deleting an ATM withdrawal through the generic cash
+  /// delete would orphan its ATM fee expense, so it is blocked with guidance.
+  void _showAtmDeleteBlockedMessage() {
+    final l10n = AppLocalizations.of(context)!;
+    CalmSnackBar.showMessage(
+      context,
+      message: l10n.cashWalletAtmDeleteBlocked,
+    );
   }
 
   bool _canEditLinkedExpense(CashTransaction transaction) {
@@ -1737,45 +1777,46 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                GestureDetector(
-                  onTap: _isSaving ? null : _pickCurrency,
-                  child: Builder(builder: (ctx) {
-                    final isArabic =
-                        Localizations.localeOf(ctx).languageCode == 'ar';
-                    final entry = CountryDatabase.countries.firstWhere(
-                      (c) => c.currencyCode == _selectedCurrencyCode,
-                      orElse: () => CountryInfo(
-                        countryCode: '',
-                        englishName: _selectedCurrencyCode,
-                        arabicName: _selectedCurrencyCode,
-                        currencyCode: _selectedCurrencyCode,
-                        currencyName: '',
-                        flagEmoji: '🏳',
-                      ),
-                    );
-                    return InputDecorator(
-                      decoration: InputDecoration(
-                        labelText: l10n.cashWalletCashCurrencyLabel,
-                        prefixIcon:
-                            const Icon(Icons.currency_exchange_outlined),
-                        suffixIcon: const Icon(Icons.arrow_drop_down),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(entry.flagEmoji,
-                              style: const TextStyle(fontSize: 20)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              '${entry.getLocalizedName(isArabic)} | ${entry.currencyCode}',
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                // ATM withdrawals always dispense the trip destination currency,
+                // so the received currency is locked (read-only) — not a picker.
+                Builder(builder: (ctx) {
+                  final isArabic =
+                      Localizations.localeOf(ctx).languageCode == 'ar';
+                  final entry = CountryDatabase.countries.firstWhere(
+                    (c) => c.currencyCode == _selectedCurrencyCode,
+                    orElse: () => CountryInfo(
+                      countryCode: '',
+                      englishName: _selectedCurrencyCode,
+                      arabicName: _selectedCurrencyCode,
+                      currencyCode: _selectedCurrencyCode,
+                      currencyName: '',
+                      flagEmoji: '🏳',
+                    ),
+                  );
+                  return InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: l10n.cashWalletCashCurrencyLabel,
+                      helperText: l10n.cashWalletAtmCurrencyLockedHelper,
+                      helperMaxLines: 2,
+                      prefixIcon:
+                          const Icon(Icons.currency_exchange_outlined),
+                      suffixIcon: const Icon(Icons.lock_outline, size: 18),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(entry.flagEmoji,
+                            style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            '${entry.getLocalizedName(isArabic)} | ${entry.currencyCode}',
+                            overflow: TextOverflow.ellipsis,
                           ),
-                        ],
-                      ),
-                    );
-                  }),
-                ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
                 const SizedBox(height: 12),
                 _buildCardSelector(l10n, cards, effectiveCardId),
                 const SizedBox(height: 12),
@@ -2072,45 +2113,6 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
       );
       _syncDateTimeFields();
     });
-  }
-
-  Future<void> _pickCurrency() async {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final tripDest = widget.trip.destinationCurrency.trim().toUpperCase();
-    final tripHome = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
-
-    final seen = <String>{};
-    final allUnique = <CountryInfo>[];
-    for (final c in CountryDatabase.countries) {
-      if (seen.add(c.currencyCode)) allUnique.add(c);
-    }
-
-    final pinned = allUnique
-        .where((c) => c.currencyCode == tripDest || c.currencyCode == tripHome)
-        .toList();
-    final rest = allUnique
-        .where((c) => c.currencyCode != tripDest && c.currencyCode != tripHome)
-        .toList()
-      ..sort((a, b) => a.currencyCode.compareTo(b.currencyCode));
-    final fullList = [...pinned, ...rest];
-
-    if (!mounted) return;
-    final picked = await showModalBottomSheet<String>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _CurrencyPickerSheet(
-        allEntries: fullList,
-        selectedCode: _selectedCurrencyCode,
-        isArabic: isArabic,
-      ),
-    );
-
-    if (picked != null && mounted) {
-      setState(() {
-        _selectedCurrencyCode = picked;
-      });
-    }
   }
 
   Future<void> _addCard() async {

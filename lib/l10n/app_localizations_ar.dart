@@ -526,6 +526,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletAtmFeeTooHighValidation => 'يجب أن تكون رسوم السحب أقل من المبلغ المخصوم من البطاقة.';
 
   @override
+  String get cashWalletAtmCurrencyLockedHelper => 'سحب الصراف يكون بعملة الرحلة.';
+
+  @override
+  String get cashWalletAtmEditBlocked => 'لا يمكن تعديل سحب الصراف من هذه الشاشة حالياً. لحماية خصم البطاقة ورسوم الصراف وتكلفة الكاش، سيتم التعامل مع التصحيح بشكل مستقل.';
+
+  @override
+  String get cashWalletAtmDeleteBlocked => 'لا يمكن حذف سحب الصراف من هذه الشاشة حالياً. قد تتضمن هذه العملية خصماً من البطاقة ورسوم صراف، لذلك تحتاج إلى مسار تصحيح آمن.';
+
+  @override
   String get cashWalletAtmFeeCategory => 'رسوم الصراف';
 
   @override

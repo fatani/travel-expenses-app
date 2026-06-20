@@ -1085,6 +1085,24 @@ abstract class AppLocalizations {
   /// **'The ATM fee must be less than the amount charged to your card.'**
   String get cashWalletAtmFeeTooHighValidation;
 
+  /// No description provided for @cashWalletAtmCurrencyLockedHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM withdrawals use the trip currency.'**
+  String get cashWalletAtmCurrencyLockedHelper;
+
+  /// No description provided for @cashWalletAtmEditBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM withdrawals can\'t be edited from this screen yet. To protect the card charge, ATM fee, and cash cost, correction will be handled separately.'**
+  String get cashWalletAtmEditBlocked;
+
+  /// No description provided for @cashWalletAtmDeleteBlocked.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM withdrawals can\'t be deleted from this screen yet. This withdrawal may include a card charge and ATM fee, so it needs a safe correction flow.'**
+  String get cashWalletAtmDeleteBlocked;
+
   /// No description provided for @cashWalletAtmFeeCategory.
   ///
   /// In en, this message translates to:
