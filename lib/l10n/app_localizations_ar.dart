@@ -511,6 +511,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletAtmSelectCardValidation => 'يرجى اختيار البطاقة المستخدمة.';
 
   @override
+  String get cashWalletAtmAddCardBeforeSave => 'أضف بطاقة أولاً لتتمكن من حفظ سحب الصراف.';
+
+  @override
+  String get cashWalletAtmChooseCardBeforeSave => 'اختر بطاقة أولاً لتسجيل سحب الصراف.';
+
+  @override
   String get cashWalletAtmChargedLabel => 'المبلغ المخصوم من البطاقة';
 
   @override

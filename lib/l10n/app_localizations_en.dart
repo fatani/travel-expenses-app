@@ -511,6 +511,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletAtmSelectCardValidation => 'Please select the card used.';
 
   @override
+  String get cashWalletAtmAddCardBeforeSave => 'Add a card first to save this ATM withdrawal.';
+
+  @override
+  String get cashWalletAtmChooseCardBeforeSave => 'Choose a card first to record this ATM withdrawal.';
+
+  @override
   String get cashWalletAtmChargedLabel => 'Amount charged to your card';
 
   @override

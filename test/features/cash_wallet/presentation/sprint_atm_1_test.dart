@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:travel_expenses/core/design_system/app_buttons.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_lot_repository.dart';
@@ -161,9 +162,18 @@ void main() {
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);
 
+      final cnyTrip = Trip.create(
+        id: 'trip-atm-cny',
+        name: 'Beijing',
+        destination: 'Beijing',
+        baseCurrency: 'CNY',
+        destinationCurrency: 'CNY',
+        homeCurrencySnapshot: 'SAR',
+      );
+
       final spy = _SpyAtmUseCase();
       await tester.pumpWidget(
-        _buildApp(trip: trip, cards: const [], atmUseCase: spy),
+        _buildApp(trip: cnyTrip, cards: const [], atmUseCase: spy),
       );
       await tester.pumpAndSettle();
 
@@ -171,14 +181,65 @@ void main() {
 
       expect(find.text('Add a card to record this ATM withdrawal.'),
           findsOneWidget);
+      expect(find.text('Add a card first to save this ATM withdrawal.'),
+          findsOneWidget);
 
-      await tester.enterText(find.byType(TextField).at(0), '5000');
+      await tester.enterText(find.byType(TextField).at(0), '2000');
+      await tester.enterText(find.byType(TextField).at(1), '1130');
+      await tester.enterText(find.byType(TextField).at(2), '15');
+      await tester.pumpAndSettle();
+
+      final saveButton = tester.widget<AppPrimaryButton>(
+        find.descendant(
+          of: find.byKey(const Key('atm_save_button')),
+          matching: find.byType(AppPrimaryButton),
+        ),
+      );
+      expect(saveButton.onPressed, isNull);
+
       await tester.ensureVisible(find.text('Save'));
       await tester.tap(find.text('Save'));
       await tester.pumpAndSettle();
 
       expect(spy.callCount, 0);
-      expect(find.text('Please select the card used.'), findsOneWidget);
+    });
+
+    testWidgets('7b — save with card selected still records withdrawal',
+        (tester) async {
+      tester.view.physicalSize = const Size(900, 1600);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+
+      final spy = _SpyAtmUseCase();
+      await tester.pumpWidget(
+        _buildApp(trip: trip, cards: [buildCard(3, 'Visa')], atmUseCase: spy),
+      );
+      await tester.pumpAndSettle();
+
+      await openAtmSheet(tester);
+
+      await tester.enterText(find.byType(TextField).at(0), '1000');
+      await tester.enterText(find.byType(TextField).at(1), '520');
+      await tester.enterText(find.byType(TextField).at(2), '10');
+      await tester.pumpAndSettle();
+
+      final saveButton = tester.widget<AppPrimaryButton>(
+        find.descendant(
+          of: find.byKey(const Key('atm_save_button')),
+          matching: find.byType(AppPrimaryButton),
+        ),
+      );
+      expect(saveButton.onPressed, isNotNull);
+
+      await tester.ensureVisible(find.text('Save'));
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+
+      expect(spy.callCount, 1);
+      expect(spy.lastFundingCardId, 3);
+      expect(spy.lastReceivedAmount, 1000);
+      expect(spy.lastChargedAmount, 520);
+      expect(spy.lastFeeAmount, 10);
     });
 
     testWidgets('9 — save with charged amount passes it to the use case',

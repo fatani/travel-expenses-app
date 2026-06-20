@@ -1055,6 +1055,18 @@ abstract class AppLocalizations {
   /// **'Please select the card used.'**
   String get cashWalletAtmSelectCardValidation;
 
+  /// No description provided for @cashWalletAtmAddCardBeforeSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a card first to save this ATM withdrawal.'**
+  String get cashWalletAtmAddCardBeforeSave;
+
+  /// No description provided for @cashWalletAtmChooseCardBeforeSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a card first to record this ATM withdrawal.'**
+  String get cashWalletAtmChooseCardBeforeSave;
+
   /// No description provided for @cashWalletAtmChargedLabel.
   ///
   /// In en, this message translates to:

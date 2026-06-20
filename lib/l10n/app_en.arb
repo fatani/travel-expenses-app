@@ -178,6 +178,8 @@
   "cashWalletAtmNoCardsMessage": "Add a card to record this ATM withdrawal.",
   "cashWalletAtmAddCard": "Add card",
   "cashWalletAtmSelectCardValidation": "Please select the card used.",
+  "cashWalletAtmAddCardBeforeSave": "Add a card first to save this ATM withdrawal.",
+  "cashWalletAtmChooseCardBeforeSave": "Choose a card first to record this ATM withdrawal.",
   "cashWalletAtmChargedLabel": "Amount charged to your card",
   "cashWalletAtmChargedHelper": "Use the amount shown by your bank. You can leave it blank and add it later.",
   "cashWalletAtmFeeLabel": "ATM fee",

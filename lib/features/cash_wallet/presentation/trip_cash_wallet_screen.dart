@@ -1739,6 +1739,7 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
     final cardsAsync = ref.watch(cardsProvider);
     final cards = cardsAsync.value ?? const <CardProfile>[];
     final effectiveCardId = _resolveSelectedCardId(cards);
+    final canSave = !_isSaving && effectiveCardId != null;
 
     return Material(
       color: Colors.white,
@@ -1893,7 +1894,8 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
                 ),
                 const SizedBox(height: 18),
                 _SheetGradientButton(
-                  onPressed: _isSaving ? null : () => _save(cards),
+                  key: const Key('atm_save_button'),
+                  onPressed: canSave ? () => _save(cards) : null,
                   child: _isSaving
                       ? const SizedBox(
                           width: 16,
@@ -2021,6 +2023,14 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
                     fontWeight: FontWeight.w600,
                   ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.cashWalletAtmAddCardBeforeSave,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF7C3AED),
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
               onPressed: _isSaving ? null : _addCard,
@@ -2032,12 +2042,18 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
       );
     }
 
+    final cardHelperText = effectiveCardId == null
+        ? l10n.cashWalletAtmChooseCardBeforeSave
+        : null;
+
     return DropdownButtonFormField<int>(
       key: const Key('atm_card_selector'),
       isExpanded: true,
       initialValue: effectiveCardId,
       decoration: InputDecoration(
         labelText: l10n.cashWalletAtmCardLabel,
+        helperText: cardHelperText,
+        helperMaxLines: 2,
         prefixIcon: const Icon(Icons.credit_card_rounded),
       ),
       items: [
@@ -4059,7 +4075,11 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
 }
 
 class _SheetGradientButton extends StatelessWidget {
-  const _SheetGradientButton({required this.onPressed, required this.child});
+  const _SheetGradientButton({
+    super.key,
+    required this.onPressed,
+    required this.child,
+  });
 
   final VoidCallback? onPressed;
   final Widget child;

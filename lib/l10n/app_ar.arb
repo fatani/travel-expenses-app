@@ -177,6 +177,8 @@
   "cashWalletAtmNoCardsMessage": "أضف بطاقة لتسجيل هذا السحب من الصراف.",
   "cashWalletAtmAddCard": "أضف بطاقة",
   "cashWalletAtmSelectCardValidation": "يرجى اختيار البطاقة المستخدمة.",
+  "cashWalletAtmAddCardBeforeSave": "أضف بطاقة أولاً لتتمكن من حفظ سحب الصراف.",
+  "cashWalletAtmChooseCardBeforeSave": "اختر بطاقة أولاً لتسجيل سحب الصراف.",
   "cashWalletAtmChargedLabel": "المبلغ المخصوم من البطاقة",
   "cashWalletAtmChargedHelper": "استخدم المبلغ الظاهر من البنك. يمكنك تركه فارغاً وإضافته لاحقاً.",
   "cashWalletAtmFeeLabel": "رسوم السحب من الصراف",
