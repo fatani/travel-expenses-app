@@ -1106,9 +1106,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get refundFormLinkNone => 'بدون ربط';
 
   @override
-  String get refundFormCurrencyInvalid => 'أدخل رمز عملة من ٣ أحرف.';
-
-  @override
   String get refundFormUnlinkedCashNeedsHome => 'لتسجيل استرداد نقدي بهذه العملة، اربطه بمصروف أولاً.';
 
   @override

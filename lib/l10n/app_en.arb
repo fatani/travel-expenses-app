@@ -413,7 +413,6 @@
   "refundFormCurrencyLabel": "Currency",
   "refundFormLinkLabel": "Link to expense",
   "refundFormLinkNone": "No linked expense",
-  "refundFormCurrencyInvalid": "Enter a 3-letter currency code.",
   "refundFormUnlinkedCashNeedsHome": "To record a cash refund in this currency, link it to an expense first.",
   "expenseFormRefundGuidance": "If you received a partial or full refund, use Refund instead of changing the expense amount.",
   "expenseFormTitleLabel": "Title",

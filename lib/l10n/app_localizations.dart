@@ -2189,12 +2189,6 @@ abstract class AppLocalizations {
   /// **'No linked expense'**
   String get refundFormLinkNone;
 
-  /// No description provided for @refundFormCurrencyInvalid.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a 3-letter currency code.'**
-  String get refundFormCurrencyInvalid;
-
   /// No description provided for @refundFormUnlinkedCashNeedsHome.
   ///
   /// In en, this message translates to:

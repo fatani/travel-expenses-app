@@ -1106,9 +1106,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refundFormLinkNone => 'No linked expense';
 
   @override
-  String get refundFormCurrencyInvalid => 'Enter a 3-letter currency code.';
-
-  @override
   String get refundFormUnlinkedCashNeedsHome => 'To record a cash refund in this currency, link it to an expense first.';
 
   @override

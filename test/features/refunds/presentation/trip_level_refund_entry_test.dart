@@ -134,6 +134,98 @@ void main() {
     });
   });
 
+  group('Refund currency dropdown', () {
+    final dropdownTrip = Trip.create(
+      id: 'trip-currency-dropdown',
+      name: 'Shanghai',
+      destination: 'Shanghai',
+      baseCurrency: 'CNY',
+      destinationCurrency: 'CNY',
+      homeCurrencySnapshot: 'SAR',
+      startDate: DateTime(2026, 1, 1),
+      endDate: DateTime(2026, 1, 10),
+    );
+
+    final cardExpenseUsd = Expense.create(
+      id: 'exp-card-usd',
+      tripId: dropdownTrip.id,
+      title: 'Hotel',
+      amount: 100,
+      currencyCode: 'USD',
+      transactionAmount: 100,
+      transactionCurrency: 'USD',
+      spentAt: DateTime(2026, 1, 2),
+      paymentMethod: 'Credit Card',
+      paymentChannel: 'POS Purchase',
+      category: 'Lodging',
+    );
+
+    final cashExpenseJpy = Expense.create(
+      id: 'exp-cash-jpy',
+      tripId: dropdownTrip.id,
+      title: 'Snacks',
+      amount: 500,
+      currencyCode: 'JPY',
+      transactionAmount: 500,
+      transactionCurrency: 'JPY',
+      spentAt: DateTime(2026, 1, 3),
+      paymentMethod: 'Cash',
+      paymentChannel: 'Cash',
+      category: 'Food',
+    );
+
+    Future<void> pumpForm(WidgetTester tester, {RecordRefundUseCase? spy}) {
+      return tester.pumpWidget(
+        _buildRefundFormApp(
+          trip: dropdownTrip,
+          expenses: [cardExpenseUsd, cashExpenseJpy],
+          recordRefundUseCase: spy ?? _CapturingRecordRefundUseCase(),
+        ),
+      );
+    }
+
+    testWidgets('currency control is a dropdown, not free-text', (tester) async {
+      await pumpForm(tester);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
+      // No editable text field carries the currency label.
+      expect(find.widgetWithText(TextFormField, 'Currency'), findsNothing);
+    });
+
+    testWidgets('defaults to the trip destination currency', (tester) async {
+      final spy = _CapturingRecordRefundUseCase();
+      await pumpForm(tester, spy: spy);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Refund amount'),
+        '20',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Record refund'));
+      await tester.pumpAndSettle();
+
+      expect(spy.capturedCurrency, 'CNY');
+    });
+
+    testWidgets('lists home, destination and prior card currencies only',
+        (tester) async {
+      await pumpForm(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+
+      // Home (SAR) and prior card currency (USD) appear as selectable codes.
+      expect(find.text('SAR'), findsOneWidget);
+      expect(find.text('USD'), findsOneWidget);
+      // Cash-only currency is excluded; arbitrary currencies are not offered.
+      expect(find.text('JPY'), findsNothing);
+      expect(find.text('EUR'), findsNothing);
+    });
+  });
+
   group('Unlinked card refund persistence + reporting (real DB)', () {
     late AppDatabase db;
     late CashWalletRepository walletRepo;

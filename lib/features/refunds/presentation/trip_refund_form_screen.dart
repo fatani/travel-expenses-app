@@ -9,6 +9,7 @@ import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../expenses/domain/expense.dart';
 import '../../trips/domain/trip.dart';
+import '../domain/allowed_refund_currencies.dart';
 import '../domain/over_refund_exception.dart';
 import '../domain/refund_destination.dart';
 import 'linked_refund_home_snapshot.dart';
@@ -46,8 +47,9 @@ class TripRefundFormScreen extends ConsumerStatefulWidget {
 class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _amountController;
-  late final TextEditingController _currencyController;
   late final TextEditingController _noteController;
+  late final List<String> _allowedCurrencies;
+  late String _currency;
   RefundDestination _destination = RefundDestination.card;
   String? _linkedExpenseId;
   bool _isSubmitting = false;
@@ -56,16 +58,25 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
   void initState() {
     super.initState();
     _amountController = TextEditingController();
-    _currencyController = TextEditingController(
-      text: widget.trip.homeCurrencySnapshot.trim().toUpperCase(),
-    );
     _noteController = TextEditingController();
+    _allowedCurrencies = buildAllowedRefundCurrencies(
+      homeCurrency: widget.trip.homeCurrencySnapshot,
+      destinationCurrency: widget.trip.destinationCurrency,
+      expenses: widget.expenses,
+    );
+    // Default to the trip destination currency; it is always present in the
+    // allowed list. Fall back to the first allowed code if destination is blank.
+    final defaultCurrency = widget.trip.destinationCurrency.trim().toUpperCase();
+    _currency = defaultCurrency.isNotEmpty
+        ? defaultCurrency
+        : (_allowedCurrencies.isNotEmpty
+            ? _allowedCurrencies.first
+            : widget.trip.homeCurrencySnapshot.trim().toUpperCase());
   }
 
   @override
   void dispose() {
     _amountController.dispose();
-    _currencyController.dispose();
     _noteController.dispose();
     super.dispose();
   }
@@ -82,7 +93,15 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final currency = _currencyController.text.trim().toUpperCase();
+    final currency = _currency;
+    // The dropdown must always be able to render the active selection. A linked
+    // expense can settle in a currency that is not otherwise an allowed refund
+    // currency, so union it in to avoid an invalid-value assertion.
+    final currencyOptions = <String>[
+      ..._allowedCurrencies,
+      if (currency.isNotEmpty && !_allowedCurrencies.contains(currency))
+        currency,
+    ];
 
     return Scaffold(
       appBar: AppBar(
@@ -138,31 +157,25 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
                 },
               ),
               const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _currencyController,
-                enabled: !_isSubmitting && _linkedExpenseId == null,
-                textCapitalization: TextCapitalization.characters,
-                maxLength: 3,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[A-Za-z]')),
-                  TextInputFormatter.withFunction(
-                    (oldValue, newValue) => newValue.copyWith(
-                      text: newValue.text.toUpperCase(),
-                    ),
-                  ),
-                ],
+              DropdownButtonFormField<String>(
+                initialValue: currency.isEmpty ? null : currency,
+                isExpanded: true,
                 decoration: InputDecoration(
                   labelText: l10n.refundFormCurrencyLabel,
-                  counterText: '',
                 ),
-                onChanged: (_) => setState(() {}),
-                validator: (value) {
-                  final code = value?.trim() ?? '';
-                  if (code.length != 3) {
-                    return l10n.refundFormCurrencyInvalid;
-                  }
-                  return null;
-                },
+                items: [
+                  for (final code in currencyOptions)
+                    DropdownMenuItem<String>(
+                      value: code,
+                      child: LtrText(data: code),
+                    ),
+                ],
+                onChanged: (_isSubmitting || _linkedExpenseId != null)
+                    ? null
+                    : (value) {
+                        if (value == null) return;
+                        setState(() => _currency = value);
+                      },
               ),
               if (widget.expenses.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.md),
@@ -231,8 +244,7 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
       final expense = _linkedExpense;
       if (expense != null) {
         // Linked refunds always settle in the original expense currency.
-        _currencyController.text =
-            expense.transactionCurrency.trim().toUpperCase();
+        _currency = expense.transactionCurrency.trim().toUpperCase();
       }
     });
   }
@@ -244,7 +256,7 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
 
     final l10n = AppLocalizations.of(context)!;
     final amount = double.parse(_amountController.text.trim());
-    final currency = _currencyController.text.trim().toUpperCase();
+    final currency = _currency.trim().toUpperCase();
     final linkedExpense = _linkedExpense;
     final homeCurrency = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
 
