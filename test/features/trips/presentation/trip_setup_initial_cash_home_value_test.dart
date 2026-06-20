@@ -423,6 +423,28 @@ void main() {
       expect(parseOptionalHomeCurrencyAmount('1050'), closeTo(1050, 0.000001));
     });
 
+    test('resolveInitialCashHomeCurrencyAmount uses amount for home currency',
+        () {
+      expect(
+        resolveInitialCashHomeCurrencyAmount(
+          amount: 5000,
+          currencyCode: 'SAR',
+          homeCurrencyCode: 'SAR',
+          homeValueText: '',
+        ),
+        closeTo(5000, 0.000001),
+      );
+      expect(
+        resolveInitialCashHomeCurrencyAmount(
+          amount: 1000,
+          currencyCode: 'USD',
+          homeCurrencyCode: 'SAR',
+          homeValueText: '3750',
+        ),
+        closeTo(3750, 0.000001),
+      );
+    });
+
     test('empty home value leaves cash_lot basis null', () async {
       final trip = await tripRepository.createTrip(
         Trip.create(
@@ -445,6 +467,125 @@ void main() {
       expect(lot.homeCurrencyAmount, isNull);
       expect(lot.homeCurrencyCode, isNull);
       expect(lot.effectiveRate, isNull);
+    });
+  });
+
+  group('Trip Setup — home-currency initial cash auto home value', () {
+    testWidgets('home currency auto-fills home value', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+        ),
+      );
+      await tester.pump();
+
+      await _selectCashRowCurrency(tester, fromCurrency: 'THB', toCurrency: 'SAR');
+      await tester.enterText(_cashAmountField(), '5000');
+      await tester.pump();
+
+      expect(_cashHomeValueFieldText(tester), '5000');
+      expect(find.text('Same as home currency'), findsOneWidget);
+    });
+
+    testWidgets('home value updates when amount changes', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+        ),
+      );
+      await tester.pump();
+
+      await _selectCashRowCurrency(tester, fromCurrency: 'THB', toCurrency: 'SAR');
+      await tester.enterText(_cashAmountField(), '5000');
+      await tester.pump();
+      await tester.enterText(_cashAmountField(), '6000');
+      await tester.pump();
+
+      expect(_cashHomeValueFieldText(tester), '6000');
+    });
+
+    testWidgets('home value is read-only for home currency', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+        ),
+      );
+      await tester.pump();
+
+      await _selectCashRowCurrency(tester, fromCurrency: 'THB', toCurrency: 'SAR');
+      await tester.enterText(_cashAmountField(), '5000');
+      await tester.pump();
+
+      expect(_cashHomeValueFieldWidget(tester).readOnly, isTrue);
+      await tester.enterText(_cashHomeValueField(), '9999');
+      await tester.pump();
+      expect(_cashHomeValueFieldText(tester), '5000');
+    });
+
+    testWidgets('non-home currency home value remains editable', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+        ),
+      );
+      await tester.pump();
+
+      await _selectCashRowCurrency(tester, fromCurrency: 'THB', toCurrency: 'USD');
+      await tester.enterText(_cashAmountField(), '1000');
+      await tester.enterText(_cashHomeValueField(), '3750');
+      await tester.pump();
+
+      expect(_cashHomeValueFieldWidget(tester).readOnly, isFalse);
+      expect(_cashHomeValueFieldText(tester), '3750');
+    });
+
+    testWidgets('switching currency to home locks and auto-fills', (tester) async {
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+        ),
+      );
+      await tester.pump();
+
+      await _selectCashRowCurrency(tester, fromCurrency: 'THB', toCurrency: 'USD');
+      await tester.enterText(_cashAmountField(), '1000');
+      await tester.enterText(_cashHomeValueField(), '3750');
+      await tester.pump();
+
+      await _selectCashRowCurrency(tester, fromCurrency: 'USD', toCurrency: 'SAR');
+      await tester.pump();
+
+      expect(_cashHomeValueFieldText(tester), '1000');
+      expect(_cashHomeValueFieldWidget(tester).readOnly, isTrue);
+    });
+
+    testWidgets('home-currency row submits amount as home value', (tester) async {
+      final recording = _RecordingCashWalletRepository();
+
+      await tester.pumpWidget(
+        _buildApp(
+          home: TripSetupScreen(selectedDestination: thailand),
+          homeCurrencyCode: 'SAR',
+          cashWallet: recording,
+        ),
+      );
+      await tester.pump();
+
+      await _selectCashRowCurrency(tester, fromCurrency: 'THB', toCurrency: 'SAR');
+      await tester.enterText(_cashAmountField(), '5000');
+      await tester.pump();
+
+      await tester.tap(find.text('Create trip'));
+      await tester.pump();
+
+      expect(recording.addCalls, 1);
+      expect(recording.lastHomeCurrencyAmount, closeTo(5000, 0.000001));
+      expect(recording.lastHomeCurrencyCode, 'SAR');
     });
   });
 }
@@ -486,6 +627,42 @@ Future<void> _confirmMissingHomeValueDialog(WidgetTester tester) async {
     await tester.tap(continueButton);
     await tester.pump();
   }
+}
+
+Future<void> _selectCashRowCurrency(
+  WidgetTester tester, {
+  required String fromCurrency,
+  required String toCurrency,
+}) async {
+  final currencyFinder = find.text(fromCurrency);
+  await tester.ensureVisible(currencyFinder);
+  await tester.tap(currencyFinder);
+  await tester.pumpAndSettle();
+
+  final label = switch (toCurrency) {
+    'SAR' => 'SAR - Saudi Riyal',
+    'USD' => 'USD - US Dollar',
+    'THB' => 'THB - Thai Baht',
+    _ => toCurrency,
+  };
+  final optionFinder = find.text(label);
+  await tester.scrollUntilVisible(
+    optionFinder,
+    48,
+    scrollable: find.byType(Scrollable).last,
+  );
+  await tester.tap(optionFinder);
+  await tester.pumpAndSettle();
+}
+
+TextField _cashHomeValueFieldWidget(WidgetTester tester, {int rowIndex = 0}) {
+  return tester.widget<TextField>(_cashHomeValueField(rowIndex: rowIndex));
+}
+
+String _cashHomeValueFieldText(WidgetTester tester, {int rowIndex = 0}) {
+  return _cashHomeValueFieldWidget(tester, rowIndex: rowIndex)
+      .controller!
+      .text;
 }
 
 Widget _buildApp({

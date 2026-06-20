@@ -231,6 +231,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                                   _CashRowFields(
                                     row: _cashRows[i],
                                     enabled: !_isSubmitting,
+                                    homeCurrencyCode: homeCurrencyCode,
                                     amountLabel: l10n.tripSetupAmountLabel,
                                     homeValueLabel: l10n.tripSetupHomeValueLabel(
                                       homeCurrencyCode,
@@ -240,6 +241,8 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
                                       homeCurrencyCode,
                                     ),
                                     homeValueHint: l10n.tripSetupHomeValueHint,
+                                    homeValueSameAsHomeCurrencyHint:
+                                        l10n.tripSetupHomeValueSameAsHomeCurrency,
                                     onCurrencyTap: () =>
                                         _pickCurrencyForRow(_cashRows[i]),
                                   ),
@@ -377,8 +380,17 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
       ),
     );
     if (selected != null && mounted) {
+      final previousCurrency = row.currencyCode;
+      final newCurrency = _extractCurrencyCode(selected);
       setState(() {
-        row.currencyCode = _extractCurrencyCode(selected);
+        row.currencyCode = newCurrency;
+        syncInitialCashHomeValueOnCurrencyChange(
+          amountController: row.amountController,
+          homeValueController: row.homeValueController,
+          previousCurrencyCode: previousCurrency,
+          newCurrencyCode: newCurrency,
+          homeCurrencyCode: _homeCurrencyCode(),
+        );
       });
     }
   }
@@ -512,7 +524,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
         }
       }
 
-      final cashEntries = _resolvedCashEntries();
+      final cashEntries = _resolvedCashEntries(homeCurrencySnapshot);
       if (_hasCashAmountsMissingHomeValue(cashEntries)) {
         final shouldContinue = await _showMissingHomeValueWarning();
         if (!mounted || !shouldContinue) {
@@ -588,7 +600,7 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
     }
   }
 
-  List<_ResolvedCashEntry> _resolvedCashEntries() {
+  List<_ResolvedCashEntry> _resolvedCashEntries(String homeCurrencyCode) {
     final entries = <_ResolvedCashEntry>[];
     for (final row in _cashRows) {
       final amountText = row.amountController.text.trim();
@@ -607,8 +619,11 @@ class _TripSetupScreenState extends ConsumerState<TripSetupScreen> {
         _ResolvedCashEntry(
           amount: amount,
           currencyCode: currency,
-          homeCurrencyAmount: parseOptionalHomeCurrencyAmount(
-            row.homeValueController.text,
+          homeCurrencyAmount: resolveInitialCashHomeCurrencyAmount(
+            amount: amount,
+            currencyCode: currency,
+            homeCurrencyCode: homeCurrencyCode,
+            homeValueText: row.homeValueController.text,
           ),
         ),
       );
@@ -796,6 +811,59 @@ double? parseOptionalHomeCurrencyAmount(String text) {
   return parsed;
 }
 
+bool isInitialCashHomeCurrencyRow({
+  required String currencyCode,
+  required String homeCurrencyCode,
+}) {
+  return currencyCode.trim().toUpperCase() ==
+      homeCurrencyCode.trim().toUpperCase();
+}
+
+double? resolveInitialCashHomeCurrencyAmount({
+  required double amount,
+  required String currencyCode,
+  required String homeCurrencyCode,
+  required String homeValueText,
+}) {
+  if (isInitialCashHomeCurrencyRow(
+    currencyCode: currencyCode,
+    homeCurrencyCode: homeCurrencyCode,
+  )) {
+    return amount;
+  }
+
+  return parseOptionalHomeCurrencyAmount(homeValueText);
+}
+
+void syncInitialCashHomeValueOnCurrencyChange({
+  required TextEditingController amountController,
+  required TextEditingController homeValueController,
+  required String previousCurrencyCode,
+  required String newCurrencyCode,
+  required String homeCurrencyCode,
+}) {
+  final wasHomeCurrencyRow = isInitialCashHomeCurrencyRow(
+    currencyCode: previousCurrencyCode,
+    homeCurrencyCode: homeCurrencyCode,
+  );
+  final isHomeCurrencyRow = isInitialCashHomeCurrencyRow(
+    currencyCode: newCurrencyCode,
+    homeCurrencyCode: homeCurrencyCode,
+  );
+
+  if (isHomeCurrencyRow) {
+    homeValueController.text = amountController.text;
+    return;
+  }
+
+  if (wasHomeCurrencyRow) {
+    final amountText = amountController.text.trim();
+    if (homeValueController.text.trim() == amountText) {
+      homeValueController.clear();
+    }
+  }
+}
+
 class _CashEntryRow {
   _CashEntryRow({required this.currencyCode})
       : amountController = TextEditingController(),
@@ -919,27 +987,102 @@ class _DateField extends StatelessWidget {
   }
 }
 
-class _CashRowFields extends StatelessWidget {
+class _CashRowFields extends StatefulWidget {
   const _CashRowFields({
     required this.row,
     required this.onCurrencyTap,
     required this.enabled,
+    required this.homeCurrencyCode,
     required this.amountLabel,
     required this.homeValueLabel,
     required this.homeValueInputHint,
     required this.homeValueHint,
+    required this.homeValueSameAsHomeCurrencyHint,
   });
 
   final _CashEntryRow row;
   final VoidCallback onCurrencyTap;
   final bool enabled;
+  final String homeCurrencyCode;
   final String amountLabel;
   final String homeValueLabel;
   final String homeValueInputHint;
   final String homeValueHint;
+  final String homeValueSameAsHomeCurrencyHint;
+
+  @override
+  State<_CashRowFields> createState() => _CashRowFieldsState();
+}
+
+class _CashRowFieldsState extends State<_CashRowFields> {
+  bool get _isHomeCurrencyRow => isInitialCashHomeCurrencyRow(
+        currencyCode: widget.row.currencyCode,
+        homeCurrencyCode: widget.homeCurrencyCode,
+      );
+
+  @override
+  void initState() {
+    super.initState();
+    widget.row.amountController.addListener(_onAmountChanged);
+    _syncHomeValueIfNeeded();
+  }
+
+  @override
+  void didUpdateWidget(_CashRowFields oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.homeCurrencyCode != widget.homeCurrencyCode) {
+      _onCurrencyChanged(oldWidget);
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.row.amountController.removeListener(_onAmountChanged);
+    super.dispose();
+  }
+
+  void _onAmountChanged() {
+    if (!_isHomeCurrencyRow) {
+      return;
+    }
+
+    final amountText = widget.row.amountController.text;
+    if (widget.row.homeValueController.text != amountText) {
+      widget.row.homeValueController.text = amountText;
+    }
+  }
+
+  void _onCurrencyChanged(_CashRowFields oldWidget) {
+    final wasHomeCurrencyRow = isInitialCashHomeCurrencyRow(
+      currencyCode: oldWidget.row.currencyCode,
+      homeCurrencyCode: oldWidget.homeCurrencyCode,
+    );
+
+    if (_isHomeCurrencyRow) {
+      _syncHomeValueIfNeeded();
+      return;
+    }
+
+    if (wasHomeCurrencyRow) {
+      final amountText = widget.row.amountController.text.trim();
+      if (widget.row.homeValueController.text.trim() == amountText) {
+        widget.row.homeValueController.clear();
+      }
+    }
+  }
+
+  void _syncHomeValueIfNeeded() {
+    if (_isHomeCurrencyRow) {
+      widget.row.homeValueController.text = widget.row.amountController.text;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final homeValueHint = _isHomeCurrencyRow
+        ? widget.homeValueSameAsHomeCurrencyHint
+        : widget.homeValueHint;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -953,7 +1096,7 @@ class _CashRowFields extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(12),
-                  onTap: enabled ? onCurrencyTap : null,
+                  onTap: widget.enabled ? widget.onCurrencyTap : null,
                   child: Padding(
                     padding:
                         const EdgeInsetsDirectional.fromSTEB(12, 14, 12, 14),
@@ -961,7 +1104,7 @@ class _CashRowFields extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            row.currencyCode,
+                            widget.row.currencyCode,
                             textDirection: TextDirection.ltr,
                             textAlign: TextAlign.start,
                             style: const TextStyle(
@@ -985,8 +1128,8 @@ class _CashRowFields extends StatelessWidget {
             Expanded(
               flex: 3,
               child: TextField(
-                controller: row.amountController,
-                enabled: enabled,
+                controller: widget.row.amountController,
+                enabled: widget.enabled,
                 keyboardType:
                     const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
@@ -994,7 +1137,7 @@ class _CashRowFields extends StatelessWidget {
                   FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
                 ],
                 decoration: InputDecoration(
-                  labelText: amountLabel,
+                  labelText: widget.amountLabel,
                   isDense: true,
                   filled: true,
                   fillColor: const Color(0xFFF8FAFC),
@@ -1020,8 +1163,9 @@ class _CashRowFields extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         TextField(
-          controller: row.homeValueController,
-          enabled: enabled,
+          controller: widget.row.homeValueController,
+          enabled: widget.enabled,
+          readOnly: _isHomeCurrencyRow,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           textInputAction: TextInputAction.done,
           textDirection: TextDirection.ltr,
@@ -1029,8 +1173,8 @@ class _CashRowFields extends StatelessWidget {
             FilteringTextInputFormatter.allow(RegExp(r'[\d.]')),
           ],
           decoration: InputDecoration(
-            labelText: homeValueLabel,
-            hintText: homeValueInputHint,
+            labelText: widget.homeValueLabel,
+            hintText: _isHomeCurrencyRow ? null : widget.homeValueInputHint,
             isDense: true,
             filled: true,
             fillColor: const Color(0xFFF8FAFC),

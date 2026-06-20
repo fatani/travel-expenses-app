@@ -676,6 +676,7 @@
     }
   },
   "tripSetupHomeValueHint": "يساعد ذلك في حساب تكلفة الرحلة بعملتك الأساسية بدقة أكبر.",
+  "tripSetupHomeValueSameAsHomeCurrency": "نفس عملة الحساب الأساسية",
   "tripSetupMissingHomeValueTitle": "لم تدخل القيمة التقريبية للنقد.",
   "tripSetupMissingHomeValueMessage": "سيستمر التطبيق بالعمل بشكل طبيعي، لكن بعض تقارير تكلفة الرحلة بعملتك الأساسية قد تكون أقل دقة.",
   "tripSetupMissingHomeValueContinue": "متابعة",

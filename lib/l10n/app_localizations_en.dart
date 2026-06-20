@@ -1779,6 +1779,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripSetupHomeValueHint => 'This helps calculate your trip cost more accurately in your home currency.';
 
   @override
+  String get tripSetupHomeValueSameAsHomeCurrency => 'Same as home currency';
+
+  @override
   String get tripSetupMissingHomeValueTitle => 'You did not enter the approximate value of your cash.';
 
   @override

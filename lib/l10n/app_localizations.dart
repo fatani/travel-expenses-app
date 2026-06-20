@@ -3383,6 +3383,12 @@ abstract class AppLocalizations {
   /// **'This helps calculate your trip cost more accurately in your home currency.'**
   String get tripSetupHomeValueHint;
 
+  /// No description provided for @tripSetupHomeValueSameAsHomeCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as home currency'**
+  String get tripSetupHomeValueSameAsHomeCurrency;
+
   /// No description provided for @tripSetupMissingHomeValueTitle.
   ///
   /// In en, this message translates to:

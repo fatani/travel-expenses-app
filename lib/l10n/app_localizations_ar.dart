@@ -1786,6 +1786,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripSetupHomeValueHint => 'يساعد ذلك في حساب تكلفة الرحلة بعملتك الأساسية بدقة أكبر.';
 
   @override
+  String get tripSetupHomeValueSameAsHomeCurrency => 'نفس عملة الحساب الأساسية';
+
+  @override
   String get tripSetupMissingHomeValueTitle => 'لم تدخل القيمة التقريبية للنقد.';
 
   @override
