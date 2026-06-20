@@ -1,3 +1,4 @@
+import 'package:sqflite/sqflite.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/database/app_database.dart';
@@ -87,6 +88,48 @@ class RecordAtmWithdrawalUseCase {
   /// [note]            — free-text note for the cash transaction.
   /// [createdAt]       — timestamp; defaults to now.
   Future<AtmWithdrawalResult> execute({
+    required String tripId,
+    required double receivedAmount,
+    required String receivedCurrency,
+    double? chargedAmount,
+    String? chargedCurrency,
+    double? feeAmount,
+    String? feeCurrency,
+    String? feeNote,
+    int? fundingCardId,
+    String? homeCurrencyCode,
+    String? note,
+    DateTime? createdAt,
+  }) async {
+    final db = await _appDatabase.database;
+    return db.transaction(
+      (txn) => recordInTransaction(
+        txn,
+        tripId: tripId,
+        receivedAmount: receivedAmount,
+        receivedCurrency: receivedCurrency,
+        chargedAmount: chargedAmount,
+        chargedCurrency: chargedCurrency,
+        feeAmount: feeAmount,
+        feeCurrency: feeCurrency,
+        feeNote: feeNote,
+        fundingCardId: fundingCardId,
+        homeCurrencyCode: homeCurrencyCode,
+        note: note,
+        createdAt: createdAt,
+      ),
+    );
+  }
+
+  /// Records an ATM withdrawal inside the caller-supplied [txn].
+  ///
+  /// Lets the correction flow reverse-then-record in a single atomic
+  /// transaction (so a failed corrected record rolls back the reverse). The
+  /// financial logic — validation, `cashCost = chargedAmount - feeAmount`, the
+  /// fee home-value snapshot and `source_ref` linkage — is identical to
+  /// [execute].
+  Future<AtmWithdrawalResult> recordInTransaction(
+    DatabaseExecutor txn, {
     required String tripId,
     required double receivedAmount,
     required String receivedCurrency,
@@ -201,46 +244,42 @@ class RecordAtmWithdrawalUseCase {
       );
     }
 
-    // ── Atomic transaction ────────────────────────────────────────────────────
-    final db = await _appDatabase.database;
-    return db.transaction((txn) async {
-      // a. Insert lot
-      final insertedLot = await _lotRepository.insertCashLot(lot, txn: txn);
+    // ── Atomic writes (inside the caller's transaction) ───────────────────────
+    // a. Insert lot
+    final insertedLot = await _lotRepository.insertCashLot(lot, txn: txn);
 
-      // b & c. Insert cash_transaction with lot_id + update balance
-      final cashTx = await _cashWalletRepository.recordAtmInflow(
-        txn: txn,
-        tripId: tripId,
-        lotId: insertedLot.id,
-        amount: receivedAmount,
-        currencyCode: normalizedReceived,
-        homeCurrencyAmount: cashPortionAmount,
-        homeCurrencyCode: normalizedChargedCurrency,
-        note: note,
-        createdAt: timestamp,
-      );
+    // b & c. Insert cash_transaction with lot_id + update balance
+    final cashTx = await _cashWalletRepository.recordAtmInflow(
+      txn: txn,
+      tripId: tripId,
+      lotId: insertedLot.id,
+      amount: receivedAmount,
+      currencyCode: normalizedReceived,
+      homeCurrencyAmount: cashPortionAmount,
+      homeCurrencyCode: normalizedChargedCurrency,
+      note: note,
+      createdAt: timestamp,
+    );
 
-      // Patch lot's sourceRefId to point to the cash_transaction.id.
-      // We do this via a targeted UPDATE so the lot row reflects the real ref.
-      await _lotRepository.updateLotSourceRef(
-        lotId: insertedLot.id,
-        sourceRefId: cashTx.id,
-        txn: txn,
-      );
+    // Patch lot's sourceRefId to point to the cash_transaction.id.
+    // We do this via a targeted UPDATE so the lot row reflects the real ref.
+    await _lotRepository.updateLotSourceRef(
+      lotId: insertedLot.id,
+      sourceRefId: cashTx.id,
+      txn: txn,
+    );
 
-      // d. Optional fee card expense, linked to this ATM cash transaction.
-      Expense? createdFee;
-      if (feeExpense != null) {
-        final linkedFee = feeExpense.copyWith(sourceRefId: cashTx.id);
-        createdFee =
-            await _expenseRepository.createExpense(linkedFee, txn: txn);
-      }
+    // d. Optional fee card expense, linked to this ATM cash transaction.
+    Expense? createdFee;
+    if (feeExpense != null) {
+      final linkedFee = feeExpense.copyWith(sourceRefId: cashTx.id);
+      createdFee = await _expenseRepository.createExpense(linkedFee, txn: txn);
+    }
 
-      return AtmWithdrawalResult(
-        cashLot: insertedLot.copyWith(sourceRefId: cashTx.id),
-        cashTransaction: cashTx,
-        feeExpense: createdFee,
-      );
-    });
+    return AtmWithdrawalResult(
+      cashLot: insertedLot.copyWith(sourceRefId: cashTx.id),
+      cashTransaction: cashTx,
+      feeExpense: createdFee,
+    );
   }
 }

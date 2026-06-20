@@ -30,6 +30,8 @@ import '../../trips/domain/country_database.dart';
 import '../../trips/domain/country_info.dart';
 import '../../trips/domain/trip.dart';
 import '../../trips/domain/trip_title_resolver.dart';
+import '../domain/atm_correction.dart';
+import '../domain/atm_not_correctable_exception.dart';
 import '../domain/cash_transaction.dart';
 import '../domain/currency_exchange.dart';
 import '../domain/exchange_correction.dart';
@@ -54,11 +56,15 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
   bool _isCashSheetOpen = false;
   final Set<String> _deletingManualTransactionIds = <String>{};
   final Set<String> _processingExchangeIds = <String>{};
+  final Set<String> _processingAtmIds = <String>{};
   List<TripCashBalance> _balances = const [];
   List<CashTransaction> _transactions = const [];
   // Correction status for each active exchange, keyed by exchange id. Drives
   // whether an exchange row offers Correct/Undo (unused) or View affected (used).
   Map<String, ExchangeCorrectionStatus> _exchangeStatusById = const {};
+  // Correction status for each active ATM withdrawal, keyed by its cash
+  // transaction id. Drives Correct/Undo vs View affected vs unavailable.
+  Map<String, AtmCorrectionStatus> _atmStatusById = const {};
 
   late _PrimaryCashBalance _primaryCashBalance;
   late _CashHealth _cashHealth;
@@ -97,6 +103,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
           .read(cashWalletRepositoryProvider)
           .getRecentTransactionsByTrip(widget.trip.id);
       final exchangeStatuses = await _loadExchangeStatuses(transactions);
+      final atmStatuses = await _loadAtmStatuses(transactions);
       if (!mounted || generation != _loadGeneration) {
         return;
       }
@@ -104,6 +111,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         _balances = balances;
         _transactions = transactions;
         _exchangeStatusById = exchangeStatuses;
+        _atmStatusById = atmStatuses;
         _isLoading = false;
         _hasLoadError = false;
         _recomputeDerivedState();
@@ -144,6 +152,36 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       }
     }
     return statuses;
+  }
+
+  /// Loads the correction status for every active ATM withdrawal in the
+  /// activity list, keyed by its cash transaction id.
+  Future<Map<String, AtmCorrectionStatus>> _loadAtmStatuses(
+    List<CashTransaction> transactions,
+  ) async {
+    final service = ref.read(atmCorrectionServiceProvider);
+    final statuses = <String, AtmCorrectionStatus>{};
+    for (final transaction in transactions) {
+      if (transaction.type != CashTransactionType.atmWithdrawal ||
+          transaction.isReversed) {
+        continue;
+      }
+      try {
+        statuses[transaction.id] = await service.getStatus(transaction.id);
+      } catch (_) {
+        // A status failure must not break the wallet load; the row simply
+        // shows no correction actions.
+      }
+    }
+    return statuses;
+  }
+
+  AtmCorrectionStatus? _atmStatusFor(CashTransaction transaction) {
+    if (transaction.type != CashTransactionType.atmWithdrawal ||
+        transaction.isReversed) {
+      return null;
+    }
+    return _atmStatusById[transaction.id];
   }
 
   void _recomputeDerivedState() {
@@ -346,8 +384,12 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                                   : null,
                               exchangeStatus:
                                   _exchangeStatusFor(transaction),
+                              atmStatus: _atmStatusFor(transaction),
+                              // ATM rows never use the generic edit/delete path
+                              // (it would orphan the fee). They expose dedicated
+                              // Correct/Undo actions instead.
                               onEdit: _isAtmWithdrawalRow(transaction)
-                                  ? _showAtmEditBlockedMessage
+                                  ? null
                                   : _canEditManualTransaction(transaction)
                                       ? () => _showAddCashSheet(
                                             initialType: transaction.type,
@@ -355,7 +397,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                                           )
                                       : null,
                               onDelete: _isAtmWithdrawalRow(transaction)
-                                  ? _showAtmDeleteBlockedMessage
+                                  ? null
                                   : _canDeleteManualTransaction(transaction)
                                       ? () => _confirmDeleteManualTransaction(
                                             transaction)
@@ -369,6 +411,10 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
                                   _handleUndoExchange(transaction),
                               onViewAffectedExchange: () =>
                                   _handleViewAffectedExchange(transaction),
+                              onCorrectAtm: () => _handleCorrectAtm(transaction),
+                              onUndoAtm: () => _handleUndoAtm(transaction),
+                              onViewAffectedAtm: () =>
+                                  _handleViewAffectedAtm(transaction),
                             ),
                           ),
                         const SizedBox(height: 4),
@@ -586,32 +632,230 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     return _canEditManualTransaction(transaction);
   }
 
-  /// Whether [transaction] is an active ATM withdrawal row. Such rows expose
-  /// edit/delete affordances that explain why the action is unavailable, rather
-  /// than silently dropping the buttons.
+  /// Whether [transaction] is an active ATM withdrawal row. Such rows never use
+  /// the generic edit/delete path; they offer dedicated Safe Correct/Undo
+  /// actions driven by [AtmCorrectionStatus].
   bool _isAtmWithdrawalRow(CashTransaction transaction) {
     return transaction.type == CashTransactionType.atmWithdrawal &&
         !transaction.isReversed;
   }
 
-  /// Pre-launch guard: editing an ATM withdrawal through the generic Add Cash
-  /// sheet could break the card charge / ATM fee / cash cost relationship, so
-  /// it is blocked with guidance instead of opening that sheet.
-  void _showAtmEditBlockedMessage() {
+  /// Safe Undo: reverse an unused ATM withdrawal (cash + generated lot + linked
+  /// fee). Blocked (with guidance) when the received cash was used.
+  Future<void> _handleUndoAtm(CashTransaction transaction) async {
     final l10n = AppLocalizations.of(context)!;
-    CalmSnackBar.showMessage(
-      context,
-      message: l10n.cashWalletAtmEditBlocked,
+    final status = _atmStatusFor(transaction);
+    if (status == null) {
+      return;
+    }
+    if (!status.canUndo) {
+      if (status.isBlockedByUsedCash) {
+        await _showAffectedAtmSheet(status, isCorrect: false);
+      }
+      return;
+    }
+
+    final confirmed = await _confirmUndoAtm();
+    if (!mounted || confirmed != true) {
+      return;
+    }
+    if (_processingAtmIds.contains(transaction.id)) {
+      return;
+    }
+    _processingAtmIds.add(transaction.id);
+    try {
+      await ref
+          .read(reverseAtmWithdrawalUseCaseProvider)
+          .execute(transaction.id);
+      if (!mounted) {
+        return;
+      }
+      await _load();
+      _refreshTripExpenseViews();
+      if (!mounted) {
+        return;
+      }
+      CalmSnackBar.showMessage(context, message: l10n.cashWalletAtmUndone);
+    } on AtmNotCorrectableException {
+      if (!mounted) {
+        return;
+      }
+      // The cash was spent between status load and confirm — refresh and guide.
+      await _load();
+      if (!mounted) {
+        return;
+      }
+      final refreshed = _atmStatusById[transaction.id];
+      if (refreshed != null && refreshed.isBlockedByUsedCash) {
+        await _showAffectedAtmSheet(refreshed, isCorrect: false);
+        return;
+      }
+      CalmSnackBar.showMessage(context, message: l10n.cashWalletAtmUndoFailed);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      CalmSnackBar.showMessage(context, message: l10n.cashWalletAtmUndoFailed);
+    } finally {
+      _processingAtmIds.remove(transaction.id);
+    }
+  }
+
+  /// Safe Correct: open the ATM sheet prefilled with the original values. The
+  /// original is NOT reversed here — only when the user saves the correction
+  /// (handled atomically by [CorrectAtmWithdrawalUseCase]).
+  Future<void> _handleCorrectAtm(CashTransaction transaction) async {
+    final status = _atmStatusFor(transaction);
+    if (status == null) {
+      return;
+    }
+    if (!status.canCorrect) {
+      if (status.isBlockedByUsedCash) {
+        await _showAffectedAtmSheet(status, isCorrect: true);
+      }
+      return;
+    }
+
+    // Reconstruct the original values for prefill (best-effort, never guessed):
+    //   received    ← cash transaction amount/currency
+    //   cashCost    ← cash transaction home value (lot cost basis)
+    //   fee + card  ← linked fee expense (when present)
+    //   charged     ← cashCost + fee
+    double? feeAmount;
+    int? fundingCardId;
+    if (status.feeExpenseId != null) {
+      final fee = await ref
+          .read(expenseRepositoryProvider)
+          .getExpenseById(status.feeExpenseId!);
+      if (!mounted) {
+        return;
+      }
+      feeAmount = fee?.transactionAmount;
+      fundingCardId = fee?.cardProfileId;
+    }
+    final cashCost = transaction.homeCurrencyAmount;
+    final double? chargedAmount =
+        cashCost != null ? cashCost + (feeAmount ?? 0) : null;
+
+    await _showCorrectAtmSheet(
+      _AtmCorrectionContext(
+        cashTransactionId: transaction.id,
+        receivedAmount: transaction.amount,
+        receivedCurrencyCode: transaction.currencyCode,
+        chargedAmount: chargedAmount,
+        feeAmount: feeAmount,
+        fundingCardId: fundingCardId,
+        note: transaction.note,
+        createdAt: transaction.createdAt,
+      ),
     );
   }
 
-  /// Pre-launch guard: deleting an ATM withdrawal through the generic cash
-  /// delete would orphan its ATM fee expense, so it is blocked with guidance.
-  void _showAtmDeleteBlockedMessage() {
+  /// Shows the read-only "what used this cash" sheet for a blocked ATM row.
+  Future<void> _handleViewAffectedAtm(CashTransaction transaction) async {
+    final status = _atmStatusFor(transaction);
+    if (status == null) {
+      return;
+    }
+    await _showAffectedAtmSheet(status, isCorrect: false);
+  }
+
+  Future<bool?> _confirmUndoAtm() {
     final l10n = AppLocalizations.of(context)!;
-    CalmSnackBar.showMessage(
-      context,
-      message: l10n.cashWalletAtmDeleteBlocked,
+    return showModalBottomSheet<bool>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.34),
+      builder: (sheetContext) {
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.sm,
+              AppSpacing.md,
+              AppSpacing.md + bottomInset,
+            ),
+            child: AppConfirmationDialog(
+              icon: Icons.undo_rounded,
+              title: l10n.cashWalletAtmUndoTitle,
+              message: l10n.cashWalletAtmUndoMessage,
+              cancelLabel: l10n.commonCancel,
+              confirmLabel: l10n.cashWalletAtmUndoConfirm,
+              onCancel: () => Navigator.of(sheetContext).pop(false),
+              onConfirm: () => Navigator.of(sheetContext).pop(true),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _showCorrectAtmSheet(_AtmCorrectionContext correction) async {
+    if (_isCashSheetOpen) {
+      return;
+    }
+    _isCashSheetOpen = true;
+    try {
+      final result = await showModalBottomSheet<bool>(
+        context: context,
+        useRootNavigator: true,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        barrierColor: Colors.black.withValues(alpha: 0.45),
+        builder: (sheetContext) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+            ),
+            child: _AtmWithdrawalSheet(trip: widget.trip, correction: correction),
+          );
+        },
+      );
+
+      if (!mounted) {
+        return;
+      }
+      if (result == true) {
+        await _load();
+        _refreshTripExpenseViews();
+        if (!mounted) {
+          return;
+        }
+        CalmSnackBar.showMessage(
+          context,
+          message: AppLocalizations.of(context)!.cashWalletAtmCorrected,
+        );
+      }
+    } finally {
+      _isCashSheetOpen = false;
+    }
+  }
+
+  Future<void> _showAffectedAtmSheet(
+    AtmCorrectionStatus status, {
+    required bool isCorrect,
+  }) {
+    return showModalBottomSheet<void>(
+      context: context,
+      useRootNavigator: true,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
+      builder: (sheetContext) {
+        return Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
+          ),
+          child: _AffectedTransactionsSheet(
+            affectedTransactions: status.affectedTransactions,
+            isCorrect: isCorrect,
+          ),
+        );
+      },
     );
   }
 
@@ -915,7 +1159,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
             bottom: MediaQuery.of(sheetContext).viewInsets.bottom,
           ),
           child: _AffectedTransactionsSheet(
-            status: status,
+            affectedTransactions: status.affectedTransactions,
             isCorrect: isCorrect,
           ),
         );
@@ -1670,10 +1914,37 @@ class _AddCashSheetState extends ConsumerState<_AddCashSheet> {
 /// Models the traveller's mental model: "I used this card at an ATM and
 /// received this cash." It does not expose the generic cash source dropdown and
 /// always records through [RecordAtmWithdrawalUseCase] with a funding card.
+/// Immutable description of the ATM withdrawal being corrected, passed to
+/// [_AtmWithdrawalSheet] to drive correction mode (prefill + atomic
+/// reverse-and-re-record on Save). All amounts are reconstructed from the
+/// original cash transaction + linked fee — never guessed.
+class _AtmCorrectionContext {
+  const _AtmCorrectionContext({
+    required this.cashTransactionId,
+    required this.receivedAmount,
+    required this.receivedCurrencyCode,
+    this.chargedAmount,
+    this.feeAmount,
+    this.fundingCardId,
+    this.note,
+    this.createdAt,
+  });
+
+  final String cashTransactionId;
+  final double receivedAmount;
+  final String receivedCurrencyCode;
+  final double? chargedAmount;
+  final double? feeAmount;
+  final int? fundingCardId;
+  final String? note;
+  final DateTime? createdAt;
+}
+
 class _AtmWithdrawalSheet extends ConsumerStatefulWidget {
-  const _AtmWithdrawalSheet({required this.trip});
+  const _AtmWithdrawalSheet({required this.trip, this.correction});
 
   final Trip trip;
+  final _AtmCorrectionContext? correction;
 
   @override
   ConsumerState<_AtmWithdrawalSheet> createState() =>
@@ -1692,14 +1963,39 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
   int? _selectedCardId;
   bool _isSaving = false;
 
+  bool get _isCorrection => widget.correction != null;
+
   @override
   void initState() {
     super.initState();
     _dateController = TextEditingController();
     _timeController = TextEditingController();
-    // Part D — default received currency to the trip destination currency.
+    // Part D — received currency is always the trip destination currency.
     _selectedCurrencyCode = widget.trip.destinationCurrency.trim().toUpperCase();
     _selectedDateTime = DateTime.now();
+
+    // Correction mode: prefill the original values (reconstructed, not guessed).
+    final correction = widget.correction;
+    if (correction != null) {
+      _receivedAmountController.text =
+          _trimAmount(correction.receivedAmount);
+      if (correction.chargedAmount != null) {
+        _chargedAmountController.text = _trimAmount(correction.chargedAmount!);
+      }
+      if (correction.feeAmount != null && correction.feeAmount! > 0) {
+        _feeController.text = _trimAmount(correction.feeAmount!);
+      }
+      _noteController.text = correction.note ?? '';
+      _selectedCardId = correction.fundingCardId;
+      _selectedDateTime = (correction.createdAt ?? DateTime.now()).toLocal();
+    }
+  }
+
+  String _trimAmount(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toStringAsFixed(0);
+    }
+    return value.toString();
   }
 
   @override
@@ -1760,7 +2056,9 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
               children: [
                 _SheetHeader(
                   icon: Icons.local_atm_outlined,
-                  title: l10n.cashWalletAtmSheetTitle,
+                  title: _isCorrection
+                      ? l10n.cashWalletAtmCorrectTitle
+                      : l10n.cashWalletAtmSheetTitle,
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -1903,7 +2201,9 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white),
                         )
-                      : Text(l10n.tripDetailsQuickAddSave),
+                      : Text(_isCorrection
+                          ? l10n.cashWalletAtmCorrectSave
+                          : l10n.tripDetailsQuickAddSave),
                 ),
               ],
             ),
@@ -2194,19 +2494,38 @@ class _AtmWithdrawalSheetState extends ConsumerState<_AtmWithdrawalSheet> {
     });
 
     try {
-      await ref.read(recordAtmWithdrawalUseCaseProvider).execute(
-            tripId: widget.trip.id,
-            receivedAmount: received!,
-            receivedCurrency: currencyCode,
-            chargedAmount: chargedAmount,
-            chargedCurrency: chargedAmount != null ? homeCurrencyCode : null,
-            feeAmount: feeAmount,
-            feeCurrency: feeAmount != null ? homeCurrencyCode : null,
-            fundingCardId: selectedCardId,
-            homeCurrencyCode: homeCurrencyCode,
-            note: _noteController.text,
-            createdAt: _selectedDateTime,
-          );
+      final correction = widget.correction;
+      if (correction != null) {
+        // Correct = atomically reverse the original ATM event + record the
+        // corrected one (CorrectAtmWithdrawalUseCase). If the corrected record
+        // is invalid, the original stays active.
+        await ref.read(correctAtmWithdrawalUseCaseProvider).execute(
+              tripId: widget.trip.id,
+              originalAtmCashTransactionId: correction.cashTransactionId,
+              receivedAmount: received!,
+              receivedCurrency: currencyCode,
+              chargedAmount: chargedAmount,
+              feeAmount: feeAmount,
+              fundingCardId: selectedCardId,
+              homeCurrencyCode: homeCurrencyCode,
+              note: _noteController.text,
+              createdAt: _selectedDateTime,
+            );
+      } else {
+        await ref.read(recordAtmWithdrawalUseCaseProvider).execute(
+              tripId: widget.trip.id,
+              receivedAmount: received!,
+              receivedCurrency: currencyCode,
+              chargedAmount: chargedAmount,
+              chargedCurrency: chargedAmount != null ? homeCurrencyCode : null,
+              feeAmount: feeAmount,
+              feeCurrency: feeAmount != null ? homeCurrencyCode : null,
+              fundingCardId: selectedCardId,
+              homeCurrencyCode: homeCurrencyCode,
+              note: _noteController.text,
+              createdAt: _selectedDateTime,
+            );
+      }
 
       if (!mounted) {
         return;
@@ -3524,23 +3843,31 @@ class _TransactionTile extends StatelessWidget {
     required this.transaction,
     required this.balanceAfterTransaction,
     this.exchangeStatus,
+    this.atmStatus,
     this.onEdit,
     this.onDelete,
     this.onEditExpense,
     this.onCorrectExchange,
     this.onUndoExchange,
     this.onViewAffectedExchange,
+    this.onCorrectAtm,
+    this.onUndoAtm,
+    this.onViewAffectedAtm,
   });
 
   final CashTransaction transaction;
   final double? balanceAfterTransaction;
   final ExchangeCorrectionStatus? exchangeStatus;
+  final AtmCorrectionStatus? atmStatus;
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
   final VoidCallback? onEditExpense;
   final VoidCallback? onCorrectExchange;
   final VoidCallback? onUndoExchange;
   final VoidCallback? onViewAffectedExchange;
+  final VoidCallback? onCorrectAtm;
+  final VoidCallback? onUndoAtm;
+  final VoidCallback? onViewAffectedAtm;
 
   @override
   Widget build(BuildContext context) {
@@ -3650,6 +3977,36 @@ class _TransactionTile extends StatelessWidget {
                               label:
                                   l10n.cashWalletExchangeViewAffectedAction,
                             ),
+                          if (_showAtmCorrect)
+                            _ExpenseLinkActionButton(
+                              onPressed: onCorrectAtm,
+                              icon: Icons.tune_rounded,
+                              label: l10n.cashWalletAtmCorrect,
+                            ),
+                          if (_showAtmUndo)
+                            _ExpenseLinkActionButton(
+                              onPressed: onUndoAtm,
+                              icon: Icons.undo_rounded,
+                              label: l10n.cashWalletAtmUndo,
+                            ),
+                          if (_showAtmViewAffected)
+                            _ExpenseLinkActionButton(
+                              onPressed: onViewAffectedAtm,
+                              icon: Icons.visibility_outlined,
+                              label:
+                                  l10n.cashWalletExchangeViewAffectedAction,
+                            ),
+                          if (_showAtmUnavailable)
+                            Text(
+                              l10n.cashWalletAtmCorrectionUnavailable,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: const Color(0xFF98A2B3),
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                            ),
                         ],
                       ),
                     ),
@@ -3712,13 +4069,40 @@ class _TransactionTile extends StatelessWidget {
       (exchangeStatus?.isBlockedByUsedCash ?? false) &&
       !(exchangeStatus?.canUndo ?? false);
 
+  bool get _isAtmRow =>
+      transaction.type == CashTransactionType.atmWithdrawal &&
+      !transaction.isReversed;
+
+  bool get _showAtmCorrect =>
+      _isAtmRow && onCorrectAtm != null && (atmStatus?.canCorrect ?? false);
+
+  bool get _showAtmUndo =>
+      _isAtmRow && onUndoAtm != null && (atmStatus?.canUndo ?? false);
+
+  bool get _showAtmViewAffected =>
+      _isAtmRow &&
+      onViewAffectedAtm != null &&
+      (atmStatus?.isBlockedByUsedCash ?? false);
+
+  /// Shown for an ATM row whose status is loaded but neither correctable nor
+  /// blocked-by-used-cash (e.g. a legacy/unlinked fee) — a disabled note.
+  bool get _showAtmUnavailable =>
+      _isAtmRow &&
+      atmStatus != null &&
+      !(atmStatus?.canCorrect ?? false) &&
+      !(atmStatus?.isBlockedByUsedCash ?? false);
+
   bool get _hasAnyAction =>
       onEdit != null ||
       onDelete != null ||
       onEditExpense != null ||
       _showExchangeCorrect ||
       _showExchangeUndo ||
-      _showViewAffected;
+      _showViewAffected ||
+      _showAtmCorrect ||
+      _showAtmUndo ||
+      _showAtmViewAffected ||
+      _showAtmUnavailable;
 
   bool _isNegative(CashTransactionType type) {
     return type == CashTransactionType.cashExpenseDeduction ||
@@ -4213,11 +4597,11 @@ class _CashActionOptionRow extends StatelessWidget {
 /// the traveller to fix those first.
 class _AffectedTransactionsSheet extends StatelessWidget {
   const _AffectedTransactionsSheet({
-    required this.status,
+    required this.affectedTransactions,
     required this.isCorrect,
   });
 
-  final ExchangeCorrectionStatus status;
+  final List<AffectedCashUse> affectedTransactions;
   final bool isCorrect;
 
   @override
@@ -4261,7 +4645,7 @@ class _AffectedTransactionsSheet extends StatelessWidget {
                         color: const Color(0xFF6B7280),
                       ),
                 ),
-                if (status.affectedTransactions.isNotEmpty) ...[
+                if (affectedTransactions.isNotEmpty) ...[
                   const SizedBox(height: 18),
                   Text(
                     l10n.cashWalletExchangeUsedInLabel,
@@ -4271,7 +4655,7 @@ class _AffectedTransactionsSheet extends StatelessWidget {
                         ),
                   ),
                   const SizedBox(height: 10),
-                  for (final affected in status.affectedTransactions)
+                  for (final affected in affectedTransactions)
                     Padding(
                       padding: const EdgeInsets.only(bottom: 8),
                       child: _AffectedTransactionRow(affected: affected),

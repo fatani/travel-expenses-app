@@ -145,6 +145,53 @@ class ExpenseRepository {
     return _parseExpenseRows(rows);
   }
 
+  /// Whether the trip has any active ATM-fee expense that is **not** linked via
+  /// `source_ref` (a legacy fee created before fee linkage existed).
+  ///
+  /// When such ambiguous fees exist, a no-linked-fee ATM withdrawal cannot be
+  /// safely corrected — we can't tell whether one of these orphans belongs to
+  /// it — so ATM Safe Correct/Undo treats it as unavailable.
+  Future<bool> hasActiveUnlinkedAtmFeeExpenses(
+    String tripId, {
+    DatabaseExecutor? txn,
+  }) async {
+    DataIntegrity.requireNonEmptyTripId(tripId);
+    final executor = txn ?? await _appDatabase.database;
+    final rows = await executor.query(
+      AppDatabase.expensesTable,
+      columns: ['id'],
+      where: 'trip_id = ? AND is_reversed = 0 '
+          "AND payment_channel = 'ATM Withdrawal Fee' "
+          'AND source_ref_id IS NULL',
+      whereArgs: [tripId],
+      limit: 1,
+    );
+    return rows.isNotEmpty;
+  }
+
+  /// Soft-reverses a card expense (e.g. an ATM fee) by setting `is_reversed = 1`
+  /// and `reversed_at`. Unlike cash-expense reversal there are no FIFO
+  /// consumptions to restore — an ATM fee never consumed cash.
+  Future<void> markExpenseReversed(
+    String expenseId, {
+    DateTime? reversedAt,
+    DatabaseExecutor? txn,
+  }) async {
+    DataIntegrity.requireNonEmptyId(expenseId, field: 'expenseId');
+    final now = (reversedAt ?? DateTime.now()).toUtc();
+    final executor = txn ?? await _appDatabase.database;
+    await executor.update(
+      AppDatabase.expensesTable,
+      {
+        'is_reversed': 1,
+        'reversed_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      },
+      where: 'id = ? AND is_reversed = 0',
+      whereArgs: [expenseId],
+    );
+  }
+
   Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
     final entity = expense.copyWith(updatedAt: DateTime.now().toUtc());
 

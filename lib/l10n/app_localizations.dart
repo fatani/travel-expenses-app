@@ -1115,6 +1115,72 @@ abstract class AppLocalizations {
   /// **'ATM withdrawals can\'t be deleted from this screen yet. This withdrawal may include a card charge and ATM fee, so it needs a safe correction flow.'**
   String get cashWalletAtmDeleteBlocked;
 
+  /// No description provided for @cashWalletAtmCorrect.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct'**
+  String get cashWalletAtmCorrect;
+
+  /// No description provided for @cashWalletAtmUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get cashWalletAtmUndo;
+
+  /// No description provided for @cashWalletAtmCorrectionUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Correction unavailable'**
+  String get cashWalletAtmCorrectionUnavailable;
+
+  /// No description provided for @cashWalletAtmUndoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo ATM withdrawal?'**
+  String get cashWalletAtmUndoTitle;
+
+  /// No description provided for @cashWalletAtmUndoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will remove the cash received and the linked ATM fee from active totals.'**
+  String get cashWalletAtmUndoMessage;
+
+  /// No description provided for @cashWalletAtmUndoConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get cashWalletAtmUndoConfirm;
+
+  /// No description provided for @cashWalletAtmUndone.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM withdrawal undone.'**
+  String get cashWalletAtmUndone;
+
+  /// No description provided for @cashWalletAtmUndoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t undo this ATM withdrawal. Please try again.'**
+  String get cashWalletAtmUndoFailed;
+
+  /// No description provided for @cashWalletAtmCorrectTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Correct ATM withdrawal'**
+  String get cashWalletAtmCorrectTitle;
+
+  /// No description provided for @cashWalletAtmCorrectSave.
+  ///
+  /// In en, this message translates to:
+  /// **'Save correction'**
+  String get cashWalletAtmCorrectSave;
+
+  /// No description provided for @cashWalletAtmCorrected.
+  ///
+  /// In en, this message translates to:
+  /// **'ATM withdrawal corrected.'**
+  String get cashWalletAtmCorrected;
+
   /// No description provided for @cashWalletAtmFeeCategory.
   ///
   /// In en, this message translates to:

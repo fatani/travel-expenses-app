@@ -541,6 +541,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cashWalletAtmDeleteBlocked => 'لا يمكن حذف سحب الصراف من هذه الشاشة حالياً. قد تتضمن هذه العملية خصماً من البطاقة ورسوم صراف، لذلك تحتاج إلى مسار تصحيح آمن.';
 
   @override
+  String get cashWalletAtmCorrect => 'تصحيح';
+
+  @override
+  String get cashWalletAtmUndo => 'إلغاء';
+
+  @override
+  String get cashWalletAtmCorrectionUnavailable => 'التصحيح غير متاح';
+
+  @override
+  String get cashWalletAtmUndoTitle => 'إلغاء سحب الصراف؟';
+
+  @override
+  String get cashWalletAtmUndoMessage => 'سيتم إزالة الكاش المستلم ورسوم الصراف المرتبطة من الإجماليات النشطة.';
+
+  @override
+  String get cashWalletAtmUndoConfirm => 'إلغاء';
+
+  @override
+  String get cashWalletAtmUndone => 'تم إلغاء سحب الصراف.';
+
+  @override
+  String get cashWalletAtmUndoFailed => 'تعذّر إلغاء سحب الصراف. حاول مرة أخرى.';
+
+  @override
+  String get cashWalletAtmCorrectTitle => 'تصحيح سحب الصراف';
+
+  @override
+  String get cashWalletAtmCorrectSave => 'حفظ التصحيح';
+
+  @override
+  String get cashWalletAtmCorrected => 'تم تصحيح سحب الصراف.';
+
+  @override
   String get cashWalletAtmFeeCategory => 'رسوم الصراف';
 
   @override

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/core/providers/database_providers.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
@@ -76,30 +77,24 @@ void main() {
     await settle(tester);
   }
 
-  testWidgets('ATM row edit shows a blocked message, not the generic sheet',
+  testWidgets('ATM row never shows the generic Edit/Delete icons',
       (tester) async {
     await pump(tester, [atmRow()]);
 
-    await tester.tap(find.byIcon(Icons.edit_outlined));
-    await settle(tester);
-
-    // Blocked message shown; the generic "Edit cash entry" sheet never opens.
-    expect(find.textContaining("ATM withdrawals can't be edited"),
-        findsOneWidget);
+    // ATM rows route to dedicated Safe Correct/Undo, never the generic
+    // edit/delete path that could orphan the fee.
+    expect(find.byIcon(Icons.edit_outlined), findsNothing);
+    expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);
     expect(find.text('Edit cash entry'), findsNothing);
   });
 
-  testWidgets('ATM row delete is blocked and never reverses the transaction',
+  testWidgets('generic manual cash delete reversal is never triggered for ATM',
       (tester) async {
     await pump(tester, [atmRow()]);
 
-    await tester.tap(find.byIcon(Icons.delete_outline_rounded));
-    await settle(tester);
-
-    expect(find.textContaining("ATM withdrawals can't be deleted"),
-        findsOneWidget);
-    // No generic delete confirmation, and the reversal use case is never hit —
-    // so the ATM fee expense cannot be orphaned.
+    // There is no generic delete affordance on an ATM row, so the manual
+    // reverse path (which would orphan the fee) is never reachable.
+    expect(find.byIcon(Icons.delete_outline_rounded), findsNothing);
     expect(repo.reverseCallCount, 0);
   });
 
@@ -144,6 +139,13 @@ class _FakeCashWalletRepository extends CashWalletRepository {
     bool includeReversed = false,
   }) async =>
       _rows;
+
+  @override
+  Future<CashTransaction?> getCashTransactionById(
+    String id, {
+    DatabaseExecutor? txn,
+  }) async =>
+      null;
 
   @override
   Future<void> reverseManualCashTransaction({

@@ -10,7 +10,10 @@ import '../../features/cash_wallet/domain/cash_lot_fifo_engine.dart';
 import '../../features/cash_wallet/domain/currency_exchange_engine.dart';
 import '../../features/cash_wallet/domain/correct_currency_exchange_use_case.dart';
 import '../../features/cash_wallet/domain/exchange_correction_service.dart';
+import '../../features/cash_wallet/domain/atm_correction_service.dart';
+import '../../features/cash_wallet/domain/correct_atm_withdrawal_use_case.dart';
 import '../../features/cash_wallet/domain/record_atm_withdrawal_use_case.dart';
+import '../../features/cash_wallet/domain/reverse_atm_withdrawal_use_case.dart';
 import '../../features/cash_wallet/domain/record_currency_exchange_use_case.dart';
 import '../../features/cash_wallet/domain/reverse_currency_exchange_use_case.dart';
 import '../../features/refunds/domain/record_refund_use_case.dart';
@@ -101,6 +104,34 @@ final recordAtmWithdrawalUseCaseProvider =
     cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
     lotRepository: ref.watch(cashLotRepositoryProvider),
     expenseRepository: ref.watch(expenseRepositoryProvider),
+  );
+});
+
+final atmCorrectionServiceProvider = Provider<AtmCorrectionService>((ref) {
+  return AtmCorrectionService(
+    cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+    lotRepository: ref.watch(cashLotRepositoryProvider),
+    consumptionRepository: ref.watch(cashLotConsumptionRepositoryProvider),
+    expenseRepository: ref.watch(expenseRepositoryProvider),
+  );
+});
+
+final reverseAtmWithdrawalUseCaseProvider =
+    Provider<ReverseAtmWithdrawalUseCase>((ref) {
+  return ReverseAtmWithdrawalUseCase(
+    appDatabase: ref.watch(appDatabaseProvider),
+    correctionService: ref.watch(atmCorrectionServiceProvider),
+    cashWalletRepository: ref.watch(cashWalletRepositoryProvider),
+    expenseRepository: ref.watch(expenseRepositoryProvider),
+  );
+});
+
+final correctAtmWithdrawalUseCaseProvider =
+    Provider<CorrectAtmWithdrawalUseCase>((ref) {
+  return CorrectAtmWithdrawalUseCase(
+    appDatabase: ref.watch(appDatabaseProvider),
+    reverseUseCase: ref.watch(reverseAtmWithdrawalUseCaseProvider),
+    recordUseCase: ref.watch(recordAtmWithdrawalUseCaseProvider),
   );
 });
 

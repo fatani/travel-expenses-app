@@ -439,6 +439,42 @@ class CashWalletRepository {
     }
   }
 
+  /// Loads a single cash transaction by id, or null if missing.
+  ///
+  /// Pass [txn] to read inside an outer transaction (e.g. ATM correction
+  /// re-validating just before mutating).
+  Future<CashTransaction?> getCashTransactionById(
+    String id, {
+    DatabaseExecutor? txn,
+  }) async {
+    if (id.trim().isEmpty) {
+      return null;
+    }
+    final executor = txn ?? await _appDatabase.database;
+    final rows = await executor.query(
+      AppDatabase.cashTransactionsTable,
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+    return rows.isEmpty ? null : CashTransaction.fromMap(rows.first);
+  }
+
+  /// Reverses an ATM withdrawal's cash side (inflow transaction + generated lot
+  /// + balance) inside the caller's [txn].
+  ///
+  /// Reuses the proven manual-reverse primitive — it resolves the linked lot
+  /// from the stored row, refuses to reverse a lot whose cash was already spent,
+  /// reverses the cash transaction, and applies the inverse balance delta. The
+  /// linked ATM **fee** expense is reversed separately by
+  /// `ReverseAtmWithdrawalUseCase` (a fee is a card expense, not cash).
+  Future<void> reverseAtmCashInflowInTxn(
+    DatabaseExecutor txn, {
+    required CashTransaction transaction,
+  }) async {
+    await _reverseManualCashTransactionInTxn(txn, transaction: transaction);
+  }
+
   Future<void> reverseManualCashTransaction({
     required CashTransaction transaction,
   }) async {

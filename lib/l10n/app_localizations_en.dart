@@ -541,6 +541,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cashWalletAtmDeleteBlocked => 'ATM withdrawals can\'t be deleted from this screen yet. This withdrawal may include a card charge and ATM fee, so it needs a safe correction flow.';
 
   @override
+  String get cashWalletAtmCorrect => 'Correct';
+
+  @override
+  String get cashWalletAtmUndo => 'Undo';
+
+  @override
+  String get cashWalletAtmCorrectionUnavailable => 'Correction unavailable';
+
+  @override
+  String get cashWalletAtmUndoTitle => 'Undo ATM withdrawal?';
+
+  @override
+  String get cashWalletAtmUndoMessage => 'This will remove the cash received and the linked ATM fee from active totals.';
+
+  @override
+  String get cashWalletAtmUndoConfirm => 'Undo';
+
+  @override
+  String get cashWalletAtmUndone => 'ATM withdrawal undone.';
+
+  @override
+  String get cashWalletAtmUndoFailed => 'Couldn\'t undo this ATM withdrawal. Please try again.';
+
+  @override
+  String get cashWalletAtmCorrectTitle => 'Correct ATM withdrawal';
+
+  @override
+  String get cashWalletAtmCorrectSave => 'Save correction';
+
+  @override
+  String get cashWalletAtmCorrected => 'ATM withdrawal corrected.';
+
+  @override
   String get cashWalletAtmFeeCategory => 'ATM fee';
 
   @override
