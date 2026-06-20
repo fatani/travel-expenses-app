@@ -16,8 +16,12 @@ import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../shared/widgets/calm_load_error_panel.dart';
+import '../../expenses/presentation/expense_controller.dart';
 import '../../expenses/presentation/expense_form_screen.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
+import '../../global_reports/data/global_report_provider.dart';
+import '../../predictions/data/trip_prediction_provider.dart';
+import '../../reports/data/trip_report_provider.dart';
 import '../../settings/domain/card_display_helper.dart';
 import '../../settings/domain/card_profile.dart';
 import '../../settings/presentation/add_card_screen.dart';
@@ -461,10 +465,38 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
 
       if (result == true) {
         await _load();
+        await _refreshTripExpenseViews();
       }
     } finally {
       _isCashSheetOpen = false;
     }
+  }
+
+  /// After an ATM withdrawal that may have created a fee card expense, refresh
+  /// the trip's expense + report views.
+  ///
+  /// These providers are keep-alive and owned by the Trip Details screen, not
+  /// this Cash Wallet screen. The ATM fee is persisted in its own DB
+  /// transaction, but without this the newly-created expense stays invisible on
+  /// Trip Details until the app restarts. Mirrors the refresh set that
+  /// [ExpenseController] runs after a normal mutation.
+  ///
+  /// The expense list is refreshed via the notifier's [ExpenseController.reload]
+  /// (not `ref.invalidate`): the controller holds a `late final` trip id, so
+  /// invalidating it would rebuild the same notifier and throw.
+  Future<void> _refreshTripExpenseViews() async {
+    if (!mounted) {
+      return;
+    }
+    await ref
+        .read(expenseControllerProvider(widget.trip.id).notifier)
+        .reload();
+    if (!mounted) {
+      return;
+    }
+    ref.invalidate(tripReportProvider(widget.trip.id));
+    ref.invalidate(tripPredictionProvider(widget.trip.id));
+    ref.invalidate(globalReportProvider);
   }
 
   /// Opens the dedicated exchange money sheet (Exchange UX v1.0).
