@@ -33,10 +33,15 @@ abstract final class BackupPersistedEnums {
     ...ExpenseOptionLabels.paymentChannels,
     'Card Present',
     'Online',
+    // ATM fee expenses (RecordAtmWithdrawalUseCase) persist this channel.
+    'ATM Withdrawal Fee',
   };
 
-  static final Set<String> expenseCategories =
-      ExpenseOptionLabels.categories.toSet();
+  static final Set<String> expenseCategories = {
+    ...ExpenseOptionLabels.categories,
+    // ATM fee expenses persist this category.
+    'Fees',
+  };
 
   static const Set<String> expenseSources = {'manual', 'sms'};
 

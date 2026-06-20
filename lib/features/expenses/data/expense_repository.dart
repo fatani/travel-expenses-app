@@ -119,6 +119,32 @@ class ExpenseRepository {
     return Expense.tryFromMap(rows.first);
   }
 
+  /// Returns active (non-reversed) expenses linked to a financial event via the
+  /// generic source reference — e.g. the ATM fee for an ATM cash transaction
+  /// (`sourceRefType = 'atm_withdrawal'`, `sourceRefId = atmCashTransactionId`).
+  ///
+  /// Returns empty for unlinked/legacy rows (null source ref). This is the
+  /// reliable lookup the future ATM Safe Undo/Correct flow will use; it never
+  /// falls back to timestamp/amount matching.
+  Future<List<Expense>> getActiveExpensesBySourceRef(
+    String sourceRefType,
+    String sourceRefId, {
+    DatabaseExecutor? txn,
+  }) async {
+    if (sourceRefType.trim().isEmpty || sourceRefId.trim().isEmpty) {
+      return const [];
+    }
+    final executor = txn ?? await _appDatabase.database;
+    final rows = await executor.query(
+      AppDatabase.expensesTable,
+      where: 'source_ref_type = ? AND source_ref_id = ? AND is_reversed = 0',
+      whereArgs: [sourceRefType, sourceRefId],
+      orderBy: 'spent_at DESC, created_at DESC',
+    );
+
+    return _parseExpenseRows(rows);
+  }
+
   Future<Expense> updateExpense(Expense expense, {DatabaseExecutor? txn}) async {
     final entity = expense.copyWith(updatedAt: DateTime.now().toUtc());
 

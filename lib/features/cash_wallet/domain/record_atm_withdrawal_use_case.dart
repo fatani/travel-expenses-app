@@ -194,6 +194,10 @@ class RecordAtmWithdrawalUseCase {
         category: 'Fees',
         cardProfileId: fundingCardId,
         spentAt: timestamp,
+        // Durable link back to this ATM event. The source ref id (the ATM cash
+        // transaction id) is only known inside the transaction, so it is
+        // patched in below before the fee is written.
+        sourceRefType: 'atm_withdrawal',
       );
     }
 
@@ -224,11 +228,12 @@ class RecordAtmWithdrawalUseCase {
         txn: txn,
       );
 
-      // d. Optional fee card expense
+      // d. Optional fee card expense, linked to this ATM cash transaction.
       Expense? createdFee;
       if (feeExpense != null) {
+        final linkedFee = feeExpense.copyWith(sourceRefId: cashTx.id);
         createdFee =
-            await _expenseRepository.createExpense(feeExpense, txn: txn);
+            await _expenseRepository.createExpense(linkedFee, txn: txn);
       }
 
       return AtmWithdrawalResult(

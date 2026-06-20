@@ -29,10 +29,10 @@ void main() {
   // ---------------------------------------------------------------------------
 
   group('database version', () {
-    test('database version is 22', () async {
+    test('database version is 23', () async {
       final db = await appDatabase.database;
       final result = await db.rawQuery('PRAGMA user_version');
-      expect(result.first['user_version'], 22);
+      expect(result.first['user_version'], 23);
     });
   });
 

@@ -35,6 +35,8 @@ class Expense implements ExpenseLike {
     required this.updatedAt,
     this.isReversed = false,
     this.reversedAt,
+    this.sourceRefType,
+    this.sourceRefId,
   });
 
   factory Expense.create({
@@ -66,6 +68,8 @@ class Expense implements ExpenseLike {
     String? note,
     String? rawSmsText,
     int? cardProfileId,
+    String? sourceRefType,
+    String? sourceRefId,
   }) {
     final now = DateTime.now().toUtc();
 
@@ -112,6 +116,8 @@ class Expense implements ExpenseLike {
       updatedAt: now,
       isReversed: false,
       reversedAt: null,
+      sourceRefType: sourceRefType,
+      sourceRefId: sourceRefId,
     );
   }
 
@@ -209,6 +215,8 @@ class Expense implements ExpenseLike {
       reversedAt: (map['reversed_at'] as String?) != null
           ? DateTime.parse(map['reversed_at']! as String)
           : null,
+      sourceRefType: map['source_ref_type'] as String?,
+      sourceRefId: map['source_ref_id'] as String?,
     );
   }
 
@@ -249,6 +257,12 @@ class Expense implements ExpenseLike {
   final DateTime updatedAt;
   final bool isReversed;
   final DateTime? reversedAt;
+
+  /// Generic link back to the financial event that created this expense.
+  /// For an ATM fee: `'atm_withdrawal'` + the ATM cash transaction id. Null on
+  /// legacy/unlinked rows.
+  final String? sourceRefType;
+  final String? sourceRefId;
 
   static const Object sentinel = Object();
 
@@ -299,6 +313,8 @@ class Expense implements ExpenseLike {
     DateTime? updatedAt,
     bool? isReversed,
     Object? reversedAt = sentinel,
+    Object? sourceRefType = sentinel,
+    Object? sourceRefId = sentinel,
   }) {
     return Expense(
       id: id ?? this.id,
@@ -349,6 +365,12 @@ class Expense implements ExpenseLike {
       updatedAt: updatedAt ?? this.updatedAt,
       isReversed: isReversed ?? this.isReversed,
       reversedAt: identical(reversedAt, sentinel) ? this.reversedAt : reversedAt as DateTime?,
+      sourceRefType: identical(sourceRefType, sentinel)
+          ? this.sourceRefType
+          : sourceRefType as String?,
+      sourceRefId: identical(sourceRefId, sentinel)
+          ? this.sourceRefId
+          : sourceRefId as String?,
     );
   }
 
@@ -386,6 +408,8 @@ class Expense implements ExpenseLike {
       'updated_at': updatedAt.toUtc().toIso8601String(),
       'is_reversed': isReversed ? 1 : 0,
       'reversed_at': reversedAt?.toUtc().toIso8601String(),
+      'source_ref_type': sourceRefType,
+      'source_ref_id': sourceRefId,
     };
   }
 

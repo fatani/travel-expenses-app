@@ -10,7 +10,7 @@ class AppDatabase {
   static const String databaseName = 'travel_expenses.db';
 
   final String _databaseFileName;
-  static const int databaseVersion = 22;
+  static const int databaseVersion = 23;
 
   static const String tripsTable = 'trips';
   static const String expensesTable = 'expenses';
@@ -97,6 +97,7 @@ class AppDatabase {
         await _ensureExpensesReversalColumns(db);
         await _ensureCashTransactionsFifoColumns(db);
         await _ensureExpenseRefundsLotColumn(db);
+        await _ensureExpensesSourceRefColumns(db);
         await _backfillLegacyCashLots(db);
       },
       onCreate: (db, version) async {
@@ -154,9 +155,16 @@ class AppDatabase {
             updated_at TEXT NOT NULL,
             is_reversed INTEGER NOT NULL DEFAULT 0,
             reversed_at TEXT,
+            source_ref_type TEXT,
+            source_ref_id TEXT,
             FOREIGN KEY (trip_id) REFERENCES $tripsTable (id) ON DELETE CASCADE
           )
         ''');
+
+        await db.execute(
+          'CREATE INDEX IF NOT EXISTS idx_expenses_source_ref '
+          'ON $expensesTable (source_ref_type, source_ref_id)',
+        );
 
         await db.execute('''
           CREATE TABLE $settingsTable (
@@ -531,6 +539,10 @@ class AppDatabase {
 
         if (oldVersion < 22) {
           await _ensureTripsDescriptionColumn(db);
+        }
+
+        if (oldVersion < 23) {
+          await _ensureExpensesSourceRefColumns(db);
         }
       },
     );
@@ -1204,6 +1216,33 @@ class AppDatabase {
         'ALTER TABLE $expensesTable ADD COLUMN reversed_at TEXT',
       );
     }
+  }
+
+  /// ATM Fee Linkage Foundation: a durable, generic source reference on
+  /// expenses so a record can point back to the financial event that created
+  /// it (e.g. an ATM fee → its ATM cash transaction). Additive and nullable —
+  /// legacy rows stay null and are treated as unlinked.
+  Future<void> _ensureExpensesSourceRefColumns(Database db) async {
+    final hasSourceRefType =
+        await _hasColumn(db, expensesTable, 'source_ref_type');
+    if (!hasSourceRefType) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN source_ref_type TEXT',
+      );
+    }
+
+    final hasSourceRefId =
+        await _hasColumn(db, expensesTable, 'source_ref_id');
+    if (!hasSourceRefId) {
+      await db.execute(
+        'ALTER TABLE $expensesTable ADD COLUMN source_ref_id TEXT',
+      );
+    }
+
+    await db.execute(
+      'CREATE INDEX IF NOT EXISTS idx_expenses_source_ref '
+      'ON $expensesTable (source_ref_type, source_ref_id)',
+    );
   }
 
   Future<void> _ensureCashTransactionsFifoColumns(Database db) async {
