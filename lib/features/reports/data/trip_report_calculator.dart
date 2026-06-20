@@ -120,8 +120,11 @@ class TripReportCalculator {
     }
 
     // --- by payment network --------------------------------------------------
+    // Only card-paid expenses belong here; cash and reversed entries are excluded.
     final networkMap = <String, Map<String, _Accumulator>>{};
     for (final e in expenses) {
+      if (e.isReversed) continue;
+      if (_normalisePaymentType(e.paymentMethod) == 'cash') continue;
       final network = (e.paymentNetwork?.isNotEmpty == true)
           ? e.paymentNetwork!
           : 'Other';

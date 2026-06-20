@@ -506,6 +506,118 @@ void main() {
       expect(summary.smartInsights.first.percentage, greaterThan(0));
     });
 
+    // -----------------------------------------------------------------------
+    // Card network filter — cash expenses must not appear in byPaymentNetwork
+    // -----------------------------------------------------------------------
+
+    group('card network filter', () {
+      test('cash expenses are excluded from byPaymentNetwork', () {
+        final summary = _run([
+          _expense(
+            amount: 1396,
+            currency: 'CNY',
+            paymentMethod: 'Cash',
+            paymentNetwork: null,
+            category: 'Food',
+          ),
+          _expense(
+            amount: 100,
+            currency: 'CNY',
+            paymentMethod: 'Credit Card',
+            paymentNetwork: 'Mastercard',
+            category: 'Shopping',
+          ),
+          _expense(
+            amount: 200,
+            currency: 'CNY',
+            paymentMethod: 'Credit Card',
+            paymentNetwork: null,
+            category: 'Transport',
+          ),
+        ]);
+
+        final networkKeys = summary.byPaymentNetwork.map((b) => b.key).toSet();
+        expect(networkKeys, contains('Mastercard'));
+        expect(networkKeys, contains('Other'));
+
+        final mastercard =
+            summary.byPaymentNetwork.firstWhere((b) => b.key == 'Mastercard');
+        expect(mastercard.totalAmount, 100.0);
+
+        final other =
+            summary.byPaymentNetwork.firstWhere((b) => b.key == 'Other');
+        // Only the 200 CNY card expense with unknown network — not the 1396 CNY cash expense.
+        expect(other.totalAmount, 200.0);
+      });
+
+      test('cash-only trip has no card network rows', () {
+        final summary = _run([
+          _expense(
+            amount: 500,
+            currency: 'CNY',
+            paymentMethod: 'Cash',
+            paymentNetwork: null,
+            category: 'Food',
+          ),
+        ]);
+
+        expect(summary.byPaymentNetwork, isEmpty);
+      });
+
+      test('reversed card expenses are excluded from byPaymentNetwork', () {
+        final active = _expense(
+          amount: 100,
+          currency: 'CNY',
+          paymentMethod: 'Credit Card',
+          paymentNetwork: 'Visa',
+          category: 'Food',
+        );
+        final reversed = Expense.create(
+          tripId: 'trip-1',
+          title: 'Reversed',
+          amount: 200,
+          currencyCode: 'CNY',
+          paymentMethod: 'Credit Card',
+          paymentNetwork: 'Visa',
+          spentAt: DateTime(2026, 1, 15),
+        ).copyWith(isReversed: true);
+
+        final summary = _run([active, reversed]);
+
+        final visa =
+            summary.byPaymentNetwork.where((b) => b.key == 'Visa').toList();
+        expect(visa.length, 1);
+        expect(visa.first.totalAmount, 100.0);
+      });
+
+      test('payment method totals are unaffected by card network fix', () {
+        final summary = _run([
+          _expense(
+            amount: 1396,
+            currency: 'CNY',
+            paymentMethod: 'Cash',
+            paymentNetwork: null,
+            category: 'Food',
+          ),
+          _expense(
+            amount: 300,
+            currency: 'CNY',
+            paymentMethod: 'Credit Card',
+            paymentNetwork: 'Mastercard',
+            category: 'Shopping',
+          ),
+        ]);
+
+        // Gross total must include both
+        expect(summary.totalBilledByCurrency.first.totalAmount, 1696.0);
+
+        // Card network section must total only 300 CNY
+        final networkTotal = summary.byPaymentNetwork
+            .fold<double>(0, (sum, b) => sum + b.totalAmount);
+        expect(networkTotal, 300.0);
+      });
+    });
+
     test('trip insights show category drift when spike condition is not met', () {
       final summary = _run([
         _expense(
