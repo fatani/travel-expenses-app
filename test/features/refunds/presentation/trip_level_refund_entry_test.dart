@@ -330,6 +330,277 @@ void main() {
       expect(summary.netSpendingHomeAmount, closeTo(500, 0.01));
     });
   });
+
+  // ── Unlinked cash refund in non-home currency ─────────────────────────────
+
+  group('Unlinked cash refund in non-home currency', () {
+    final sarCnyTrip = Trip.create(
+      id: 'trip-cash-refund-sar-cny',
+      name: 'Beijing',
+      destination: 'Beijing',
+      baseCurrency: 'CNY',
+      destinationCurrency: 'CNY',
+      homeCurrencySnapshot: 'SAR',
+      startDate: DateTime(2026, 1, 1),
+      endDate: DateTime(2026, 1, 10),
+    );
+
+    Future<void> pumpAndSwitchToCash(WidgetTester tester,
+        _CapturingRecordRefundUseCase spy) async {
+      await tester.pumpWidget(
+        _buildRefundFormApp(
+          trip: sarCnyTrip,
+          expenses: [],
+          recordRefundUseCase: spy,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+          find.byType(DropdownButtonFormField<RefundDestination>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cash refund').last);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets(
+        'shows home value field when cash + unlinked + non-home currency',
+        (tester) async {
+      final spy = _CapturingRecordRefundUseCase();
+      await pumpAndSwitchToCash(tester, spy);
+
+      expect(
+        find.widgetWithText(
+            TextFormField, 'Approximate value in home currency'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('cannot save without home value — shows validation error',
+        (tester) async {
+      final spy = _CapturingRecordRefundUseCase();
+      await pumpAndSwitchToCash(tester, spy);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Refund amount'),
+        '100',
+      );
+      await tester.pumpAndSettle();
+
+      // Leave home value empty and attempt to save
+      await tester.tap(find.widgetWithText(FilledButton, 'Record refund'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Enter the approximate value in your home currency.'),
+        findsOneWidget,
+      );
+      expect(spy.capturedDestination, isNull);
+    });
+
+    testWidgets('can save with home value — passes correct args to use case',
+        (tester) async {
+      final spy = _CapturingRecordRefundUseCase();
+      await pumpAndSwitchToCash(tester, spy);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Refund amount'),
+        '100',
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(
+            TextFormField, 'Approximate value in home currency'),
+        '52.5',
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.widgetWithText(FilledButton, 'Record refund'));
+      await tester.pumpAndSettle();
+
+      expect(spy.capturedDestination, RefundDestination.cash);
+      expect(spy.capturedExpenseId, isNull);
+      expect(spy.capturedAmount, 100);
+      expect(spy.capturedCurrency, 'CNY');
+      expect(spy.capturedHomeAmount, closeTo(52.5, 0.01));
+      expect(spy.capturedHomeCurrency, 'SAR');
+    });
+  });
+
+  // ── Home-currency unlinked cash refund ────────────────────────────────────
+
+  group('Home-currency unlinked cash refund', () {
+    final sarCnyTrip = Trip.create(
+      id: 'trip-cash-refund-home-cur',
+      name: 'Beijing',
+      destination: 'Beijing',
+      baseCurrency: 'CNY',
+      destinationCurrency: 'CNY',
+      homeCurrencySnapshot: 'SAR',
+      startDate: DateTime(2026, 1, 1),
+      endDate: DateTime(2026, 1, 10),
+    );
+
+    testWidgets(
+        'does not show home value field; helper text shown; saves 1:1',
+        (tester) async {
+      final spy = _CapturingRecordRefundUseCase();
+      await tester.pumpWidget(
+        _buildRefundFormApp(
+          trip: sarCnyTrip,
+          expenses: [],
+          recordRefundUseCase: spy,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Switch to Cash refund
+      await tester.tap(
+          find.byType(DropdownButtonFormField<RefundDestination>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cash refund').last);
+      await tester.pumpAndSettle();
+
+      // Switch currency to SAR (home currency)
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('SAR').last);
+      await tester.pumpAndSettle();
+
+      // No home value INPUT field — currency equals home currency
+      expect(
+        find.widgetWithText(
+            TextFormField, 'Approximate value in home currency'),
+        findsNothing,
+      );
+      // Helper text indicating 1:1 valuation is shown
+      expect(find.text('Same as home currency'), findsOneWidget);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Refund amount'),
+        '100',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Record refund'));
+      await tester.pumpAndSettle();
+
+      expect(spy.capturedDestination, RefundDestination.cash);
+      expect(spy.capturedCurrency, 'SAR');
+      expect(spy.capturedHomeAmount, closeTo(100, 0.01));
+      expect(spy.capturedHomeCurrency, 'SAR');
+    });
+  });
+
+  // ── Unlinked cash refund — real DB ────────────────────────────────────────
+
+  group('Unlinked cash refund — real DB', () {
+    late AppDatabase db;
+    late CashWalletRepository walletRepo;
+    late CashLotRepository lotRepo;
+    late ExpenseRefundRepository refundRepo;
+    late RecordRefundUseCase useCase;
+
+    final sarCnyTrip = Trip.create(
+      id: 'trip-unlinked-cash-refund-db',
+      name: 'Beijing',
+      destination: 'Beijing',
+      baseCurrency: 'CNY',
+      destinationCurrency: 'CNY',
+      homeCurrencySnapshot: 'SAR',
+      startDate: DateTime(2026, 1, 1),
+      endDate: DateTime(2026, 1, 10),
+    );
+
+    setUp(() async {
+      db = createIsolatedAppDatabase(prefix: 'unlinked_cash_refund');
+      walletRepo = CashWalletRepository(db);
+      lotRepo = CashLotRepository(db);
+      refundRepo = ExpenseRefundRepository(db);
+      useCase = RecordRefundUseCase(
+        appDatabase: db,
+        refundEngine: const RefundInheritanceEngine(),
+        refundRepository: refundRepo,
+        lotRepository: lotRepo,
+        cashWalletRepository: walletRepo,
+      );
+      await TripRepository(db).createTrip(sarCnyTrip);
+    });
+
+    tearDown(() async => db.close());
+
+    test('cash balance increases and lot is created with correct home basis',
+        () async {
+      final result = await useCase.execute(
+        destination: RefundDestination.cash,
+        tripId: sarCnyTrip.id,
+        expenseId: null,
+        refundAmount: 100,
+        refundCurrency: 'CNY',
+        homeAmount: 52.5,
+        homeCurrency: 'SAR',
+      );
+
+      // Refund record
+      expect(result.refund.expenseId, isNull);
+      expect(result.refund.destination, RefundDestination.cash);
+      expect(result.refund.amount, closeTo(100, 0.01));
+      expect(result.refund.currencyCode, 'CNY');
+      expect(result.refund.homeAmount, closeTo(52.5, 0.01));
+      expect(result.refund.homeCurrency, 'SAR');
+
+      // Cash lot
+      expect(result.cashLot, isNotNull);
+      expect(result.cashLot!.sourceType, 'cash_refund');
+      expect(result.cashLot!.originalAmount, closeTo(100, 0.01));
+      expect(result.cashLot!.remainingAmount, closeTo(100, 0.01));
+      expect(result.cashLot!.currencyCode, 'CNY');
+      expect(result.cashLot!.homeCurrencyAmount, closeTo(52.5, 0.01));
+      expect(result.cashLot!.homeCurrencyCode, 'SAR');
+
+      // Cash balance increased
+      final balances = await walletRepo.getBalancesByTrip(sarCnyTrip.id);
+      final cnyBalance =
+          balances.firstWhere((b) => b.currencyCode == 'CNY');
+      expect(cnyBalance.balanceAmount, closeTo(100, 0.01));
+    });
+
+    test('refund home amount recorded and queryable from repository',
+        () async {
+      await useCase.execute(
+        destination: RefundDestination.cash,
+        tripId: sarCnyTrip.id,
+        expenseId: null,
+        refundAmount: 100,
+        refundCurrency: 'CNY',
+        homeAmount: 52.5,
+        homeCurrency: 'SAR',
+      );
+
+      final refunds =
+          await refundRepo.getActiveRefundsByTrip(sarCnyTrip.id);
+      expect(refunds, hasLength(1));
+      expect(refunds.first.homeAmount, closeTo(52.5, 0.01));
+      expect(refunds.first.homeCurrency, 'SAR');
+    });
+
+    test('card refund does not affect cash balance or create a lot',
+        () async {
+      await useCase.execute(
+        destination: RefundDestination.card,
+        tripId: sarCnyTrip.id,
+        expenseId: null,
+        refundAmount: 50,
+        refundCurrency: 'CNY',
+        homeAmount: 26.25,
+        homeCurrency: 'SAR',
+      );
+
+      final balances = await walletRepo.getBalancesByTrip(sarCnyTrip.id);
+      expect(balances, isEmpty);
+
+      final lots = await lotRepo.getOpenLotsForCurrency(sarCnyTrip.id, 'CNY');
+      expect(lots, isEmpty);
+    });
+  });
 }
 
 Widget _buildTripDetailsApp({

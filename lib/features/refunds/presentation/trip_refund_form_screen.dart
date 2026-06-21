@@ -26,9 +26,9 @@ import 'trip_refunds_provider.dart';
 ///   expense (same path used by the per-expense refund form).
 /// * When unlinked and the refund currency equals the trip's home currency, the
 ///   refund is valued 1:1 in home currency so it reduces net spending.
-/// * Otherwise no home value is derived (existing app behaviour — rates are
-///   never invented).  Unlinked cash refunds in a non-home currency are blocked
-///   because the cash-lot basis cannot be established without a home value.
+/// * When unlinked and the refund currency differs from home currency, the user
+///   must supply an approximate home-currency value so the cash-lot cost basis
+///   can be established.
 class TripRefundFormScreen extends ConsumerStatefulWidget {
   const TripRefundFormScreen({
     super.key,
@@ -48,6 +48,7 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _amountController;
   late final TextEditingController _noteController;
+  late final TextEditingController _homeValueController;
   late final List<String> _allowedCurrencies;
   late String _currency;
   RefundDestination _destination = RefundDestination.card;
@@ -59,6 +60,7 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
     super.initState();
     _amountController = TextEditingController();
     _noteController = TextEditingController();
+    _homeValueController = TextEditingController();
     _allowedCurrencies = buildAllowedRefundCurrencies(
       homeCurrency: widget.trip.homeCurrencySnapshot,
       destinationCurrency: widget.trip.destinationCurrency,
@@ -78,6 +80,7 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
+    _homeValueController.dispose();
     super.dispose();
   }
 
@@ -90,10 +93,24 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
     return null;
   }
 
+  String get _homeCurrency =>
+      widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+
+  /// True when the user must supply an explicit home-currency amount.
+  ///
+  /// Only applies to unlinked cash refunds in a foreign currency — linked
+  /// refunds inherit the basis from the expense, and home-currency refunds
+  /// are valued 1:1 automatically.
+  bool get _needsHomeValueInput =>
+      _destination == RefundDestination.cash &&
+      _linkedExpenseId == null &&
+      _currency != _homeCurrency;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final currency = _currency;
+    final homeCurrency = _homeCurrency;
     // The dropdown must always be able to render the active selection. A linked
     // expense can settle in a currency that is not otherwise an allowed refund
     // currency, so union it in to avoid an invalid-value assertion.
@@ -132,7 +149,10 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
                     ? null
                     : (value) {
                         if (value == null) return;
-                        setState(() => _destination = value);
+                        setState(() {
+                          _destination = value;
+                          _homeValueController.clear();
+                        });
                       },
               ),
               const SizedBox(height: AppSpacing.md),
@@ -174,7 +194,10 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
                     ? null
                     : (value) {
                         if (value == null) return;
-                        setState(() => _currency = value);
+                        setState(() {
+                          _currency = value;
+                          _homeValueController.clear();
+                        });
                       },
               ),
               if (widget.expenses.isNotEmpty) ...[
@@ -202,6 +225,41 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
                   ],
                   onChanged: _isSubmitting ? null : _onLinkedExpenseChanged,
                 ),
+              ],
+              // Home value section — only for unlinked cash refunds.
+              if (_destination == RefundDestination.cash &&
+                  _linkedExpenseId == null) ...[
+                const SizedBox(height: AppSpacing.md),
+                if (_needsHomeValueInput)
+                  TextFormField(
+                    controller: _homeValueController,
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                    inputFormatters: [
+                      FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                    ],
+                    decoration: InputDecoration(
+                      labelText: l10n.refundFormHomeValueLabel,
+                      suffixText: homeCurrency.isEmpty ? null : homeCurrency,
+                      helperText: l10n.refundFormHomeValueHelper,
+                    ),
+                    validator: (value) {
+                      if (!_needsHomeValueInput) return null;
+                      final parsed = double.tryParse(value?.trim() ?? '');
+                      if (parsed == null || parsed <= 0) {
+                        return l10n.refundFormHomeValueRequired;
+                      }
+                      return null;
+                    },
+                  )
+                else
+                  Text(
+                    l10n.refundFormHomeValueSameCurrency,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
               ],
               const SizedBox(height: AppSpacing.md),
               TextFormField(
@@ -246,6 +304,7 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
         // Linked refunds always settle in the original expense currency.
         _currency = expense.transactionCurrency.trim().toUpperCase();
       }
+      _homeValueController.clear();
     });
   }
 
@@ -258,7 +317,7 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
     final amount = double.parse(_amountController.text.trim());
     final currency = _currency.trim().toUpperCase();
     final linkedExpense = _linkedExpense;
-    final homeCurrency = widget.trip.homeCurrencySnapshot.trim().toUpperCase();
+    final homeCurrency = _homeCurrency;
 
     // Derive the home snapshot.
     double? homeAmount;
@@ -274,17 +333,10 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
       // Refund is in the home currency — value it 1:1 so reports update.
       homeAmount = amount;
       homeCurrencyCode = homeCurrency;
-    }
-
-    // Unlinked cash refunds need a home value to set the cash-lot basis.
-    if (_destination == RefundDestination.cash &&
-        linkedExpense == null &&
-        homeAmount == null) {
-      CalmSnackBar.showMessage(
-        context,
-        message: l10n.refundFormUnlinkedCashNeedsHome,
-      );
-      return;
+    } else if (_needsHomeValueInput) {
+      // User-supplied approximate home value for foreign-currency cash refund.
+      homeAmount = double.tryParse(_homeValueController.text.trim());
+      homeCurrencyCode = homeCurrency.isNotEmpty ? homeCurrency : null;
     }
 
     setState(() {

@@ -1109,6 +1109,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get refundFormUnlinkedCashNeedsHome => 'لتسجيل استرداد نقدي بهذه العملة، اربطه بمصروف أولاً.';
 
   @override
+  String get refundFormHomeValueLabel => 'القيمة التقريبية بعملة الحساب الأساسية';
+
+  @override
+  String get refundFormHomeValueHelper => 'تُستخدم هذه القيمة لحساب تكلفة الكاش المسترد بعملة حسابك الأساسية.';
+
+  @override
+  String get refundFormHomeValueSameCurrency => 'نفس عملة الحساب الأساسية';
+
+  @override
+  String get refundFormHomeValueRequired => 'أدخل القيمة التقريبية بعملة الحساب الأساسية.';
+
+  @override
   String get expenseFormRefundGuidance => 'إذا كنت تسترجع جزءاً من المصروف أو كامله فاستخدم \"تسجيل استرجاع\" بدلاً من تعديل المبلغ.';
 
   @override

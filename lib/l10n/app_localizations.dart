@@ -2195,6 +2195,30 @@ abstract class AppLocalizations {
   /// **'To record a cash refund in this currency, link it to an expense first.'**
   String get refundFormUnlinkedCashNeedsHome;
 
+  /// No description provided for @refundFormHomeValueLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate value in home currency'**
+  String get refundFormHomeValueLabel;
+
+  /// No description provided for @refundFormHomeValueHelper.
+  ///
+  /// In en, this message translates to:
+  /// **'Used to calculate the cost basis of the refunded cash in your home currency.'**
+  String get refundFormHomeValueHelper;
+
+  /// No description provided for @refundFormHomeValueSameCurrency.
+  ///
+  /// In en, this message translates to:
+  /// **'Same as home currency'**
+  String get refundFormHomeValueSameCurrency;
+
+  /// No description provided for @refundFormHomeValueRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the approximate value in your home currency.'**
+  String get refundFormHomeValueRequired;
+
   /// No description provided for @expenseFormRefundGuidance.
   ///
   /// In en, this message translates to:

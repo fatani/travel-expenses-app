@@ -1109,6 +1109,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get refundFormUnlinkedCashNeedsHome => 'To record a cash refund in this currency, link it to an expense first.';
 
   @override
+  String get refundFormHomeValueLabel => 'Approximate value in home currency';
+
+  @override
+  String get refundFormHomeValueHelper => 'Used to calculate the cost basis of the refunded cash in your home currency.';
+
+  @override
+  String get refundFormHomeValueSameCurrency => 'Same as home currency';
+
+  @override
+  String get refundFormHomeValueRequired => 'Enter the approximate value in your home currency.';
+
+  @override
   String get expenseFormRefundGuidance => 'If you received a partial or full refund, use Refund instead of changing the expense amount.';
 
   @override
