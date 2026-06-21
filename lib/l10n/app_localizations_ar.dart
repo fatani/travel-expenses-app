@@ -1629,8 +1629,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripReportsEstimatedReportTitle => 'تنبيه حول العملة الأساسية';
 
   @override
-  String tripReportsEstimatedReportMessage(int count, String currency) {
-    return 'ملخص $currency أدناه لا يشمل $count من عمليات البطاقة لأن قيمتها النهائية بعملة الحساب الأساسية لم تكتمل بعد. ما زالت محسوبة في ملخص العملة الأصلية أعلاه.';
+  String tripReportsEstimatedReportMessage(String currency) {
+    return 'ملخص $currency أدناه لا يشمل بعض عمليات البطاقة لأن قيمتها النهائية بعملة الحساب الأساسية لم تكتمل بعد. ما زالت هذه العمليات محسوبة في ملخص العملة الأصلية أعلاه.';
   }
 
   @override

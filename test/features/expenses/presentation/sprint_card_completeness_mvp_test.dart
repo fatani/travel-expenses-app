@@ -14,6 +14,7 @@ import 'package:travel_expenses/features/expenses/presentation/expense_form_scre
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
 import 'package:travel_expenses/features/refunds/data/expense_refund_repository.dart';
 import 'package:travel_expenses/features/refunds/domain/expense_refund.dart';
+import 'package:travel_expenses/features/refunds/domain/refund_destination.dart';
 import 'package:travel_expenses/features/reports/data/trip_report_calculator.dart';
 import 'package:travel_expenses/features/reports/presentation/trip_reports_screen.dart';
 import 'package:travel_expenses/features/settings/domain/card_profile.dart';
@@ -275,8 +276,12 @@ void main() {
 
       expect(find.textContaining('Home-currency note'), findsOneWidget);
       expect(
-        find.textContaining('SAR summary below excludes 1 card operation'),
+        find.textContaining('SAR summary below excludes some card operations'),
         findsOneWidget,
+      );
+      expect(
+        find.textContaining('1 card operation'),
+        findsNothing,
       );
       expect(
         find.textContaining('still counted in the original-currency summary above'),
@@ -292,6 +297,36 @@ void main() {
       );
 
       expect(find.textContaining('Home-currency note'), findsNothing);
+    });
+
+    testWidgets(
+        'generic copy shown when pending expense and pending card refund both exist',
+        (tester) async {
+      await _pumpReportWithRefunds(
+        tester,
+        trip: trip,
+        expenses: reportExpenses,
+        refunds: [
+          ExpenseRefund.create(
+            id: 'unlinked-card-refund',
+            tripId: trip.id,
+            amount: 50,
+            currencyCode: 'CNY',
+            destination: RefundDestination.card,
+          ),
+        ],
+      );
+
+      expect(find.textContaining('Home-currency note'), findsOneWidget);
+      expect(
+        find.textContaining('SAR summary below excludes some card operations'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('1 card operation'), findsNothing);
+      expect(
+        find.textContaining('still counted in the original-currency summary above'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -368,6 +403,37 @@ Future<void> _pumpReport(
   await tester.pumpAndSettle();
 }
 
+Future<void> _pumpReportWithRefunds(
+  WidgetTester tester, {
+  required Trip trip,
+  required List<Expense> expenses,
+  required List<ExpenseRefund> refunds,
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        expenseRepositoryProvider.overrideWithValue(
+          _FakeExpenseRepository(expenses),
+        ),
+        tripRepositoryProvider.overrideWithValue(_FakeTripRepository(trip)),
+        expenseRefundRepositoryProvider.overrideWithValue(
+          _FakeRefundRepositoryWithList(refunds),
+        ),
+        cashLotRepositoryProvider.overrideWithValue(_FakeCashLotRepository()),
+        cashWalletRepositoryProvider.overrideWithValue(
+          _FakeCashWalletRepository(),
+        ),
+      ],
+      child: MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: TripReportsScreen(trip: trip),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 class _FakeExpenseRepository extends TestExpenseRepository {
   _FakeExpenseRepository(this._expenses) : super(AppDatabase());
 
@@ -396,6 +462,16 @@ class _FakeRefundRepository extends ExpenseRefundRepository {
   @override
   Future<List<ExpenseRefund>> getActiveRefundsByTrip(String tripId) async =>
       const [];
+}
+
+class _FakeRefundRepositoryWithList extends ExpenseRefundRepository {
+  _FakeRefundRepositoryWithList(this._refunds) : super(AppDatabase());
+
+  final List<ExpenseRefund> _refunds;
+
+  @override
+  Future<List<ExpenseRefund>> getActiveRefundsByTrip(String tripId) async =>
+      _refunds.where((r) => r.tripId == tripId).toList();
 }
 
 class _FakeCashLotRepository extends CashLotRepository {

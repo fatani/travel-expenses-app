@@ -3128,8 +3128,8 @@ abstract class AppLocalizations {
   /// No description provided for @tripReportsEstimatedReportMessage.
   ///
   /// In en, this message translates to:
-  /// **'The {currency} summary below excludes {count} card operation(s) — their final home-currency value is not available yet. They are still counted in the original-currency summary above.'**
-  String tripReportsEstimatedReportMessage(int count, String currency);
+  /// **'The {currency} summary below excludes some card operations because their final home-currency value is not available yet. They are still counted in the original-currency summary above.'**
+  String tripReportsEstimatedReportMessage(String currency);
 
   /// No description provided for @tripReportsGrossExpenses.
   ///

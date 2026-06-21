@@ -1622,8 +1622,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripReportsEstimatedReportTitle => 'Home-currency note';
 
   @override
-  String tripReportsEstimatedReportMessage(int count, String currency) {
-    return 'The $currency summary below excludes $count card operation(s) — their final home-currency value is not available yet. They are still counted in the original-currency summary above.';
+  String tripReportsEstimatedReportMessage(String currency) {
+    return 'The $currency summary below excludes some card operations because their final home-currency value is not available yet. They are still counted in the original-currency summary above.';
   }
 
   @override

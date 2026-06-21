@@ -131,7 +131,6 @@ class _ReportBody extends ConsumerWidget {
             sectionGap,
             if (summary.pendingCardExpenseCount > 0) ...[
               _PendingCardReportNotice(
-                count: summary.pendingCardExpenseCount,
                 currency: summary.grossSpendingHomeCurrency ?? '',
               ),
               const SizedBox(height: 12),
@@ -193,7 +192,6 @@ class _ReportBody extends ConsumerWidget {
           sectionGap,
           if (summary.pendingCardExpenseCount > 0) ...[
             _PendingCardReportNotice(
-              count: summary.pendingCardExpenseCount,
               currency: summary.grossSpendingHomeCurrency ?? '',
             ),
             const SizedBox(height: 12),
@@ -519,11 +517,9 @@ class _TripSpendingSummaryCard extends StatelessWidget {
 
 class _PendingCardReportNotice extends StatelessWidget {
   const _PendingCardReportNotice({
-    required this.count,
     required this.currency,
   });
 
-  final int count;
   final String currency;
 
   @override
@@ -542,7 +538,7 @@ class _PendingCardReportNotice extends StatelessWidget {
             ),
           ),
           TextSpan(
-            text: context.l10n.tripReportsEstimatedReportMessage(count, currency),
+            text: context.l10n.tripReportsEstimatedReportMessage(currency),
             style: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant.withValues(alpha: 0.82),
               height: 1.45,
