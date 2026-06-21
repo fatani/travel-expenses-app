@@ -95,7 +95,7 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final selectedNetwork = _selectedCardNetwork;
     final availableTiers = selectedNetwork?.allowedTiers ?? const <CardTier>[];
-    final showTierSection = selectedNetwork != null && !selectedNetwork.hidesTierField;
+    final showTierSection = selectedNetwork?.supportsCardTier ?? false;
     final isValid = _isFormValid();
     final saveLabel = widget.isEditMode ? l10n.cardFormSaveEdit : l10n.cardFormSaveCreate;
 
@@ -124,11 +124,11 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
                             onSelected: (network) {
                               setState(() {
                                 _selectedCardNetwork = network;
-                                if (network.hidesTierField) {
-                                  _selectedCardTier = null;
-                                } else {
+                                if (network.supportsCardTier) {
                                   _selectedCardTier =
                                       network.canonicalizeTier(_selectedCardTier);
+                                } else {
+                                  _selectedCardTier = null;
                                 }
                               });
                             },
@@ -397,7 +397,7 @@ class _AddCardScreenState extends ConsumerState<AddCardScreen> {
         _customNetworkController.text.trim().isEmpty) {
       return false;
     }
-    if (_selectedCardNetwork!.hidesTierField == false && _selectedCardTier == null) {
+    if (_selectedCardNetwork!.supportsCardTier && _selectedCardTier == null) {
       return false;
     }
     if (_effectiveTier == CardTier.other && _customTierController.text.trim().isEmpty) {

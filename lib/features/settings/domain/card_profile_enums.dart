@@ -86,13 +86,27 @@ extension CardNetworkX on CardNetwork {
           CardTier.worldElite,
         ];
       case CardNetwork.mada:
-        return const [CardTier.other];
+        return const [
+          CardTier.classic,
+          CardTier.platinum,
+          CardTier.signature,
+          CardTier.infinite,
+          CardTier.other,
+        ];
       case CardNetwork.other:
         return const [CardTier.other];
     }
   }
 
-  bool get hidesTierField => this == CardNetwork.mada;
+  bool get supportsCardTier {
+    switch (this) {
+      case CardNetwork.visa:
+      case CardNetwork.mastercard:
+      case CardNetwork.mada:
+      case CardNetwork.other:
+        return true;
+    }
+  }
 
   CardTier get defaultTier => allowedTiers.first;
 
