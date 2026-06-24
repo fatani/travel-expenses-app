@@ -70,11 +70,30 @@ class BackupRestoreService {
   }
 
   Future<void> _wipeAllTables(Transaction txn) async {
+    // Deletion order respects SQLite NO ACTION foreign keys (FK enforcement is
+    // ON via onConfigure). A table must be cleared before any table it
+    // references via NO ACTION FK; otherwise SQLite rejects the delete.
+    //
+    // FIFO dependency chain:
+    //   cash_lot_consumptions.lot_id      → cash_lots        (NO ACTION)
+    //   cash_lot_consumptions.exchange_id → currency_exchanges (NO ACTION)
+    //   cash_transactions.lot_id          → cash_lots        (NO ACTION)
+    //   cash_transactions.exchange_id     → currency_exchanges (NO ACTION)
+    //   expense_refunds.returned_lot_id   → cash_lots        (NO ACTION)
+    //
+    // Therefore:
+    //   cash_lot_consumptions must be wiped before cash_lots and currency_exchanges.
+    //   cash_transactions must be wiped before cash_lots and currency_exchanges.
+    //   expense_refunds must be wiped before cash_lots.
+    //   cash_lots and currency_exchanges can be wiped after all three above.
     const wipeOrder = [
+      AppDatabase.cashLotConsumptionsTable, // ← NEW (blocks cash_lots + currency_exchanges)
       AppDatabase.cashTransactionsTable,
       AppDatabase.expenseRefundsTable,
       AppDatabase.tripCashBalancesTable,
       AppDatabase.expensesTable,
+      AppDatabase.cashLotsTable,            // ← NEW (safe: cash_transactions + expense_refunds wiped)
+      AppDatabase.currencyExchangesTable,   // ← NEW (safe: cash_transactions wiped)
       AppDatabase.manualExchangeRatesTable,
       AppDatabase.tripsTable,
       AppDatabase.cardsTable,

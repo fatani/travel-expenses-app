@@ -273,4 +273,163 @@ void main() {
       );
     });
   });
+
+  // ── M-02 fix: is_reversed validation for expenses and cash_transactions ──
+
+  group('is_reversed field validation', () {
+    test('rejects expenses.is_reversed = 2', () {
+      final result = validator.validate(
+        validEnvelope(
+          manifestOverride: manifest(expenseCount: 1),
+          expenses: [
+            {
+              'id': 'exp-1',
+              'trip_id': 'trip-1',
+              'payment_method': 'Cash',
+              'source': 'manual',
+              'is_reversed': 2,
+            },
+          ],
+        ),
+      );
+
+      expect(result.isValid, isFalse);
+      expect(
+        result.issues.any(
+          (i) =>
+              i.code == 'invalid_field' &&
+              i.message.contains('expenses.is_reversed'),
+        ),
+        isTrue,
+      );
+    });
+
+    test('rejects cash_transactions.is_reversed = 2', () {
+      final result = validator.validate(
+        validEnvelope(
+          manifestOverride: manifest(cashTransactionCount: 1),
+          cashTransactions: [
+            {
+              'id': 'cash-1',
+              'trip_id': 'trip-1',
+              'type': CashTransactionType.initialCash.value,
+              'is_reversed': 2,
+            },
+          ],
+        ),
+      );
+
+      expect(result.isValid, isFalse);
+      expect(
+        result.issues.any(
+          (i) =>
+              i.code == 'invalid_field' &&
+              i.message.contains('cash_transactions.is_reversed'),
+        ),
+        isTrue,
+      );
+    });
+
+    test('accepts expenses.is_reversed = 0', () {
+      final result = validator.validate(
+        validEnvelope(
+          manifestOverride: manifest(expenseCount: 1),
+          expenses: [
+            {
+              'id': 'exp-1',
+              'trip_id': 'trip-1',
+              'payment_method': 'Cash',
+              'source': 'manual',
+              'is_reversed': 0,
+            },
+          ],
+        ),
+      );
+
+      expect(
+        result.issues.any(
+          (i) =>
+              i.code == 'invalid_field' &&
+              i.message.contains('expenses.is_reversed'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('accepts expenses.is_reversed = 1', () {
+      final result = validator.validate(
+        validEnvelope(
+          manifestOverride: manifest(expenseCount: 1),
+          expenses: [
+            {
+              'id': 'exp-1',
+              'trip_id': 'trip-1',
+              'payment_method': 'Cash',
+              'source': 'manual',
+              'is_reversed': 1,
+            },
+          ],
+        ),
+      );
+
+      expect(
+        result.issues.any(
+          (i) =>
+              i.code == 'invalid_field' &&
+              i.message.contains('expenses.is_reversed'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('accepts cash_transactions.is_reversed = 0', () {
+      final result = validator.validate(
+        validEnvelope(
+          manifestOverride: manifest(cashTransactionCount: 1),
+          cashTransactions: [
+            {
+              'id': 'cash-1',
+              'trip_id': 'trip-1',
+              'type': CashTransactionType.initialCash.value,
+              'is_reversed': 0,
+            },
+          ],
+        ),
+      );
+
+      expect(
+        result.issues.any(
+          (i) =>
+              i.code == 'invalid_field' &&
+              i.message.contains('cash_transactions.is_reversed'),
+        ),
+        isFalse,
+      );
+    });
+
+    test('accepts cash_transactions.is_reversed = 1', () {
+      final result = validator.validate(
+        validEnvelope(
+          manifestOverride: manifest(cashTransactionCount: 1),
+          cashTransactions: [
+            {
+              'id': 'cash-1',
+              'trip_id': 'trip-1',
+              'type': CashTransactionType.initialCash.value,
+              'is_reversed': 1,
+            },
+          ],
+        ),
+      );
+
+      expect(
+        result.issues.any(
+          (i) =>
+              i.code == 'invalid_field' &&
+              i.message.contains('cash_transactions.is_reversed'),
+        ),
+        isFalse,
+      );
+    });
+  });
 }

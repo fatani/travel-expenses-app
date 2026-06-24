@@ -790,7 +790,7 @@
         }
     },
     "backupRestoreConfirmTitle": "Replace all data?",
-    "backupRestoreConfirmMessage": "Restoring will replace all current CalmLedger data on this device. This cannot be undone.",
+    "backupRestoreConfirmMessage": "Restoring will replace all current CalmLedger data on this device. This cannot be undone.\n\nWallet balances will be recalculated automatically. Cash exchange and lot tracking history will be rebuilt from available transactions.",
     "backupRestoreConfirmButton": "Replace all data",
     "backupRestoreCancelButton": "Cancel",
     "backupRestoreInProgress": "Restoring…",
