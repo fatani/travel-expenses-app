@@ -397,6 +397,17 @@ class BackupRestoreValidator {
           ),
         );
       }
+
+      final isReversed = transaction['is_reversed'];
+      if (isReversed != null && isReversed != 0 && isReversed != 1) {
+        issues.add(
+          BackupRestoreValidationIssue(
+            code: 'invalid_field',
+            message:
+                'cash_transactions.is_reversed must be 0 or 1 (id=${transaction['id']}, got=$isReversed)',
+          ),
+        );
+      }
     }
 
     for (final expense in envelope.expenses) {
@@ -451,6 +462,17 @@ class BackupRestoreValidator {
             code: 'unknown_enum',
             message:
                 'Unsupported expenses.source: $source (id=${expense['id']})',
+          ),
+        );
+      }
+
+      final isReversed = expense['is_reversed'];
+      if (isReversed != null && isReversed != 0 && isReversed != 1) {
+        issues.add(
+          BackupRestoreValidationIssue(
+            code: 'invalid_field',
+            message:
+                'expenses.is_reversed must be 0 or 1 (id=${expense['id']}, got=$isReversed)',
           ),
         );
       }

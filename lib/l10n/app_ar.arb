@@ -790,7 +790,7 @@
     }
   },
   "backupRestoreConfirmTitle": "استبدال كل البيانات؟",
-  "backupRestoreConfirmMessage": "ستؤدي الاستعادة إلى استبدال جميع بيانات CalmLedger الحالية على هذا الجهاز. لا يمكن التراجع عن ذلك.",
+  "backupRestoreConfirmMessage": "ستؤدي الاستعادة إلى استبدال جميع بيانات CalmLedger الحالية على هذا الجهاز. لا يمكن التراجع عن ذلك.\n\nسيتم إعادة احتساب أرصدة المحفظة النقدية تلقائياً. وسيُعاد بناء سجل تتبع المبادلات النقدية والدفعات من المعاملات المتاحة.",
   "backupRestoreConfirmButton": "استبدال كل البيانات",
   "backupRestoreCancelButton": "إلغاء",
   "backupRestoreInProgress": "جارٍ الاستعادة…",
