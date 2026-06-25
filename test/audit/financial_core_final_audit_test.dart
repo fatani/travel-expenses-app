@@ -29,6 +29,7 @@ import 'package:travel_expenses/features/refunds/data/expense_refund_repository.
 import 'package:travel_expenses/features/refunds/domain/record_refund_use_case.dart';
 import 'package:travel_expenses/features/refunds/domain/refund_destination.dart';
 import 'package:travel_expenses/features/refunds/domain/refund_inheritance_engine.dart';
+import 'package:travel_expenses/features/reports/data/remaining_cash_from_lots.dart';
 import 'package:travel_expenses/features/reports/data/trip_report_calculator.dart';
 import 'package:travel_expenses/features/reports/domain/remaining_cash_value.dart';
 import 'package:travel_expenses/features/reports/domain/trip_report_summary.dart';
@@ -235,12 +236,18 @@ void main() {
             ))
         .toList();
     final activeLots = await lotRepo.getActiveLotsForTrip(trip.id);
+    final netTripCostRemainingValues = buildRemainingCashValuesFromLots(
+      lots: activeLots,
+      homeCurrencyCode: 'SAR',
+      excludeSourceTypes: const {'cash_refund'},
+    );
     return const TripReportCalculator().calculate(
       tripId: trip.id,
       tripName: trip.name,
       expenses: expenses,
       refunds: refunds,
       lotRemainingValues: lotRemainingValues,
+      netTripCostRemainingValues: netTripCostRemainingValues,
       activeLots: activeLots,
     );
   }
@@ -888,9 +895,10 @@ void main() {
       expect(remainingByCurrency['THB']!.homeAmount,
           closeTo(expectedThbHome, 1e-9));
 
-      // Net trip cost = net spending − total remaining cash (home).
+      // Net trip cost = net spending − remaining cash (home), excluding
+      // cash_refund lots (already counted in net spending via refunds).
       final expectedNetTripCost =
-          expectedNet - (1875 + expectedThbHome);
+          expectedNet - (1875 + expectedThbHome - foodRefundHome);
       expect(report.netTripCostHomeAmount,
           closeTo(expectedNetTripCost, 1e-9));
 

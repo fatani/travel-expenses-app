@@ -385,7 +385,16 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       return;
     }
 
-    // ── Card → card path (unchanged) ────────────────────────────────────────
+    // ── Card → card path ────────────────────────────────────────────────────
+    final activeRefunds = await ref
+        .read(expenseRefundRepositoryProvider)
+        .getActiveRefundsByExpense(expense.id);
+    if (activeRefunds.isNotEmpty) {
+      throw const UpdateCashExpenseException(
+        UpdateCashExpenseFailureReason.hasActiveRefunds,
+      );
+    }
+
     final fxSnapshotService = ExpenseFxSnapshotService(
       cashWalletRepository: ref.read(cashWalletRepositoryProvider),
     );

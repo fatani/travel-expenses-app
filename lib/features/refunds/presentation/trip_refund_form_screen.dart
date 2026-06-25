@@ -12,6 +12,8 @@ import '../../trips/domain/trip.dart';
 import '../domain/allowed_refund_currencies.dart';
 import '../domain/over_refund_exception.dart';
 import '../domain/refund_destination.dart';
+import '../../reports/data/trip_cash_balances_provider.dart';
+import '../../reports/data/trip_report_provider.dart';
 import 'linked_refund_home_snapshot.dart';
 import 'trip_refunds_provider.dart';
 
@@ -359,6 +361,8 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
           );
 
       ref.invalidate(tripRefundsProvider(widget.trip.id));
+      ref.invalidate(tripReportProvider(widget.trip.id));
+      ref.invalidate(tripCashBalancesProvider(widget.trip.id));
 
       if (!mounted) {
         return;

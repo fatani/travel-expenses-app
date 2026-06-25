@@ -326,6 +326,7 @@
   "tripDetailsDeleteExpenseMessage": "سيُحذف {expenseTitle} من هذه الرحلة.",
   "@tripDetailsDeleteExpenseMessage": {"placeholders": {"expenseTitle": {}}},
   "tripDetailsDeleteExpenseError": "تعذر حذف المصروف. حاول مرة أخرى.",
+  "tripDetailsDeleteExpenseHasRefunds": "لا يمكن حذف مصروف مرتبط باسترداد. أزل عمليات الاسترداد أولاً.",
   "tripDetailsExcludedCurrenciesWarning": "بعض المصاريف بعملات أخرى غير مشمولة في الإجماليات أعلاه",
   "tripDetailsNoExpensesInBaseCurrency": "لا توجد مصاريف بهذه العملة",
   "tripDetailsEmptyExpensesTitle": "لا توجد مصاريف لهذه الرحلة",

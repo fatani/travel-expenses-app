@@ -15,6 +15,7 @@ import 'package:sqflite/sqflite.dart';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../../support/empty_expense_refund_repository.dart';
 import '../../../support/no_fifo_record_cash_expense_use_case.dart';
 import '../../../support/no_fifo_update_cash_expense_use_case.dart';
 import '../../../support/test_expense_repository.dart';
@@ -48,6 +49,9 @@ void main() {
     return ProviderContainer(
       overrides: [
         expenseRepositoryProvider.overrideWithValue(expenseRepo),
+        expenseRefundRepositoryProvider.overrideWithValue(
+          EmptyExpenseRefundRepository(),
+        ),
         cashWalletRepositoryProvider.overrideWithValue(walletRepo),
         manualCurrencyConversionServiceProvider.overrideWithValue(
           ManualCurrencyConversionService(_NoOpManualRateRepository()),

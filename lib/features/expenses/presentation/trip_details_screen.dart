@@ -28,6 +28,7 @@ import '../../trips/presentation/trip_form_screen.dart';
 import '../domain/expense.dart';
 import '../domain/card_expense_completeness.dart';
 import '../domain/expense_payment.dart';
+import '../domain/update_cash_expense_exception.dart';
 import 'expense_controller.dart';
 import 'expense_form_screen.dart';
 import 'expense_list_display.dart';
@@ -462,9 +463,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
       if (!mounted) {
         return;
       }
+      final message = error is UpdateCashExpenseException &&
+              error.reason == UpdateCashExpenseFailureReason.hasActiveRefunds
+          ? l10n.tripDetailsDeleteExpenseHasRefunds
+          : l10n.tripDetailsDeleteExpenseError;
       CalmSnackBar.showMessage(
         context,
-        message: l10n.tripDetailsDeleteExpenseError,
+        message: message,
       );
     } finally {
       _undoingCreatedExpenseIds.remove(expenseId);
@@ -679,9 +684,13 @@ class _TripDetailsScreenState extends ConsumerState<TripDetailsScreen> {
         return;
       }
 
+      final message = error is UpdateCashExpenseException &&
+              error.reason == UpdateCashExpenseFailureReason.hasActiveRefunds
+          ? l10n.tripDetailsDeleteExpenseHasRefunds
+          : l10n.tripDetailsDeleteExpenseError;
       CalmSnackBar.showMessage(
         context,
-        message: l10n.tripDetailsDeleteExpenseError,
+        message: message,
       );
     } finally {
       _committingDeletionExpenseIds.remove(expense.id);

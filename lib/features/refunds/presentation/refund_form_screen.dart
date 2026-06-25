@@ -10,6 +10,7 @@ import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../expenses/domain/expense.dart';
 import '../../expenses/domain/expense_payment_service.dart';
+import '../../reports/data/trip_cash_balances_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
 import '../../trips/domain/trip.dart';
 import '../domain/over_refund_exception.dart';
@@ -240,6 +241,7 @@ class _RefundFormScreenState extends ConsumerState<RefundFormScreen> {
 
       ref.invalidate(tripRefundsProvider(widget.trip.id));
       ref.invalidate(tripReportProvider(widget.trip.id));
+      ref.invalidate(tripCashBalancesProvider(widget.trip.id));
 
       if (!mounted) {
         return;
