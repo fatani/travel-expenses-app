@@ -91,7 +91,22 @@ void main() {
       effectiveRate: rate,
       createdAt: createdAt,
     );
-    return lotRepo.insertCashLot(lot);
+    final inserted = await lotRepo.insertCashLot(lot);
+    // Seed trip_cash_balances so the balance guard approves spends from this lot.
+    final dbRef = await db.database;
+    await dbRef.transaction((txn) async {
+      await walletRepo.recordAtmInflow(
+        txn: txn,
+        tripId: trip.id,
+        lotId: inserted.id,
+        amount: amount,
+        currencyCode: currency,
+        homeCurrencyAmount: (rate != null && homeCode != null) ? amount * rate : null,
+        homeCurrencyCode: homeCode,
+        createdAt: createdAt,
+      );
+    });
+    return inserted;
   }
 
   Expense cashExpense({
@@ -380,14 +395,13 @@ void main() {
     });
 
     test('trip_cash_balances decreases by expense amount', () async {
-      // First add some balance to the wallet
+      // addCashTransaction creates both the balance entry and the backing lot.
       await walletRepo.addCashTransaction(
         tripId: trip.id,
         type: CashTransactionType.initialCash,
         amount: 5000,
         currencyCode: 'JPY',
       );
-      await insertLot(amount: 5000);
 
       await useCase.execute(cashExpense(amount: 1500));
 

@@ -3,6 +3,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:travel_expenses/core/database/app_database.dart';
 import 'package:travel_expenses/features/cash_wallet/data/cash_wallet_repository.dart';
 import 'package:travel_expenses/features/cash_wallet/domain/cash_transaction.dart';
+import 'package:travel_expenses/features/cash_wallet/domain/insufficient_cash_exception.dart';
 import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/trips/data/trip_repository.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
@@ -270,19 +271,22 @@ void main() {
   });
 
   group('negative balance scenario', () {
-    test('spend without balance, then reverse restores correctly', () async {
+    test('spend without balance throws InsufficientCashException', () async {
+      // No addCashTransaction call — balance stays at 0.
+      // The balance guard must block the deduction rather than going negative.
       final expense = cashExpense(id: 'exp-negative', amount: 400);
-      await repository.recordCashExpenseDeduction(
-        tripId: trip.id,
-        expenseId: expense.id,
-        amount: expense.transactionAmount,
-        currencyCode: expense.transactionCurrency,
+
+      await expectLater(
+        () => repository.recordCashExpenseDeduction(
+          tripId: trip.id,
+          expenseId: expense.id,
+          amount: expense.transactionAmount,
+          currencyCode: expense.transactionCurrency,
+        ),
+        throwsA(isA<InsufficientCashException>()),
       );
 
-      expect(await balanceFor('THB'), closeTo(-400, 0.000001));
-
-      await repository.restoreCashForDeletedExpense(expense);
-
+      // Balance stays at 0 — guard blocked the deduction.
       expect(await balanceFor('THB'), closeTo(0, 0.000001));
     });
   });
