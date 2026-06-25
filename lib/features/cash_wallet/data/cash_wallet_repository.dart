@@ -8,6 +8,7 @@ import '../../expenses/domain/expense_payment.dart';
 import '../domain/cash_lot.dart';
 import '../domain/cash_transaction.dart';
 import '../domain/cash_effective_rate_calculator.dart';
+import '../domain/insufficient_cash_exception.dart';
 import '../domain/trip_cash_balance.dart';
 
 class CashExpenseDeductionResult {
@@ -321,6 +322,14 @@ class CashWalletRepository {
     DateTime? createdAt,
   }) async {
     final normalizedCurrency = fromCurrencyCode.trim().toUpperCase();
+    // Balance-level guard before any write: prevents source balance going
+    // negative when lot remaining is overstated after a backup restore.
+    await _assertSufficientBalance(
+      txn,
+      tripId: tripId,
+      currencyCode: normalizedCurrency,
+      requiredAmount: fromAmount,
+    );
     final transaction = CashTransaction.create(
       id: _uuid.v4(),
       tripId: tripId,
@@ -417,6 +426,20 @@ class CashWalletRepository {
 
     for (final row in rows) {
       final transaction = CashTransaction.fromMap(row);
+      // Undo the original signed delta (out restores +fromAmount to the source
+      // currency; in removes +toAmount from the destination currency).
+      final reversalDelta = -transaction.type.signedDelta(transaction.amount);
+      // Balance-level guard for exchange_in reversal: removing the destination
+      // cash decrements its balance. Guard prevents negative balance when lots
+      // are overstated after a backup restore.
+      if (reversalDelta < 0) {
+        await _assertSufficientBalance(
+          txn,
+          tripId: transaction.tripId,
+          currencyCode: transaction.currencyCode,
+          requiredAmount: transaction.amount,
+        );
+      }
       await txn.update(
         AppDatabase.cashTransactionsTable,
         {
@@ -426,9 +449,6 @@ class CashWalletRepository {
         where: 'id = ? AND is_reversed = 0',
         whereArgs: [transaction.id],
       );
-      // Undo the original signed delta (out restores +fromAmount to the source
-      // currency; in removes +toAmount from the destination currency).
-      final reversalDelta = -transaction.type.signedDelta(transaction.amount);
       await _applyBalanceDelta(
         txn,
         tripId: transaction.tripId,
@@ -615,6 +635,16 @@ class CashWalletRepository {
         tripId: tripId,
         currencyCode: normalizedCurrency,
       );
+      // Balance-level guard: enforced so no cash expense can produce a negative
+      // balance even when cash_lots.remaining_amount is overstated after restore.
+      const balanceEpsilon = 1e-9;
+      if (currentBalance < amount - balanceEpsilon) {
+        throw InsufficientCashException(
+          required: amount,
+          available: currentBalance,
+          currencyCode: normalizedCurrency,
+        );
+      }
       final wasInsufficient = currentBalance < amount;
       final nextBalance = currentBalance - amount;
 
@@ -918,6 +948,17 @@ class CashWalletRepository {
     }
 
     final reversalDelta = -transaction.type.signedDelta(transaction.amount);
+    // Balance-level guard: reverting an inflow decrements the balance.
+    // Guard ensures the wallet never goes negative even when cash_lots show a
+    // higher remaining amount than the true balance after a backup restore.
+    if (reversalDelta < 0) {
+      await _assertSufficientBalance(
+        txn,
+        tripId: transaction.tripId,
+        currencyCode: transaction.currencyCode,
+        requiredAmount: transaction.amount,
+      );
+    }
     await _applyBalanceDelta(
       txn,
       tripId: transaction.tripId,
@@ -936,6 +977,34 @@ class CashWalletRepository {
       transaction.toMap(),
       conflictAlgorithm: ConflictAlgorithm.abort,
     );
+  }
+
+  /// Throws [InsufficientCashException] when the current balance for
+  /// ([tripId], [currencyCode]) is less than [requiredAmount] − ε.
+  ///
+  /// Called before every negative balance delta so that no outflow can produce
+  /// a negative [trip_cash_balances] row — even when [cash_lots.remaining_amount]
+  /// is overstated after a Backup Format v1 restore (which reconstructs lots at
+  /// their original amounts, losing prior spending history).
+  Future<void> _assertSufficientBalance(
+    DatabaseExecutor executor, {
+    required String tripId,
+    required String currencyCode,
+    required double requiredAmount,
+  }) async {
+    const epsilon = 1e-9;
+    final current = await _getCurrentBalance(
+      executor,
+      tripId: tripId,
+      currencyCode: currencyCode,
+    );
+    if (current < requiredAmount - epsilon) {
+      throw InsufficientCashException(
+        required: requiredAmount,
+        available: current,
+        currencyCode: currencyCode,
+      );
+    }
   }
 
   Future<void> _applyBalanceDelta(

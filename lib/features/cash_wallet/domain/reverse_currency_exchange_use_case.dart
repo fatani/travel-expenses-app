@@ -9,6 +9,7 @@ import 'currency_exchange.dart';
 import 'exchange_correction.dart';
 import 'exchange_correction_service.dart';
 import 'exchange_not_correctable_exception.dart';
+import 'insufficient_cash_exception.dart';
 
 /// Safely reverses (undoes) a single currency exchange whose received cash has
 /// not been used.
@@ -103,10 +104,20 @@ class ReverseCurrencyExchangeUseCase {
 
     // 4. Reverse both exchange cash transactions and restore balances
     //    (source +fromAmount, destination −toAmount).
-    await _cashWalletRepository.reverseCurrencyExchangeTransactionsInTxn(
-      txn,
-      exchangeId: exchangeId,
-    );
+    // Wrap InsufficientCashException (balance guard fired — destination cash
+    // was spent before backup so lot-remaining is overstated after restore)
+    // into the domain exception the UI already knows how to handle.
+    try {
+      await _cashWalletRepository.reverseCurrencyExchangeTransactionsInTxn(
+        txn,
+        exchangeId: exchangeId,
+      );
+    } on InsufficientCashException {
+      throw ExchangeNotCorrectableException(
+        exchangeId: exchangeId,
+        reason: ExchangeCorrectionReason.destinationCashUsed,
+      );
+    }
 
     // 5. Mark the exchange row reversed (records reversedAt).
     await _exchangeRepository.markExchangeReversed(exchangeId, txn: txn);

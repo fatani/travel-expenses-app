@@ -7,6 +7,7 @@ import 'atm_correction.dart';
 import 'atm_correction_service.dart';
 import 'atm_not_correctable_exception.dart';
 import 'cash_transaction.dart';
+import 'insufficient_cash_exception.dart';
 
 /// Safely reverses (undoes) a single ATM withdrawal whose generated cash has
 /// not been used.
@@ -81,10 +82,20 @@ class ReverseAtmWithdrawalUseCase {
     }
 
     // 1. Reverse the cash side: generated lot + inflow transaction + balance.
-    await _cashWalletRepository.reverseAtmCashInflowInTxn(
-      txn,
-      transaction: cashTx,
-    );
+    // Wrap InsufficientCashException (balance guard fired — ATM cash was spent
+    // before backup so the lot-remaining is overstated after restore) into the
+    // domain exception the UI already knows how to handle.
+    try {
+      await _cashWalletRepository.reverseAtmCashInflowInTxn(
+        txn,
+        transaction: cashTx,
+      );
+    } on InsufficientCashException {
+      throw AtmNotCorrectableException(
+        cashTransactionId: atmCashTransactionId,
+        reason: AtmCorrectionReason.cashUsed,
+      );
+    }
 
     // 2. Reverse the linked ATM fee expense, if any (card expense — no FIFO).
     final feeExpenseId = status.feeExpenseId;
