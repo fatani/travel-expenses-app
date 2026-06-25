@@ -883,6 +883,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tripDetailsDeleteExpenseError => 'تعذر حذف المصروف. حاول مرة أخرى.';
 
   @override
+  String get tripDetailsDeleteExpenseHasRefunds => 'لا يمكن حذف مصروف مرتبط باسترداد. أزل عمليات الاسترداد أولاً.';
+
+  @override
   String get tripDetailsExcludedCurrenciesWarning => 'بعض المصاريف بعملات أخرى غير مشمولة في الإجماليات أعلاه';
 
   @override
@@ -1995,7 +1998,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get backupRestoreConfirmTitle => 'استبدال كل البيانات؟';
 
   @override
-  String get backupRestoreConfirmMessage => 'ستؤدي الاستعادة إلى استبدال جميع بيانات CalmLedger الحالية على هذا الجهاز. لا يمكن التراجع عن ذلك.';
+  String get backupRestoreConfirmMessage => 'ستؤدي الاستعادة إلى استبدال جميع بيانات CalmLedger الحالية على هذا الجهاز. لا يمكن التراجع عن ذلك.\n\nسيتم إعادة احتساب أرصدة المحفظة النقدية تلقائياً. وسيُعاد بناء سجل تتبع المبادلات النقدية والدفعات من المعاملات المتاحة.';
 
   @override
   String get backupRestoreConfirmButton => 'استبدال كل البيانات';

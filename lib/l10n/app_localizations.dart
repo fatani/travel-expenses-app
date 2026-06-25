@@ -1751,6 +1751,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t delete this expense. Try again.'**
   String get tripDetailsDeleteExpenseError;
 
+  /// No description provided for @tripDetailsDeleteExpenseHasRefunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t delete an expense that has refunds. Remove its refunds first.'**
+  String get tripDetailsDeleteExpenseHasRefunds;
+
   /// No description provided for @tripDetailsExcludedCurrenciesWarning.
   ///
   /// In en, this message translates to:
@@ -3776,7 +3782,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupRestoreConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'Restoring will replace all current CalmLedger data on this device. This cannot be undone.'**
+  /// **'Restoring will replace all current CalmLedger data on this device. This cannot be undone.\n\nWallet balances will be recalculated automatically. Cash exchange and lot tracking history will be rebuilt from available transactions.'**
   String get backupRestoreConfirmMessage;
 
   /// No description provided for @backupRestoreConfirmButton.

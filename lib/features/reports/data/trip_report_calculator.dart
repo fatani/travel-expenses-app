@@ -29,6 +29,7 @@ class TripReportCalculator {
     List<ExpenseRefund> refunds = const [],
     List<CashBalanceRateInput> cashBalanceRates = const [],
     List<RemainingCashValue> lotRemainingValues = const [],
+    List<RemainingCashValue>? netTripCostRemainingValues,
     List<CashLot> activeLots = const [],
   }) {
     if (expenses.isEmpty) {
@@ -244,10 +245,16 @@ class TripReportCalculator {
 
     // --- net trip cost ---------------------------------------------------------
     // Net Trip Cost = Net Spending − Total Remaining Cash (home-currency value).
-    // Only remaining cash entries whose homeCurrency matches grossCurrency count.
+    // [netTripCostRemainingValues] may exclude cash_refund lots so refund cash
+    // is not subtracted twice (refunds already reduce net spending).
+    // Only entries whose homeCurrency matches grossCurrency count.
+    final valuesForNetTripCost = netTripCostRemainingValues ??
+        (lotRemainingValues.isNotEmpty
+            ? lotRemainingValues
+            : _buildRemainingCashValues(cashBalanceRates));
     double? netTripCostHomeAmount;
     if (netSpendingHomeAmount != null) {
-      final totalRemainingCashHome = remainingCashValues
+      final totalRemainingCashHome = valuesForNetTripCost
           .where((v) => grossCurrency != null && v.homeCurrency == grossCurrency)
           .fold<double>(0, (sum, v) => sum + v.homeAmount);
       netTripCostHomeAmount = netSpendingHomeAmount - totalRemainingCashHome;

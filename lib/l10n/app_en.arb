@@ -327,6 +327,7 @@
   "tripDetailsDeleteExpenseMessage": "This removes {expenseTitle} from this trip.",
   "@tripDetailsDeleteExpenseMessage": {"placeholders": {"expenseTitle": {}}},
   "tripDetailsDeleteExpenseError": "Couldn't delete this expense. Try again.",
+  "tripDetailsDeleteExpenseHasRefunds": "Can't delete an expense that has refunds. Remove its refunds first.",
   "tripDetailsExcludedCurrenciesWarning": "Some expenses in other currencies are not included in the totals above",
   "tripDetailsNoExpensesInBaseCurrency": "No expenses in this currency",
   "tripDetailsEmptyExpensesTitle": "No expenses yet",

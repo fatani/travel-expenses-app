@@ -883,6 +883,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tripDetailsDeleteExpenseError => 'Couldn\'t delete this expense. Try again.';
 
   @override
+  String get tripDetailsDeleteExpenseHasRefunds => 'Can\'t delete an expense that has refunds. Remove its refunds first.';
+
+  @override
   String get tripDetailsExcludedCurrenciesWarning => 'Some expenses in other currencies are not included in the totals above';
 
   @override
@@ -1988,7 +1991,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupRestoreConfirmTitle => 'Replace all data?';
 
   @override
-  String get backupRestoreConfirmMessage => 'Restoring will replace all current CalmLedger data on this device. This cannot be undone.';
+  String get backupRestoreConfirmMessage => 'Restoring will replace all current CalmLedger data on this device. This cannot be undone.\n\nWallet balances will be recalculated automatically. Cash exchange and lot tracking history will be rebuilt from available transactions.';
 
   @override
   String get backupRestoreConfirmButton => 'Replace all data';

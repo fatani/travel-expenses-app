@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/providers/database_providers.dart';
 import '../domain/remaining_cash_value.dart';
 import '../domain/trip_report_display.dart';
+import 'remaining_cash_from_lots.dart';
 import 'trip_report_calculator.dart';
 
 final tripReportProvider =
@@ -42,6 +43,17 @@ final tripReportProvider =
       // Fetch all active (non-reversed) lots for Cash Acquisition Summary.
       final activeLots = await lotRepo.getActiveLotsForTrip(tripId);
 
+      final List<RemainingCashValue>? netTripCostRemainingValues;
+      if (homeCurrency != null) {
+        netTripCostRemainingValues = buildRemainingCashValuesFromLots(
+          lots: activeLots,
+          homeCurrencyCode: homeCurrency,
+          excludeSourceTypes: const {'cash_refund'},
+        );
+      } else {
+        netTripCostRemainingValues = null;
+      }
+
       final refundRepo = ref.read(expenseRefundRepositoryProvider);
       final refunds = await refundRepo.getActiveRefundsByTrip(tripId);
 
@@ -53,6 +65,7 @@ final tripReportProvider =
         tripHomeCurrency: homeCurrency,
         refunds: refunds,
         lotRemainingValues: lotRemainingValues,
+        netTripCostRemainingValues: netTripCostRemainingValues,
         activeLots: activeLots,
       );
 
