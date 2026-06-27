@@ -1942,7 +1942,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get backupCreatesFileNotice => 'أنشئ ملف نسخ احتياطي يمكنك حفظه في مكان آخر.';
 
   @override
-  String get backupNoCloudSyncNotice => 'CalmLedger لا يزامن تلقائياً مع السحابة.';
+  String get backupNoCloudSyncNotice => 'CalmTrip لا يزامن تلقائياً مع السحابة.';
 
   @override
   String get backupCreateButton => 'إنشاء نسخة احتياطية';
@@ -1998,7 +1998,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get backupRestoreConfirmTitle => 'استبدال كل البيانات؟';
 
   @override
-  String get backupRestoreConfirmMessage => 'ستؤدي الاستعادة إلى استبدال جميع بيانات CalmLedger الحالية على هذا الجهاز. لا يمكن التراجع عن ذلك.\n\nسيتم إعادة احتساب أرصدة المحفظة النقدية تلقائياً. وسيُعاد بناء سجل تتبع المبادلات النقدية والدفعات من المعاملات المتاحة.';
+  String get backupRestoreConfirmMessage => 'ستؤدي الاستعادة إلى استبدال جميع بيانات CalmTrip الحالية على هذا الجهاز. لا يمكن التراجع عن ذلك.\n\nسيتم إعادة احتساب أرصدة المحفظة النقدية تلقائياً. وسيُعاد بناء سجل تتبع المبادلات النقدية والدفعات من المعاملات المتاحة.';
 
   @override
   String get backupRestoreConfirmButton => 'استبدال كل البيانات';
@@ -2013,13 +2013,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get backupRestoreSuccess => 'اكتملت الاستعادة بنجاح.';
 
   @override
-  String get backupRestoreInvalidFile => 'ملف نسخة احتياطية غير صالح. اختر ملف CalmLedger بامتداد .clbackup.';
+  String get backupRestoreInvalidFile => 'ملف نسخة احتياطية غير صالح. اختر ملف CalmTrip بامتداد .clbackup.';
 
   @override
-  String get backupRestoreUnsupportedBackupVersion => 'إصدار النسخة الاحتياطية غير مدعوم. حدّث CalmLedger وحاول مرة أخرى.';
+  String get backupRestoreUnsupportedBackupVersion => 'إصدار النسخة الاحتياطية غير مدعوم. حدّث CalmTrip وحاول مرة أخرى.';
 
   @override
-  String get backupRestoreUnsupportedSchemaVersion => 'إصدار المخطط غير مدعوم. حدّث CalmLedger وحاول مرة أخرى.';
+  String get backupRestoreUnsupportedSchemaVersion => 'إصدار المخطط غير مدعوم. حدّث CalmTrip وحاول مرة أخرى.';
 
   @override
   String get backupRestoreCorruptBackup => 'يبدو أن ملف النسخة الاحتياطية تالف. جرّب ملفاً آخر.';
