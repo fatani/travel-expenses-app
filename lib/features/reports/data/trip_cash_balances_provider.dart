@@ -2,6 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/database_providers.dart';
 import '../../cash_wallet/domain/trip_cash_balance.dart';
+import 'trip_report_provider.dart';
+
+/// Invalidates report summary + cash-wallet snapshot providers after a mutation
+/// that changes [trip_cash_balances].
+void invalidateTripCashReportSnapshots(
+  void Function(ProviderOrFamily provider) invalidate,
+  String tripId,
+) {
+  invalidate(tripReportProvider(tripId));
+  invalidate(tripCashBalancesProvider(tripId));
+}
 
 /// Read-only cash wallet balances for a trip (independent of report calculations).
 final tripCashBalancesProvider =

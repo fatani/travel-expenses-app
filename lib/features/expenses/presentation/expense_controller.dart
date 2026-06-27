@@ -6,6 +6,7 @@ import '../../cash_wallet/data/cash_wallet_repository.dart';
 import '../../cash_wallet/domain/insufficient_cash_exception.dart';
 import '../../global_reports/data/global_report_provider.dart';
 import '../../predictions/data/trip_prediction_provider.dart';
+import '../../reports/data/trip_cash_balances_provider.dart';
 import '../../reports/data/trip_report_provider.dart';
 import '../domain/expense_fx_snapshot_service.dart';
 import '../domain/expense.dart';
@@ -163,10 +164,13 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
       cardProfileId: normalizedPayment.cardProfileId,
     );
 
-    return _runMutation(() async {
+    final affectsCashBalances = _isCashExpense(expense);
+
+    return _runMutation(
+      () async {
       final expenseRepository = ref.read(expenseRepositoryProvider);
 
-      if (!_isCashExpense(expense)) {
+      if (!affectsCashBalances) {
         final created = await expenseRepository.createExpense(expense);
         return _buildCreateOutcome(
           created: created,
@@ -190,7 +194,9 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
           createdExpenseId: null,
         );
       }
-    });
+    },
+      invalidateCashBalances: affectsCashBalances,
+    );
   }
 
   bool _isCashExpense(Expense expense) {
@@ -224,13 +230,19 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
     );
   }
 
-  Future<T> _runMutation<T>(Future<T> Function() mutation) async {
+  Future<T> _runMutation<T>(
+    Future<T> Function() mutation, {
+    bool invalidateCashBalances = false,
+  }) async {
     state = AsyncNotifierReload.loadingPreserving(state);
 
     try {
       final result = await mutation();
       ref.invalidate(globalReportProvider);
       ref.invalidate(tripReportProvider(_tripId));
+      if (invalidateCashBalances) {
+        ref.invalidate(tripCashBalancesProvider(_tripId));
+      }
       ref.invalidate(tripPredictionProvider(_tripId));
       state = AsyncData(await _loadExpenses());
       return result;
@@ -373,15 +385,18 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
         cardProfileId: normalizedPayment.cardProfileId,
       );
 
-      await _runMutation(() async {
-        try {
-          await ref
-              .read(updateCashExpenseUseCaseProvider)
-              .execute(updatedExpense);
-        } on UpdateCashExpenseException {
-          rethrow;
-        }
-      });
+      await _runMutation(
+        () async {
+          try {
+            await ref
+                .read(updateCashExpenseUseCaseProvider)
+                .execute(updatedExpense);
+          } on UpdateCashExpenseException {
+            rethrow;
+          }
+        },
+        invalidateCashBalances: true,
+      );
       return;
     }
 
@@ -470,14 +485,17 @@ class ExpenseController extends FamilyAsyncNotifier<List<Expense>, String> {
   }
 
   Future<void> deleteExpense(String expenseId) async {
-    await _runMutation(() async {
-      // UpdateCashExpenseUseCase.reverseAndDelete atomically restores FIFO lot
-      // state (consumptions reversed, lot remaining_amounts restored,
-      // cash_transactions deduction reversed) before hard-deleting the row.
-      await ref
-          .read(updateCashExpenseUseCaseProvider)
-          .reverseAndDelete(expenseId);
-    });
+    await _runMutation(
+      () async {
+        // UpdateCashExpenseUseCase.reverseAndDelete atomically restores FIFO lot
+        // state (consumptions reversed, lot remaining_amounts restored,
+        // cash_transactions deduction reversed) before hard-deleting the row.
+        await ref
+            .read(updateCashExpenseUseCaseProvider)
+            .reverseAndDelete(expenseId);
+      },
+      invalidateCashBalances: true,
+    );
   }
 
   String? _normalizeText(String? value) {

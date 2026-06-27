@@ -21,7 +21,7 @@ import '../../expenses/presentation/expense_form_screen.dart';
 import '../../expenses/presentation/expense_option_labels.dart';
 import '../../global_reports/data/global_report_provider.dart';
 import '../../predictions/data/trip_prediction_provider.dart';
-import '../../reports/data/trip_report_provider.dart';
+import '../../reports/data/trip_cash_balances_provider.dart';
 import '../../settings/domain/card_display_helper.dart';
 import '../../settings/domain/card_profile.dart';
 import '../../settings/presentation/add_card_screen.dart';
@@ -477,6 +477,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
 
       if (result == true) {
         await _load();
+        _invalidateTripCashReportSnapshots();
       }
     } finally {
       _isCashSheetOpen = false;
@@ -523,6 +524,12 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     }
   }
 
+  /// Invalidates trip report + cash-balance snapshot providers after a cash
+  /// wallet mutation. Report summary and cash snapshot must stay in sync.
+  void _invalidateTripCashReportSnapshots() {
+    invalidateTripCashReportSnapshots(ref.invalidate, widget.trip.id);
+  }
+
   /// After an ATM withdrawal that may have created a fee card expense, refresh
   /// the trip's expense + report views.
   ///
@@ -545,7 +552,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
     if (!mounted) {
       return;
     }
-    ref.invalidate(tripReportProvider(widget.trip.id));
+    invalidateTripCashReportSnapshots(ref.invalidate, widget.trip.id);
     ref.invalidate(tripPredictionProvider(widget.trip.id));
     ref.invalidate(globalReportProvider);
   }
@@ -598,6 +605,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         if (!mounted) {
           return;
         }
+        _invalidateTripCashReportSnapshots();
         CalmSnackBar.showMessage(
           context,
           message: AppLocalizations.of(context)!.cashWalletExchangeSaved,
@@ -918,6 +926,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         return;
       }
       await _load();
+      _invalidateTripCashReportSnapshots();
     } catch (error) {
       if (!mounted) {
         return;
@@ -980,6 +989,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
       if (!mounted) {
         return;
       }
+      _invalidateTripCashReportSnapshots();
       CalmSnackBar.showMessage(context, message: l10n.cashWalletExchangeUndone);
     } on ExchangeNotCorrectableException catch (error) {
       if (!mounted) {
@@ -1133,6 +1143,7 @@ class _TripCashWalletScreenState extends ConsumerState<TripCashWalletScreen> {
         if (!mounted) {
           return;
         }
+        _invalidateTripCashReportSnapshots();
         CalmSnackBar.showMessage(
           context,
           message: AppLocalizations.of(context)!.cashWalletExchangeCorrected,
