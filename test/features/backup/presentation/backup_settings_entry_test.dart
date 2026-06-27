@@ -50,7 +50,7 @@ void main() {
       findsOneWidget,
     );
     expect(
-      find.text('CalmLedger does not sync to the cloud automatically.'),
+      find.text('CalmTrip does not sync to the cloud automatically.'),
       findsOneWidget,
     );
     expect(find.text('Replace all data'), findsNothing);

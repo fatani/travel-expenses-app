@@ -3698,7 +3698,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupNoCloudSyncNotice.
   ///
   /// In en, this message translates to:
-  /// **'CalmLedger does not sync to the cloud automatically.'**
+  /// **'CalmTrip does not sync to the cloud automatically.'**
   String get backupNoCloudSyncNotice;
 
   /// No description provided for @backupCreateButton.
@@ -3782,7 +3782,7 @@ abstract class AppLocalizations {
   /// No description provided for @backupRestoreConfirmMessage.
   ///
   /// In en, this message translates to:
-  /// **'Restoring will replace all current CalmLedger data on this device. This cannot be undone.\n\nWallet balances will be recalculated automatically. Cash exchange and lot tracking history will be rebuilt from available transactions.'**
+  /// **'Restoring will replace all current CalmTrip data on this device. This cannot be undone.\n\nWallet balances will be recalculated automatically. Cash exchange and lot tracking history will be rebuilt from available transactions.'**
   String get backupRestoreConfirmMessage;
 
   /// No description provided for @backupRestoreConfirmButton.
@@ -3812,19 +3812,19 @@ abstract class AppLocalizations {
   /// No description provided for @backupRestoreInvalidFile.
   ///
   /// In en, this message translates to:
-  /// **'Invalid backup file. Choose a CalmLedger .clbackup file.'**
+  /// **'Invalid backup file. Choose a CalmTrip .clbackup file.'**
   String get backupRestoreInvalidFile;
 
   /// No description provided for @backupRestoreUnsupportedBackupVersion.
   ///
   /// In en, this message translates to:
-  /// **'Unsupported backup version. Update CalmLedger and try again.'**
+  /// **'Unsupported backup version. Update CalmTrip and try again.'**
   String get backupRestoreUnsupportedBackupVersion;
 
   /// No description provided for @backupRestoreUnsupportedSchemaVersion.
   ///
   /// In en, this message translates to:
-  /// **'Unsupported schema version. Update CalmLedger and try again.'**
+  /// **'Unsupported schema version. Update CalmTrip and try again.'**
   String get backupRestoreUnsupportedSchemaVersion;
 
   /// No description provided for @backupRestoreCorruptBackup.

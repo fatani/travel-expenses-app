@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -92,10 +93,12 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       final file = result.files.single;
       final fileName = file.name;
       if (!isSupportedRestorePickedFile(file)) {
-        debugPrint(
-          'backup restore pick rejected invalid extension: '
-          'name=${file.name}, path=${file.path}',
-        );
+        if (kDebugMode) {
+          debugPrint(
+            'backup restore pick rejected invalid extension: '
+            'name=${file.name}, path=${file.path}',
+          );
+        }
         CalmSnackBar.showMessage(context, message: l10n.backupRestoreSelectFailed);
         return;
       }
@@ -104,8 +107,10 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
       try {
         bytes = await readRestorePickedFileBytes(file);
       } catch (error, stackTrace) {
-        debugPrint('backup restore pick failed: $error');
-        debugPrintStack(stackTrace: stackTrace);
+        if (kDebugMode) {
+          debugPrint('backup restore pick failed: $error');
+          debugPrintStack(stackTrace: stackTrace);
+        }
         if (!mounted) {
           return;
         }
@@ -137,8 +142,10 @@ class _BackupRestoreScreenState extends ConsumerState<BackupRestoreScreen> {
         message: backupRestoreFailureMessage(l10n, error),
       );
     } catch (error, stackTrace) {
-      debugPrint('backup restore pick failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
+      if (kDebugMode) {
+        debugPrint('backup restore pick failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
       if (!mounted) {
         return;
       }

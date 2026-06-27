@@ -9,10 +9,12 @@ import 'package:flutter/foundation.dart';
 Future<List<int>?> readRestorePickedFileBytes(PlatformFile file) async {
   final hasBytes = file.bytes != null;
   final hasPath = file.path != null;
-  debugPrint(
-    'backup restore pick: name=${file.name}, size=${file.size}, '
-    'hasBytes=$hasBytes, hasPath=$hasPath',
-  );
+  if (kDebugMode) {
+    debugPrint(
+      'backup restore pick: name=${file.name}, size=${file.size}, '
+      'hasBytes=$hasBytes, hasPath=$hasPath',
+    );
+  }
 
   if (file.bytes != null) {
     return file.bytes!;
@@ -23,8 +25,10 @@ Future<List<int>?> readRestorePickedFileBytes(PlatformFile file) async {
     try {
       return await File(path).readAsBytes();
     } catch (error, stackTrace) {
-      debugPrint('backup restore pick file read failed: $error');
-      debugPrintStack(stackTrace: stackTrace);
+      if (kDebugMode) {
+        debugPrint('backup restore pick file read failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
       rethrow;
     }
   }

@@ -1935,7 +1935,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupCreatesFileNotice => 'Create a backup file you can save elsewhere.';
 
   @override
-  String get backupNoCloudSyncNotice => 'CalmLedger does not sync to the cloud automatically.';
+  String get backupNoCloudSyncNotice => 'CalmTrip does not sync to the cloud automatically.';
 
   @override
   String get backupCreateButton => 'Create backup';
@@ -1991,7 +1991,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupRestoreConfirmTitle => 'Replace all data?';
 
   @override
-  String get backupRestoreConfirmMessage => 'Restoring will replace all current CalmLedger data on this device. This cannot be undone.\n\nWallet balances will be recalculated automatically. Cash exchange and lot tracking history will be rebuilt from available transactions.';
+  String get backupRestoreConfirmMessage => 'Restoring will replace all current CalmTrip data on this device. This cannot be undone.\n\nWallet balances will be recalculated automatically. Cash exchange and lot tracking history will be rebuilt from available transactions.';
 
   @override
   String get backupRestoreConfirmButton => 'Replace all data';
@@ -2006,13 +2006,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupRestoreSuccess => 'Restore completed successfully.';
 
   @override
-  String get backupRestoreInvalidFile => 'Invalid backup file. Choose a CalmLedger .clbackup file.';
+  String get backupRestoreInvalidFile => 'Invalid backup file. Choose a CalmTrip .clbackup file.';
 
   @override
-  String get backupRestoreUnsupportedBackupVersion => 'Unsupported backup version. Update CalmLedger and try again.';
+  String get backupRestoreUnsupportedBackupVersion => 'Unsupported backup version. Update CalmTrip and try again.';
 
   @override
-  String get backupRestoreUnsupportedSchemaVersion => 'Unsupported schema version. Update CalmLedger and try again.';
+  String get backupRestoreUnsupportedSchemaVersion => 'Unsupported schema version. Update CalmTrip and try again.';
 
   @override
   String get backupRestoreCorruptBackup => 'This backup file looks corrupt. Try another file.';
