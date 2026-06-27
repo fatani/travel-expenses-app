@@ -2846,7 +2846,7 @@ abstract class AppLocalizations {
   /// No description provided for @tripDetailsActuallyCharged.
   ///
   /// In en, this message translates to:
-  /// **'Total charged (SAR)'**
+  /// **'Total charged'**
   String get tripDetailsActuallyCharged;
 
   /// No description provided for @tripDetailsTotalInCurrencyOnly.

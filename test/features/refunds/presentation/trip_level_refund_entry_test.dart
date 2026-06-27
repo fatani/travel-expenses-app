@@ -56,6 +56,20 @@ void main() {
     category: 'Food',
   );
 
+  final sampleCardExpense = Expense.create(
+    id: 'expense-card-1',
+    tripId: trip.id,
+    title: 'Hotel',
+    amount: 100,
+    currencyCode: 'CNY',
+    transactionAmount: 100,
+    transactionCurrency: 'CNY',
+    spentAt: DateTime(2026, 1, 3),
+    paymentMethod: 'Credit Card',
+    paymentChannel: 'POS Purchase',
+    category: 'Lodging',
+  );
+
   group('Trip-level refund entry point', () {
     testWidgets('overflow menu exposes Add Refund (English)', (tester) async {
       await tester.pumpWidget(
@@ -108,7 +122,7 @@ void main() {
       await tester.pumpWidget(
         _buildRefundFormApp(
           trip: trip,
-          expenses: [sampleExpense],
+          expenses: [sampleCardExpense],
           recordRefundUseCase: spy,
         ),
       );
@@ -131,6 +145,53 @@ void main() {
       // Home currency == refund currency → valued 1:1 so reports update.
       expect(spy.capturedHomeAmount, 50);
       expect(spy.capturedHomeCurrency, 'CNY');
+    });
+  });
+
+  group('Trip refund default destination', () {
+    Future<void> pumpAndSaveDefault(
+      WidgetTester tester,
+      List<Expense> expenses,
+      _CapturingRecordRefundUseCase spy,
+    ) async {
+      await tester.pumpWidget(
+        _buildRefundFormApp(
+          trip: trip,
+          expenses: expenses,
+          recordRefundUseCase: spy,
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Refund amount'),
+        '10',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Record refund'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('cash-only expenses default to cash refund', (tester) async {
+      final spy = _CapturingRecordRefundUseCase();
+      await pumpAndSaveDefault(tester, [sampleExpense], spy);
+      expect(spy.capturedDestination, RefundDestination.cash);
+    });
+
+    testWidgets('card expense defaults to card refund', (tester) async {
+      final spy = _CapturingRecordRefundUseCase();
+      await pumpAndSaveDefault(tester, [sampleCardExpense], spy);
+      expect(spy.capturedDestination, RefundDestination.card);
+    });
+
+    testWidgets('mixed cash and card expenses default to card refund',
+        (tester) async {
+      final spy = _CapturingRecordRefundUseCase();
+      await pumpAndSaveDefault(
+        tester,
+        [sampleExpense, sampleCardExpense],
+        spy,
+      );
+      expect(spy.capturedDestination, RefundDestination.card);
     });
   });
 

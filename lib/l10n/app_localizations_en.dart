@@ -1441,7 +1441,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get intlTotalCharged => 'Total charged';
 
   @override
-  String get tripDetailsActuallyCharged => 'Total charged (SAR)';
+  String get tripDetailsActuallyCharged => 'Total charged';
 
   @override
   String tripDetailsTotalInCurrencyOnly(Object currency) {
