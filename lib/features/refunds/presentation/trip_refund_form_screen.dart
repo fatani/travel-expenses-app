@@ -8,6 +8,7 @@ import '../../../core/formatting/bidi_format.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../expenses/domain/expense.dart';
+import '../../expenses/domain/expense_payment_service.dart';
 import '../../trips/domain/trip.dart';
 import '../domain/allowed_refund_currencies.dart';
 import '../domain/over_refund_exception.dart';
@@ -53,7 +54,7 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
   late final TextEditingController _homeValueController;
   late final List<String> _allowedCurrencies;
   late String _currency;
-  RefundDestination _destination = RefundDestination.card;
+  late RefundDestination _destination;
   String? _linkedExpenseId;
   bool _isSubmitting = false;
 
@@ -76,6 +77,22 @@ class _TripRefundFormScreenState extends ConsumerState<TripRefundFormScreen> {
         : (_allowedCurrencies.isNotEmpty
             ? _allowedCurrencies.first
             : widget.trip.homeCurrencySnapshot.trim().toUpperCase());
+    _destination = _defaultRefundDestination(widget.expenses);
+  }
+
+  /// Cash-only trips should default to cash refunds; mixed or card-only trips
+  /// keep card as the safer default when expenses are absent or include cards.
+  static RefundDestination _defaultRefundDestination(List<Expense> expenses) {
+    if (expenses.isEmpty) {
+      return RefundDestination.card;
+    }
+    final allCash = expenses.every(
+      (expense) => isCashExpensePayment(
+        paymentMethod: expense.paymentMethod,
+        paymentChannel: expense.paymentChannel,
+      ),
+    );
+    return allCash ? RefundDestination.cash : RefundDestination.card;
   }
 
   @override

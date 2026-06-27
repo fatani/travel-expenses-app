@@ -530,7 +530,7 @@
   "intlBilled": "Billed",
   "intlFees": "Fees",
   "intlTotalCharged": "Total charged",
-  "tripDetailsActuallyCharged": "Total charged (SAR)",
+  "tripDetailsActuallyCharged": "Total charged",
   "tripDetailsTotalInCurrencyOnly": "Total in {currency} only",
   "@tripDetailsTotalInCurrencyOnly": {"placeholders": {"currency": {}}},
   "tripDetailsCardChargesInCurrency": "Card charges in {currency}",

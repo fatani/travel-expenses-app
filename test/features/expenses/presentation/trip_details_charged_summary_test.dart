@@ -10,8 +10,15 @@ import 'package:travel_expenses/features/expenses/domain/expense.dart';
 import 'package:travel_expenses/features/expenses/presentation/trip_details_screen.dart';
 import 'package:travel_expenses/features/trips/domain/trip.dart';
 import 'package:travel_expenses/l10n/app_localizations.dart';
+import 'package:travel_expenses/l10n/app_localizations_en.dart';
 
 void main() {
+  test('English total charged label does not hardcode SAR', () {
+    final l10n = AppLocalizationsEn();
+    expect(l10n.tripDetailsActuallyCharged, 'Total charged');
+    expect(l10n.tripDetailsActuallyCharged.toUpperCase(), isNot(contains('SAR')));
+  });
+
   final trip = Trip.create(
     id: 'trip-charged-summary',
     name: 'Dubai',
