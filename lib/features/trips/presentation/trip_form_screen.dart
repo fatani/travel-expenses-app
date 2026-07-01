@@ -1202,31 +1202,34 @@ class _CurrencyPickerSheetState extends State<_CurrencyPickerSheet> {
                   final name = parts.length > 1 ? parts.last : currency;
                   final selected = _isCurrentlySelected(currency);
 
-                  return ListTile(
-                    leading: Container(
-                      width: 48,
-                      alignment: Alignment.center,
-                      child: Text(
-                        code,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
+                  return Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      leading: Container(
+                        width: 48,
+                        alignment: Alignment.center,
+                        child: Text(
+                          code,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
+                      title: Text(name),
+                      trailing: selected
+                          ? Icon(
+                              Icons.check_circle,
+                              color: Theme.of(context).colorScheme.primary,
+                            )
+                          : null,
+                      selected: selected,
+                      selectedTileColor: Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: 0.08),
+                      onTap: () => Navigator.of(context).pop(currency),
                     ),
-                    title: Text(name),
-                    trailing: selected
-                        ? Icon(
-                            Icons.check_circle,
-                            color: Theme.of(context).colorScheme.primary,
-                          )
-                        : null,
-                    selected: selected,
-                    selectedTileColor: Theme.of(context)
-                        .colorScheme
-                        .primary
-                        .withValues(alpha: 0.08),
-                    onTap: () => Navigator.of(context).pop(currency),
                   );
                 },
               ),
@@ -1743,33 +1746,36 @@ class _DestinationCard extends StatelessWidget {
                             itemCount: visibleOptions.length,
                             itemBuilder: (context, index) {
                               final country = visibleOptions[index];
-                              return ListTile(
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 2,
-                                ),
-                                leading: Text(
-                                  country.flagEmoji,
-                                  style: const TextStyle(fontSize: 22),
-                                ),
-                                title: Text(
-                                  country.getLocalizedName(isArabic),
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
+                              return Material(
+                                color: Colors.transparent,
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 2,
                                   ),
-                                ),
-                                subtitle: Text(
-                                  '${country.currencyCode} • ${country.currencyName}',
-                                  textDirection: TextDirection.ltr,
-                                ),
-                                trailing: Text(
-                                  country.countryCode,
-                                  style: const TextStyle(
-                                    color: Color(0xFF7A6AAE),
-                                    fontWeight: FontWeight.w600,
+                                  leading: Text(
+                                    country.flagEmoji,
+                                    style: const TextStyle(fontSize: 22),
                                   ),
+                                  title: Text(
+                                    country.getLocalizedName(isArabic),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    '${country.currencyCode} • ${country.currencyName}',
+                                    textDirection: TextDirection.ltr,
+                                  ),
+                                  trailing: Text(
+                                    country.countryCode,
+                                    style: const TextStyle(
+                                      color: Color(0xFF7A6AAE),
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  onTap: () => onSelected(country),
                                 ),
-                                onTap: () => onSelected(country),
                               );
                             },
                           ),
