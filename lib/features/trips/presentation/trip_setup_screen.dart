@@ -1356,12 +1356,15 @@ class _SetupCurrencyPickerSheetState extends State<_SetupCurrencyPickerSheet> {
                 itemBuilder: (context, index) {
                   final currency = _filtered[index];
                   final code = currency.split(' - ').first;
-                  return ListTile(
-                    title: Text(
-                      currency,
-                      textDirection: TextDirection.ltr,
+                  return Material(
+                    color: Colors.transparent,
+                    child: ListTile(
+                      title: Text(
+                        currency,
+                        textDirection: TextDirection.ltr,
+                      ),
+                      onTap: () => Navigator.of(context).pop(code),
                     ),
-                    onTap: () => Navigator.of(context).pop(code),
                   );
                 },
               ),

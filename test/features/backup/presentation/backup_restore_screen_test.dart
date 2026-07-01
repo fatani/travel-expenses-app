@@ -35,7 +35,7 @@ void main() {
 
   test('restore picker uses FileType.any without allowedExtensions', () {
     final source = File(
-      'E:/myProjects/travel_expenses-pro/lib/features/backup/presentation/backup_restore_screen.dart',
+      'lib/features/backup/presentation/backup_restore_screen.dart',
     ).readAsStringSync();
 
     expect(source, contains('type: FileType.any'));

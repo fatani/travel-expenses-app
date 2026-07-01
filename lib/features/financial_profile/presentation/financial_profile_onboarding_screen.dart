@@ -95,28 +95,31 @@ class _FinancialProfileOnboardingScreenState
                       itemBuilder: (context, index) {
                         final country = countries[index];
                         final selected = _selectedCountry?.countryCode == country.countryCode;
-                        return ListTile(
-                          onTap: _isSaving
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _selectedCountry = country;
-                                  });
-                                },
-                          leading: Text(country.flagEmoji, style: const TextStyle(fontSize: 24)),
-                          title: Text(
-                            country.getLocalizedName(isArabic),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.w700),
+                        return Material(
+                          color: Colors.transparent,
+                          child: ListTile(
+                            onTap: _isSaving
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _selectedCountry = country;
+                                    });
+                                  },
+                            leading: Text(country.flagEmoji, style: const TextStyle(fontSize: 24)),
+                            title: Text(
+                              country.getLocalizedName(isArabic),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                            subtitle: Text(
+                              '${country.currencyCode} • ${country.currencyName}',
+                              textDirection: TextDirection.ltr,
+                            ),
+                            trailing: selected
+                                ? const Icon(Icons.check_circle, color: Color(0xFF2563EB))
+                                : null,
                           ),
-                          subtitle: Text(
-                            '${country.currencyCode} • ${country.currencyName}',
-                            textDirection: TextDirection.ltr,
-                          ),
-                          trailing: selected
-                              ? const Icon(Icons.check_circle, color: Color(0xFF2563EB))
-                              : null,
                         );
                       },
                     ),
